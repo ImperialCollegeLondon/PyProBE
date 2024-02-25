@@ -45,16 +45,17 @@ for line in lines:
         titles.append(line[3:].strip())
 
 steps = [[[]] for _ in range(len(titles))]
+cycles = [[] for _ in range(len(titles))]
 print(steps)
 #%%
 line_index = 0
 title_index = -1
 cycle_index = 0
+cycle_numbers = []
 while line_index < len(lines):
     if lines[line_index].startswith('##'):    
         title_index += 1
         cycle_index = 0
-    
     if lines[line_index].startswith('#-'):
         match = re.search(r'Step (\d+)', lines[line_index])
         if match:
@@ -69,11 +70,17 @@ while line_index < len(lines):
         match = re.search(r'Cycle count: (\d+)', lines[line_index])
         if match:
             cycle_count = int(match.group(1))
-        for i in range(cycle_count):
+        for i in range(cycle_count-1):
             steps[title_index].append(list(range(starting_step, latest_step+1)))
             cycle_index += 1
     line_index += 1
-        
+
+#cycles = [[len(sublist) for sublist in group] for group in steps]
+cycles = [list(range(len(sublist))) for sublist in steps]
+for i in range(len(cycles)-1):
+    cycles[i+1] = [item+cycles[i][-1] for item in cycles[i+1]]
+    cycles[i] = [item+1 for item in cycles[i]]
+
 step_names = [None for _ in range(steps[-1][-1][-1]+1)]
 line_index = 0
 while line_index < len(lines):
@@ -83,6 +90,80 @@ while line_index < len(lines):
             step_names[int(match.group(1))] = lines[line_index].split(': ')[1].strip()
     line_index += 1
 
+print(steps)
+print(cycles)
+print(step_names)
+print(cycles[0], steps[0])
+
+#%%
+def flatten(lst):
+    if not isinstance(lst, list):
+        return [lst]
+    if lst == []:
+        return lst
+    if isinstance(lst[0], list):
+        return flatten(lst[0]) + flatten(lst[1:])
+    return lst[:1] + flatten(lst[1:])
+
+
+class Experiment:
+    def __init__(self, data, cycles_idx, steps_idx, step_names):
+        self.data = data
+        self.cycles_idx = cycles_idx
+        self.steps_idx = steps_idx
+        self.step_names = step_names
+    
+    @property
+    def RawData(self):
+        return self.data[(self.data['Cycle'].isin(self.cycles_idx)) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+
+    def cycle(self,cycle_number):
+        return Cycle(self.data, self.cycles_idx[cycle_number-1], self.steps_idx[cycle_number-1], self.step_names)
+    
+class Cycle:
+    def __init__(self, data, cycles_idx, steps_idx, step_names):
+        self.data = data
+        self.cycles_idx = cycles_idx
+        self.steps_idx = steps_idx
+        self.step_names = step_names
+
+    @property
+    def RawData(self):
+        print(self.cycles_idx, self.steps_idx)
+        return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+
+    def step(self, step_number):
+        return Step(self.data, self.cycles_idx, self.steps_idx[step_number-1], self.step_names)
+
+class Step:
+    def __init__(self, data, cycles_idx, steps_idx, step_names):
+        self.data = data
+        self.cycles_idx = cycles_idx
+        self.steps_idx = steps_idx
+        self.step_names = step_names
+
+    @property
+    def RawData(self):
+        print(self.cycles_idx, self.steps_idx)
+        return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+
+    @property
+    def capacity(self):
+        return self.RawData['Capacity (Ah)'].max()
+
+experiments = []
+for i in range(len(titles)):
+    experiments.append(Experiment(df, cycles[i], steps[i], step_names))
+
+# for cycler in range(4,10):
+#     for channel in range(1,8):
+# print(experiments[1].cycle(5).step(3).capacity) 
+
+
+exp = Experiment(df, cycles[1], steps[1], step_names)
+
+print(exp.cycle(2).step(2).RawData)
+#%%
 class Step:
     def __init__(self, data):
         self.RawData = data
@@ -93,7 +174,19 @@ class Step:
     
 section = df[(df['Cycle'] == 1) & (df['Step'] == 4)]
 step = Step(section)
-print(step.capacity)
+
+step_objects = []
+for title_steps in steps:
+    title_objects = []
+    for cycle_steps in title_steps:
+        cycle_objects = []
+        for step_number in cycle_steps:
+            section = df[(df['Cycle'] == cycle_number) & (df['Step'] == step_number)]
+            step = Step(section)
+            cycle_objects.append(step)
+        title_objects.append(cycle_objects)
+    step_objects.append(title_objects)
+
 
 
 
