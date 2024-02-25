@@ -163,7 +163,12 @@ for i in range(len(cells)):
     capacities.append([cells[i][1].cycle(5).step(1).capacity])
 
 #%%
-plt.boxplot(flatten(capacities))
+import numpy as np
+print(np.array(flatten(capacities[:-2])))
+capacities = np.array(flatten(capacities))
+capacities = capacities[~np.isnan(capacities)]
+plt.boxplot(capacities)
+plt.show()
 
 #%%
 class Step:
