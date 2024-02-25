@@ -5,7 +5,7 @@ import re
 loc = "/Users/tom/Library/CloudStorage/OneDrive-ImperialCollegeLondon/PhD Workspace/05 - Parallel SLP/DATA"
 
 # Load the data
-df = pd.read_csv(loc + "/SLP_Cell-Cell_Variation_R1_4_1.csv")
+
 
 def convert_units(df):
     conversion_dict = {'m': 1e-3, 'µ': 1e-6, 'n': 1e-9, 'p': 1e-12}
@@ -21,12 +21,15 @@ def convert_units(df):
 
     return df
 
-column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
-df = convert_units(df)
-df = df[list(column_dict.keys())].rename(columns=column_dict)
-df['Date'] = pd.to_datetime(df['Date'])
-df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
-print(df.head())
+def read_data(filepath):
+    df = pd.read_csv(filepath)
+    column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
+    df = convert_units(df)
+    df = df[list(column_dict.keys())].rename(columns=column_dict)
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
+    return df
+
 # %%
 
 import pandas as pd
@@ -46,7 +49,6 @@ for line in lines:
 
 steps = [[[]] for _ in range(len(titles))]
 cycles = [[] for _ in range(len(titles))]
-print(steps)
 #%%
 line_index = 0
 title_index = -1
@@ -90,11 +92,6 @@ while line_index < len(lines):
             step_names[int(match.group(1))] = lines[line_index].split(': ')[1].strip()
     line_index += 1
 
-print(steps)
-print(cycles)
-print(step_names)
-print(cycles[0], steps[0])
-
 #%%
 def flatten(lst):
     if not isinstance(lst, list):
@@ -115,7 +112,7 @@ class Experiment:
     
     @property
     def RawData(self):
-        return self.data[(self.data['Cycle'].isin(self.cycles_idx)) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+        return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
 
     def cycle(self,cycle_number):
         return Cycle(self.data, self.cycles_idx[cycle_number-1], self.steps_idx[cycle_number-1], self.step_names)
@@ -129,7 +126,6 @@ class Cycle:
 
     @property
     def RawData(self):
-        print(self.cycles_idx, self.steps_idx)
         return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
 
     def step(self, step_number):
@@ -144,25 +140,31 @@ class Step:
 
     @property
     def RawData(self):
-        print(self.cycles_idx, self.steps_idx)
         return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
 
     @property
     def capacity(self):
         return self.RawData['Capacity (Ah)'].max()
 
-experiments = []
-for i in range(len(titles)):
-    experiments.append(Experiment(df, cycles[i], steps[i], step_names))
+cells = []
+for cycler in range(4,10):
+    for channel in range(1,8):
+        filename = f'SLP_Cell-Cell_Variation_R1_{cycler}_{channel}.csv'
+        df = read_data(loc + '/' + filename)
+        experiments = []
+        for i in range(len(titles)):
+            experiments.append(Experiment(df, cycles[i], steps[i], step_names))
+        cells.append(experiments)
 
-# for cycler in range(4,10):
-#     for channel in range(1,8):
-# print(experiments[1].cycle(5).step(3).capacity) 
+import matplotlib.pyplot as plt
 
+capacities = []
+for i in range(len(cells)):
+    capacities.append([cells[i][1].cycle(5).step(1).capacity])
 
-exp = Experiment(df, cycles[1], steps[1], step_names)
+#%%
+plt.boxplot(flatten(capacities))
 
-print(exp.cycle(2).step(2).RawData)
 #%%
 class Step:
     def __init__(self, data):
