@@ -83,6 +83,18 @@ while line_index < len(lines):
             step_names[int(match.group(1))] = lines[line_index].split(': ')[1].strip()
     line_index += 1
 
+class Step:
+    def __init__(self, data):
+        self.RawData = data
+
+    @property
+    def capacity(self):
+        return self.RawData['Capacity (Ah)'].max()
+    
+section = df[(df['Cycle'] == 1) & (df['Step'] == 4)]
+step = Step(section)
+print(step.capacity)
+
 
 
 # %%
