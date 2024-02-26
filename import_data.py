@@ -22,7 +22,6 @@ class Neware(DataLoader):
         
         column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
         df = cls.convert_units(df)
-        print(df)
         df = df[list(column_dict.keys())].rename(columns=column_dict)
         df['Date'] = pd.to_datetime(df['Date'])
         df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
@@ -99,5 +98,4 @@ def process_readme(loc):
                     step_names[int(match.group(1))] = lines[line_index].split(': ')[1].strip()
             line_index += 1
             
-        print(steps, cycles, step_names)
         return titles, steps, cycles, step_names
