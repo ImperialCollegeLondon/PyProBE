@@ -14,9 +14,8 @@ class DataLoader:
         titles, steps, cycles, step_names = process_readme(os.path.dirname(filepath))
         experiment_types = {'Constant Current': Experiment.Experiment, 'Pulsing': Experiment.Pulsing, 'Cycling': Experiment.Experiment, 'SOC Reset': Experiment.Experiment}
         experiments = {}
-        for i in range(len(titles)-1):
+        for i in range(len(titles)):
             title = list(titles.keys())[i]
-            print(f'Processing {title}...')
             experiments[title] = experiment_types[titles[title]](data, cycles[i], steps[i], step_names)
         return experiments
     
@@ -103,7 +102,9 @@ def process_readme(loc):
         cycles = [list(range(len(sublist))) for sublist in steps]
         for i in range(len(cycles)-1):
             cycles[i+1] = [item+cycles[i][-1] for item in cycles[i+1]]
+        for i in range(len(cycles)): 
             cycles[i] = [item+1 for item in cycles[i]]
+            
 
         step_names = [None for _ in range(steps[-1][-1][-1]+1)]
         line_index = 0
