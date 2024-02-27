@@ -41,7 +41,7 @@ record_xlsx = os.path.join(folder_path, "Experiment_Record.xlsx")
 record = pd.read_excel(record_xlsx, sheet_name = test_name)
 
 
-for i in range(3):
+for i in range(1):
     
     test_details = record.iloc[i].to_dict()
     round = int(test_details['Round'])
@@ -69,5 +69,5 @@ def open_pickle(file_path):
     
 
 cell = open_pickle(os.path.join(folder_path, f"Cell_{1}.pkl"))
-print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'])
+print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Charge Pulses'].R0)
 # %%
