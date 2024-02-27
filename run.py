@@ -42,8 +42,7 @@ record_xlsx = os.path.join(folder_path, "Experiment_Record.xlsx")
 record = pd.read_excel(record_xlsx, sheet_name = test_name)
 
 
-for i in range(2,3):
-    
+for i in range(56):
     test_details = record.iloc[i].to_dict()
     round = int(test_details['Round'])
     cell_num = int(test_details['Cell'])
@@ -62,17 +61,21 @@ for i in range(2,3):
     print(f"Processed: Cell {cell_num} in {time.time()-t1:.2f} seconds. File size = {os.path.getsize(pickle_path)/1e6:.2f} MB") 
     
     
-# %%
-def open_pickle(file_path):
-    with open(file_path, 'rb') as f:
-        data = pickle.load(f)
-    return data
+# # %%
+# def open_pickle(file_path):
+#     with open(file_path, 'rb') as f:
+#         data = pickle.load(f)
+#     return data
     
 
-cell = open_pickle(os.path.join(folder_path, f"Cell_{3}.pkl"))
-for cycle in range(1,6):
-    plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Exp Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Voltage (V)'])
-#plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Voltage (V)'])
+# cell = open_pickle(os.path.join(folder_path, f"Cell_{3}.pkl"))
 
+# plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Exp Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Voltage (V)'])
+# #plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Voltage (V)'])
+# plt.figure()
+# for i in range(1,6):
+    
+#     plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].cycle(i).RawData['Cycle Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].cycle(i).RawData['Voltage (V)'])
+# # %%
 
 # %%

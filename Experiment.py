@@ -40,7 +40,9 @@ class Cycle:
 
     @property
     def RawData(self):
-        return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+        RawData = self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+        RawData['Cycle Capacity (Ah)'] = RawData['Capacity (Ah)'] - capacity_ref(self, RawData)
+        return RawData
 
     def step(self, step_number):
         return Step(self.data, self.cycles_idx, self.steps_idx[step_number-1], self.step_names)
@@ -71,9 +73,7 @@ class Step:
     def RawData(self):
         return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
 
-    @property
-    def capacity(self):
-        return self.RawData['Capacity (Ah)'].max()
+    
     
     @property
     def R0(self):
@@ -85,10 +85,18 @@ class Step:
 class Charge(Step):
     def __init__(self, data, cycles_idx, steps_idx, step_names):
         super().__init__(data, cycles_idx, steps_idx, step_names)
+        
+    @property
+    def capacity(self):
+        return self.RawData['Charge Capacity (Ah)'].max()
     
 class Discharge(Step):
     def __init__(self, data, cycles_idx, steps_idx, step_names):
         super().__init__(data, cycles_idx, steps_idx, step_names)
+        
+    @property
+    def capacity(self):
+        return self.RawData['Discharge Capacity (Ah)'].max()
         
 class Rest(Step):
     def __init__(self, data, cycles_idx, steps_idx, step_names):

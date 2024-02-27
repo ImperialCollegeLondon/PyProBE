@@ -34,10 +34,10 @@ class Neware(DataLoader):
         dQ_discharge[dQ_discharge < 0] = 0
         dQ_charge = np.append(dQ_charge, 0)
         dQ_discharge = np.append(dQ_discharge, 0)
-        df['Step Capacity (Ah)'] = df['Capacity (Ah)']
         df['Capacity (Ah)'] = np.cumsum(dQ_charge - dQ_discharge)
         df['Capacity (Ah)'] = df['Capacity (Ah)'] + df['Charge Capacity (Ah)'].max()
         df['Exp Capacity (Ah)'] = np.zeros(len(df))
+        df['Cycle Capacity (Ah)'] = np.zeros(len(df))
         df['Date'] = pd.to_datetime(df['Date'])
         df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
         return df
