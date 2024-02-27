@@ -3,23 +3,14 @@ import numpy as np
 import pandas as pd
 class Experiment:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
-        #self.RawData = data
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.RawData = data[(data['Cycle'].isin(flatten(self.cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
-        #print(self.RawData['Capacity (Ah)'])
-        #print(np.array(self.RawData['Capacity (Ah)']))
         if not self.RawData.empty:
             self.RawData['Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
         else:
             print("The DataFrame is empty.")
-        
-    # @property
-    # def RawData(self):
-    #     RawData = self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
-    #     #RawData['Exp Capacity (Ah)'] = RawData['Capacity (Ah)'] - capacity_ref(self, RawData)
-    #     return RawData
     
     def cycle(self,cycle_number):
         return Cycle(self.RawData, self.cycles_idx[cycle_number-1], self.steps_idx[cycle_number-1], self.step_names)
@@ -33,20 +24,6 @@ class Pulsing(Experiment):
             return self.cycle(pulse_number).charge(1)
         elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
             return self.cycle(pulse_number).discharge(1)
-    
-    # def R0(self, pulse_num):
-    #     if (self.pulse(pulse_num).RawData['Current (A)']).all() >= 0:
-    #         return self.pulse(pulse_num).charge(1).R0
-    #     elif (self.pulse(pulse_num).RawData['Current (A)']).all() <= 0:
-    #         return self.pulse(pulse_num).discharge(1).R0
-            
-    
-    # def start_capacity(self, pulse_num):
-    #     if (self.pulse(pulse_num).RawData['Current (A)']).all() >= 0:
-    #         return self.pulse(pulse_num).charge(1).start_capacity
-    #     elif (self.pulse(pulse_num).RawData['Current (A)']).all() <= 0:
-    #         return self.pulse(pulse_num).discharge(1).start_capacity
-    
           
     def calc_resistances(self):
         _R0 = np.zeros(len(self.cycles_idx))
@@ -59,17 +36,10 @@ class Pulsing(Experiment):
     
 class Cycle:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
-        #self.RawData = data
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.RawData = data[(data['Cycle'].isin(flatten(cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
-
-    # @property
-    # def RawData(self):
-    #     RawData = self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
-    #     #RawData['Cycle Capacity (Ah)'] = RawData['Capacity (Ah)'] - capacity_ref(self, RawData)
-    #     return RawData
 
     def step(self, step_number):
         return Step(self.RawData, self.cycles_idx, self.steps_idx[step_number-1], self.step_names)
@@ -91,15 +61,10 @@ class Cycle:
     
 class Step:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
-        #self.RawData = data
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.RawData = data[(data['Cycle'].isin(flatten(self.cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
-
-    # @property
-    # def RawData(self):
-    #     return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
 
     @property
     def R0(self):
@@ -110,7 +75,6 @@ class Step:
     
     @property
     def start_capacity(self):
-        #print(self.RawData)
         return self.RawData['Exp Capacity (Ah)'].iloc[0]
     
     @property
