@@ -1,4 +1,4 @@
-
+import matplotlib.pyplot as plt
 
 class Experiment:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
@@ -6,11 +6,13 @@ class Experiment:
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
-    
+        
     @property
     def RawData(self):
-        return self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
-
+        RawData = self.data[(self.data['Cycle'].isin(flatten(self.cycles_idx))) & (self.data['Step'].isin(flatten(self.steps_idx)))]
+        RawData['Exp Capacity (Ah)'] = RawData['Capacity (Ah)'] - capacity_ref(self, RawData)
+        return RawData
+    
     def cycle(self,cycle_number):
         return Cycle(self.data, self.cycles_idx[cycle_number-1], self.steps_idx[cycle_number-1], self.step_names)
     
@@ -100,3 +102,6 @@ def flatten(lst):
     if isinstance(lst[0], list):
         return flatten(lst[0]) + flatten(lst[1:])
     return lst[:1] + flatten(lst[1:])
+
+def capacity_ref(self, df):
+        return df.loc[(df['Current (A)'] == 0) & (df['Voltage (V)'] == df[df['Current (A)'] == 0]['Voltage (V)'].max()), 'Capacity (Ah)'].values[0]

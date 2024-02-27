@@ -4,6 +4,8 @@ import re
 import os
 import pandas as pd
 import PyBatDATA.Experiment as Experiment
+import numpy as np
+import matplotlib.pyplot as plt
   
 class DataLoader:
     @classmethod
@@ -22,9 +24,20 @@ class Neware(DataLoader):
     def import_csv(cls,filepath):
         df = pd.read_csv(filepath)
         
-        column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
+        column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 'Chg. Cap.(Ah)': 'Charge Capacity (Ah)','dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
         df = cls.convert_units(df)
+
         df = df[list(column_dict.keys())].rename(columns=column_dict)
+        dQ_charge = np.diff(df['Charge Capacity (Ah)'])
+        dQ_discharge = np.diff(df['Discharge Capacity (Ah)'])
+        dQ_charge[dQ_charge < 0] = 0
+        dQ_discharge[dQ_discharge < 0] = 0
+        dQ_charge = np.append(dQ_charge, 0)
+        dQ_discharge = np.append(dQ_discharge, 0)
+        df['Step Capacity (Ah)'] = df['Capacity (Ah)']
+        df['Capacity (Ah)'] = np.cumsum(dQ_charge - dQ_discharge)
+        df['Capacity (Ah)'] = df['Capacity (Ah)'] + df['Charge Capacity (Ah)'].max()
+        df['Exp Capacity (Ah)'] = np.zeros(len(df))
         df['Date'] = pd.to_datetime(df['Date'])
         df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
         return df
@@ -32,7 +45,6 @@ class Neware(DataLoader):
     
     @staticmethod
     def convert_units(df):
-        
         conversion_dict = {'m': 1e-3, 'µ': 1e-6, 'n': 1e-9, 'p': 1e-12}
         for column in df.columns:
             match = re.search(r'\((.*?)\)', column)  # Update the regular expression pattern to extract the unit from the column name
@@ -102,3 +114,6 @@ def process_readme(loc):
             line_index += 1
             
         return titles, steps, cycles, step_names
+    
+def capacity_ref(df):
+        return df.loc[(df['Current (A)'] == 0) & (df['Voltage (V)'] == df[df['Current (A)'] == 0]['Voltage (V)'].max()), 'Capacity (Ah)'].values[0]

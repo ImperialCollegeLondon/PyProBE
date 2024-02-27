@@ -5,6 +5,7 @@ sys.path.insert(0, '/home/tjh17/GitRepo/')
 import pandas as pd
 import pickle
 import time
+import matplotlib.pyplot as plt
 from PyBatDATA.import_data import Neware
 
 def process_csv_files(folder_path):
@@ -41,7 +42,7 @@ record_xlsx = os.path.join(folder_path, "Experiment_Record.xlsx")
 record = pd.read_excel(record_xlsx, sheet_name = test_name)
 
 
-for i in range(1):
+for i in range(2,3):
     
     test_details = record.iloc[i].to_dict()
     round = int(test_details['Round'])
@@ -68,6 +69,10 @@ def open_pickle(file_path):
     return data
     
 
-cell = open_pickle(os.path.join(folder_path, f"Cell_{1}.pkl"))
-print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Charge Pulses'].R0)
+cell = open_pickle(os.path.join(folder_path, f"Cell_{3}.pkl"))
+for cycle in range(1,6):
+    plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Exp Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Voltage (V)'])
+#plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Voltage (V)'])
+
+
 # %%
