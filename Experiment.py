@@ -25,13 +25,9 @@ class Pulsing(Experiment):
     def R0(self):
         for pulse_num in range(1, len(self.cycles_idx)+1):
             if (self.pulse(pulse_num).RawData['Current (A)']).all() >= 0:
-                pulse_data = self.pulse(pulse_num).charge(1).RawData
+                return self.pulse(pulse_num).charge(1).R0
             elif (self.pulse(pulse_num).RawData['Current (A)']).all() <= 0:
-                pulse_data = self.pulse(pulse_num).discharge(1).RawData
-            OCV = pulse_data['Voltage (V)'].iloc[0]
-            V1 = pulse_data['Voltage (V)'].iloc[1]
-            print(OCV, V1)
-
+                return self.pulse(pulse_num).discharge(1).R0
     
 class Cycle:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
@@ -77,11 +73,12 @@ class Step:
     def capacity(self):
         return self.RawData['Capacity (Ah)'].max()
     
-    # @property
-    # def R0(self):
-    #     OCV = self.RawData['Voltage (V)'].iloc[0]
-    #     V1 = self.RawData['Voltage (V)'].iloc[1]
-    #     print(OCV, V1)
+    @property
+    def R0(self):
+        V1 = self.RawData['Voltage (V)'].iloc[0]
+        V2 = self.RawData['Voltage (V)'].loc[self.RawData['Voltage (V)'] != self.RawData['Voltage (V)'].iloc[0]].iloc[0]
+        I = self.RawData['Current (A)'].iloc[0]
+        return (V2-V1)/I
     
 class Charge(Step):
     def __init__(self, data, cycles_idx, steps_idx, step_names):
