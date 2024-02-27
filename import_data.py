@@ -14,8 +14,9 @@ class DataLoader:
         titles, steps, cycles, step_names = process_readme(os.path.dirname(filepath))
         experiment_types = {'Constant Current': Experiment.Experiment, 'Pulsing': Experiment.Pulsing, 'Cycling': Experiment.Experiment, 'SOC Reset': Experiment.Experiment}
         experiments = {}
-        for i in range(len(titles)):
+        for i in range(len(titles)-1):
             title = list(titles.keys())[i]
+            print(f'Processing {title}...')
             experiments[title] = experiment_types[titles[title]](data, cycles[i], steps[i], step_names)
         return experiments
     
