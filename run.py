@@ -41,7 +41,7 @@ record_xlsx = os.path.join(folder_path, "Experiment_Record.xlsx")
 record = pd.read_excel(record_xlsx, sheet_name = test_name)
 
 
-for i in range(len(record)):
+for i in range(3):
     
     test_details = record.iloc[i].to_dict()
     round = int(test_details['Round'])
@@ -61,3 +61,13 @@ for i in range(len(record)):
     print(f"Processed: Cell {cell_num} in {time.time()-t1:.2f} seconds. File size = {os.path.getsize(pickle_path)/1e6:.2f} MB") 
     
     
+# %%
+def open_pickle(file_path):
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
+    return data
+    
+
+cell = open_pickle(os.path.join(folder_path, f"Cell_{1}.pkl"))
+print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'])
+# %%

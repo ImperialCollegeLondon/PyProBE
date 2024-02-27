@@ -10,9 +10,9 @@ class DataLoader:
     def load_data(cls,filepath):
         data = cls.import_csv(filepath)
         titles, steps, cycles, step_names = process_readme(os.path.dirname(filepath))
-        experiments = []
+        experiments = {}
         for i in range(len(titles)):
-            experiments.append(Experiment.Experiment(data, cycles[i], steps[i], step_names))
+            experiments[list(titles.keys())[i]] = Experiment.Experiment(data, cycles[i], steps[i], step_names)
         return experiments
     
 class Neware(DataLoader): 
@@ -48,13 +48,15 @@ def process_readme(loc):
         with open(loc + '/README.txt', 'r') as file:
             lines = file.readlines()
 
-        titles = []
+        titles = {}
 
 
         title_index = 0
         for line in lines:
             if line.startswith('##'):    
-                titles.append(line[3:].strip())
+                splitted_line = line[3:].split(":")
+                print(splitted_line)
+                titles[splitted_line[0].strip()] = splitted_line[1].strip()
 
         steps = [[[]] for _ in range(len(titles))]
         cycles = [[] for _ in range(len(titles))]
