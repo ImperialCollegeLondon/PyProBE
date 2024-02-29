@@ -23,10 +23,8 @@ class Neware(DataLoader):
     @classmethod
     def import_csv(cls,filepath):
         df = pd.read_csv(filepath)
-        
         column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 'Chg. Cap.(Ah)': 'Charge Capacity (Ah)','dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
         df = cls.convert_units(df)
-
         df = df[list(column_dict.keys())].rename(columns=column_dict)
         dQ_charge = np.diff(df['Charge Capacity (Ah)'])
         dQ_discharge = np.diff(df['Discharge Capacity (Ah)'])
@@ -63,8 +61,6 @@ def process_readme(loc):
             lines = file.readlines()
 
         titles = {}
-
-
         title_index = 0
         for line in lines:
             if line.startswith('##'):    
@@ -104,8 +100,7 @@ def process_readme(loc):
             cycles[i+1] = [item+cycles[i][-1] for item in cycles[i+1]]
         for i in range(len(cycles)): 
             cycles[i] = [item+1 for item in cycles[i]]
-            
-
+        
         step_names = [None for _ in range(steps[-1][-1][-1]+1)]
         line_index = 0
         while line_index < len(lines):
