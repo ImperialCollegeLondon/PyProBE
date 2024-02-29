@@ -6,6 +6,7 @@ class Experiment:
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
+        
         self.RawData = data[(data['Cycle'].isin(flatten(self.cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
         if not self.RawData.empty:
             self.RawData['Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
@@ -27,12 +28,14 @@ class Pulsing(Experiment):
           
     def calc_resistances(self):
         _R0 = np.zeros(len(self.cycles_idx))
+        _R_10s = np.zeros(len(self.cycles_idx))
         _start_capacity = np.zeros(len(self.cycles_idx))
         for i in range(1, len(self.cycles_idx)+1):
             _R0[i-1] = self.pulse(i).R0
             _start_capacity[i-1] = self.pulse(i).start_capacity
+            _R_10s[i-1] = self.pulse(i).R_time
             
-        return pd.DataFrame({'R0': _R0, 'Start Capacity (Ah)': _start_capacity})
+        return pd.DataFrame({'R0': _R0, 'Capacity Throughput (Ah)': _start_capacity, 'R 10s': _R_10s})
     
 class Cycle:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
@@ -45,7 +48,7 @@ class Cycle:
         return Step(self.RawData, self.cycles_idx, self.steps_idx[step_number-1], self.step_names)
 
     def charge(self, charge_number):
-        charge_steps = [index for index, item in enumerate(self.step_names) if item == 'CC Chg']
+        charge_steps = [index for index, item in enumerate(self.step_names) if (item == 'CC Chg' or item == 'CCCV Chg')]
         charge_steps = list(set(charge_steps) & set(flatten(self.steps_idx)))
         return Charge(self.RawData, self.cycles_idx, charge_steps[charge_number-1], self.step_names)
  
@@ -70,6 +73,13 @@ class Step:
     def R0(self):
         V1 = self.RawData['Voltage (V)'].iloc[0]
         V2 = self.RawData['Voltage (V)'].loc[self.RawData['Voltage (V)'] != self.RawData['Voltage (V)'].iloc[0]].iloc[0]
+        I = self.RawData['Current (A)'].iloc[0]
+        return (V2-V1)/I
+    
+    @property
+    def R_time(self):
+        V1 = self.RawData['Voltage (V)'].iloc[0]
+        V2 = self.RawData['Voltage (V)'].loc[self.RawData['Time'] >= 10].iloc[0]
         I = self.RawData['Current (A)'].iloc[0]
         return (V2-V1)/I
     

@@ -42,7 +42,7 @@ record_xlsx = os.path.join(folder_path, "Experiment_Record.xlsx")
 record = pd.read_excel(record_xlsx, sheet_name = test_name)
 
 
-for i in range(2,3):
+for i in range(56):
     test_details = record.iloc[i].to_dict()
     round = int(test_details['Round'])
     cell_num = int(test_details['Cell'])
@@ -68,23 +68,12 @@ def open_pickle(file_path):
     return data
     
 
-cell = open_pickle(os.path.join(folder_path, f"Cell_{3}.pkl"))
+cell = open_pickle(os.path.join(folder_path, f"Cell_{1}.pkl"))
 
-# print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData.head())
-# plt.figure()
-# plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].pulse(1).RawData['Time'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].pulse(1).RawData['Voltage (V)'])
-# #print((cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].cycle(1).RawData['Current (A)']<= 0).all() )
-print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].calc_resistances())
-#plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Date'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Voltage (V)'])
-#print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Capacity (Ah)'].iloc[0])
-# plt.figure()
-#plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Exp Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Voltage (V)'])
-# plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Exp Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].RawData['Voltage (V)'])
-# #plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].RawData['Voltage (V)'])
-# plt.figure()
-# for i in range(1,6):
+for cycle in range(5):
+    print(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].cycle(cycle).discharge(1).capacity)
     
-#     plt.plot(cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].cycle(i).RawData['Cycle Capacity (Ah)'], cell['SLP_Cell-Cell_Variation_R1']['Data']['Break-in Cycles'].cycle(i).RawData['Voltage (V)'])
-# # %%
+cell['SLP_Cell-Cell_Variation_R1']['Data']['Discharge Pulses'].calc_resistances()
+
 
 # %%
