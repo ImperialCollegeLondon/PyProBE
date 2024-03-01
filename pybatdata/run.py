@@ -6,7 +6,7 @@ import pandas as pd
 import pickle
 import time
 import matplotlib.pyplot as plt
-from PyBatDATA.import_data import Neware
+from import_data import Neware
 
 def process_csv_files(folder_path):
     # Use glob to match the pattern '*.csv', meaning any file ending with .csv
