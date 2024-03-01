@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from procedure import Procedure
+import json
   
 class DataLoader:
     @classmethod
@@ -27,8 +28,11 @@ class DataLoader:
     def from_parquet(cls, directory, test_name, cell_name):
         data = pd.read_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'), engine='pyarrow')
         titles, steps, cycles, step_names = process_readme(os.path.join(directory, test_name))
-        return Procedure(data, titles, cycles, steps, step_names)
-        
+        metadata_filename = f'{test_name}_details.json'
+        with open(os.path.join(directory, cell_name, metadata_filename)) as f:
+            metadata = json.load(f)
+        return Procedure(data, titles, cycles, steps, step_names), metadata
+
 class Neware: 
     @classmethod
     def import_csv(cls,filepath):
