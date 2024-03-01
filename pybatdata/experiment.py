@@ -10,10 +10,9 @@ class Experiment:
         self.RawData = data
         
         if not self.RawData.empty:
-            self.RawData['Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
+            self.RawData.loc[:, 'Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
         else:
             print("The DataFrame is empty.")
-    
     def cycle(self,cycle_number):
         cycles_idx = self.cycles_idx[cycle_number-1]
         steps_idx = self.steps_idx[cycle_number-1]
