@@ -9,13 +9,27 @@ from procedure import Procedure
   
 class DataLoader:
     @classmethod
-    def load_data(cls, filepath):
+    def from_csv(cls, filepath):
         data = cls.import_csv(filepath)
         titles, steps, cycles, step_names = process_readme(os.path.dirname(filepath))
         return Procedure(data, titles, cycles, steps, step_names)
-        
     
-class Neware(DataLoader): 
+    @classmethod
+    def from_hdf(cls, filepath, test_name):
+        with pd.HDFStore(filepath, 'r') as store:
+            # Load the metadata from the file under the specified group
+            data = store.get(f'{test_name}/Data')
+            metadata = store.get_storer(f'{test_name}/Data').attrs.metadata
+        titles, steps, cycles, step_names = process_readme(os.path.join(os.path.dirname(filepath), test_name))
+        return Procedure(data, titles, cycles, steps, step_names), metadata
+    
+    @classmethod
+    def from_parquet(cls, directory, test_name, cell_name):
+        data = pd.read_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'), engine='pyarrow')
+        titles, steps, cycles, step_names = process_readme(os.path.join(directory, test_name))
+        return Procedure(data, titles, cycles, steps, step_names)
+        
+class Neware: 
     @classmethod
     def import_csv(cls,filepath):
         df = pd.read_csv(filepath)
@@ -36,6 +50,10 @@ class Neware(DataLoader):
         df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
         return df
     
+    @classmethod
+    def import_hdf(cls, filepath):
+        df = pd.read_hdf(filepath)
+        return df
     
     @staticmethod
     def convert_units(df):
