@@ -16,15 +16,6 @@ class DataLoader:
         return Procedure(data, titles, cycles, steps, step_names)
     
     @classmethod
-    def from_hdf(cls, filepath, test_name):
-        with pd.HDFStore(filepath, 'r') as store:
-            # Load the metadata from the file under the specified group
-            data = store.get(f'{test_name}/Data')
-            metadata = store.get_storer(f'{test_name}/Data').attrs.metadata
-        titles, steps, cycles, step_names = process_readme(os.path.join(os.path.dirname(filepath), test_name))
-        return Procedure(data, titles, cycles, steps, step_names), metadata
-    
-    @classmethod
     def from_parquet(cls, directory, test_name, cell_name):
         data = pd.read_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'), engine='pyarrow')
         titles, steps, cycles, step_names = process_readme(os.path.join(directory, test_name))
@@ -52,11 +43,6 @@ class Neware:
         df['Cycle Capacity (Ah)'] = np.zeros(len(df))
         df['Date'] = pd.to_datetime(df['Date'])
         df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
-        return df
-    
-    @classmethod
-    def import_hdf(cls, filepath):
-        df = pd.read_hdf(filepath)
         return df
     
     @staticmethod
