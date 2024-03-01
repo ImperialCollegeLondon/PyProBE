@@ -41,7 +41,7 @@ test_name = "SLP_Cell-Cell_Variation_R1"
 record_xlsx = os.path.join(folder_path, "Experiment_Record.xlsx")
 record = pd.read_excel(record_xlsx, sheet_name = test_name)
 
-
+#%%
 for i in range(56):
     test_details = record.iloc[i].to_dict()
     round = int(test_details['Round'])
@@ -60,6 +60,9 @@ for i in range(56):
     save_pickle(cell_dict, pickle_path)
     print(f"Processed: Cell {cell_num} in {time.time()-t1:.2f} seconds. File size = {os.path.getsize(pickle_path)/1e6:.2f} MB") 
     
+# %%
+a = Neware.load_data(os.path.join(folder_path, test_name, f"{test_name}_{4}_{5}.csv"))
+print(a.experiment('Discharge Pulses'))
     
 # %%
 def open_pickle(file_path):

@@ -1,20 +1,43 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+class Test:
+    def __init__(self, data, titles, cycles_idx, steps_idx, step_names):
+        self.RawData = data.set_index(['Cycle', 'Step'])
+        self.titles = titles
+        self.cycles_idx = cycles_idx
+        self.steps_idx = steps_idx
+        self.step_names = step_names
+        
+    def experiment(self, experiment_name):
+        experiment_number = list(self.titles.keys()).index(experiment_name)
+        cycles_idx = self.cycles_idx[experiment_number]
+        steps_idx = self.steps_idx[experiment_number]
+        data = self.RawData.loc[self.RawData.index.isin(flatten(cycles_idx), level='Cycle') & self.RawData.index.isin(flatten(steps_idx), level='Step')]
+        
+        experiment_types = {'Constant Current': Experiment, 'Pulsing': Pulsing, 'Cycling': Experiment, 'SOC Reset': Experiment}
+        
+        return experiment_types[self.titles[experiment_name]](data, cycles_idx, steps_idx, self.step_names)
+
 class Experiment:
     def __init__(self, data, cycles_idx, steps_idx, step_names):
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
+        self.RawData = data
         
-        self.RawData = data[(data['Cycle'].isin(flatten(self.cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
+       
         if not self.RawData.empty:
             self.RawData['Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
         else:
             print("The DataFrame is empty.")
     
     def cycle(self,cycle_number):
-        return Cycle(self.RawData, self.cycles_idx[cycle_number-1], self.steps_idx[cycle_number-1], self.step_names)
+        cycles_idx = self.cycles_idx[cycle_number-1]
+        steps_idx = self.steps_idx[cycle_number-1]
+        data = self.RawData.loc[self.RawData.index.isin(flatten(cycles_idx), level='Cycle') & self.RawData.index.isin(flatten(steps_idx), level='Step')]
+        return Cycle(data, cycles_idx, steps_idx, self.step_names)
     
 class Pulsing(Experiment):
     def __init__(self, data, cycles_idx, steps_idx, step_names):
@@ -42,32 +65,36 @@ class Cycle:
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
-        self.RawData = data[(data['Cycle'].isin(flatten(cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
-
+        self.RawData = data
+        
     def step(self, step_number):
-        return Step(self.RawData, self.cycles_idx, self.steps_idx[step_number-1], self.step_names)
+        steps_idx = self.steps_idx[step_number-1]
+        data = self.RawData.loc[self.RawData.index.isin(flatten(steps_idx), level='Step')]
+        return Step(data, steps_idx, self.step_names)
 
     def charge(self, charge_number):
         charge_steps = [index for index, item in enumerate(self.step_names) if (item == 'CC Chg' or item == 'CCCV Chg')]
         charge_steps = list(set(charge_steps) & set(flatten(self.steps_idx)))
-        return Charge(self.RawData, self.cycles_idx, charge_steps[charge_number-1], self.step_names)
+        data = self.RawData.loc[self.RawData.index.isin(flatten(charge_steps[charge_number-1]), level='Step')]
+        return Charge(data, charge_steps[charge_number-1], self.step_names)
  
     def discharge(self, discharge_number):
         discharge_steps = [index for index, item in enumerate(self.step_names) if item == 'CC DChg']
         discharge_steps = list(set(discharge_steps) & set(flatten(self.steps_idx)))
-        return Discharge(self.RawData, self.cycles_idx, discharge_steps[discharge_number-1], self.step_names)
+        data = self.RawData.loc[self.RawData.index.isin(flatten(discharge_steps[discharge_number-1]), level='Step')]
+        return Discharge(data, discharge_steps[discharge_number-1], self.step_names)
     
     def rest(self, rest_number):
         rest_steps = [index for index, item in enumerate(self.step_names) if item == 'Rest']
         rest_steps = list(set(rest_steps) & set(flatten(self.steps_idx)))
-        return Rest(self.RawData, self.cycles_idx, rest_steps[rest_number-1], self.step_names)
+        data = self.RawData.loc[self.RawData.index.isin(flatten(rest_steps[rest_number-1]), level='Step')]
+        return Rest(data, rest_steps[rest_number-1], self.step_names)
     
 class Step:
-    def __init__(self, data, cycles_idx, steps_idx, step_names):
-        self.cycles_idx = cycles_idx
+    def __init__(self, data, steps_idx, step_names):
         self.steps_idx = steps_idx
         self.step_names = step_names
-        self.RawData = data[(data['Cycle'].isin(flatten(self.cycles_idx))) & (data['Step'].isin(flatten(self.steps_idx)))]
+        self.RawData = data
 
     @property
     def R0(self):
@@ -92,24 +119,24 @@ class Step:
         return self.RawData['Exp Capacity (Ah)'].iloc[-1]
     
 class Charge(Step):
-    def __init__(self, data, cycles_idx, steps_idx, step_names):
-        super().__init__(data, cycles_idx, steps_idx, step_names)
+    def __init__(self, data, steps_idx, step_names):
+        super().__init__(data, steps_idx, step_names)
         
     @property
     def capacity(self):
         return self.RawData['Charge Capacity (Ah)'].max()
     
 class Discharge(Step):
-    def __init__(self, data, cycles_idx, steps_idx, step_names):
-        super().__init__(data, cycles_idx, steps_idx, step_names)
+    def __init__(self, data, steps_idx, step_names):
+        super().__init__(data,steps_idx, step_names)
         
     @property
     def capacity(self):
         return self.RawData['Discharge Capacity (Ah)'].max()
         
 class Rest(Step):
-    def __init__(self, data, cycles_idx, steps_idx, step_names):
-        super().__init__(data, cycles_idx, steps_idx, step_names)
+    def __init__(self, data, steps_idx, step_names):
+        super().__init__(data, steps_idx, step_names)
     
 def flatten(lst):
     if not isinstance(lst, list):

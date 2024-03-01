@@ -8,16 +8,23 @@ import numpy as np
 import matplotlib.pyplot as plt
   
 class DataLoader:
+    # @classmethod
+    # def load_data(cls,filepath):
+    #     data = cls.import_csv(filepath)
+    #     titles, steps, cycles, step_names = process_readme(os.path.dirname(filepath))
+    #     experiment_types = {'Constant Current': Experiment.Experiment, 'Pulsing': Experiment.Pulsing, 'Cycling': Experiment.Experiment, 'SOC Reset': Experiment.Experiment}
+    #     experiments = {}
+    #     for i in range(len(titles)):
+    #         title = list(titles.keys())[i]
+    #         experiments[title] = experiment_types[titles[title]](data, cycles[i], steps[i], step_names)
+    #     return experiments
+    
     @classmethod
-    def load_data(cls,filepath):
+    def load_data(cls, filepath):
         data = cls.import_csv(filepath)
         titles, steps, cycles, step_names = process_readme(os.path.dirname(filepath))
-        experiment_types = {'Constant Current': Experiment.Experiment, 'Pulsing': Experiment.Pulsing, 'Cycling': Experiment.Experiment, 'SOC Reset': Experiment.Experiment}
-        experiments = {}
-        for i in range(len(titles)):
-            title = list(titles.keys())[i]
-            experiments[title] = experiment_types[titles[title]](data, cycles[i], steps[i], step_names)
-        return experiments
+        return Experiment.Test(data, titles, cycles, steps, step_names)
+        
     
 class Neware(DataLoader): 
     @classmethod
