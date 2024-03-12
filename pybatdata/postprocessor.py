@@ -85,7 +85,7 @@ class DataLoader:
     @classmethod
     def from_parquet(cls, directory, test_name, cell_name):
         data = pd.read_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'), engine='pyarrow')
-        titles, steps, cycles, step_names = process_readme(os.path.join(directory, test_name))
+        titles, steps, cycles, step_names = process_readme(os.path.join(directory,test_name, 'README.txt'))
         metadata_filename = f'{test_name}_details.json'
         with open(os.path.join(directory, cell_name, metadata_filename)) as f:
             metadata = json.load(f)
