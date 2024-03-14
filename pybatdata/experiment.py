@@ -28,15 +28,47 @@ class Pulsing(Experiment):
             return self.cycle(pulse_number).charge(1)
         elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
             return self.cycle(pulse_number).discharge(1)
-          
+        
+    def R0(self, pulse_number):
+        if (self.cycle(pulse_number).RawData['Current (A)']>= 0).all():
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+            V1 = self.cycle(pulse_number).charge(1).RawData['Voltage (V)'].iloc[0]
+            I = self.cycle(pulse_number).charge(1).RawData['Current (A)'].iloc[0]
+            return (V1-V0)/I
+        elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+            V1 = self.cycle(pulse_number).discharge(1).RawData['Voltage (V)'].iloc[0]
+            I = self.cycle(pulse_number).discharge(1).RawData['Current (A)'].iloc[0]
+            return (V1-V0)/I
+        
+    def R_time(self, pulse_number):
+        if (self.cycle(pulse_number).RawData['Current (A)']>= 0).all():
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+            V1 = self.cycle(pulse_number).charge(1).RawData['Voltage (V)'].loc[self.cycle(pulse_number).charge(1).RawData['Time'] >= 10].iloc[0]
+            I = self.cycle(pulse_number).charge(1).RawData['Current (A)'].iloc[0]
+            return (V1-V0)/I
+        elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+
+            V1 = self.cycle(pulse_number).discharge(1).RawData['Voltage (V)'].loc[self.cycle(pulse_number).discharge(1).RawData['Time'] >= 10].iloc[0]
+            I = self.cycle(pulse_number).discharge(1).RawData['Current (A)'].iloc[0]
+            return (V1-V0)/I
+    
+
+    def start_capacity(self):
+        return self.RawData['Exp Capacity (Ah)'].iloc[0]
+
+    def end_capacity(self):
+        return self.RawData['Exp Capacity (Ah)'].iloc[-1]  
+        
     def calc_resistances(self):
         _R0 = np.zeros(len(self.cycles_idx))
         _R_10s = np.zeros(len(self.cycles_idx))
         _start_capacity = np.zeros(len(self.cycles_idx))
         for i in range(1, len(self.cycles_idx)+1):
-            _R0[i-1] = self.pulse(i).R0
-            _start_capacity[i-1] = self.pulse(i).start_capacity
-            _R_10s[i-1] = self.pulse(i).R_time
+            _R0[i-1] = self.R0(i)
+            # _start_capacity[i-1] = self.pulse(i).start_capacity
+            _R_10s[i-1] = self.R_time(i)
             
         return pd.DataFrame({'R0': _R0, 'Capacity Throughput (Ah)': _start_capacity, 'R 10s': _R_10s})
 
