@@ -9,6 +9,7 @@ from procedure import Procedure
 import json
 import os
 import time
+import polars as pl
   
 class PostProcessor:
     def __init__(self, preprocessor, input):
@@ -84,7 +85,7 @@ class DataLoader:
     
     @classmethod
     def from_parquet(cls, directory, test_name, cell_name):
-        data = pd.read_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'), engine='pyarrow')
+        data = pl.scan_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'))
         titles, steps, cycles, step_names = process_readme(os.path.join(directory,test_name, 'README.txt'))
         metadata_filename = f'{test_name}_details.json'
         with open(os.path.join(directory, cell_name, metadata_filename)) as f:

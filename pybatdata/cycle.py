@@ -1,16 +1,21 @@
 from step import Step, Charge, Discharge, Rest
-
+import polars as pl
 class Cycle:
-    def __init__(self, data, cycles_idx, steps_idx, step_names):
+    def __init__(self, lazyframe, conditions,  cycles_idx, steps_idx, step_names):
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
-        self.RawData = data
+        self.lf = lazyframe
+    
+    def RawData(self):
+        return self.lf.collect()
         
     def step(self, step_number):
         steps_idx = self.steps_idx[step_number-1]
-        data = self.RawData.loc[self.RawData.index.isin(flatten(steps_idx), level='Step')]
-        return Step(data, steps_idx, self.step_names)
+        self.conditions = ([(pl.col('Step').apply(lambda group: group in flatten(steps_idx), return_dtype=pl.Boolean)).alias('Step')
+                                ])
+        lf_filtered = self.lf.filter(self.conditions)
+        return Step(lf_filtered, steps_idx, self.step_names)
 
     def charge(self, charge_number):
         charge_steps = [index for index, item in enumerate(self.step_names) if (item == 'CC Chg' or item == 'CCCV Chg')]

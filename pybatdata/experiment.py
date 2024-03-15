@@ -1,23 +1,34 @@
 import numpy as np
 import pandas as pd
 from cycle import Cycle
+import polars as pl
 
 class Experiment:
-    def __init__(self, data, cycles_idx, steps_idx, step_names):
+    def __init__(self, lazyframe, conditions, cycles_idx, steps_idx, step_names):
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
-        self.RawData = data
+        self.conditions = conditions
+        self.lf = lazyframe
         
-        if not self.RawData.empty:
-            self.RawData.loc[:, 'Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
-        else:
-            print("The DataFrame is empty.")
+    def RawData(self):
+        return self.lf.collect()
+        # if not self.RawData.empty:
+        #     self.RawData.loc[:, 'Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
+        # else:
+        #     print("The DataFrame is empty.")
+    
     def cycle(self,cycle_number):
         cycles_idx = self.cycles_idx[cycle_number-1]
         steps_idx = self.steps_idx[cycle_number-1]
-        data = self.RawData.loc[self.RawData.index.isin(flatten(cycles_idx), level='Cycle') & self.RawData.index.isin(flatten(steps_idx), level='Step')]
-        return Cycle(data, cycles_idx, steps_idx, self.step_names)
+        self.conditions = ([
+                                (pl.col('Cycle').apply(lambda group: group in flatten(cycles_idx), return_dtype=pl.Boolean)).alias('Cycle'),
+                                (pl.col('Step').apply(lambda group: group in flatten(steps_idx), return_dtype=pl.Boolean)).alias('Step')
+                                ])
+        lf_filtered = self.lf.filter(self.conditions)
+
+    #     #data = self.RawData.loc[self.RawData.index.isin(flatten(cycles_idx), level='Cycle') & self.RawData.index.isin(flatten(steps_idx), level='Step')]
+        return Cycle(lf_filtered, self.conditions, cycles_idx, steps_idx, self.step_names)
     
 class Pulsing(Experiment):
     def __init__(self, data, cycles_idx, steps_idx, step_names):
@@ -49,7 +60,6 @@ class Pulsing(Experiment):
             return (V1-V0)/I
         elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
             V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
-
             V1 = self.cycle(pulse_number).discharge(1).RawData['Voltage (V)'].loc[self.cycle(pulse_number).discharge(1).RawData['Time'] >= 10].iloc[0]
             I = self.cycle(pulse_number).discharge(1).RawData['Current (A)'].iloc[0]
             return (V1-V0)/I
