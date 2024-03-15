@@ -9,9 +9,14 @@ class Experiment:
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.lf = lazyframe
-        
+        self._raw_data = None
+    
+    @property
     def RawData(self):
-        return self.lf.collect()
+        if self._raw_data is None:
+            self._raw_data = self.lf.collect()
+        return self._raw_data
+
         # if not self.RawData.empty:
         #     self.RawData.loc[:, 'Exp Capacity (Ah)'] = self.RawData['Capacity (Ah)'] - self.RawData['Capacity (Ah)'].iloc[0]
         # else:

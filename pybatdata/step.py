@@ -7,9 +7,13 @@ class Step:
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.lf = lf
+        self._raw_data = None
 
+    @property
     def RawData(self):
-        return self.lf.collect()
+        if self._raw_data is None:
+            self._raw_data = self.lf.collect()
+        return self._raw_data
     
     @property
     def R0(self):
@@ -39,7 +43,7 @@ class Charge(Step):
         
     @property
     def capacity(self):
-        return self.lf.select(pl.col("Charge Capacity (Ah)").max()).collect()[0].to_numpy()
+        return self.RawData['Charge Capacity (Ah)'].max()
     
 class Discharge(Step):
     def __init__(self, lf, steps_idx, step_names):
@@ -47,7 +51,7 @@ class Discharge(Step):
         
     @property
     def capacity(self):
-        return self.lf.select(pl.col("Discharge Capacity (Ah)").max()).collect()[0].to_numpy()
+        return self.RawData['Discharge Capacity (Ah)'].max()
         
 class Rest(Step):
     def __init__(self, lf, steps_idx, step_names):

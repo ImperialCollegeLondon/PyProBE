@@ -6,9 +6,13 @@ class Cycle:
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.lf = lazyframe
+        self._raw_data = None
     
+    @property
     def RawData(self):
-        return self.lf.collect()
+        if self._raw_data is None:
+            self._raw_data = self.lf.collect()
+        return self._raw_data
         
     def step(self, step_number):
         steps_idx = self.steps_idx[step_number-1]
