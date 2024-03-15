@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
+import polars as pl
 
 class Step:
-    def __init__(self, lazyframe, steps_idx, step_names):
+    def __init__(self, lf, steps_idx, step_names):
         self.steps_idx = steps_idx
         self.step_names = step_names
-        self.lf = lazyframe
+        self.lf = lf
 
     def RawData(self):
         return self.lf.collect()
@@ -33,21 +34,21 @@ class Step:
         return self.RawData['Exp Capacity (Ah)'].iloc[-1]
     
 class Charge(Step):
-    def __init__(self, lazyframe, steps_idx, step_names):
-        super().__init__(lazyframe, steps_idx, step_names)
+    def __init__(self, lf, steps_idx, step_names):
+        super().__init__(lf, steps_idx, step_names)
         
     @property
     def capacity(self):
-        return self.RawData['Charge Capacity (Ah)'].max()
+        return self.lf.select(pl.col("Charge Capacity (Ah)").max()).collect()[0].to_numpy()
     
 class Discharge(Step):
-    def __init__(self, lazyframe, steps_idx, step_names):
-        super().__init__(lazyframe, steps_idx, step_names)
+    def __init__(self, lf, steps_idx, step_names):
+        super().__init__(lf, steps_idx, step_names)
         
     @property
     def capacity(self):
-        return self.RawData['Discharge Capacity (Ah)'].max()
+        return self.lf.select(pl.col("Discharge Capacity (Ah)").max()).collect()[0].to_numpy()
         
 class Rest(Step):
-    def __init__(self, lazyframe, steps_idx, step_names):
-        super().__init__(lazyframe, steps_idx, step_names)
+    def __init__(self, lf, steps_idx, step_names):
+        super().__init__(lf, steps_idx, step_names)

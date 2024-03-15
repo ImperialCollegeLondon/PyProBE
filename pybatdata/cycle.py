@@ -29,14 +29,14 @@ class Cycle:
         discharge_steps = list(set(discharge_steps) & set(flatten(self.steps_idx)))
         conditions = ([(pl.col('Step').apply(lambda group: group in flatten(discharge_steps[discharge_number-1]), return_dtype=pl.Boolean)).alias('Step')])
         lf_filtered = self.lf.filter(conditions)
-        return Charge(lf_filtered, discharge_steps[discharge_number-1], self.step_names)
+        return Discharge(lf_filtered, discharge_steps[discharge_number-1], self.step_names)
     
     def rest(self, rest_number):
         rest_steps = [index for index, item in enumerate(self.step_names) if item == 'Rest']
         rest_steps = list(set(rest_steps) & set(flatten(self.steps_idx)))
         conditions = ([(pl.col('Step').apply(lambda group: group in flatten(rest_steps[rest_number-1]), return_dtype=pl.Boolean)).alias('Step')])
         lf_filtered = self.lf.filter(conditions)
-        return Charge(lf_filtered, rest_steps[rest_number-1], self.step_names)
+        return Rest(lf_filtered, rest_steps[rest_number-1], self.step_names)
     
 def flatten(lst):
     if not isinstance(lst, list):
