@@ -24,7 +24,7 @@ class Procedure:
                             'Pulsing': Experiment, 
                             'Cycling': Experiment, 
                             'SOC Reset': Experiment}
-        return experiment_types[self.titles[experiment_name]](lf_filtered, conditions, cycles_idx, steps_idx, self.step_names)
+        return experiment_types[self.titles[experiment_name]](lf_filtered, cycles_idx, steps_idx, self.step_names)
    
 def flatten(lst):
     if not isinstance(lst, list):

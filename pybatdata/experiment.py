@@ -4,11 +4,10 @@ from cycle import Cycle
 import polars as pl
 
 class Experiment:
-    def __init__(self, lazyframe, conditions, cycles_idx, steps_idx, step_names):
+    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
         self.cycles_idx = cycles_idx
         self.steps_idx = steps_idx
         self.step_names = step_names
-        self.conditions = conditions
         self.lf = lazyframe
         
     def RawData(self):
@@ -21,14 +20,13 @@ class Experiment:
     def cycle(self,cycle_number):
         cycles_idx = self.cycles_idx[cycle_number-1]
         steps_idx = self.steps_idx[cycle_number-1]
-        self.conditions = ([
+        conditions = ([
                                 (pl.col('Cycle').apply(lambda group: group in flatten(cycles_idx), return_dtype=pl.Boolean)).alias('Cycle'),
                                 (pl.col('Step').apply(lambda group: group in flatten(steps_idx), return_dtype=pl.Boolean)).alias('Step')
                                 ])
-        lf_filtered = self.lf.filter(self.conditions)
-
+        lf_filtered = self.lf.filter(conditions)
     #     #data = self.RawData.loc[self.RawData.index.isin(flatten(cycles_idx), level='Cycle') & self.RawData.index.isin(flatten(steps_idx), level='Step')]
-        return Cycle(lf_filtered, self.conditions, cycles_idx, steps_idx, self.step_names)
+        return Cycle(lf_filtered, cycles_idx, steps_idx, self.step_names)
     
 class Pulsing(Experiment):
     def __init__(self, data, cycles_idx, steps_idx, step_names):
