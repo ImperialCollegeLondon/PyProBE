@@ -1,19 +1,14 @@
 import numpy as np
 import pandas as pd
+from base import Base
 import polars as pl
 
-class Step:
+class Step(Base):
     def __init__(self, lf, steps_idx, step_names):
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.lf = lf
         self._raw_data = None
-
-    @property
-    def RawData(self):
-        if self._raw_data is None:
-            self._raw_data = self.lf.collect()
-        return self._raw_data
     
     @property
     def R0(self):
@@ -46,6 +41,14 @@ class Charge(Step):
         return self.RawData['Charge Capacity (Ah)'].max()
     
 class Discharge(Step):
+    def __init__(self, lf, steps_idx, step_names):
+        super().__init__(lf, steps_idx, step_names)
+        
+    @property
+    def capacity(self):
+        return self.RawData['Discharge Capacity (Ah)'].max()
+    
+class ChargeOrDischarge(Step):
     def __init__(self, lf, steps_idx, step_names):
         super().__init__(lf, steps_idx, step_names)
         
