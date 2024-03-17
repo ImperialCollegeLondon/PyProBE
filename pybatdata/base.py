@@ -1,5 +1,18 @@
 import polars as pl
 class Base:
+    def __init__(self, lf, cycles_idx, steps_idx, step_names):
+        self.cycles_idx = cycles_idx
+        self.steps_idx = steps_idx
+        self.step_names = step_names
+        self.lf = lf
+        self.set_capacity()
+        self._raw_data = None
+
+    def set_capacity(self):
+        self.lf = self.lf.with_columns([
+            (pl.col("Capacity (Ah)") - pl.col("Capacity (Ah)").first()).alias("Capacity (Ah)")
+        ]) 
+    
     @property
     def RawData(self):
         if self._raw_data is None:

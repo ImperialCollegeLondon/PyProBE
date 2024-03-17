@@ -4,12 +4,7 @@ from base import Base
 
 class Cycle(Base):
     def __init__(self, lf, cycles_idx, steps_idx, step_names):
-        self.cycles_idx = cycles_idx
-        self.steps_idx = steps_idx
-        self.step_names = step_names
-        self.lf = lf
-        self.set_capacity()
-        self._raw_data = None
+        super().__init__(lf, cycles_idx, steps_idx, step_names)
     
     def set_capacity(self):
         self.lf = self.lf.with_columns([

@@ -5,11 +5,8 @@ import polars as pl
 
 class Step(Base):
     def __init__(self, lf, steps_idx, step_names):
-        self.steps_idx = steps_idx
-        self.step_names = step_names
-        self.lf = lf
-        self._raw_data = None
-    
+        super().__init__(lf, None, steps_idx, step_names)
+
     @property
     def R0(self):
         V1 = self.RawData['Voltage (V)'].iloc[0]

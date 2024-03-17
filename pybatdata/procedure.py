@@ -6,11 +6,8 @@ from base import Base
 
 class Procedure(Base):
     def __init__(self, lf, titles, cycles_idx, steps_idx, step_names):
-        self.lf = lf
+        super().__init__(lf, cycles_idx, steps_idx, step_names)
         self.titles = titles
-        self.cycles_idx = cycles_idx
-        self.steps_idx = steps_idx
-        self.step_names = step_names
         
     def experiment(self, experiment_name):
         experiment_number = list(self.titles.keys()).index(experiment_name)
