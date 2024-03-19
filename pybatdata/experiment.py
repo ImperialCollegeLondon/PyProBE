@@ -8,11 +8,6 @@ class Experiment(Base):
     def __init__(self, lf, cycles_idx, steps_idx, step_names):
         super().__init__(lf, cycles_idx, steps_idx, step_names)
 
-    def set_capacity(self):
-        self.lf = self.lf.with_columns([
-            (pl.col("Capacity (Ah)") - pl.col("Capacity (Ah)").first()).alias("Exp Capacity (Ah)")
-        ]) 
-
     def cycle(self,cycle_number):
         cycles_idx = self.cycles_idx[cycle_number-1]
         steps_idx = self.steps_idx[cycle_number-1]

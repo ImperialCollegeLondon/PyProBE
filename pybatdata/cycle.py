@@ -6,11 +6,6 @@ class Cycle(Base):
     def __init__(self, lf, cycles_idx, steps_idx, step_names):
         super().__init__(lf, cycles_idx, steps_idx, step_names)
     
-    def set_capacity(self):
-        self.lf = self.lf.with_columns([
-            (pl.col("Capacity (Ah)") - pl.col("Capacity (Ah)").first()).alias("Cycle Capacity (Ah)")
-        ]) 
-        
     def step(self, step_number):
         steps_idx = self.steps_idx[step_number-1]
         conditions = [self.get_conditions('Step', steps_idx)]
