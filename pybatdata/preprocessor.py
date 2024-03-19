@@ -9,7 +9,7 @@ class Preprocessor:
         print("Preprocessor running...")
         self.folderpath = folderpath
         self.test_name = test_name
-        self.record = self.read_record(folderpath, test_name)
+        self.record = self.read_record()
         self.column_headings = ['Date', 
                                 'Time', 
                                 'Cycle', 
