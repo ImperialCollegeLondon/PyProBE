@@ -2,29 +2,29 @@
 
 import re
 import os
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from procedure import Procedure
-import json
+import preprocessor
 import os
-import time
 import polars as pl
   
 class PostProcessor:
-    @classmethod
-    def from_parquet(cls, directory, test_name, cell_name):
-        data = pl.scan_parquet(os.path.join(directory, cell_name, f'{test_name}.parquet'))
-        titles, steps, cycles, step_names = cls.process_readme(os.path.join(directory,test_name, 'README.txt'))
-        metadata_filename = f'{test_name}_details.json'
-        with open(os.path.join(directory, cell_name, metadata_filename)) as f:
-            metadata = json.load(f)
-        return Procedure(data, titles, cycles, steps, step_names), metadata
+    def __init__(self, folderpath, test_name):
+        self.PreProc = preprocessor.Preprocessor(folderpath, test_name)
+        self.test_dict = self.PreProc.test_dict
+        readme_path = os.path.join(folderpath, test_name, 'README.txt')
+        self.titles, self.steps, self.cycles, self.step_names = self.process_readme(readme_path)
+        for record_entry in range(len(self.test_dict)):
+            data_path = self.PreProc.parquet_path(self.test_dict[record_entry]['Cycler'], self.test_dict[record_entry]['Channel'])
+            self.test_dict[record_entry]['Data'] = self.from_parquet(data_path)
+        
+    def from_parquet(self, data_path):
+        data = pl.scan_parquet(data_path)
+        return Procedure(data, self.titles, self.cycles, self.steps, self.step_names)
 
     @staticmethod
-    def process_readme(loc):
+    def process_readme(readme_path):
             """Function to process the README.md file and extract the relevant information."""
-            with open(loc, 'r') as file:
+            with open(readme_path, 'r') as file:
                 lines = file.readlines()
 
             titles = {}

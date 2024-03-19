@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import os
-import json
-import random
 import re
 import time
 
@@ -11,7 +9,7 @@ class Preprocessor:
         print("Preprocessor running...")
         self.folderpath = folderpath
         self.test_name = test_name
-        self.record = self.read_record()
+        self.record = self.read_record(folderpath, test_name)
         self.column_headings = ['Date', 
                                 'Time', 
                                 'Cycle', 
@@ -21,12 +19,16 @@ class Preprocessor:
                                 'Capacity (Ah)', 
                                 'Discharge Capacity (Ah)', 
                                 'Charge Capacity (Ah)',]
-        self.data_verified = False
-        self.update_parquets = False
-        for record_entry in range(1):
+        self.test_dict = [None]*len(self.record)
+        for record_entry in range(len(self.record)):
             print(f"Processing record {record_entry+1} of {len(self.record)}:")
-            test_details = self.record.iloc[record_entry].to_dict()
-            self.write_parquet(test_details)
+            self.test_dict[record_entry] = self.record.iloc[record_entry].to_dict()
+            self.write_parquet(self.test_dict[record_entry])
+            
+
+    def read_record(self):
+        record_xlsx = os.path.join(self.folderpath, "Experiment_Record.xlsx")
+        return pd.read_excel(record_xlsx, sheet_name = self.test_name)
             
     def xlsx_path(self, cycler, channel):
         return os.path.join(self.folderpath, self.test_name, f"{self.test_name}-{cycler}-{channel}.xlsx")
@@ -34,15 +36,11 @@ class Preprocessor:
     def parquet_path(self, cycler, channel):
         xlsx_path = self.xlsx_path(cycler, channel)
         return xlsx_path.replace('.xlsx', '.parquet')
-        
-    def read_record(self):
-        record_xlsx = os.path.join(self.folderpath, "Experiment_Record.xlsx")
-        return pd.read_excel(record_xlsx, sheet_name = self.test_name)
                 
-    def write_parquet(self, test_details):
-        cycler = int(test_details['Cycler']) if not pd.isna(test_details['Cycler']) else None
-        channel = int(test_details['Channel']) if not pd.isna(test_details['Channel']) else None
-        cell_num = int(test_details['Cell'])
+    def write_parquet(self, test_dict):
+        cycler = int(test_dict['Cycler']) if not pd.isna(test_dict['Cycler']) else None
+        channel = int(test_dict['Channel']) if not pd.isna(test_dict['Channel']) else None
+        cell_num = int(test_dict['Cell'])
         cell_name = f"Cell_{cell_num}"
         if not os.path.exists(self.parquet_path(cycler, channel)):
             t1 = time.time()
@@ -53,7 +51,7 @@ class Preprocessor:
             print("\tparquet already exists.")
 
 class Neware: 
-    @classmethod
+    @staticmethod
     def import_xlsx(cls,filepath):
         df = pd.read_excel(filepath)
         column_dict = {'Date': 'Date', 
