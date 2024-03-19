@@ -12,89 +12,58 @@ class Preprocessor:
         self.folderpath = folderpath
         self.test_name = test_name
         self.record = self.read_record()
-        self.column_headings = ['Date', 'Time', 'Cycle', 'Step', 'Current (A)',  'Voltage (V)', 'Capacity (Ah)', 'Discharge Capacity (Ah)', 'Charge Capacity (Ah)','dQ/dV (Ah/V)', 'Exp Capacity (Ah)', 'Cycle Capacity (Ah)']
+        self.column_headings = ['Date', 
+                                'Time', 
+                                'Cycle', 
+                                'Step', 
+                                'Current (A)',  
+                                'Voltage (V)', 
+                                'Capacity (Ah)', 
+                                'Discharge Capacity (Ah)', 
+                                'Charge Capacity (Ah)',]
         self.data_verified = False
         self.update_parquets = False
-        for i in range(len(self.record)):
-            print(f"Processing record {i+1} of {len(self.record)}:")
-            test_details = self.write_metadata(i)
+        for record_entry in range(1):
+            print(f"Processing record {record_entry+1} of {len(self.record)}:")
+            test_details = self.record.iloc[record_entry].to_dict()
             self.write_parquet(test_details)
             
-    def data_path(self, cell_name):
-        return os.path.join(self.folderpath, f"{cell_name}", f'{self.test_name}.parquet')
+    def xlsx_path(self, cycler, channel):
+        return os.path.join(self.folderpath, self.test_name, f"{self.test_name}-{cycler}-{channel}.xlsx")
     
-    def metadata_path(self, cell_name):
-        return os.path.join(self.folderpath, f"{cell_name}", f'{self.test_name}_details.json')
-    
-    def csv_path(self, cycler, channel):
-        return os.path.join(self.folderpath, self.test_name, f"{self.test_name}_{cycler}_{channel}.csv")
+    def parquet_path(self, cycler, channel):
+        xlsx_path = self.xlsx_path(cycler, channel)
+        return xlsx_path.replace('.xlsx', '.parquet')
         
     def read_record(self):
         record_xlsx = os.path.join(self.folderpath, "Experiment_Record.xlsx")
         return pd.read_excel(record_xlsx, sheet_name = self.test_name)
-    
-    def write_metadata(self, record_entry):
-        test_details = self.record.iloc[record_entry].to_dict()
-        cell_num = int(test_details['Cell'])
-        cell_name = f"Cell_{cell_num}"
-        
-
-        # create directory for cell if it doesn't exist
-        if not os.path.exists(os.path.dirname(self.metadata_path(cell_name))):
-            os.makedirs(os.path.dirname(self.metadata_path(cell_name)))
-        
-        if os.path.exists(self.metadata_path(cell_name)):
-            with open(self.metadata_path(cell_name), 'r') as f:
-                existing_details = json.load(f)
-                if existing_details != test_details:
-                    with open(self.metadata_path(cell_name), 'w') as f:
-                        json.dump(test_details, f)
-        else:
-            with open(self.metadata_path(cell_name), 'w') as f:
-                json.dump(test_details, f)
-        return test_details
                 
     def write_parquet(self, test_details):
         cycler = int(test_details['Cycler']) if not pd.isna(test_details['Cycler']) else None
         channel = int(test_details['Channel']) if not pd.isna(test_details['Channel']) else None
         cell_num = int(test_details['Cell'])
         cell_name = f"Cell_{cell_num}"
-        if os.path.exists(self.data_path(cell_name)):
-            existing_data = pd.read_parquet(self.data_path(cell_name))
-            # Compare headings
-            existing_columns = list(existing_data.columns)
-            if (self.column_headings != existing_columns) or (self.update_parquets==True):
-                t1 = time.time()
-                test_data = Neware.import_csv(self.csv_path(cycler, channel))
-                test_data.to_parquet(self.data_path(cell_name), engine='pyarrow')
-                print(f"\tparquet updated in {time.time()-t1:.2f} seconds.")
-            else:
-                if self.data_verified==False:
-                    test_data = Neware.import_csv(self.csv_path(cycler, channel))
-                    # Compare a randomly selected row
-                    random_index = random.choice(existing_data.index.tolist())
-                    if not existing_data.loc[random_index].equals(test_data.loc[random_index]):
-                        print(f"\tparquet does not match raw data.")
-                        t1 = time.time()
-                        test_data.to_parquet(self.data_path(cell_name), engine='pyarrow')
-                        self.update_parquets = True
-                        print(f"\tparquet updated in {time.time()-t1:.2f} seconds.")
-                    else:
-                        print(f"\tparquet matches raw data.")
-                    self.data_verified = True
-                else:
-                    print("\tparquet unchanged.")
-        else:
+        if not os.path.exists(self.parquet_path(cycler, channel)):
             t1 = time.time()
-            test_data = Neware.import_csv(self.csv_path(cycler, channel))
-            test_data.to_parquet(self.data_path(cell_name), engine='pyarrow')
+            test_data = Neware.import_xlsx(self.xlsx_path(cycler, channel))
+            test_data.to_parquet(self.parquet_path(cycler, channel), engine='pyarrow')
             print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+        else:
+            print("\tparquet already exists.")
 
 class Neware: 
     @classmethod
-    def import_csv(cls,filepath):
-        df = pd.read_csv(filepath)
-        column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 'Chg. Cap.(Ah)': 'Charge Capacity (Ah)','dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
+    def import_xlsx(cls,filepath):
+        df = pd.read_excel(filepath)
+        column_dict = {'Date': 'Date', 
+                       'Cycle Index': 'Cycle', 
+                       'Step Index': 'Step', 
+                       'Current(A)': 'Current (A)', 
+                       'Voltage(V)': 'Voltage (V)', 
+                       'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 
+                       'Chg. Cap.(Ah)': 'Charge Capacity (Ah)',
+                       }
         df = cls.convert_units(df)
         df = df[list(column_dict.keys())].rename(columns=column_dict)
         dQ_charge = np.diff(df['Charge Capacity (Ah)'])
@@ -108,7 +77,7 @@ class Neware:
         df['Exp Capacity (Ah)'] = np.zeros(len(df))
         df['Cycle Capacity (Ah)'] = np.zeros(len(df))
         df['Date'] = pd.to_datetime(df['Date'])
-        df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
+        df['Time'] = (df['Date'] - df['Date'].iloc[0]).dt.total_seconds()
         return df
     
     @staticmethod
