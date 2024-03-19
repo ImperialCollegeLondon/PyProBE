@@ -31,25 +31,24 @@ class Pulsing(Experiment):
         
     def R0(self, pulse_number):
         if (self.cycle(pulse_number).RawData['Current (A)']>= 0).all():
-            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[-1]
             V1 = self.cycle(pulse_number).charge(1).RawData['Voltage (V)'].iloc[0]
             I = self.cycle(pulse_number).charge(1).RawData['Current (A)'].iloc[0]
             return (V1-V0)/I
         elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
-            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[-1]
             V1 = self.cycle(pulse_number).discharge(1).RawData['Voltage (V)'].iloc[0]
             I = self.cycle(pulse_number).discharge(1).RawData['Current (A)'].iloc[0]
             return (V1-V0)/I
         
     def R_time(self, pulse_number):
         if (self.cycle(pulse_number).RawData['Current (A)']>= 0).all():
-            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[-1]
             V1 = self.cycle(pulse_number).charge(1).RawData['Voltage (V)'].loc[self.cycle(pulse_number).charge(1).RawData['Time'] >= 10].iloc[0]
             I = self.cycle(pulse_number).charge(1).RawData['Current (A)'].iloc[0]
             return (V1-V0)/I
         elif (self.cycle(pulse_number).RawData['Current (A)']<= 0).all():
-            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[0]
-
+            V0 = self.cycle(pulse_number).rest(1).RawData['Voltage (V)'].iloc[-1]
             V1 = self.cycle(pulse_number).discharge(1).RawData['Voltage (V)'].loc[self.cycle(pulse_number).discharge(1).RawData['Time'] >= 10].iloc[0]
             I = self.cycle(pulse_number).discharge(1).RawData['Current (A)'].iloc[0]
             return (V1-V0)/I

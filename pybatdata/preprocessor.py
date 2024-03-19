@@ -12,7 +12,15 @@ class Preprocessor:
         self.folderpath = folderpath
         self.test_name = test_name
         self.record = self.read_record()
-        self.column_headings = ['Date', 'Time', 'Cycle', 'Step', 'Current (A)',  'Voltage (V)', 'Capacity (Ah)', 'Discharge Capacity (Ah)', 'Charge Capacity (Ah)','dQ/dV (Ah/V)', 'Exp Capacity (Ah)', 'Cycle Capacity (Ah)']
+        self.column_headings = ['Date', 
+                                'Time', 
+                                'Cycle', 
+                                'Step', 
+                                'Current (A)',  
+                                'Voltage (V)', 
+                                'Capacity (Ah)', 
+                                'Discharge Capacity (Ah)', 
+                                'Charge Capacity (Ah)',]
         self.data_verified = False
         self.update_parquets = False
         for i in range(len(self.record)):
@@ -94,7 +102,15 @@ class Neware:
     @classmethod
     def import_csv(cls,filepath):
         df = pd.read_csv(filepath)
-        column_dict = {'Date': 'Date', 'Time': 'Time', 'Cycle Index': 'Cycle', 'Step Index': 'Step', 'Current(A)': 'Current (A)', 'Voltage(V)': 'Voltage (V)', 'Capacity(Ah)': 'Capacity (Ah)', 'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 'Chg. Cap.(Ah)': 'Charge Capacity (Ah)','dQ/dV(Ah/V)': 'dQ/dV (Ah/V)'}
+        column_dict = {'Date': 'Date', 
+                       'Time': 'Time', 
+                       'Cycle Index': 'Cycle', 
+                       'Step Index': 'Step', 
+                       'Current(A)': 'Current (A)', 
+                       'Voltage(V)': 'Voltage (V)', 
+                       'Capacity(Ah)': 'Capacity (Ah)', 
+                       'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 
+                       'Chg. Cap.(Ah)': 'Charge Capacity (Ah)',}
         df = cls.convert_units(df)
         df = df[list(column_dict.keys())].rename(columns=column_dict)
         dQ_charge = np.diff(df['Charge Capacity (Ah)'])
@@ -105,10 +121,8 @@ class Neware:
         dQ_discharge = np.append(dQ_discharge, 0)
         df['Capacity (Ah)'] = np.cumsum(dQ_charge - dQ_discharge)
         df['Capacity (Ah)'] = df['Capacity (Ah)'] + df['Charge Capacity (Ah)'].max()
-        df['Exp Capacity (Ah)'] = np.zeros(len(df))
-        df['Cycle Capacity (Ah)'] = np.zeros(len(df))
         df['Date'] = pd.to_datetime(df['Date'])
-        df['Time'] = pd.to_timedelta(df['Time']).dt.total_seconds()
+        df['Time'] = pd.to_timedelta(df['Date']).dt.total_seconds()
         return df
     
     @staticmethod
