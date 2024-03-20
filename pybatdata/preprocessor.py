@@ -7,8 +7,8 @@ import polars as pl
 from procedure import Procedure
 
 class Preprocessor:
-    def __init__(self, folderpath, test_name, filename, filename_inputs):
-        print("Preprocessor running...")
+    def __init__(self, folderpath, test_name):
+        
         self.folderpath = folderpath
         self.test_name = test_name
         self.record = self.read_record()
@@ -23,10 +23,11 @@ class Preprocessor:
                                 'Charge Capacity (Ah)',]
 
         self.test_dict = [None]*len(self.record)
-        
         readme_path = os.path.join(self.folderpath, self.test_name, 'README.txt')
         self.titles, self.steps, self.cycles, self.step_names = self.process_readme(readme_path)
         
+    def run(self, filename, filename_inputs):
+        print("Preprocessor running...")
         for record_entry in range(len(self.record)):
             self.test_dict[record_entry] = self.record.iloc[record_entry].to_dict()
             input_name = self.input_name(self.test_dict[record_entry], filename, filename_inputs)
@@ -34,9 +35,8 @@ class Preprocessor:
             output_path = os.path.splitext(input_path)[0]+'.parquet'
             self.write_parquet(input_path, output_path)
             self.test_dict[record_entry]['Data'] = self.read_parquet(output_path)
-            
         print("Preprocessor complete.")
-
+        return self.test_dict
     
     @staticmethod
     def input_name(test_dict_entry, filename, filename_inputs):
