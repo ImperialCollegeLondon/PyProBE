@@ -8,8 +8,7 @@ from procedure import Procedure
 from cyclers import Neware
 
 class Preprocessor:
-    def __init__(self, folderpath, test_name):
-        
+    def __init__(self, folderpath, test_name, cycler):
         self.folderpath = folderpath
         self.test_name = test_name
         self.record = self.read_record()
@@ -26,6 +25,8 @@ class Preprocessor:
         self.test_dict = [None]*len(self.record)
         readme_path = os.path.join(self.folderpath, self.test_name, 'README.txt')
         self.titles, self.steps, self.cycles, self.step_names = self.process_readme(readme_path)
+        self.cycer_dict = {'Neware': Neware}
+        self.cycler = self.cycer_dict[cycler]
         
     def run(self, filename, filename_inputs):
         print("Preprocessor running...")
@@ -50,13 +51,12 @@ class Preprocessor:
         record_xlsx = os.path.join(self.folderpath, "Experiment_Record.xlsx")
         return pd.read_excel(record_xlsx, sheet_name = self.test_name)
     
-    @staticmethod
-    def write_parquet(input_path, output_path):  
+    def write_parquet(self, input_path, output_path):  
         if not os.path.exists(output_path):
             print(f"Processing file: {os.path.basename(input_path)}")
             filepath = os.path.join(input_path)
             t1 = time.time()
-            test_data = Neware.load_file(filepath)
+            test_data = self.cycler.load_file(filepath)
             test_data.to_parquet(output_path, engine='pyarrow')
             print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
             
