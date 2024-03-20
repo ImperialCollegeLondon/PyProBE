@@ -1,4 +1,5 @@
 import polars as pl
+import matplotlib.pyplot as plt
 class Base:
     def __init__(self, lf, cycles_idx, steps_idx, step_names):
         self.cycles_idx = cycles_idx
@@ -22,6 +23,10 @@ class Base:
     @classmethod
     def get_conditions(cls,column, indices):
         return pl.col(column).is_in(cls.flatten(indices)).alias(column)
+    
+    def plot(self, x, y):
+        plt.plot(self.RawData[x], self.RawData[y])
+        
 
     @classmethod
     def flatten(cls, lst):
