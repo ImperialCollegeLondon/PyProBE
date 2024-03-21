@@ -24,8 +24,11 @@ class Base:
     def get_conditions(cls,column, indices):
         return pl.col(column).is_in(cls.flatten(indices)).alias(column)
     
-    def plot(self, x, y):
-        plt.plot(self.RawData[x], self.RawData[y])
+    def plot(self, x, y, **kwargs):
+        plt.plot(self.RawData[x], self.RawData[y], **kwargs)
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.legend()
         
 
     @classmethod
