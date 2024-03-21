@@ -39,12 +39,8 @@ class Cycle(Base):
 
     def get_steps(self, criteria, step_number):
         steps = [index for index, item in enumerate(self.step_names) if criteria(item)]
-        print(steps)
         flattened_steps = self.flatten(self.steps_idx)
-        print(flattened_steps)
         steps = [step for step in steps if step in flattened_steps]
-        print(steps)
-        print(step_number)
         steps_idx = steps[step_number]
         conditions = [self.get_conditions('Step', steps_idx)]
         return self.lf.filter(conditions), steps[step_number]
