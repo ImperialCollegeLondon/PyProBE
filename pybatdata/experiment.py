@@ -9,8 +9,8 @@ class Experiment(Base):
         super().__init__(lf, cycles_idx, steps_idx, step_names)
 
     def cycle(self,cycle_number):
-        cycles_idx = self.cycles_idx[cycle_number-1]
-        steps_idx = self.steps_idx[cycle_number-1]
+        cycles_idx = self.cycles_idx[cycle_number]
+        steps_idx = self.steps_idx[cycle_number]
         conditions = [self.get_conditions('Cycle', cycles_idx),
                       self.get_conditions('Step', steps_idx)]
         lf_filtered = self.lf.filter(conditions)
@@ -51,14 +51,14 @@ class Pulsing(Experiment):
         return (Vt-self.V0)/self.I1    
         
     def pulse(self, pulse_number):
-        if self.pulses[pulse_number-1] is None:
-            self.pulses[pulse_number-1] = self.cycle(pulse_number).chargeordischarge(1)
-        return self.pulses[pulse_number-1]
+        if self.pulses[pulse_number] is None:
+            self.pulses[pulse_number] = self.cycle(pulse_number).chargeordischarge(1)
+        return self.pulses[pulse_number]
     
     def rest(self, rest_number):
-        if self.rests[rest_number-1] is None:
-            self.rests[rest_number-1] = self.cycle(rest_number).rest(1)
-        return self.rests[rest_number-1]
+        if self.rests[rest_number] is None:
+            self.rests[rest_number] = self.cycle(rest_number).rest(1)
+        return self.rests[rest_number]
     
 
     def start_capacity(self):

@@ -7,7 +7,7 @@ class Cycle(Base):
         super().__init__(lf, cycles_idx, steps_idx, step_names)
     
     def step(self, step_number):
-        steps_idx = self.steps_idx[step_number-1]
+        steps_idx = self.steps_idx[step_number]
         conditions = [self.get_conditions('Step', steps_idx)]
         lf_filtered = self.lf.filter(conditions)
         return Step(lf_filtered, steps_idx, self.step_names)
@@ -44,7 +44,7 @@ class Cycle(Base):
         print(flattened_steps)
         steps = [step for step in steps if step in flattened_steps]
         print(steps)
-        print(step_number-1)
-        steps_idx = steps[step_number-1]
+        print(step_number)
+        steps_idx = steps[step_number]
         conditions = [self.get_conditions('Step', steps_idx)]
-        return self.lf.filter(conditions), steps[step_number-1]
+        return self.lf.filter(conditions), steps[step_number]
