@@ -13,33 +13,38 @@ class Cycle(Base):
         return Step(lf_filtered, steps_idx, self.step_names)
 
     def charge(self, charge_number):
-        charge_steps = [index for index, item in enumerate(self.step_names) if (item == 'CC Chg' or item == 'CCCV Chg')]
-        charge_steps = list(set(charge_steps) & set(self.flatten(self.steps_idx)))
-        steps_idx = charge_steps[charge_number-1]
-        conditions = [self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
-        return Charge(lf_filtered, charge_steps[charge_number-1], self.step_names)
+        def criteria(step_name):
+            return step_name == 'CC Chg' or step_name == 'CCCV Chg'
+        lf_filtered, charge_steps = self.get_steps(criteria, charge_number)
+        return Charge(lf_filtered, charge_steps, self.step_names)
  
     def discharge(self, discharge_number):
-        discharge_steps = [index for index, item in enumerate(self.step_names) if item == 'CC DChg']
-        discharge_steps = list(set(discharge_steps) & set(self.flatten(self.steps_idx)))
-        steps_idx = discharge_steps[discharge_number-1]
-        conditions = [self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
-        return Discharge(lf_filtered, discharge_steps[discharge_number-1], self.step_names)
+        def criteria(step_name):
+            return step_name == 'CC DChg'
+        lf_filtered, discharge_steps = self.get_steps(criteria, discharge_number)
+        return Discharge(lf_filtered, discharge_steps, self.step_names)
     
     def chargeordischarge(self, chargeordischarge_number):
-        chargeordischarge_steps = [index for index, item in enumerate(self.step_names) if (item == 'CC Chg' or item == 'CCCV Chg' or item == 'CC DChg')]
-        chargeordischarge_steps = list(set(chargeordischarge_steps) & set(self.self.flatten(self.steps_idx)))
-        steps_idx = chargeordischarge_steps[chargeordischarge_number-1]
-        conditions = [self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
-        return ChargeOrDischarge(lf_filtered, chargeordischarge_steps[chargeordischarge_number-1], self.step_names)
+        def criteria(step_name):
+            return step_name == 'CC DChg' or step_name == 'CCCV Chg' or step_name == 'CC DChg'
+        lf_filtered, chargeordischarge_steps = self.get_steps(criteria, chargeordischarge_number)
+        return ChargeOrDischarge(lf_filtered, chargeordischarge_steps, self.step_names)
 
     def rest(self, rest_number):
-        rest_steps = [index for index, item in enumerate(self.step_names) if item == 'Rest']
-        rest_steps = list(set(rest_steps) & set(self.flatten(self.steps_idx)))
-        steps_idx = rest_steps[rest_number-1]
+        def criteria(step_name):
+            return step_name == 'Rest'
+        lf_filtered, rest_steps = self.get_steps(criteria, rest_number)
+        
+        return Rest(lf_filtered, rest_steps, self.step_names)
+
+    def get_steps(self, criteria, step_number):
+        steps = [index for index, item in enumerate(self.step_names) if criteria(item)]
+        print(steps)
+        flattened_steps = self.flatten(self.steps_idx)
+        print(flattened_steps)
+        steps = [step for step in steps if step in flattened_steps]
+        print(steps)
+        print(step_number-1)
+        steps_idx = steps[step_number-1]
         conditions = [self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
-        return Rest(lf_filtered, rest_steps[rest_number-1], self.step_names)
+        return self.lf.filter(conditions), steps[step_number-1]
