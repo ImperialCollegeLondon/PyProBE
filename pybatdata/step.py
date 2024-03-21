@@ -12,9 +12,6 @@ class Step(Base):
         
         n = len(V)
         V_range = V.max() - V.min()
-        # diffV = abs(np.diff(V))
-        # deltaV = min(diffV[diffV > 0])*10
-        # print(deltaV)
         v = np.linspace(V.min(), V.max(), int(V_range/deltaV))
         deltaV = v[1]-v[0]
         
