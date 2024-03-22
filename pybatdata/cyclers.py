@@ -12,6 +12,7 @@ class Neware:
         elif file_ext == '.csv':
             df = pd.read_csv(filepath)
         column_dict = {'Date': 'Date', 
+                       'Time': 'Step Time (s)',
                        'Cycle Index': 'Cycle', 
                        'Step Index': 'Step', 
                        'Current(A)': 'Current (A)', 

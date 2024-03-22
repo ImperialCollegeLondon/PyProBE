@@ -13,6 +13,7 @@ class Preprocessor:
         self.record = self.read_record()
         self.column_headings = ['Date', 
                                 'Time', 
+                                'Step Time (s)',
                                 'Cycle', 
                                 'Step', 
                                 'Current (A)',  
