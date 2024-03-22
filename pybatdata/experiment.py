@@ -63,10 +63,3 @@ class Pulsing(Experiment):
         if self.rests[rest_number] is None:
             self.rests[rest_number] = self.cycle(rest_number).rest(0)
         return self.rests[rest_number]
-    
-
-    def start_capacity(self):
-        return self.RawData['Exp Capacity (Ah)'].iloc[0]
-
-    def end_capacity(self):
-        return self.RawData['Exp Capacity (Ah)'].iloc[-1]  

@@ -21,6 +21,3 @@ class Procedure(Base):
                             'Cycling': Experiment, 
                             'SOC Reset': Experiment}
         return experiment_types[self.titles[experiment_name]](lf_filtered, cycles_idx, steps_idx, self.step_names)
-
-def capacity_ref(df):
-        return df.loc[(df['Current (A)'] == 0) & (df['Voltage (V)'] == df[df['Current (A)'] == 0]['Voltage (V)'].max()), 'Capacity (Ah)'].values[0]
