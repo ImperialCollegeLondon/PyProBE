@@ -1,5 +1,7 @@
 import polars as pl
 import matplotlib.pyplot as plt
+import dashboard
+
 class Base:
     def __init__(self, lf, cycles_idx, steps_idx, step_names):
         self.cycles_idx = cycles_idx
