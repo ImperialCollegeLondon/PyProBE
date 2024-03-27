@@ -1,12 +1,9 @@
-import pytest
-from pybatdata.procedure import Procedure
 
-
-def test_experiment(procedure_fixture):
-    experiment = procedure_fixture.experiment('Break-in Cycles')
-    assert experiment.cycles_idx == [1, 2, 3, 4, 5]
-    assert experiment.steps_idx == [[4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7]]
-    assert experiment.step_names ==  [None, 
+def test_cycle(BreakinCycles_fixture):
+    cycle = BreakinCycles_fixture.cycle(0)
+    assert cycle.cycles_idx == 1
+    assert cycle.steps_idx == [4, 5, 6, 7]
+    assert cycle.step_names ==  [None, 
                                     'Rest', 
                                     'CCCV Chg', 
                                     'Rest', 
