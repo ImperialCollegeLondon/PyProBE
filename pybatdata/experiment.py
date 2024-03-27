@@ -51,7 +51,7 @@ class Pulsing(Experiment):
         for i in range(len(Vt)):
             condition = self.RawData['Time'] >= t_point[i]
             first_row = self.RawData.filter(condition).sort('Time').head(1)
-            Vt[i] = first_row['Voltage (V)'].to_numpy()
+            Vt[i] = first_row['Voltage (V)'].to_numpy()[0]
         return (Vt-self.V0)/self.I1    
         
     def pulse(self, pulse_number):

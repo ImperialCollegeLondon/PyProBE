@@ -24,3 +24,7 @@ def procedure_fixture(lazyframe, preprocessor_fixture):
 @pytest.fixture(scope='module')
 def BreakinCycles_fixture(procedure_fixture):
     return procedure_fixture.experiment('Break-in Cycles')
+
+@pytest.fixture(scope='module')
+def Pulsing_fixture(procedure_fixture):
+    return procedure_fixture.experiment('Discharge Pulses')
