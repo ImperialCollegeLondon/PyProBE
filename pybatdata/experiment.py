@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from cycle import Cycle
+from pybatdata.cycle import Cycle
 import polars as pl
-from base import Base
+from pybatdata.base import Base
 
 class Experiment(Base):
     def __init__(self, lf, cycles_idx, steps_idx, step_names):

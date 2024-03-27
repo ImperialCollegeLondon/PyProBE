@@ -1,6 +1,6 @@
-from step import *
+from pybatdata.step import *
 import polars as pl
-from base import Base
+from pybatdata.base import Base
 
 class Cycle(Base):
     def __init__(self, lf, cycles_idx, steps_idx, step_names):

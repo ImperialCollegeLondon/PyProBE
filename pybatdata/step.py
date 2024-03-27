@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from base import Base
+from pybatdata.base import Base
 import polars as pl
 
 class Step(Base):

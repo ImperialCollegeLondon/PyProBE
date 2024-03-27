@@ -3,8 +3,8 @@ import os
 import re
 import time
 import polars as pl
-from procedure import Procedure
-from cyclers import Neware
+from pybatdata.procedure import Procedure
+from pybatdata.cyclers import Neware
 
 class Preprocessor:
     def __init__(self, folderpath, test_name, cycler):

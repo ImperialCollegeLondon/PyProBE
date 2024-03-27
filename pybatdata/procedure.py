@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from experiment import Experiment, Pulsing
+from pybatdata.experiment import Experiment, Pulsing
 import polars as pl
-from base import Base
+from pybatdata.base import Base
 
 class Procedure(Base):
     def __init__(self, lf, titles, cycles_idx, steps_idx, step_names):
