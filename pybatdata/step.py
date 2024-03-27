@@ -32,31 +32,35 @@ class Step(Base):
             diag = np.diag(vector, int(k))
             A += alpha[n] * diag
         return A @ IC
+    
+    @property
+    def capacity(self):
+        return abs(self.RawData['Capacity (Ah)'].max() - self.RawData['Capacity (Ah)'].min())
             
     
 class Charge(Step):
     def __init__(self, lf, steps_idx, step_names):
         super().__init__(lf, steps_idx, step_names)
         
-    @property
-    def capacity(self):
-        return self.RawData['Charge Capacity (Ah)'].max()
+    # @property
+    # def capacity(self):
+    #     return self.RawData['Charge Capacity (Ah)'].max()
     
 class Discharge(Step):
     def __init__(self, lf, steps_idx, step_names):
         super().__init__(lf, steps_idx, step_names)
         
-    @property
-    def capacity(self):
-        return self.RawData['Discharge Capacity (Ah)'].max()
+    # @property
+    # def capacity(self):
+    #     return self.RawData['Discharge Capacity (Ah)'].max()
     
 class ChargeOrDischarge(Step):
     def __init__(self, lf, steps_idx, step_names):
         super().__init__(lf, steps_idx, step_names)
         
-    @property
-    def capacity(self):
-        return self.RawData['Discharge Capacity (Ah)'].max()
+    # @property
+    # def capacity(self):
+    #     return self.RawData['Discharge Capacity (Ah)'].max()
         
 class Rest(Step):
     def __init__(self, lf, steps_idx, step_names):
