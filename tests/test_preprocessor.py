@@ -3,23 +3,7 @@ import pytest
 from pybatdata.preprocessor import Preprocessor
 from pybatdata.cyclers import Neware
 
-@pytest.fixture
-def preprocessor_fixture():
-    folderpath = "tests"
-    test_name = "sample_data_neware"
-    cycler = "Neware"
-    return Preprocessor(folderpath, test_name, cycler)
 
-@pytest.fixture
-def titles_fixture():
-    return {'Initial Charge': 'SOC Reset', 
-            'Break-in Cycles': 'Cycling', 
-            'Discharge Pulses': 'Pulsing', }
-    
-@pytest.fixture(scope='module')
-def lazyframe():
-    preprocessor_fixture.write_parquet('sample_data/sample_data_neware.csv', 'sample_data/sample_data_neware.parquet')
-    return preprocessor_fixture.read_parquet('sample_data/sample_data_neware.parquet')
 
 def test_preprocessor_initialization(preprocessor_fixture):
     assert preprocessor_fixture.folderpath == "tests"
