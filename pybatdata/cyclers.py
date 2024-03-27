@@ -26,8 +26,8 @@ class Neware:
         dQ_discharge = np.diff(df['Discharge Capacity (Ah)'])
         dQ_charge[dQ_charge < 0] = 0
         dQ_discharge[dQ_discharge < 0] = 0
-        dQ_charge = np.append(dQ_charge, 0)
-        dQ_discharge = np.append(dQ_discharge, 0)
+        dQ_charge = np.append(0, dQ_charge)
+        dQ_discharge = np.append(0, dQ_discharge)
         df['Capacity (Ah)'] = np.cumsum(dQ_charge - dQ_discharge)
         df['Capacity (Ah)'] = df['Capacity (Ah)'] + df['Charge Capacity (Ah)'].max()
         df['Exp Capacity (Ah)'] = np.zeros(len(df))

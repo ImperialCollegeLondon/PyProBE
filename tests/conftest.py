@@ -13,8 +13,8 @@ def preprocessor_fixture():
     return Preprocessor(folderpath, test_name, cycler)
 
 @pytest.fixture(scope='module')
-def lazyframe():
-    # preprocessor_fixture.write_parquet("tests/sample_data_neware/sample_data_neware.xlsx", "tests/sample_data_neware/sample_data_neware.parquet")
+def lazyframe(preprocessor_fixture):
+    preprocessor_fixture.write_parquet("tests/sample_data_neware/sample_data_neware.xlsx", "tests/sample_data_neware/sample_data_neware.parquet")
     return pl.scan_parquet("tests/sample_data_neware/sample_data_neware.parquet")
 
 @pytest.fixture(scope='module')
