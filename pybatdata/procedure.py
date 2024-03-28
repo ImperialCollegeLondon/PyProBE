@@ -5,8 +5,8 @@ import polars as pl
 from pybatdata.base import Base
 
 class Procedure(Base):
-    def __init__(self, lf, titles, cycles_idx, steps_idx, step_names):
-        super().__init__(lf, cycles_idx, steps_idx, step_names)
+    def __init__(self, lazyframe, titles, cycles_idx, steps_idx, step_names):
+        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
         self.titles = titles
         
     def experiment(self, experiment_name):
@@ -15,7 +15,7 @@ class Procedure(Base):
         steps_idx = self.steps_idx[experiment_number]
         conditions = [self.get_conditions('Cycle', cycles_idx),
                       self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
+        lf_filtered = self.lazyframe.filter(conditions)
         experiment_types = {'Constant Current': Experiment, 
                             'Pulsing': Pulsing, 
                             'Cycling': Experiment, 

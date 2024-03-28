@@ -11,7 +11,7 @@ def test_init(base_instance):
     assert base_instance.cycles_idx is not None
     assert base_instance.steps_idx is not None
     assert base_instance.step_names is not None
-    assert base_instance.lf is not None
+    assert base_instance.lazyframe is not None
 
 def test_set_capacity(base_instance):
     base_instance.set_capacity()

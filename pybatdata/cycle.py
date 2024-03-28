@@ -3,13 +3,13 @@ import polars as pl
 from pybatdata.base import Base
 
 class Cycle(Base):
-    def __init__(self, lf, cycles_idx, steps_idx, step_names):
-        super().__init__(lf, cycles_idx, steps_idx, step_names)
+    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
+        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
     
     def step(self, step_number):
         steps_idx = self.steps_idx[step_number]
         conditions = [self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
+        lf_filtered = self.lazyframe.filter(conditions)
         return Step(lf_filtered, steps_idx, self.step_names)
 
     def charge(self, charge_number):
@@ -43,4 +43,4 @@ class Cycle(Base):
         steps = [step for step in steps if step in flattened_steps]
         steps_idx = steps[step_number]
         conditions = [self.get_conditions('Step', steps_idx)]
-        return self.lf.filter(conditions), steps[step_number]
+        return self.lazyframe.filter(conditions), steps[step_number]

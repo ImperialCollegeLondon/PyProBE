@@ -5,20 +5,20 @@ import polars as pl
 from pybatdata.base import Base
 
 class Experiment(Base):
-    def __init__(self, lf, cycles_idx, steps_idx, step_names):
-        super().__init__(lf, cycles_idx, steps_idx, step_names)
+    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
+        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
 
     def cycle(self,cycle_number):
         cycles_idx = self.cycles_idx[cycle_number]
         steps_idx = self.steps_idx[cycle_number]
         conditions = [self.get_conditions('Cycle', cycles_idx),
                       self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lf.filter(conditions)
+        lf_filtered = self.lazyframe.filter(conditions)
         return Cycle(lf_filtered, cycles_idx, steps_idx, self.step_names)
     
 class Pulsing(Experiment):
-    def __init__(self, lf, cycles_idx, steps_idx, step_names):
-        super().__init__(lf, cycles_idx, steps_idx, step_names)
+    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
+        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
         self.charge_status = (self.RawData['Current (A)']>= 0).all()
         self.rests = [None]*len(cycles_idx)
         self.pulses = [None]*len(cycles_idx)
