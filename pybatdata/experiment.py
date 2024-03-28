@@ -15,8 +15,8 @@ class Experiment(Base):
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-                cycles_idx (list): The indices of the cycles in the current selection.
-                steps_idx (list): The indices of the steps in the current selection.
+                cycles_idx (list): The indices of the cycles of the experiment.
+                steps_idx (list): The indices of the steps of the experiment.
                 step_names (list): The names of all of the steps in the procedure.
         """
         super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
