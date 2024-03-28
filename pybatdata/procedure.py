@@ -1,5 +1,6 @@
 """A module for the Procedure class."""
-from pybatdata.experiment import Experiment, Pulsing
+from pybatdata.experiment import Experiment
+from pybatdata.experiments.pulsing import Pulsing
 import polars as pl
 from pybatdata.base import Base
 

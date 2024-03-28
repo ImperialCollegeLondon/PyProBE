@@ -7,6 +7,7 @@ import time
 import polars as pl
 from pybatdata.procedure import Procedure
 from pybatdata.cyclers import Neware
+from typing import Callable
 
 class Preprocessor:
     """A preprocessor class to write to and read from parquet data files.
@@ -52,7 +53,7 @@ class Preprocessor:
         self.cycer_dict = {'Neware': Neware}
         self.cycler = self.cycer_dict[cycler]
         
-    def run(self, filename_function: function, filename_inputs: list)->list[dict]:
+    def run(self, filename_function: Callable, filename_inputs: list)->list[dict]:
         """Run the preprocessor.
         
         Args:
@@ -74,7 +75,7 @@ class Preprocessor:
         return self.procedure_dict
     
     @staticmethod
-    def get_filename(procedure_dict_entry: dict, filename_function: function, filename_inputs: list)->str:
+    def get_filename(procedure_dict_entry: dict, filename_function: Callable, filename_inputs: list)->str:
         """Function to generate the input name for the data file.
         
         Args:
