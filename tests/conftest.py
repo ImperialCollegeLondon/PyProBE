@@ -8,9 +8,9 @@ from pybatdata.procedure import Procedure
 @pytest.fixture(scope='module')
 def preprocessor_fixture():
     folderpath = "tests"
-    test_name = "sample_data_neware"
+    procedure_name = "sample_data_neware"
     cycler = "Neware"
-    return Preprocessor(folderpath, test_name, cycler)
+    return Preprocessor(folderpath, procedure_name, cycler)
 
 @pytest.fixture(scope='module')
 def lazyframe(preprocessor_fixture):

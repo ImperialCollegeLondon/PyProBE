@@ -7,7 +7,7 @@ from pybatdata.cyclers import Neware
 
 def test_preprocessor_initialization(preprocessor_fixture):
     assert preprocessor_fixture.folderpath == "tests"
-    assert preprocessor_fixture.test_name == "sample_data_neware"
+    assert preprocessor_fixture.procedure_name == "sample_data_neware"
     assert preprocessor_fixture.cycler == Neware
     
 def test_process_readme(preprocessor_fixture):
