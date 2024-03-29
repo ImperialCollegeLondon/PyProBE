@@ -1,13 +1,44 @@
+"""A module for the Step class."""
+
 import numpy as np
 import pandas as pd
-from base import Base
+from pybatdata.base import Base
 import polars as pl
 
 class Step(Base):
-    def __init__(self, lf, steps_idx, step_names):
-        super().__init__(lf, None, steps_idx, step_names)
+    """A step in a battery test procedure."""
+    def __init__(self, 
+                 lazyframe: pl.LazyFrame, 
+                 steps_idx: int, 
+                 step_names: list):
+        """Create a step.
+
+            Args:
+                lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
+                steps_idx (int): The index of the step of the procedure.
+                step_names (list): The names of all of the steps in the procedure.
+        """
+        super().__init__(lazyframe, None, steps_idx, step_names)
+
+    @property
+    def capacity(self) -> float:
+        """Calculate the capacity passed during the step.
+        
+        Returns:
+            float: The capacity passed during the step.
+        """
+        return abs(self.RawData['Capacity (Ah)'].max() - self.RawData['Capacity (Ah)'].min())
     
-    def IC(self, deltaV):
+    def IC(self, deltaV: float) -> tuple[np.ndarray, np.ndarray]:
+        """Calculate the normalised incremental capacity ($\frac{1}{Q}\frac{dQ}{dV}$) of the step.
+        Method from: 10.1016/j.etran.2020.100051
+        
+        Args:
+            deltaV (float): The voltage sampling interval.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: The midpints of the voltage sampling intervales and the normalised incremental capacity.
+        """
         V = self.RawData['Voltage (V)']
         
         n = len(V)
@@ -23,7 +54,17 @@ class Step(Base):
         return v_midpoints, IC
 
     @staticmethod
-    def smooth_IC(IC, alpha):
+    def smooth_IC(IC, alpha: list[float]) -> np.ndarray:
+        """Smooth the incremental capacity.
+        
+        Args:
+            IC (np.ndarray): The incremental capacity vector.
+            alpha (list[float]): The smoothing coefficients.
+        
+        Returns:
+            np.ndarray: The smoothed incremental capacity.
+            
+        """
         A = np.zeros((len(IC), len(IC)))
         w = np.floor(len(alpha)/2)
         for n in range(len(alpha)):
@@ -32,32 +73,5 @@ class Step(Base):
             diag = np.diag(vector, int(k))
             A += alpha[n] * diag
         return A @ IC
-            
     
-class Charge(Step):
-    def __init__(self, lf, steps_idx, step_names):
-        super().__init__(lf, steps_idx, step_names)
-        
-    @property
-    def capacity(self):
-        return self.RawData['Charge Capacity (Ah)'].max()
     
-class Discharge(Step):
-    def __init__(self, lf, steps_idx, step_names):
-        super().__init__(lf, steps_idx, step_names)
-        
-    @property
-    def capacity(self):
-        return self.RawData['Discharge Capacity (Ah)'].max()
-    
-class ChargeOrDischarge(Step):
-    def __init__(self, lf, steps_idx, step_names):
-        super().__init__(lf, steps_idx, step_names)
-        
-    @property
-    def capacity(self):
-        return self.RawData['Discharge Capacity (Ah)'].max()
-        
-class Rest(Step):
-    def __init__(self, lf, steps_idx, step_names):
-        super().__init__(lf, steps_idx, step_names)
