@@ -6,10 +6,10 @@ import polars as pl
 import numpy as np
 
 class Pulsing(Experiment):
-    """A class for a pulsing experiment in a battery procedure."""
+    """A pulsing experiment in a battery procedure."""
 
     def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
-        """Create a pulsing class.
+        """Create a pulsing experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.

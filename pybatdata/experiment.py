@@ -5,13 +5,13 @@ import polars as pl
 from pybatdata.base import Base
 
 class Experiment(Base):
-    """A class for an experiment in a battery procedure."""
+    """ An experiment in a battery procedure."""
     def __init__(self, 
                  lazyframe: pl.LazyFrame, 
                  cycles_idx: list, 
                  steps_idx: list, 
                  step_names: list):
-        """Create an experiment class.
+        """Create an experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
