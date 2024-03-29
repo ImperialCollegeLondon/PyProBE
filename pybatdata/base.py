@@ -13,8 +13,8 @@ class Base:
             _raw_data (polars.DataFrame): The collected dataframe of the current filter.
     """
     def __init__(self, lazyframe: pl.LazyFrame, 
-                 cycles_idx: list, 
-                 steps_idx: list, 
+                 cycles_idx: list | int, 
+                 steps_idx: list | int, 
                  step_names: list):
         """ Create a filtering class.
         
