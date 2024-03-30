@@ -8,6 +8,8 @@ import polars as pl
 from pybatdata.procedure import Procedure
 from pybatdata.cyclers import Neware
 from typing import Callable
+import pickle
+import subprocess
 
 class Preprocessor:
     """A preprocessor class to write to and read from parquet data files.
@@ -16,7 +18,6 @@ class Preprocessor:
         folderpath (str): The path to the folder containing the data.
         procedure_name (str): The name of the procedure being processed.
         record (pd.DataFrame): The metadata record of the procedure.
-        column_headings (list): The column headings to keep.
         procedure_dict (list): The list of dictionaries containing the metadata and data for each test run with a procedure.
         titles (dict): The titles of the experiments inside a procddure. Fomat {title: experiment type}.
         steps (list): The step numbers inside the procedure.
@@ -36,17 +37,6 @@ class Preprocessor:
         self.folderpath = folderpath
         self.procedure_name = procedure_name
         self.record = self.read_record()
-        self.column_headings = ['Date', 
-                                'Time', 
-                                'Step Time (s)',
-                                'Cycle', 
-                                'Step', 
-                                'Current (A)',  
-                                'Voltage (V)', 
-                                'Capacity (Ah)', 
-                                'Discharge Capacity (Ah)', 
-                                'Charge Capacity (Ah)',]
-
         self.procedure_dict = [None]*len(self.record)
         readme_path = os.path.join(self.folderpath, self.procedure_name, 'README.txt')
         self.titles, self.steps, self.cycles, self.step_names = self.process_readme(readme_path)
@@ -73,6 +63,13 @@ class Preprocessor:
             self.procedure_dict[record_entry]['Data'] = self.read_parquet(output_path)
         print("Preprocessor complete.")
         return self.procedure_dict
+    
+    def launch_dashboard(self):
+        """Function to launch the dashboard for the preprocessed data."""
+        # Serialize procedure_dict to a file
+        with open('procedure_dict.pkl', 'wb') as f:
+            pickle.dump(self.procedure_dict, f)
+        subprocess.run(["streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")])
     
     @staticmethod
     def get_filename(procedure_dict_entry: dict, filename_function: Callable, filename_inputs: list)->str:
@@ -203,3 +200,9 @@ class Preprocessor:
                 
             return titles, steps, cycles, step_names
 
+    # def launch_dashboard(self):
+    #     """Function to launch the dashboard for the preprocessed data."""
+    #     import streamlit as st
+    #     #from pybatdata.dashboard import launch
+    #     dash = Dashboard(self.procedure_dict)
+    #     dash.launch()

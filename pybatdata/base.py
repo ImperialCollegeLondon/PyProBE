@@ -2,7 +2,6 @@
 
 import polars as pl
 import matplotlib.pyplot as plt
-import dashboard
 
 class Base:
     """Base class for all filtering classes in PyBatData.
