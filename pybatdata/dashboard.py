@@ -36,6 +36,12 @@ def dataframe_with_selections(df):
 
 # Display the DataFrame in the sidebar
 selected_indices = dataframe_with_selections(metadata)
+# Get the names of the selected rows
+selected_names = [procedure_dict[i]['Name'] for i in selected_indices]
+
+# Select an experiment
+experiment_names = procedure_dict[0]['Data'].titles.keys()
+selected_experiment = st.selectbox('Select an experiment', experiment_names)
 
 # Get the cycle and step numbers from the user
 cycle_step_input = st.text_input('Enter the cycle and step numbers (e.g., "cycle(1).step(2)")')
@@ -47,12 +53,6 @@ x_axis = st.selectbox('Select x axis', x_options, index=0)
 y_axis = st.selectbox('Select y axis', y_options, index=1)
 
 # Create a figure
-p = figure(title='Bokeh Plot', x_axis_label=x_axis, y_axis_label=y_axis)
-experiment_names = procedure_dict[0]['Data'].titles.keys()
-selected_experiment = st.selectbox('Select an experiment', experiment_names)
-
-selected_names = [procedure_dict[i]['Name'] for i in selected_indices]
-# Create a figure
 fig = go.Figure()
 selected_data = []
 for i in range(len(selected_indices)):
@@ -61,13 +61,10 @@ for i in range(len(selected_indices)):
     # Check if the input is not empty
     if cycle_step_input:
         # Use eval to evaluate the input as Python code
-        try:
-            filtered_data = eval(f'data.{cycle_step_input}')
-        except Exception as e:
-            st.write(f'Error: {e}')
+        filtered_data = eval(f'experiment_data.{cycle_step_input}')
     else: 
         filtered_data = experiment_data
-
+    
     filtered_data = filtered_data.RawData.to_pandas()
     selected_data.append(filtered_data)
 
@@ -86,7 +83,7 @@ fig.update_layout(xaxis_title=x_axis,
 # Show the plot
 st.plotly_chart(fig)    
 
+# Show raw data in tabs
 tabs = st.tabs(selected_names)
-
 for tab in tabs:
     tab.write(selected_data[tabs.index(tab)])
