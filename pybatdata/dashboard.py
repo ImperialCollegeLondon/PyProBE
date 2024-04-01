@@ -54,29 +54,39 @@ selected_experiment = st.selectbox('Select an experiment', experiment_names)
 selected_names = [procedure_dict[i]['Name'] for i in selected_indices]
 # Create a figure
 fig = go.Figure()
-for selected_index in selected_indices:
-    data = procedure_dict[selected_index]['Data'].experiment(selected_experiment)
+selected_data = []
+for i in range(len(selected_indices)):
+    selected_index = selected_indices[i]
+    experiment_data = procedure_dict[selected_index]['Data'].experiment(selected_experiment)
     # Check if the input is not empty
     if cycle_step_input:
         # Use eval to evaluate the input as Python code
         try:
-            data_to_plot = eval(f'data.{cycle_step_input}')
+            filtered_data = eval(f'data.{cycle_step_input}')
         except Exception as e:
             st.write(f'Error: {e}')
     else: 
-        data_to_plot = data
+        filtered_data = experiment_data
 
-    df = data_to_plot.RawData.to_pandas()
-
+    filtered_data = filtered_data.RawData.to_pandas()
+    selected_data.append(filtered_data)
 
     # Add a line to the plot for each selected index
-    fig.add_trace(go.Scatter(x=df[x_axis], y=df[y_axis], mode='lines', name=f'Line {selected_index}'))
+    fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
+                             y=filtered_data[y_axis], 
+                             mode='lines', 
+                             name=procedure_dict[selected_index]['Name']))
 
 # Set the plot's title and labels
-fig.update_layout(title='Plotly Plot', xaxis_title=x_axis, yaxis_title=y_axis, template='simple_white')
+fig.update_layout(xaxis_title=x_axis, 
+                  yaxis_title=y_axis, 
+                  showlegend=True,
+                  template='simple_white')
 
 # Show the plot
 st.plotly_chart(fig)    
 
 tabs = st.tabs(selected_names)
 
+for tab in tabs:
+    tab.write(selected_data[tabs.index(tab)])
