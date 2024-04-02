@@ -17,8 +17,8 @@ class Neware:
                        'Step Index': 'Step', 
                        'Current(A)': 'Current (A)', 
                        'Voltage(V)': 'Voltage (V)', 
-                       'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 
-                       'Chg. Cap.(Ah)': 'Charge Capacity (Ah)',
+                       'DChg. Cap.(Ah)': 'Step Discharge Capacity (Ah)', 
+                       'Chg. Cap.(Ah)': 'Step Charge Capacity (Ah)',
                        }
         df = cls.convert_units(df)
         df = df[list(column_dict.keys())].rename(columns=column_dict)
@@ -30,10 +30,16 @@ class Neware:
         dQ_discharge = np.append(0, dQ_discharge)
         df['Capacity (Ah)'] = np.cumsum(dQ_charge - dQ_discharge)
         df['Capacity (Ah)'] = df['Capacity (Ah)'] + df['Charge Capacity (Ah)'].max()
-        df['Exp Capacity (Ah)'] = np.zeros(len(df))
-        df['Cycle Capacity (Ah)'] = np.zeros(len(df))
         df['Date'] = pd.to_datetime(df['Date'])
-        df['Time'] = (df['Date'] - df['Date'].iloc[0]).dt.total_seconds()
+        df['Time (s)'] = (df['Date'] - df['Date'].iloc[0]).dt.total_seconds()
+        df = df[['Date',
+                 'Time (s)',
+                 'Cycle',
+                 'Step',
+                 'Current (A)',
+                 'Voltage (V)',
+                 'Capacity (Ah)',
+                 ]]
         return df
     
     @staticmethod

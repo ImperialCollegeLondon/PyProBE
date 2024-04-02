@@ -1,7 +1,5 @@
 import pytest
 import polars as pl
-import numpy as np
-from datetime import datetime, timedelta
 from pybatdata.preprocessor import Preprocessor
 from pybatdata.procedure import Procedure
 
