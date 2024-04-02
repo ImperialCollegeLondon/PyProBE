@@ -3,10 +3,6 @@ import os
 import pandas as pd
 import pickle
 import sys
-from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, HoverTool
-from bokeh.io import show
-from pygwalker.api.streamlit import StreamlitRenderer, init_streamlit_comm
 import plotly.graph_objects as go
 
 import pandas as pd
