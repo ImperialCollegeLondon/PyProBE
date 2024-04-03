@@ -37,10 +37,10 @@ selected_names = [procedure_dict[i]['Name'] for i in selected_indices]
 
 # Select an experiment
 experiment_names = procedure_dict[0]['Data'].titles.keys()
-selected_experiment = st.selectbox('Select an experiment', experiment_names)
+selected_experiment = st.sidebar.selectbox('Select an experiment', experiment_names)
 
 # Get the cycle and step numbers from the user
-cycle_step_input = st.text_input('Enter the cycle and step numbers (e.g., "cycle(1).step(2)")')
+cycle_step_input = st.sidebar.text_input('Enter the cycle and step numbers (e.g., "cycle(1).step(2)")')
 x_options = ['Time (s)', 'Capacity (Ah)']
 y_options = ['Voltage (V)', 'Current (A)', 'Capacity (Ah)']
 
@@ -88,26 +88,11 @@ fig.update_layout(xaxis_title=x_axis,
 
 if secondary_y_axis != 'None':
     fig.update_layout(yaxis2=dict(title=secondary_y_axis, overlaying='y', side='right'))
-# Show the plot
-st.plotly_chart(fig)    
-# Show raw data in tabs
-if selected_data:
-    tabs = st.tabs(selected_names)
-    columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
-    for tab in tabs:
-        tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
-
-# Set the plot's title and labels
-fig.update_layout(xaxis_title=x_axis, 
-                  yaxis_title=y_axis, 
-                  showlegend=True,
-                  template='simple_white')
 
 # Show the plot
-st.plotly_chart(fig)    
+st.plotly_chart(fig)  
 
 # Show raw data in tabs
-
 if selected_data:
     tabs = st.tabs(selected_names)
     columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
