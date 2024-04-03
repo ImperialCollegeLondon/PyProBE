@@ -81,5 +81,6 @@ st.plotly_chart(fig)
 
 # Show raw data in tabs
 tabs = st.tabs(selected_names)
+columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
 for tab in tabs:
-    tab.write(selected_data[tabs.index(tab)])
+    tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
