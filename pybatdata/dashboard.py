@@ -44,10 +44,16 @@ cycle_step_input = st.sidebar.text_input('Enter the cycle and step numbers (e.g.
 x_options = ['Time (s)', 'Capacity (Ah)']
 y_options = ['Voltage (V)', 'Current (A)', 'Capacity (Ah)']
 
+graph_placeholder = st.empty()
+
 # Create select boxes for the x and y axes
 x_axis = st.selectbox('x axis', x_options, index=0)
 y_axis = st.selectbox('y axis', y_options, index=1)
 secondary_y_axis = st.selectbox('Secondary y axis', ['None'] + y_options, index=0)
+
+# Select plot theme
+theme = st.selectbox('Plot theme', ['default', 'plotly'])
+plot_theme = dict({'default': 'streamlit', 'plotly': None})
 
 # Create a figure
 fig = go.Figure()
@@ -70,27 +76,44 @@ for i in range(len(selected_indices)):
                              mode='lines', 
                              line = dict(color = procedure_dict[selected_index]['Color']),
                              name=procedure_dict[selected_index]['Name'],
-                             yaxis='y1'))
+                             yaxis='y1',
+                             showlegend=True))
     
     # Add a line to the secondary y axis if selected
     if secondary_y_axis != 'None':
         fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                                  y=filtered_data[secondary_y_axis], 
                                  mode='lines', 
+                                 line=dict(color=procedure_dict[selected_index]['Color'], dash='dash'),
                                  name=procedure_dict[selected_index]['Name'],
-                                 yaxis='y2'))
+                                 yaxis='y2',
+                                 showlegend=False))
+if secondary_y_axis != 'None':     
+    # Add a dummy trace to the legend to represent the secondary y-axis
+    fig.add_trace(go.Scatter(x=[None], 
+                            y=[None], 
+                            mode='lines', 
+                            line=dict(color='black', dash='dash'),
+                            name=secondary_y_axis,
+                            showlegend=True))
 
 # Set the plot's title and labels
 fig.update_layout(xaxis_title=x_axis, 
                   yaxis_title=y_axis,
-                  showlegend=True,
-                  template='simple_white')
+                  yaxis2 = dict(title=secondary_y_axis,
+                                anchor='free',
+                                overlaying='y',
+                                autoshift=True,
+                                tickmode='sync'),
+                  template='presentation',
+                  legend = dict(x=1.2 if secondary_y_axis != 'None' else 1,
+                                y = 1))
 
 if secondary_y_axis != 'None':
     fig.update_layout(yaxis2=dict(title=secondary_y_axis, overlaying='y', side='right'))
 
 # Show the plot
-st.plotly_chart(fig)  
+graph_placeholder.plotly_chart(fig, theme=plot_theme[theme])  
 
 # Show raw data in tabs
 if selected_data:
