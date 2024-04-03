@@ -71,7 +71,7 @@ class Preprocessor:
         print("Preprocessor complete.")
         return self.procedure_dict
     
-    def set_color_scheme(self, scheme, **kwargs):
+    def set_color_scheme(self, scheme='distinctipy', **kwargs):
         """Function to set the colour scheme for plotting."""
         if scheme == 'distinctipy':
             rgb = distinctipy.get_colors(len(self.record), 
