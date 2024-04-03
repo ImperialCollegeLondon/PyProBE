@@ -64,11 +64,11 @@ for i in range(len(selected_indices)):
     
     filtered_data = filtered_data.RawData.to_pandas()
     selected_data.append(filtered_data)
-
     # Add a line to the plot for each selected index
     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                              y=filtered_data[y_axis], 
                              mode='lines', 
+                             line = dict(color = procedure_dict[selected_index]['Color']),
                              name=procedure_dict[selected_index]['Name'],
                              yaxis='y1'))
     

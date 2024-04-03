@@ -10,6 +10,7 @@ from pybatdata.cyclers import Neware
 from typing import Callable
 import pickle
 import subprocess
+import distinctipy
 
 class Preprocessor:
     """A preprocessor class to write to and read from parquet data files.
@@ -42,6 +43,7 @@ class Preprocessor:
         self.titles, self.steps, self.cycles, self.step_names = self.process_readme(readme_path)
         self.cycer_dict = {'Neware': Neware}
         self.cycler = self.cycer_dict[cycler]
+        self.colors = self.set_color_scheme('distinctipy')
         
     def run(self, filename_function: Callable, filename_inputs: list)->list[dict]:
         """Run the preprocessor.
@@ -65,8 +67,22 @@ class Preprocessor:
             if parquets_verified == False:
                 self.write_parquet(filepath, output_path)
             self.procedure_dict[record_entry]['Data'] = self.read_parquet(output_path)
+            self.procedure_dict[record_entry]['Color'] = self.colors[record_entry]
         print("Preprocessor complete.")
         return self.procedure_dict
+    
+    def set_color_scheme(self, scheme, **kwargs):
+        """Function to set the colour scheme for plotting."""
+        if scheme == 'distinctipy':
+            rgb = distinctipy.get_colors(len(self.record), 
+                                         exclude_colors=[(0,0,0), (1,1,1),(1,1,0)], # Exclude black, white, and yellow
+                                         rng=0, # Set the random seed
+                                         **kwargs,
+                                         )
+            hex = []
+            for i in range(len(rgb)):
+                hex.append(distinctipy.get_hex(rgb[i]))
+            return hex
     
     def launch_dashboard(self):
         """Function to launch the dashboard for the preprocessed data."""
