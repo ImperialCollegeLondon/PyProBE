@@ -45,8 +45,9 @@ x_options = ['Time (s)', 'Capacity (Ah)']
 y_options = ['Voltage (V)', 'Current (A)', 'Capacity (Ah)']
 
 # Create select boxes for the x and y axes
-x_axis = st.selectbox('Select x axis', x_options, index=0)
-y_axis = st.selectbox('Select y axis', y_options, index=1)
+x_axis = st.selectbox('x axis', x_options, index=0)
+y_axis = st.selectbox('y axis', y_options, index=1)
+secondary_y_axis = st.selectbox('Secondary y axis', ['None'] + y_options, index=0)
 
 # Create a figure
 fig = go.Figure()
@@ -68,7 +69,33 @@ for i in range(len(selected_indices)):
     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                              y=filtered_data[y_axis], 
                              mode='lines', 
-                             name=procedure_dict[selected_index]['Name']))
+                             name=procedure_dict[selected_index]['Name'],
+                             yaxis='y1'))
+    
+    # Add a line to the secondary y axis if selected
+    if secondary_y_axis != 'None':
+        fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
+                                 y=filtered_data[secondary_y_axis], 
+                                 mode='lines', 
+                                 name=procedure_dict[selected_index]['Name'],
+                                 yaxis='y2'))
+
+# Set the plot's title and labels
+fig.update_layout(xaxis_title=x_axis, 
+                  yaxis_title=y_axis,
+                  showlegend=True,
+                  template='simple_white')
+
+if secondary_y_axis != 'None':
+    fig.update_layout(yaxis2=dict(title=secondary_y_axis, overlaying='y', side='right'))
+# Show the plot
+st.plotly_chart(fig)    
+# Show raw data in tabs
+if selected_data:
+    tabs = st.tabs(selected_names)
+    columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
+    for tab in tabs:
+        tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
 
 # Set the plot's title and labels
 fig.update_layout(xaxis_title=x_axis, 
@@ -80,7 +107,9 @@ fig.update_layout(xaxis_title=x_axis,
 st.plotly_chart(fig)    
 
 # Show raw data in tabs
-tabs = st.tabs(selected_names)
-columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
-for tab in tabs:
-    tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
+
+if selected_data:
+    tabs = st.tabs(selected_names)
+    columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
+    for tab in tabs:
+        tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
