@@ -12,13 +12,12 @@ class Neware:
         elif file_ext == '.csv':
             df = pd.read_csv(filepath)
         column_dict = {'Date': 'Date', 
-                       'Time': 'Step Time (s)',
                        'Cycle Index': 'Cycle', 
                        'Step Index': 'Step', 
                        'Current(A)': 'Current (A)', 
                        'Voltage(V)': 'Voltage (V)', 
-                       'DChg. Cap.(Ah)': 'Step Discharge Capacity (Ah)', 
-                       'Chg. Cap.(Ah)': 'Step Charge Capacity (Ah)',
+                       'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)', 
+                       'Chg. Cap.(Ah)': 'Charge Capacity (Ah)',
                        }
         df = cls.convert_units(df)
         df = df[list(column_dict.keys())].rename(columns=column_dict)

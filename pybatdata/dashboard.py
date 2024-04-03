@@ -41,7 +41,7 @@ selected_experiment = st.selectbox('Select an experiment', experiment_names)
 
 # Get the cycle and step numbers from the user
 cycle_step_input = st.text_input('Enter the cycle and step numbers (e.g., "cycle(1).step(2)")')
-x_options = ['Time', 'Capacity (Ah)']
+x_options = ['Time (s)', 'Capacity (Ah)']
 y_options = ['Voltage (V)', 'Current (A)', 'Capacity (Ah)']
 
 # Create select boxes for the x and y axes

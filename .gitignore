@@ -1,2 +1,4 @@
 
 *.pyc
+tests/.DS_Store
+pybatdata/.DS_Store

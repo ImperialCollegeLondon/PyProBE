@@ -13,8 +13,8 @@ def test_init(base_instance):
     assert base_instance.step_names is not None
     assert base_instance.lazyframe is not None
 
-def test_set_capacity(base_instance):
-    base_instance.set_capacity()
+def test_zero_capacity(base_instance):
+    base_instance.zero_capacity()
     assert base_instance.RawData["Capacity (Ah)"][0] == 0
 
 

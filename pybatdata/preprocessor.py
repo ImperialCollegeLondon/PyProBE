@@ -54,12 +54,16 @@ class Preprocessor:
             list[dict]: The list of dictionaries containing the metadata and data for each test run with a procedure.
         """
         print("Preprocessor running...")
+        parquets_verified = False
         for record_entry in range(len(self.record)):
             self.procedure_dict[record_entry] = self.record.iloc[record_entry].to_dict()
             filename = self.get_filename(self.procedure_dict[record_entry], filename_function, filename_inputs)
             filepath = self.get_filepath(filename)
             output_path = os.path.splitext(filepath)[0]+'.parquet'
-            self.write_parquet(filepath, output_path)
+            if record_entry == 0 and self.verify_parquet(filepath, output_path) == True:
+                parquets_verified = True
+            if parquets_verified == False:
+                self.write_parquet(filepath, output_path)
             self.procedure_dict[record_entry]['Data'] = self.read_parquet(output_path)
         print("Preprocessor complete.")
         return self.procedure_dict
@@ -105,6 +109,27 @@ class Preprocessor:
         record_xlsx = os.path.join(self.folderpath, "Experiment_Record.xlsx")
         return pd.read_excel(record_xlsx, sheet_name = self.procedure_name)
     
+    def verify_parquet(self, input_path: str, output_path: str)->bool:
+        """Function to verify that the data in the parquet file is correct.
+        
+        Args:
+            input_path (str): The path to the input data file.
+            output_path (str): The path to the output parquet file.
+        
+        Returns:
+            bool: True if the data is correct, False otherwise.
+        """
+        if not os.path.exists(output_path):
+            return False
+        else:
+            test_data = self.cycler.load_file(input_path).head()
+            parquet_data = pl.scan_parquet(output_path).head().collect().to_pandas()
+            try:
+                pd.testing.assert_frame_equal(test_data, parquet_data)
+                return True
+            except AssertionError:
+                return False
+    
     def write_parquet(self, input_path: str, output_path: str)->None:
         """Function to write the data to a parquet file.
         
@@ -112,13 +137,12 @@ class Preprocessor:
             input_path (str): The path to the input data file.
             output_path (str): The path to the output parquet file.
         """  
-        if not os.path.exists(output_path):
-            print(f"Processing file: {os.path.basename(input_path)}")
-            filepath = os.path.join(input_path)
-            t1 = time.time()
-            test_data = self.cycler.load_file(filepath)
-            test_data.to_parquet(output_path, engine='pyarrow')
-            print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+        print(f"Processing file: {os.path.basename(input_path)}")
+        filepath = os.path.join(input_path)
+        t1 = time.time()
+        test_data = self.cycler.load_file(filepath)
+        test_data.to_parquet(output_path, engine='pyarrow')
+        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
             
     def read_parquet(self, data_path: str)->Procedure:
         """Function to read the data from a parquet file and create a Procedure object.

@@ -29,14 +29,21 @@ class Base:
         self.steps_idx = steps_idx
         self.step_names = step_names
         self.lazyframe = lazyframe
-        self.set_capacity()
+        self.zero_capacity()
+        self.zero_time()
         self._raw_data = None
 
-    def set_capacity(self) -> None:
+    def zero_capacity(self) -> None:
         """Recalculate the capacity column to start from zero at beginning of current selection."""
         self.lazyframe = self.lazyframe.with_columns([
             (pl.col("Capacity (Ah)") - pl.col("Capacity (Ah)").first()).alias("Capacity (Ah)")
         ]) 
+
+    def zero_time(self) -> None:
+        """Recalculate the time column to start from zero at beginning of current selection."""
+        self.lazyframe = self.lazyframe.with_columns([
+            (pl.col("Time (s)") - pl.col("Time (s)").first()).alias("Time (s)")
+        ])
     
     @property
     def RawData(self) -> pl.DataFrame:
