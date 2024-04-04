@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 import sys
 import plotly.graph_objects as go
+import plotly
 
 import pandas as pd
 # Add the parent directory of pybatdata to the Python path
@@ -46,14 +47,19 @@ y_options = ['Voltage (V)', 'Current (A)', 'Capacity (Ah)']
 
 graph_placeholder = st.empty()
 
+col1, col2, col3 = st.columns(3)
 # Create select boxes for the x and y axes
-x_axis = st.selectbox('x axis', x_options, index=0)
-y_axis = st.selectbox('y axis', y_options, index=1)
-secondary_y_axis = st.selectbox('Secondary y axis', ['None'] + y_options, index=0)
+x_axis = col1.selectbox('x axis', x_options, index=0)
+y_axis = col2.selectbox('y axis', y_options, index=1)
+secondary_y_axis = col3.selectbox('Secondary y axis', ['None'] + y_options, index=0)
 
 # Select plot theme
-theme = st.selectbox('Plot theme', ['default', 'plotly'])
-plot_theme = dict({'default': 'streamlit', 'plotly': None})
+
+themes = list(plotly.io.templates)
+themes.remove('none')
+themes.remove('streamlit')
+themes.insert(0, 'default')
+plot_theme = st.selectbox('Plot theme', themes)
 
 # Create a figure
 fig = go.Figure()
@@ -105,7 +111,7 @@ fig.update_layout(xaxis_title=x_axis,
                                 overlaying='y',
                                 autoshift=True,
                                 tickmode='sync'),
-                  template='presentation',
+                  template=plot_theme if plot_theme != 'default' else 'plotly',
                   legend = dict(x=1.2 if secondary_y_axis != 'None' else 1,
                                 y = 1))
 
@@ -113,7 +119,46 @@ if secondary_y_axis != 'None':
     fig.update_layout(yaxis2=dict(title=secondary_y_axis, overlaying='y', side='right'))
 
 # Show the plot
-graph_placeholder.plotly_chart(fig, theme=plot_theme[theme])  
+graph_placeholder.plotly_chart(fig, theme='streamlit' if plot_theme == 'default' else None)  
+
+from bokeh.plotting import figure
+from bokeh.models import LinearAxis, Range1d
+
+# Create a figure
+p = figure(x_axis_label=x_axis, y_axis_label=y_axis)
+
+selected_data = []
+for i in range(len(selected_indices)):
+    selected_index = selected_indices[i]
+    experiment_data = procedure_dict[selected_index]['Data'].experiment(selected_experiment)
+    # Check if the input is not empty
+    if cycle_step_input:
+        # Use eval to evaluate the input as Python code
+        filtered_data = eval(f'experiment_data.{cycle_step_input}')
+    else: 
+        filtered_data = experiment_data
+    
+    filtered_data = filtered_data.RawData.to_pandas()
+    selected_data.append(filtered_data)
+    # Add a line to the plot for each selected index
+    p.line(x=filtered_data[x_axis], 
+           y=filtered_data[y_axis], 
+           line_color=procedure_dict[selected_index]['Color'],
+           legend_label=procedure_dict[selected_index]['Name'])
+    p.y_range = Range1d(start=filtered_data[y_axis].min(), end=filtered_data[y_axis].max())
+    
+    # Add a line to the secondary y axis if selected
+    if secondary_y_axis != 'None':
+        p.extra_y_ranges = {"secondary": Range1d(start=filtered_data[secondary_y_axis].min(), end=filtered_data[secondary_y_axis].max())} 
+        p.add_layout(LinearAxis(y_range_name="secondary"), 'right')
+        p.line(x=filtered_data[x_axis], 
+               y=filtered_data[secondary_y_axis], 
+               line_color=procedure_dict[selected_index]['Color'], 
+               y_range_name="secondary",
+               legend_label=procedure_dict[selected_index]['Name'])
+        
+st.bokeh_chart(p, use_container_width=True)
+
 
 # Show raw data in tabs
 if selected_data:
