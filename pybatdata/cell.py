@@ -8,13 +8,41 @@ import time
 
 class Cell:
     def __init__(self, 
-                 record_entry: pd.DataFrame, 
-                 cycler: Cycler,
+                 metadata: dict,
                  ):
-        self.metadata = record_entry.to_dict()
+        self.metadata = metadata
         self.data = {}
-        self.cycler = cycler
 
+    @classmethod
+    def batch_process(cls,
+                     root_directory: str,
+                     record_name: str,
+                     cycler: Cycler,
+                     filename_function: Callable,
+                     filename_inputs: list,
+                     cell_list: list=[],
+                     title: str = None):
+        print(f"Batch pre-processing running...")
+        record = cls.read_record(root_directory, record_name)
+        n_cells = len(record)
+        if cell_list == []:
+            for i in range(n_cells):
+                cell_list.append(cls(record.iloc[i].to_dict()))
+        for i in range(n_cells):
+            filename = cls.get_filename(cell_list[i].metadata, filename_function, filename_inputs)
+            data_path = os.path.join(root_directory, record_name, filename)
+            if i == 0:
+                cell_list[i].add_data(data_path, 
+                                      title if title is not None else record_name,
+                                      cycler)
+            else:
+                cell_list[i].add_data(data_path, 
+                                      title if title is not None else record_name,
+                                      cycler, 
+                                      verification=False)
+        return cell_list
+
+    @staticmethod
     def read_record(root_directory, record_name)->pd.DataFrame:
         """Function to read the record of tests run with this procedure from the Experiment_Record.xlsx file.
         
@@ -25,7 +53,7 @@ class Cell:
         return pd.read_excel(record_xlsx, sheet_name = record_name)
 
     @staticmethod
-    def get_filename(procedure_dict_entry: dict, filename_function: Callable, filename_inputs: list)->str:
+    def get_filename(metadata: dict, filename_function: Callable, filename_inputs: list)->str:
         """Function to generate the input name for the data file.
         
         Args:
@@ -36,16 +64,16 @@ class Cell:
         Returns:
             str: The input name for the data file.
         """
-        return filename_function(*(procedure_dict_entry[filename_inputs[i]] for i in range(len(filename_inputs))))
+        return filename_function(*(metadata[filename_inputs[i]] for i in range(len(filename_inputs))))
     
-    def add_data(self, input_path: str, title: str, readme_info: tuple = None, verification: bool=True):
+    def add_data(self, input_path: str, title: str, cycler: Cycler, verification: bool=True):
         output_path = os.path.splitext(input_path)[0]+'.parquet'
         if (os.path.exists(output_path) is False or 
-            verification is True and self.verify_parquet(input_path, output_path) is False):
-            self.write_parquet(input_path, output_path)
-        self.data[title] = Procedure(output_path, readme_info)
+            verification is True and self.verify_parquet(input_path, output_path, cycler) is False):
+            self.write_parquet(input_path, output_path, cycler)
+        self.data[title] = Procedure(output_path)
 
-    def verify_parquet(self, input_path: str, output_path: str)->bool:
+    def verify_parquet(self, input_path: str, output_path: str, cycler: Cycler)->bool:
         """Function to verify that the data in the parquet file is correct.
         
         Args:
@@ -55,7 +83,7 @@ class Cell:
         Returns:
             bool: True if the data is correct, False otherwise.
         """
-        test_data = self.cycler.load_file(input_path).head()
+        test_data = cycler.load_file(input_path).head()
         parquet_data = pl.scan_parquet(output_path).head().collect().to_pandas()
         try:
             pd.testing.assert_frame_equal(test_data, parquet_data)
@@ -63,7 +91,7 @@ class Cell:
         except AssertionError:
             return False
     
-    def write_parquet(self, input_path: str, output_path: str)->None:
+    def write_parquet(self, input_path: str, output_path: str, cycler: Cycler)->None:
         """Function to write the data to a parquet file.
         
         Args:
@@ -73,7 +101,7 @@ class Cell:
         print(f"Processing file: {os.path.basename(input_path)}")
         filepath = os.path.join(input_path)
         t1 = time.time()
-        test_data = self.cycler.load_file(filepath)
+        test_data = cycler.load_file(filepath)
         test_data.to_parquet(output_path, engine='pyarrow')
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
