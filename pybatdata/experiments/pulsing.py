@@ -73,11 +73,11 @@ class Pulsing(Experiment):
         Returns:
             numpy.ndarray: The cell resistance at a given time after each pulse.
         """
-        t_point = self.pulse_starts['Time']+t
+        t_point = self.pulse_starts['Time (s)']+t
         Vt = np.zeros(len(t_point))
         for i in range(len(Vt)):
-            condition = self.RawData['Time'] >= t_point[i]
-            first_row = self.RawData.filter(condition).sort('Time').head(1)
+            condition = self.RawData['Time (s)'] >= t_point[i]
+            first_row = self.RawData.filter(condition).sort('Time (s)').head(1)
             Vt[i] = first_row['Voltage (V)'].to_numpy()[0]
         return (Vt-self.V0)/self.I1    
         
