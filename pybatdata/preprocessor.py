@@ -87,7 +87,7 @@ class Preprocessor:
     def launch_dashboard(self):
         """Function to launch the dashboard for the preprocessed data."""
         # Serialize procedure_dict to a file
-        with open('procedure_dict.pkl', 'wb') as f:
+        with open('dashboard_data.pkl', 'wb') as f:
             pickle.dump(self.procedure_dict, f)
         subprocess.run(["streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")])
     

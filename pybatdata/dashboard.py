@@ -10,7 +10,7 @@ import pandas as pd
 # Add the parent directory of pybatdata to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-with open('procedure_dict.pkl', 'rb') as f:
+with open('dashboard_data.pkl', 'rb') as f:
     procedure_dict = pickle.load(f)
 
 st.title('PyBatData Dashboard')
