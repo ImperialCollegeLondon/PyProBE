@@ -24,13 +24,14 @@ class Cell:
                      cycler: BatteryCycler,
                      filename_function: Callable,
                      filename_inputs: list,
-                     cell_list: list=[],
+                     cell_list: list=None,
                      title: str = None,
                      fast_mode: bool = False):
         print(f"Batch pre-processing running...")
         record = cls.read_record(root_directory, record_name)
         n_cells = len(record)
-        if cell_list == []:
+        if cell_list == None:
+            cell_list = []
             colors = cls.set_color_scheme(n_cells, scheme='distinctipy')
             for i in range(n_cells):
                 cell_list.append(cls(record.iloc[i].to_dict()))
