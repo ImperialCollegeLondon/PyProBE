@@ -13,6 +13,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 with open('procedure_dict.pkl', 'rb') as f:
     procedure_dict = pickle.load(f)
 
+st.title('PyBatData Dashboard')
+st.sidebar.title('Select data to plot')
+
 metadata = pd.DataFrame(procedure_dict).drop('Data', axis=1)
 def dataframe_with_selections(df):
     df_with_selections = df.copy()
