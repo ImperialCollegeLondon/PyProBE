@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import os
 import re
+from pybatdata.cycler import Cycler
 
-class Neware: 
+class Neware(Cycler): 
     @classmethod
     def load_file(cls, filepath):
         file_ext = os.path.splitext(filepath)[1]
