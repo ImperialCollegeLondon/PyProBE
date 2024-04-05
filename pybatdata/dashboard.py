@@ -122,10 +122,16 @@ if secondary_y_axis != 'None':
 graph_placeholder.plotly_chart(fig, theme='streamlit' if plot_theme == 'default' else None)  
 
 from bokeh.plotting import figure
-from bokeh.models import LinearAxis, Range1d
+from bokeh.models import LinearAxis, Range1d, DataRange1d
 
-# Create a figure
+# Create a figure with a primary y-axis that auto-scales
 p = figure(x_axis_label=x_axis, y_axis_label=y_axis)
+
+def get_axis_range(data):
+    min_value = data.min()
+    max_value = data.max()
+    range_value = max_value - min_value
+    return min_value - 0.05 * range_value, max_value + 0.05 * range_value
 
 selected_data = []
 for i in range(len(selected_indices)):
@@ -144,19 +150,25 @@ for i in range(len(selected_indices)):
     p.line(x=filtered_data[x_axis], 
            y=filtered_data[y_axis], 
            line_color=procedure_dict[selected_index]['Color'],
+           line_width=3,
            legend_label=procedure_dict[selected_index]['Name'])
-    p.y_range = Range1d(start=filtered_data[y_axis].min(), end=filtered_data[y_axis].max())
     
+    y_min, y_max = get_axis_range(filtered_data[y_axis])
+    p.y_range = Range1d(start=y_min, end=y_max)
     # Add a line to the secondary y axis if selected
     if secondary_y_axis != 'None':
-        p.extra_y_ranges = {"secondary": Range1d(start=filtered_data[secondary_y_axis].min(), end=filtered_data[secondary_y_axis].max())} 
+        # Create a secondary y-axis that auto-scales
+        y2_min, y2_max = get_axis_range(filtered_data[secondary_y_axis])
+        p.extra_y_ranges = {"secondary": Range1d(start=y2_min, end=y2_max)}
         p.add_layout(LinearAxis(y_range_name="secondary"), 'right')
         p.line(x=filtered_data[x_axis], 
                y=filtered_data[secondary_y_axis], 
                line_color=procedure_dict[selected_index]['Color'], 
                y_range_name="secondary",
+               line_width=3,
+               line_dash='4 4',
                legend_label=procedure_dict[selected_index]['Name'])
-        
+
 st.bokeh_chart(p, use_container_width=True)
 
 
