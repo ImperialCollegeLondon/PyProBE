@@ -59,7 +59,7 @@ themes = list(plotly.io.templates)
 themes.remove('none')
 themes.remove('streamlit')
 themes.insert(0, 'default')
-plot_theme = st.selectbox('Plot theme', themes)
+plot_theme = 'simple_white'
 
 # Create a figure
 fig = go.Figure()
