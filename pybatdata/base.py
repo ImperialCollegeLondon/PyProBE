@@ -54,6 +54,8 @@ class Base:
         """
         if self._raw_data is None:
             self._raw_data = self.lazyframe.collect()
+            if self._raw_data.shape[0] == 0:
+                raise ValueError("No data exists for this filter.")
         return self._raw_data
     
     @classmethod
