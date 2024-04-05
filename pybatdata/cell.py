@@ -1,5 +1,5 @@
 from typing import Callable
-from pybatdata.cycler import Cycler
+from pybatdata.batterycycler import BatteryCycler
 import pandas as pd
 import polars as pl
 from pybatdata.procedure import Procedure
@@ -11,17 +11,19 @@ class Cell:
                  metadata: dict,
                  ):
         self.metadata = metadata
-        self.data = {}
+        self.raw_data = {}
+        self.processed_data = {}
 
     @classmethod
     def batch_process(cls,
                      root_directory: str,
                      record_name: str,
-                     cycler: Cycler,
+                     cycler: BatteryCycler,
                      filename_function: Callable,
                      filename_inputs: list,
                      cell_list: list=[],
-                     title: str = None):
+                     title: str = None,
+                     fast_mode: bool = True):
         print(f"Batch pre-processing running...")
         record = cls.read_record(root_directory, record_name)
         n_cells = len(record)
@@ -31,15 +33,24 @@ class Cell:
         for i in range(n_cells):
             filename = cls.get_filename(cell_list[i].metadata, filename_function, filename_inputs)
             data_path = os.path.join(root_directory, record_name, filename)
-            if i == 0:
-                cell_list[i].add_data(data_path, 
-                                      title if title is not None else record_name,
-                                      cycler)
+            if fast_mode is True:
+                if i == 0:
+                    cell_list[i].add_data(data_path, 
+                                        title if title is not None else record_name,
+                                        cycler,
+                                        verification=True,
+                                        skip_writing=True)
+                else:
+                    cell_list[i].add_data(data_path, 
+                                        title if title is not None else record_name,
+                                        cycler, 
+                                        verification=False,
+                                        skip_writing=True)
             else:
                 cell_list[i].add_data(data_path, 
-                                      title if title is not None else record_name,
-                                      cycler, 
-                                      verification=False)
+                                    title if title is not None else record_name,
+                                    cycler,
+                                    verification=False)
         return cell_list
 
     @staticmethod
@@ -66,14 +77,17 @@ class Cell:
         """
         return filename_function(*(metadata[filename_inputs[i]] for i in range(len(filename_inputs))))
     
-    def add_data(self, input_path: str, title: str, cycler: Cycler, verification: bool=True):
+    def add_data(self, input_path: str, title: str, cycler: BatteryCycler, skip_writing=False, verification: bool=True):
         output_path = os.path.splitext(input_path)[0]+'.parquet'
         if (os.path.exists(output_path) is False or 
-            verification is True and self.verify_parquet(input_path, output_path, cycler) is False):
+            (verification is True) and (self.verify_parquet(input_path, output_path, cycler) is False) or
+            skip_writing is False):
+            print(self.verify_parquet(input_path, output_path, cycler))
             self.write_parquet(input_path, output_path, cycler)
-        self.data[title] = Procedure(output_path)
+        self.raw_data[title] = Procedure(output_path)
+        self.processed_data[title] = {}
 
-    def verify_parquet(self, input_path: str, output_path: str, cycler: Cycler)->bool:
+    def verify_parquet(self, input_path: str, output_path: str, cycler: BatteryCycler)->bool:
         """Function to verify that the data in the parquet file is correct.
         
         Args:
@@ -91,7 +105,7 @@ class Cell:
         except AssertionError:
             return False
     
-    def write_parquet(self, input_path: str, output_path: str, cycler: Cycler)->None:
+    def write_parquet(self, input_path: str, output_path: str, cycler: BatteryCycler)->None:
         """Function to write the data to a parquet file.
         
         Args:

@@ -1,4 +1,4 @@
-class Cycler:
+class BatteryCycler:
     @classmethod
     def load_file(cls, filepath):
         raise NotImplementedError
