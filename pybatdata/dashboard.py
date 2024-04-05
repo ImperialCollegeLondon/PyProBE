@@ -11,12 +11,15 @@ import pandas as pd
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 with open('dashboard_data.pkl', 'rb') as f:
-    procedure_dict = pickle.load(f)
+    cell_list = pickle.load(f)
 
 st.title('PyBatData Dashboard')
 st.sidebar.title('Select data to plot')
 
-metadata = pd.DataFrame(procedure_dict).drop('Data', axis=1)
+metadata_list = []
+for i in range(len(cell_list)):
+    metadata_list.append(cell_list[i].metadata)
+metadata = pd.DataFrame(metadata_list)
 def dataframe_with_selections(df):
     df_with_selections = df.copy()
     df_with_selections.insert(0, "Select", False)
@@ -37,10 +40,14 @@ def dataframe_with_selections(df):
 # Display the DataFrame in the sidebar
 selected_indices = dataframe_with_selections(metadata)
 # Get the names of the selected rows
-selected_names = [procedure_dict[i]['Name'] for i in selected_indices]
+selected_names = [cell_list[i].metadata['Name'] for i in selected_indices]
+
+# Select a procedure
+procedure_names = cell_list[0].raw_data.keys()
+selected_procedure = st.sidebar.selectbox('Select a procedure', procedure_names)
 
 # Select an experiment
-experiment_names = procedure_dict[0]['Data'].titles.keys()
+experiment_names = cell_list[0].raw_data[selected_procedure].titles.keys()
 selected_experiment = st.sidebar.selectbox('Select an experiment', experiment_names)
 
 # Get the cycle and step numbers from the user
@@ -69,7 +76,7 @@ fig = go.Figure()
 selected_data = []
 for i in range(len(selected_indices)):
     selected_index = selected_indices[i]
-    experiment_data = procedure_dict[selected_index]['Data'].experiment(selected_experiment)
+    experiment_data = cell_list[selected_index].raw_data[selected_procedure].experiment(selected_experiment)
     # Check if the input is not empty
     if cycle_step_input:
         # Use eval to evaluate the input as Python code
@@ -83,8 +90,8 @@ for i in range(len(selected_indices)):
     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                              y=filtered_data[y_axis], 
                              mode='lines', 
-                             line = dict(color = procedure_dict[selected_index]['Color']),
-                             name=procedure_dict[selected_index]['Name'],
+                             line = dict(color = cell_list[selected_index].color),
+                             name=cell_list[selected_index].metadata['Name'],
                              yaxis='y1',
                              showlegend=True))
     
@@ -93,8 +100,8 @@ for i in range(len(selected_indices)):
         fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                                  y=filtered_data[secondary_y_axis], 
                                  mode='lines', 
-                                 line=dict(color=procedure_dict[selected_index]['Color'], dash='dash'),
-                                 name=procedure_dict[selected_index]['Name'],
+                                 line=dict(color=cell_list[selected_index].color, dash='dash'),
+                                 name=cell_list[selected_index].metadata['Name'],
                                  yaxis='y2',
                                  showlegend=False))
 if secondary_y_axis != 'None':     
