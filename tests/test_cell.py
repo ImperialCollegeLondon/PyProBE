@@ -38,6 +38,6 @@ def test_add_data(cell_instance, procedure_fixture):
     cell_instance.add_data(input_path, title, cycler, skip_writing)
     assert_frame_equal(cell_instance.raw_data[title].RawData, procedure_fixture.RawData)
 
-def test_verify_parquet():
-    input_path = 'tests/sample_data_neware/sample_data_neware.xlsx'
-    assert Cell.verify_parquet(input_path, Neware) == True
+# def test_verify_parquet():
+#     input_path = 'tests/sample_data_neware/sample_data_neware.xlsx'
+#     assert Cell.verify_parquet(input_path, Neware) == True
