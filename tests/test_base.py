@@ -3,8 +3,14 @@ import polars as pl
 from pybatdata.base import Base
 
 @pytest.fixture
-def base_instance(lazyframe, preprocessor_fixture):
-    return Base(lazyframe, preprocessor_fixture.cycles, preprocessor_fixture.steps, preprocessor_fixture.step_names)
+def base_instance(lazyframe_fixture,
+                  cycles_fixture,
+                  steps_fixture,
+                  step_names_fixture,):
+    return Base(lazyframe_fixture,
+                cycles_fixture,
+                steps_fixture,
+                step_names_fixture,)
 
 def test_init(base_instance):
     assert isinstance(base_instance, Base)

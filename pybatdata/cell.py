@@ -159,7 +159,8 @@ class Cell:
         except AssertionError:
             return False
     
-    def write_parquet(self, input_path: str, output_path: str, cycler: BatteryCycler) -> None:
+    @staticmethod
+    def write_parquet(input_path: str, output_path: str, cycler: BatteryCycler) -> None:
         """Function to write the data to a parquet file.
         
         Args:
@@ -196,6 +197,7 @@ class Cell:
                 hex.append(distinctipy.get_hex(rgb[i]))
             return hex
 
+    @staticmethod
     def launch_dashboard(cell_list) -> None:
         """Function to launch the dashboard for the preprocessed data.
         
