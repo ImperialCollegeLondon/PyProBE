@@ -7,9 +7,9 @@ class Neware:
     def load_file(filepath):
         file_ext = os.path.splitext(filepath)[1]
         if file_ext == '.xlsx':
-            df = pl.read_excel(filepath, engine='calamine')
+            df = pl.read_excel(filepath, engine='calamine').lazy()
         elif file_ext == '.csv':
-            df = pl.read_csv(filepath)
+            df = pl.scan_csv(filepath)
         column_dict = {'Date': 'Date',
                        'Cycle Index': 'Cycle',
                        'Step Index': 'Step',
@@ -20,16 +20,14 @@ class Neware:
                        }
         df = Neware.convert_units(df)
         df = df.select(list(column_dict.keys())).rename(column_dict)
-        dQ_charge = df['Charge Capacity (Ah)'].diff(null_behavior="drop")
-        dQ_discharge = df['Discharge Capacity (Ah)'].diff(null_behavior="drop")
-        dQ_charge = dQ_charge.clip(lower_bound=0)
-        dQ_discharge = dQ_discharge.clip(lower_bound=0)
-        dQ_charge = pl.concat([pl.Series([0], dtype=pl.Float64), dQ_charge])
-        dQ_discharge = pl.concat([pl.Series([0], dtype=pl.Float64), dQ_discharge])
-        max_charge_capacity = df['Charge Capacity (Ah)'].max()
-        capacity = (dQ_charge - dQ_discharge).cum_sum() + max_charge_capacity
-        df = df.with_columns(pl.Series('Capacity (Ah)', capacity))
-        # df = df.with_columns(pl.col('Date').str.to_datetime().alias('Date'))
+        df = df.with_columns(pl.col('Charge Capacity (Ah)').diff().alias('dQ_charge'))
+        df = df.with_columns(pl.col('Discharge Capacity (Ah)').diff().alias('dQ_discharge'))
+        df = df.with_columns(pl.col('dQ_charge').clip(lower_bound=0).fill_null(strategy="zero"))
+        df = df.with_columns(pl.col('dQ_discharge').clip(lower_bound=0).fill_null(strategy="zero"))
+        df = df.with_columns(((pl.col('dQ_charge')-pl.col('dQ_discharge')).cum_sum()
+                              + pl.col('Charge Capacity (Ah)').max()).alias('Capacity (Ah)'))
+        if df.dtypes[df.columns.index('Date')] != pl.Datetime:
+            df = df.with_columns(pl.col('Date').str.to_datetime().alias('Date'))
         df = df.with_columns(pl.col('Date').dt.timestamp('ms').alias('Time (s)'))
         df = df.with_columns(pl.col('Time (s)') - pl.col('Time (s)').first())
         df = df.with_columns(pl.col('Time (s)')*1e-3)

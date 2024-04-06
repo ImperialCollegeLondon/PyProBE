@@ -152,9 +152,9 @@ class Cell:
         """
         output_path = os.path.splitext(input_path)[0]+'.parquet'
         test_data = cycler.load_file(input_path).head()
-        parquet_data = pl.scan_parquet(output_path).head().collect()
-        print(test_data)
-        print(parquet_data)
+        parquet_data = pl.scan_parquet(output_path).head()
+        if not isinstance(test_data, pl.LazyFrame):
+            parquet_data = parquet_data.collect()
         try:
             assert_frame_equal(test_data, parquet_data)
             return True
@@ -174,6 +174,8 @@ class Cell:
         filepath = os.path.join(input_path)
         t1 = time.time()
         test_data = cycler.load_file(filepath)
+        if isinstance(test_data, pl.LazyFrame):
+            test_data = test_data.collect()
         test_data.write_parquet(output_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
