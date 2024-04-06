@@ -58,13 +58,16 @@ class Cell:
         """
         print(f"Batch pre-processing running...")
         record = cls.read_record(root_directory, record_name)
-        n_cells = len(record)
+        
         if cell_list == None:
+            n_cells = len(record)
             cell_list = []
             colors = cls.set_color_scheme(n_cells, scheme='distinctipy')
             for i in range(n_cells):
                 cell_list.append(cls(record.row(i, named=True)))
                 cell_list[i].color = colors[i]
+        else:
+            n_cells = len(cell_list)
         parquet_verified = False
         if title is None:
             title = record_name
@@ -151,6 +154,8 @@ class Cell:
             bool: True if the data is correct, False otherwise.
         """
         output_path = os.path.splitext(input_path)[0]+'.parquet'
+        if os.path.exists(output_path) is False:
+            return False
         test_data = cycler.load_file(input_path).head()
         parquet_data = pl.scan_parquet(output_path).head()
         if not isinstance(test_data, pl.LazyFrame):

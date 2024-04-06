@@ -6,7 +6,6 @@ import sys
 import plotly.graph_objects as go
 import plotly
 
-import pandas as pd
 # Add the parent directory of pybatdata to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
