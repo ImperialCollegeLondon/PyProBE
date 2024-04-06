@@ -206,4 +206,4 @@ class Cell:
         """
         with open('dashboard_data.pkl', 'wb') as f:
             pickle.dump(cell_list, f)
-        subprocess.run(["streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")])
+        subprocess.Popen(["nohup", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
