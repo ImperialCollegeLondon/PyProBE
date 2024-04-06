@@ -31,6 +31,7 @@ class Base:
         self.lazyframe = lazyframe
         self.zero_capacity()
         self.zero_time()
+        self.mA_units()
         self._raw_data = None
 
     def zero_capacity(self) -> None:
@@ -43,6 +44,15 @@ class Base:
         """Recalculate the time column to start from zero at beginning of current selection."""
         self.lazyframe = self.lazyframe.with_columns([
             (pl.col("Time (s)") - pl.col("Time (s)").first()).alias("Time (s)")
+        ])
+
+    def mA_units(self) -> None:
+        """Convert the current and capacity columns to mA units."""
+        self.lazyframe = self.lazyframe.with_columns([
+            (pl.col("Current (A)") * 1000).alias("Current (mA)")
+        ])
+        self.lazyframe = self.lazyframe.with_columns([
+            (pl.col("Capacity (Ah)") * 1000).alias("Capacity (mAh)")
         ])
     
     @property

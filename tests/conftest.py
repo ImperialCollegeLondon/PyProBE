@@ -4,10 +4,6 @@ from pybatdata.cell import Cell
 from pybatdata.procedure import Procedure
 from pybatdata.cyclers.neware import Neware
 
-# Cell.write_parquet('tests/sample_data_neware/sample_data_neware.xlsx', 
-#                    'tests/sample_data_neware/sample_data_neware.parquet',
-#                    Neware,)
-
 @pytest.fixture(scope='module')
 def metadata_fixture():
     return {"Name": 'Test_Cell'}

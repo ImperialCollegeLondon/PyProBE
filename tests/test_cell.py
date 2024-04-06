@@ -1,7 +1,7 @@
 import pytest
 from pybatdata.cell import Cell
 from pybatdata.cyclers.neware import Neware
-import pandas as pd
+import polars as pl
 from polars.testing import assert_frame_equal
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def test_read_record(metadata_fixture):
     root_directory = 'tests/sample_data_neware'
     record_name = 'sample_data_neware'
     record = Cell.read_record(root_directory, record_name)
-    pd.testing.assert_frame_equal(record, pd.DataFrame([metadata_fixture]))
+    pl.testing.assert_frame_equal(record, pl.DataFrame([metadata_fixture]))
 
 @pytest.fixture
 def filename_function():

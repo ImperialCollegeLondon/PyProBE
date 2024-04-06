@@ -1,7 +1,6 @@
 """Module for the Cell class."""
 from typing import Callable
 from pybatdata.batterycycler import BatteryCycler
-import pandas as pd
 import polars as pl
 from pybatdata.procedure import Procedure
 import os
@@ -9,6 +8,7 @@ import time
 import distinctipy
 import pickle
 import subprocess
+from polars.testing import assert_frame_equal
 
 class Cell:
     """A class for a cell in a battery experiment.
@@ -63,7 +63,7 @@ class Cell:
             cell_list = []
             colors = cls.set_color_scheme(n_cells, scheme='distinctipy')
             for i in range(n_cells):
-                cell_list.append(cls(record.iloc[i].to_dict()))
+                cell_list.append(cls(record.row(i, named=True)))
                 cell_list[i].color = colors[i]
         parquet_verified = False
         if title is None:
@@ -92,7 +92,7 @@ class Cell:
         return cell_list
 
     @staticmethod
-    def read_record(root_directory, record_name)->pd.DataFrame:
+    def read_record(root_directory, record_name)->pl.DataFrame:
         """Function to read the record of tests from the Experiment_Record.xlsx file.
 
         Args:
@@ -100,10 +100,10 @@ class Cell:
             record_name (str): The name of the record (worksheet name) in the Experiment_Record.xlsx file.
         
         Returns:
-            pd.DataFrame: The record of tests run with this procedure.
+            pl.DataFrame: The record of tests run with this procedure.
         """
         record_xlsx = os.path.join(root_directory, "Experiment_Record.xlsx")
-        return pd.read_excel(record_xlsx, sheet_name = record_name)
+        return pl.read_excel(record_xlsx, sheet_name = record_name)
 
     @staticmethod
     def get_filename(metadata: dict, filename_function: Callable, filename_inputs: list)->str:
@@ -152,9 +152,11 @@ class Cell:
         """
         output_path = os.path.splitext(input_path)[0]+'.parquet'
         test_data = cycler.load_file(input_path).head()
-        parquet_data = pl.scan_parquet(output_path).head().collect().to_pandas()
+        parquet_data = pl.scan_parquet(output_path).head()
+        if not isinstance(test_data, pl.LazyFrame):
+            parquet_data = parquet_data.collect()
         try:
-            pd.testing.assert_frame_equal(test_data, parquet_data)
+            assert_frame_equal(test_data, parquet_data)
             return True
         except AssertionError:
             return False
@@ -172,7 +174,9 @@ class Cell:
         filepath = os.path.join(input_path)
         t1 = time.time()
         test_data = cycler.load_file(filepath)
-        test_data.to_parquet(output_path, engine='pyarrow')
+        if isinstance(test_data, pl.LazyFrame):
+            test_data = test_data.collect()
+        test_data.write_parquet(output_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
     @staticmethod

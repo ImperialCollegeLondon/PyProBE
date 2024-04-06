@@ -1,5 +1,6 @@
 import pytest
 import polars as pl
+from polars.testing import assert_series_equal
 from pybatdata.base import Base
 
 @pytest.fixture
@@ -40,3 +41,12 @@ def test_flatten(base_instance):
     lst = [[1, 2, 3], [4, 5], 6]
     flat_list = base_instance.flatten(lst)
     assert flat_list == [1, 2, 3, 4, 5, 6]
+
+def test_mA_units(base_instance):
+    base_instance.mA_units()
+    assert_series_equal(base_instance.RawData["Current (mA)"], 
+                        1000*base_instance.RawData["Current (A)"],
+                        check_names=False)
+    assert_series_equal(base_instance.RawData["Capacity (mAh)"], 
+                        1000*base_instance.RawData["Capacity (Ah)"],
+                        check_names=False)

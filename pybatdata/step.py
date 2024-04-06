@@ -1,7 +1,6 @@
 """A module for the Step class."""
 
 import numpy as np
-import pandas as pd
 from pybatdata.base import Base
 import polars as pl
 
