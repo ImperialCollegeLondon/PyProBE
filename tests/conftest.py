@@ -9,10 +9,8 @@ from pybatdata.cyclers.neware import Neware
 #                    Neware,)
 
 @pytest.fixture(scope='module')
-def cell_fixture():
-    metadata = {"Name": 'Test Cell'}
-    cell = Cell(metadata)
-    return cell
+def metadata_fixture():
+    return {"Name": 'Test_Cell'}
 
 @pytest.fixture(scope='module')
 def lazyframe_fixture():

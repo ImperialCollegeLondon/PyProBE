@@ -121,8 +121,8 @@ class Cell:
     
     def add_data(self, 
                  input_path: str, 
-                 title: str, cycler: 
-                 BatteryCycler, 
+                 title: str, 
+                 cycler: BatteryCycler, 
                  skip_writing=False) -> None:
         """Function to add data to the cell object.
         
