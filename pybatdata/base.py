@@ -51,11 +51,11 @@ class Base:
         ])
     
     @property
-    def RawData(self) -> pl.DataFrame:
+    def raw_data(self) -> pl.DataFrame:
         """Collect the LazyFrame of the current selection, if not already collected.
         
         Returns:
-            RawData (polars.DataFrame): The collected data of the current selection.
+            raw_data (polars.DataFrame): The collected data of the current selection.
         """
         if self._raw_data is None:
             self._raw_data = self.lazyframe.collect()
@@ -70,7 +70,7 @@ class Base:
                                     .alias('Condition number'))).filter(pl.col('Condition number') == condition_number)
     
     def plot(self, x, y, **kwargs):
-        plt.plot(self.RawData[x], self.RawData[y], **kwargs)
+        plt.plot(self.raw_data[x], self.raw_data[y], **kwargs)
         plt.xlabel(x)
         plt.ylabel(y)
         plt.legend()

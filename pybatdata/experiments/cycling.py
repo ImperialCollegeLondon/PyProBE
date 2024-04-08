@@ -22,7 +22,7 @@ class Cycling(Experiment):
         Returns:
             np.ndarray: The state of health of the battery.
         """
-        print(self.cycle(0).discharge(1).RawData)
+        print(self.cycle(0).discharge(1).raw_data)
         reference = eval(f"self.cycle(0).{step}.capacity")
         SOH = np.zeros(self.n_cycles)
         for i in range(self.n_cycles):

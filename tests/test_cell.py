@@ -36,7 +36,7 @@ def test_add_data(cell_instance, procedure_fixture):
     cycler = Neware
     skip_writing = True
     cell_instance.add_data(input_path, title, cycler, skip_writing)
-    assert_frame_equal(cell_instance.procedure[title].RawData, procedure_fixture.RawData)
+    assert_frame_equal(cell_instance.procedure[title].raw_data, procedure_fixture.raw_data)
 
 def test_verify_parquet():
     input_path = 'tests/sample_data_neware/sample_data_neware.xlsx'
