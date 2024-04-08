@@ -4,20 +4,11 @@ from polars.testing import assert_series_equal
 from pybatdata.base import Base
 
 @pytest.fixture
-def base_instance(lazyframe_fixture,
-                  cycles_fixture,
-                  steps_fixture,
-                  step_names_fixture,):
-    return Base(lazyframe_fixture,
-                cycles_fixture,
-                steps_fixture,
-                step_names_fixture,)
+def base_instance(lazyframe_fixture):
+    return Base(lazyframe_fixture)
 
 def test_init(base_instance):
     assert isinstance(base_instance, Base)
-    assert base_instance.cycles_idx is not None
-    assert base_instance.steps_idx is not None
-    assert base_instance.step_names is not None
     assert base_instance.lazyframe is not None
 
 def test_zero_capacity(base_instance):

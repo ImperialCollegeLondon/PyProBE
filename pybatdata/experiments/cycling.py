@@ -8,17 +8,13 @@ import numpy as np
 class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
 
-    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
+    def __init__(self, lazyframe):
         """Create a cycling experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-                cycles_idx (list): The indices of the cycles of the cycling experiment.
-                steps_idx (list): The indices of the steps in the cycling experiment.
-                step_names (list): The names of all of the steps in the procedure.
         """
-        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
-        self.n_cycles = len(cycles_idx)
+        super().__init__(lazyframe)
 
     def SOH_capacity(self, step) -> np.ndarray:
         """Calculate the state of health of the battery.

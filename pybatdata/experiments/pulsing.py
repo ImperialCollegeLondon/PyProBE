@@ -8,18 +8,15 @@ import numpy as np
 class Pulsing(Experiment):
     """A pulsing experiment in a battery procedure."""
 
-    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
+    def __init__(self, lazyframe):
         """Create a pulsing experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-                cycles_idx (list): The indices of the cycles of the pulsing experiment.
-                steps_idx (list): The indices of the steps in the pulsing experiment.
-                step_names (list): The names of all of the steps in the procedure.
         """
-        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
-        self.rests = [None]*len(cycles_idx)
-        self.pulses = [None]*len(cycles_idx)
+        super().__init__(lazyframe)
+        self.rests = [None]*lazyframe.select('Cycle').collect().n_unique('Cycle')
+        self.pulses = [None]*lazyframe.select('Cycle').collect().n_unique('Cycle')
 
     @property
     def pulse_starts(self)->pl.DataFrame:

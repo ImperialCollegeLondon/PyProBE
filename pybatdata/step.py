@@ -7,17 +7,13 @@ import polars as pl
 class Step(Base):
     """A step in a battery test procedure."""
     def __init__(self, 
-                 lazyframe: pl.LazyFrame, 
-                 steps_idx: int, 
-                 step_names: list):
+                 lazyframe: pl.LazyFrame):
         """Create a step.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-                steps_idx (int): The index of the step of the procedure.
-                step_names (list): The names of all of the steps in the procedure.
         """
-        super().__init__(lazyframe, None, steps_idx, step_names)
+        super().__init__(lazyframe)
 
     @property
     def capacity(self) -> float:

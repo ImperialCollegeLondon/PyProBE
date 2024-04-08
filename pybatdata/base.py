@@ -8,26 +8,14 @@ class Base:
 
     Attributes:
             lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-            cycles_idx (list): The indices of the cycles in the current filter.
-            steps_idx (list): The indices of the steps in the current filter.
-            step_names (list): The names of all of the steps in the procedure.
             _raw_data (polars.DataFrame): The collected dataframe of the current filter.
     """
-    def __init__(self, lazyframe: pl.LazyFrame, 
-                 cycles_idx: list | int, 
-                 steps_idx: list | int, 
-                 step_names: list):
+    def __init__(self, lazyframe: pl.LazyFrame):
         """ Create a filtering class.
         
         Args:
             lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-            cycles_idx (list): The indices of the cycles in the current selection.
-            steps_idx (list): The indices of the steps in the current selection.
-            step_names (list): The names of all of the steps in the procedure.
         """
-        self.cycles_idx = cycles_idx
-        self.steps_idx = steps_idx
-        self.step_names = step_names
         self.lazyframe = lazyframe
         self._set_zero_capacity()
         self._set_zero_time()

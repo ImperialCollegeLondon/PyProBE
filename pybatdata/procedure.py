@@ -14,18 +14,13 @@ class Procedure(Base):
         """ Create a procedure class.
         
         Args:
-            lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-            titles (dict): The titles of the experiments inside a procedure. Fomat {title: experiment type}.
-            cycles_idx (list): The indices of the cycles in the current selection.
-            steps_idx (list): The indices of the steps in the current selection.
-            step_names (list): The names of all of the steps in the procedure.
+            data_path (str): The path to the data parquet file.
         """
         lazyframe = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
         readme_path = os.path.join(data_folder, 'README.txt')
-        titles, cycles_idx, steps_idx, step_names = self.process_readme(readme_path)
-        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
-        self.titles = titles
+        self.titles, self.cycles_idx, self.steps_idx, self.step_names = self.process_readme(readme_path)
+        super().__init__(lazyframe)
         
     def experiment(self, experiment_name: str)->Experiment:
         """Return an experiment object from the procedure.
@@ -46,7 +41,7 @@ class Procedure(Base):
                             'Pulsing': Pulsing, 
                             'Cycling': Cycling, 
                             'SOC Reset': Experiment}
-        return experiment_types[self.titles[experiment_name]](lf_filtered, cycles_idx, steps_idx, self.step_names)
+        return experiment_types[self.titles[experiment_name]](lf_filtered)
     
     @classmethod
     def flatten(cls, lst: list) -> list:
