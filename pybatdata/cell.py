@@ -14,20 +14,20 @@ class Cell:
     """A class for a cell in a battery experiment.
     
     Attributes:
-        metadata (dict): Rig and setup information on the cell e.g. cycler number, thermocouple channel.
+        info (dict): Rig and setup information on the cell e.g. cycler number, thermocouple channel.
         raw_data (dict): The raw data from each procedure conducted on the cell.
         processed_data (dict): A place to store processed data for each procedure for use later.    
     """
 
     def __init__(self, 
-                 metadata: dict,
+                 info: dict,
                  ):
         """Create a cell object.
         
         Args:
-            metadata (dict): Rig and setup information on the cell e.g. cycler number, thermocouple channel.
+            info (dict): Rig and setup information on the cell e.g. cycler number, thermocouple channel.
         """
-        self.metadata = metadata
+        self.info = info
         self.raw_data = {}
         self.processed_data = {}
 
@@ -48,7 +48,7 @@ class Cell:
             record_name (str): The name of the record (worksheet name) in the Experiment_Record.xlsx file.
             cycler (BatteryCycler): The cycler used to produce the data.
             filename_function (function): The function to generate the data file name.
-            filename_inputs (list): The list of inputs to filename_function. These must be keys of the cell metadata.
+            filename_inputs (list): The list of inputs to filename_function. These must be keys of the cell info.
             cell_list (list, optional): An existing list of cell objects to append data to.
             title (str, optional): A custom title for the data in the Cell.raw_data dictionary.
             fast_mode (bool): Whether to skip rewriting the parquet files if it already exists.
@@ -72,7 +72,7 @@ class Cell:
         if title is None:
             title = record_name
         for i in range(n_cells):
-            filename = cls.get_filename(cell_list[i].metadata, filename_function, filename_inputs)
+            filename = cls.get_filename(cell_list[i].info, filename_function, filename_inputs)
             data_path = os.path.join(root_directory, record_name, filename)
             if fast_mode is True:
                 if i == 0:
@@ -109,18 +109,18 @@ class Cell:
         return pl.read_excel(record_xlsx, sheet_name = record_name)
 
     @staticmethod
-    def get_filename(metadata: dict, filename_function: Callable, filename_inputs: list)->str:
+    def get_filename(info: dict, filename_function: Callable, filename_inputs: list)->str:
         """Function to generate the input name for the data file.
         
         Args:
-            metadata (dict): The metadata entry for the data file.
+            info (dict): The info entry for the data file.
             filename_function (function): The function to generate the input name.
-            filename_inputs (list): The list of inputs to filename_function. These must be keys of the cell metadata.
+            filename_inputs (list): The list of inputs to filename_function. These must be keys of the cell info.
             
         Returns:
             str: The input name for the data file.
         """
-        return filename_function(*(metadata[filename_inputs[i]] for i in range(len(filename_inputs))))
+        return filename_function(*(info[filename_inputs[i]] for i in range(len(filename_inputs))))
     
     def add_data(self, 
                  input_path: str, 

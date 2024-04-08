@@ -5,7 +5,7 @@ from pybatdata.procedure import Procedure
 from pybatdata.cyclers.neware import Neware
 
 @pytest.fixture(scope='module')
-def metadata_fixture():
+def info_fixture():
     return {"Name": 'Test_Cell'}
 
 @pytest.fixture(scope='module')

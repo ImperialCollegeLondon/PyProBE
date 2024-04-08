@@ -5,19 +5,19 @@ import polars as pl
 from polars.testing import assert_frame_equal
 
 @pytest.fixture
-def cell_instance(metadata_fixture):
-    return Cell(metadata_fixture)
+def cell_instance(info_fixture):
+    return Cell(info_fixture)
 
-def test_init(cell_instance, metadata_fixture):
-    assert cell_instance.metadata == metadata_fixture
+def test_init(cell_instance, info_fixture):
+    assert cell_instance.info == info_fixture
     assert cell_instance.raw_data == {}
     assert cell_instance.processed_data == {}
 
-def test_read_record(metadata_fixture):
+def test_read_record(info_fixture):
     root_directory = 'tests/sample_data_neware'
     record_name = 'sample_data_neware'
     record = Cell.read_record(root_directory, record_name)
-    pl.testing.assert_frame_equal(record, pl.DataFrame([metadata_fixture]))
+    pl.testing.assert_frame_equal(record, pl.DataFrame([info_fixture]))
 
 @pytest.fixture
 def filename_function():
@@ -25,9 +25,9 @@ def filename_function():
         return f'Cell_named_{name}.xlsx'
     return filename
 
-def test_get_filename(metadata_fixture, filename_function):
+def test_get_filename(info_fixture, filename_function):
     filename_inputs=['Name']
-    filename = Cell.get_filename(metadata_fixture, filename_function, filename_inputs)
+    filename = Cell.get_filename(info_fixture, filename_function, filename_inputs)
     assert filename == 'Cell_named_Test_Cell.xlsx'
 
 def test_add_data(cell_instance, procedure_fixture):

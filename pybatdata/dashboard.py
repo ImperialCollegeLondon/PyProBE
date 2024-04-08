@@ -15,10 +15,10 @@ with open('dashboard_data.pkl', 'rb') as f:
 st.title('PyBatData Dashboard')
 st.sidebar.title('Select data to plot')
 
-metadata_list = []
+info_list = []
 for i in range(len(cell_list)):
-    metadata_list.append(cell_list[i].metadata)
-metadata = pd.DataFrame(metadata_list)
+    info_list.append(cell_list[i].info)
+info = pd.DataFrame(info_list)
 def dataframe_with_selections(df):
     df_with_selections = df.copy()
     df_with_selections.insert(0, "Select", False)
@@ -37,9 +37,9 @@ def dataframe_with_selections(df):
     return selected_indices
 
 # Display the DataFrame in the sidebar
-selected_indices = dataframe_with_selections(metadata)
+selected_indices = dataframe_with_selections(info)
 # Get the names of the selected rows
-selected_names = [cell_list[i].metadata['Name'] for i in selected_indices]
+selected_names = [cell_list[i].info['Name'] for i in selected_indices]
 
 # Select a procedure
 procedure_names = cell_list[0].raw_data.keys()
@@ -90,7 +90,7 @@ for i in range(len(selected_indices)):
                              y=filtered_data[y_axis], 
                              mode='lines', 
                              line = dict(color = cell_list[selected_index].color),
-                             name=cell_list[selected_index].metadata['Name'],
+                             name=cell_list[selected_index].info['Name'],
                              yaxis='y1',
                              showlegend=True))
     
@@ -100,7 +100,7 @@ for i in range(len(selected_indices)):
                                  y=filtered_data[secondary_y_axis], 
                                  mode='lines', 
                                  line=dict(color=cell_list[selected_index].color, dash='dash'),
-                                 name=cell_list[selected_index].metadata['Name'],
+                                 name=cell_list[selected_index].info['Name'],
                                  yaxis='y2',
                                  showlegend=False))
 if secondary_y_axis != 'None':     
