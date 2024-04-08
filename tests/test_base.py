@@ -31,17 +31,6 @@ def test_RawData(base_instance):
     assert base_instance._raw_data is not None
     assert isinstance(raw_data, pl.DataFrame)
 
-def test_get_conditions(base_instance):
-    column = "Step"
-    indices = [1, 2, 3]
-    conditions = base_instance.get_conditions(column, indices)
-    assert isinstance(conditions, pl.Expr)
-
-def test_flatten(base_instance):
-    lst = [[1, 2, 3], [4, 5], 6]
-    flat_list = base_instance.flatten(lst)
-    assert flat_list == [1, 2, 3, 4, 5, 6]
-
 def test_mA_units(base_instance):
     base_instance._create_mA_units()
     assert_series_equal(base_instance.RawData["Current (mA)"], 

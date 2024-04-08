@@ -14,3 +14,8 @@ def test_process_readme(procedure_fixture,
     assert procedure_fixture.steps_idx == steps_fixture
     assert procedure_fixture.cycles_idx == cycles_fixture
     assert procedure_fixture.step_names == step_names_fixture
+
+def test_flatten(procedure_fixture):
+    lst = [[1, 2, 3], [4, 5], 6]
+    flat_list = procedure_fixture.flatten(lst)
+    assert flat_list == [1, 2, 3, 4, 5, 6]

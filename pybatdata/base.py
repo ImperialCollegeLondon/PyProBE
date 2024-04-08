@@ -75,17 +75,11 @@ class Base:
                 raise ValueError("No data exists for this filter.")
         return self._raw_data
     
-    @classmethod
-    def get_conditions(cls, column: str, indices: list) -> pl.Expr:
-        """Convert a list of indices for a column into a polars expression for filtering.
-        
-        Args:
-            column (str): The column to filter.
-            indices (list): The indices to filter.
-            
-        Returns:
-            pl.Expr: The polars expression for filtering the column."""
-        return pl.col(column).is_in(cls.flatten(indices)).alias(column)
+    @staticmethod
+    def filter_numerical(lazyframe: pl.LazyFrame, column: str, condition_number: int) -> pl.Expr:
+        return lazyframe.with_columns(((pl.col(column) - pl.col(column).shift() > 0)
+                                    .fill_null(False).cum_sum()
+                                    .alias('Condition number'))).filter(pl.col('Condition number') == condition_number)
     
     def plot(self, x, y, **kwargs):
         plt.plot(self.RawData[x], self.RawData[y], **kwargs)
@@ -94,19 +88,3 @@ class Base:
         plt.legend()
         
 
-    @classmethod
-    def flatten(cls, lst: list) -> list:
-        """Flatten a list of lists into a single list.
-        
-        Args:
-            lst (list): The list of lists to flatten.
-            
-        Returns:
-            list: The flattened list."""
-        if not isinstance(lst, list):
-            return [lst]
-        if lst == []:
-            return lst
-        if isinstance(lst[0], list):
-            return cls.flatten(lst[0]) + cls.flatten(lst[1:])
-        return lst[:1] + cls.flatten(lst[1:])

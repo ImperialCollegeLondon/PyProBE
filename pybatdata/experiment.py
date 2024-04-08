@@ -32,7 +32,8 @@ class Experiment(Base):
         """
         cycles_idx = self.cycles_idx[cycle_number]
         steps_idx = self.steps_idx[cycle_number]
-        conditions = [self.get_conditions('Cycle', cycles_idx),
-                      self.get_conditions('Step', steps_idx)]
-        lf_filtered = self.lazyframe.filter(conditions)
+        # conditions = [self.get_conditions('Cycle', cycles_idx),
+        #               self.get_conditions('Step', steps_idx)]
+        # lf_filtered = self.lazyframe.filter(conditions)
+        lf_filtered = self.filter_numerical(self.lazyframe, 'Cycle', cycle_number)
         return Cycle(lf_filtered, cycles_idx, steps_idx, self.step_names)
