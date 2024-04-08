@@ -18,9 +18,9 @@ def test_zero_capacity(base_instance):
 
 def test_RawData(base_instance):
     assert base_instance._raw_data is None
-    raw_data = base_instance.RawData
+    procedure = base_instance.RawData
     assert base_instance._raw_data is not None
-    assert isinstance(raw_data, pl.DataFrame)
+    assert isinstance(procedure, pl.DataFrame)
 
 def test_mA_units(base_instance):
     base_instance._create_mA_units()

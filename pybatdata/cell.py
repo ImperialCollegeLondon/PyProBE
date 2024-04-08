@@ -15,7 +15,7 @@ class Cell:
     
     Attributes:
         info (dict): Rig and setup information on the cell e.g. cycler number, thermocouple channel.
-        raw_data (dict): The raw data from each procedure conducted on the cell.
+        procedure (dict): The raw data from each procedure conducted on the cell.
         processed_data (dict): A place to store processed data for each procedure for use later.    
     """
 
@@ -28,7 +28,7 @@ class Cell:
             info (dict): Rig and setup information on the cell e.g. cycler number, thermocouple channel.
         """
         self.info = info
-        self.raw_data = {}
+        self.procedure = {}
         self.processed_data = {}
 
     @classmethod
@@ -50,7 +50,7 @@ class Cell:
             filename_function (function): The function to generate the data file name.
             filename_inputs (list): The list of inputs to filename_function. These must be keys of the cell info.
             cell_list (list, optional): An existing list of cell objects to append data to.
-            title (str, optional): A custom title for the data in the Cell.raw_data dictionary.
+            title (str, optional): A custom title for the data in the Cell.procedure dictionary.
             fast_mode (bool): Whether to skip rewriting the parquet files if it already exists.
         
         Returns:
@@ -131,7 +131,7 @@ class Cell:
         
         Args:
             input_path (str): The path to the data file to add.
-            title (str): The title to give the data in the raw_data dictionary.
+            title (str): The title to give the data in the procedure dictionary.
             cycler (BatteryCycler): The cycler used to produce the data.
             skip_writing (bool): Whether to skip rewriting the parquet file if it already exists.
         """
@@ -139,7 +139,7 @@ class Cell:
         if (os.path.exists(output_path) is False or 
             skip_writing is False):
             self.write_parquet(input_path, output_path, cycler)
-        self.raw_data[title] = Procedure(output_path)
+        self.procedure[title] = Procedure(output_path)
         self.processed_data[title] = {}
 
     @staticmethod

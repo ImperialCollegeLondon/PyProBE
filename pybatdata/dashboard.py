@@ -42,11 +42,11 @@ selected_indices = dataframe_with_selections(info)
 selected_names = [cell_list[i].info['Name'] for i in selected_indices]
 
 # Select a procedure
-procedure_names = cell_list[0].raw_data.keys()
-selected_procedure = st.sidebar.selectbox('Select a procedure', procedure_names)
+procedure_names = cell_list[0].procedure.keys()
+selected_raw_data = st.sidebar.selectbox('Select a procedure', procedure_names)
 
 # Select an experiment
-experiment_names = cell_list[0].raw_data[selected_procedure].titles.keys()
+experiment_names = cell_list[0].procedure[selected_raw_data].titles.keys()
 selected_experiment = st.sidebar.selectbox('Select an experiment', experiment_names)
 
 # Get the cycle and step numbers from the user
@@ -75,7 +75,7 @@ fig = go.Figure()
 selected_data = []
 for i in range(len(selected_indices)):
     selected_index = selected_indices[i]
-    experiment_data = cell_list[selected_index].raw_data[selected_procedure].experiment(selected_experiment)
+    experiment_data = cell_list[selected_index].procedure[selected_raw_data].experiment(selected_experiment)
     # Check if the input is not empty
     if cycle_step_input:
         # Use eval to evaluate the input as Python code
