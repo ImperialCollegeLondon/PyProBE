@@ -4,7 +4,7 @@ from pybatdata.cycle import Cycle
 import polars as pl
 from pybatdata.base import Base
 
-class Experiment(Base):
+class Experiment(Cycle):
     """ An experiment in a battery procedure."""
     def __init__(self, 
                  lazyframe: pl.LazyFrame):
