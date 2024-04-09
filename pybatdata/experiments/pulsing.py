@@ -8,18 +8,15 @@ import numpy as np
 class Pulsing(Experiment):
     """A pulsing experiment in a battery procedure."""
 
-    def __init__(self, lazyframe, cycles_idx, steps_idx, step_names):
+    def __init__(self, lazyframe):
         """Create a pulsing experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-                cycles_idx (list): The indices of the cycles of the pulsing experiment.
-                steps_idx (list): The indices of the steps in the pulsing experiment.
-                step_names (list): The names of all of the steps in the procedure.
         """
-        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
-        self.rests = [None]*len(cycles_idx)
-        self.pulses = [None]*len(cycles_idx)
+        super().__init__(lazyframe)
+        self.rests = [None]*lazyframe.select('Cycle').collect().n_unique('Cycle')
+        self.pulses = [None]*lazyframe.select('Cycle').collect().n_unique('Cycle')
 
     @property
     def pulse_starts(self)->pl.DataFrame:
@@ -28,7 +25,7 @@ class Pulsing(Experiment):
         Returns:
             pl.DataFrame: A dataframe with rows for the start of each pulse.
         """
-        df = self.RawData.with_columns(pl.col('Current (A)').shift().alias('Prev Current'))
+        df = self.raw_data.with_columns(pl.col('Current (A)').shift().alias('Prev Current'))
         df = df.with_columns(pl.col('Voltage (V)').shift().alias('Prev Voltage'))
         return  df.filter((df['Current (A)'].shift() == 0) & (df['Current (A)'] != 0))
 
@@ -76,8 +73,8 @@ class Pulsing(Experiment):
         t_point = self.pulse_starts['Time (s)']+t
         Vt = np.zeros(len(t_point))
         for i in range(len(Vt)):
-            condition = self.RawData['Time (s)'] >= t_point[i]
-            first_row = self.RawData.filter(condition).sort('Time (s)').head(1)
+            condition = self.raw_data['Time (s)'] >= t_point[i]
+            first_row = self.raw_data.filter(condition).sort('Time (s)').head(1)
             Vt[i] = first_row['Voltage (V)'].to_numpy()[0]
         return (Vt-self.V0)/self.I1    
         

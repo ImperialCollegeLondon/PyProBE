@@ -1,6 +1,7 @@
 """A module for the Procedure class."""
 from pybatdata.experiment import Experiment
 from pybatdata.experiments.pulsing import Pulsing
+from pybatdata.experiments.cycling import Cycling
 import polars as pl
 from pybatdata.base import Base
 import re
@@ -13,18 +14,13 @@ class Procedure(Base):
         """ Create a procedure class.
         
         Args:
-            lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
-            titles (dict): The titles of the experiments inside a procedure. Fomat {title: experiment type}.
-            cycles_idx (list): The indices of the cycles in the current selection.
-            steps_idx (list): The indices of the steps in the current selection.
-            step_names (list): The names of all of the steps in the procedure.
+            data_path (str): The path to the data parquet file.
         """
         lazyframe = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
         readme_path = os.path.join(data_folder, 'README.txt')
-        titles, cycles_idx, steps_idx, step_names = self.process_readme(readme_path)
-        super().__init__(lazyframe, cycles_idx, steps_idx, step_names)
-        self.titles = titles
+        self.titles, self.cycles_idx, self.steps_idx, self.step_names = self.process_readme(readme_path)
+        super().__init__(lazyframe)
         
     def experiment(self, experiment_name: str)->Experiment:
         """Return an experiment object from the procedure.
@@ -38,15 +34,44 @@ class Procedure(Base):
         experiment_number = list(self.titles.keys()).index(experiment_name)
         cycles_idx = self.cycles_idx[experiment_number]
         steps_idx = self.steps_idx[experiment_number]
-        conditions = [self.get_conditions('Cycle', cycles_idx),
-                      self.get_conditions('Step', steps_idx)]
+        conditions = [pl.col('Cycle').is_in(self.flatten(cycles_idx)),
+                      pl.col('Step').is_in(self.flatten(steps_idx))]
         lf_filtered = self.lazyframe.filter(conditions)
         experiment_types = {'Constant Current': Experiment, 
                             'Pulsing': Pulsing, 
-                            'Cycling': Experiment, 
+                            'Cycling': Cycling, 
                             'SOC Reset': Experiment}
-        return experiment_types[self.titles[experiment_name]](lf_filtered, cycles_idx, steps_idx, self.step_names)
+        return experiment_types[self.titles[experiment_name]](lf_filtered)
     
+    @classmethod
+    def flatten(cls, lst: list) -> list:
+        """Flatten a list of lists into a single list.
+        
+        Args:
+            lst (list): The list of lists to flatten.
+            
+        Returns:
+            list: The flattened list."""
+        if not isinstance(lst, list):
+            return [lst]
+        if lst == []:
+            return lst
+        if isinstance(lst[0], list):
+            return cls.flatten(lst[0]) + cls.flatten(lst[1:])
+        return lst[:1] + cls.flatten(lst[1:])
+
+    @classmethod
+    def get_exp_conditions(cls, column: str, indices: list) -> pl.Expr:
+        """Convert a list of indices for a column into a polars expression for filtering.
+        
+        Args:
+            column (str): The column to filter.
+            indices (list): The indices to filter.
+            
+        Returns:
+            pl.Expr: The polars expression for filtering the column."""
+        return pl.col(column).is_in(cls.flatten(indices)).alias(column)
+
     @staticmethod
     def process_readme(readme_path):
         """Function to process the README.txt file and extract the relevant information.
