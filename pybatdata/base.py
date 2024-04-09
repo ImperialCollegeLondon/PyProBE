@@ -64,10 +64,25 @@ class Base:
         return self._raw_data
     
     @staticmethod
-    def filter_numerical(lazyframe: pl.LazyFrame, column: str, condition_number: int) -> pl.Expr:
-        return lazyframe.with_columns(((pl.col(column) - pl.col(column).shift() > 0)
+    def _get_events(lazyframe: pl.LazyFrame):
+        lazyframe = lazyframe.with_columns(((pl.col('Cycle') - pl.col('Cycle').shift() != 0)
                                     .fill_null(False).cum_sum()
-                                    .alias('Condition number'))).filter(pl.col('Condition number') == condition_number)
+                                    .alias('_cycle')))
+        lazyframe = lazyframe.with_columns((((pl.col('Cycle') - pl.col('Cycle').shift() != 0) | (pl.col('Step') - pl.col('Step').shift() != 0))
+                                    .fill_null(False).cum_sum()
+                                    .alias('_step')))
+        return lazyframe
+    
+    def filter_numerical(self, lazyframe: pl.LazyFrame, column: str, condition_number: int|list[int]) -> pl.Expr:
+        if isinstance(condition_number, int):
+            condition_number = [condition_number]
+        elif isinstance(condition_number, list):
+            condition_number = list(range(condition_number[0], condition_number[1] + 1))
+        lazyframe = self._get_events(lazyframe)
+        if condition_number is not None:
+            return lazyframe.filter(pl.col(column).is_in(condition_number))
+        else: 
+            return lazyframe
     
     def plot(self, x, y, **kwargs):
         plt.plot(self.raw_data[x], self.raw_data[y], **kwargs)

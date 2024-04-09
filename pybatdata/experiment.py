@@ -24,5 +24,5 @@ class Experiment(Cycle):
         Returns:
             Cycle: A cycle object from the experiment.
         """
-        lf_filtered = self.filter_numerical(self.lazyframe, 'Cycle', cycle_number)
+        lf_filtered = self.filter_numerical(self.lazyframe, '_cycle', cycle_number)
         return Cycle(lf_filtered)
