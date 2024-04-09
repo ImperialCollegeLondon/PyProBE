@@ -4,6 +4,7 @@ from pybatdata.experiment import Experiment
 from pybatdata.step import Step
 import polars as pl
 import numpy as np
+from pybatdata.base import DataHolder
 
 class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
@@ -16,15 +17,17 @@ class Cycling(Experiment):
         """
         super().__init__(lazyframe)
 
-    def SOH_capacity(self, step) -> np.ndarray:
+    def SOH_capacity(self) -> np.ndarray:
         """Calculate the state of health of the battery.
 
         Returns:
             np.ndarray: The state of health of the battery.
         """
-        print(self.cycle(0).discharge(1).raw_data)
-        reference = eval(f"self.cycle(0).{step}.capacity")
-        SOH = np.zeros(self.n_cycles)
-        for i in range(self.n_cycles):
-            SOH[i] = eval(f"self.cycle({i}).{step}.capacity") / reference
-        return SOH
+        print(self.charge().lazyframe.collect())
+        lf_charge = self.charge().lazyframe.groupby('_cycle', maintain_order = True).agg([pl.col('Capacity (Ah)').max()-pl.col('Capacity (Ah)').min()
+                                                                                          ,pl.col('Capacity Throughput (Ah)').last()])
+        lf_discharge = self.discharge().lazyframe.groupby('_cycle', maintain_order = True).agg([pl.col('Capacity (Ah)').max()-pl.col('Capacity (Ah)').min()
+                                                                                                ,pl.col('Capacity Throughput (Ah)').last()])
+        print(lf_charge.collect())
+        print(lf_discharge.collect())
+        return DataHolder(lf_discharge.collect())

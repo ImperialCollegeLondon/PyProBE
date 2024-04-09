@@ -21,6 +21,7 @@ class Base:
         self._set_zero_time()
         self._create_mA_units()
         self._create_capacity_throughput()
+        self.lazyframe = self._get_events(self.lazyframe)
         self._raw_data = None
 
     def _set_zero_capacity(self) -> None:
@@ -90,4 +91,19 @@ class Base:
         plt.ylabel(y)
         plt.legend()
         
+    def plot_any(df, x, y):
+        plt.plot(df[x], df[y])
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.legend()
 
+class DataHolder:
+    """A class to hold data to return to a user."""
+    def __init__(self, data):
+        self.data = data
+    
+    def plot_any(self, x, y):
+        plt.plot(self.data[x], self.data[y], color=Cell.cell_color)
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.legend()
