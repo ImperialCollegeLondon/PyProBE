@@ -2,6 +2,7 @@
 
 import polars as pl
 import matplotlib.pyplot as plt
+# from pybatdata.viewer import Plot
 
 class Base:
     """Base class for all filtering classes in PyBatData.
@@ -10,7 +11,7 @@ class Base:
             lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
             _raw_data (polars.DataFrame): The collected dataframe of the current filter.
     """
-    def __init__(self, lazyframe: pl.LazyFrame):
+    def __init__(self, lazyframe: pl.LazyFrame, info):
         """ Create a filtering class.
         
         Args:
@@ -23,6 +24,7 @@ class Base:
         self._create_capacity_throughput()
         self.lazyframe = self._get_events(self.lazyframe)
         self._raw_data = None
+        self.info = info
 
     def _set_zero_capacity(self) -> None:
         """Recalculate the capacity column to start from zero at beginning of current selection."""
@@ -97,13 +99,11 @@ class Base:
         plt.ylabel(y)
         plt.legend()
 
-class DataHolder:
-    """A class to hold data to return to a user."""
-    def __init__(self, data):
-        self.data = data
+# class DataHolder:
+#     """A class to hold data to return to a user."""
+#     def __init__(self, data):
+#         self.data = data
+#         self._plot = Plot(self.data)
     
-    def plot_any(self, x, y):
-        plt.plot(self.data[x], self.data[y], color=Cell.cell_color)
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.legend()
+#     def plot(self, x, y):
+#         self._plot(x, y)

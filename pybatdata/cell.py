@@ -31,6 +31,7 @@ class Cell:
         self.procedure = {}
         self.processed_data = {}
 
+
     @classmethod
     def batch_process(cls,
                       root_directory: str,
@@ -65,7 +66,7 @@ class Cell:
             colors = cls.set_color_scheme(n_cells, scheme='distinctipy')
             for i in range(n_cells):
                 cell_list.append(cls(record.row(i, named=True)))
-                cell_list[i].color = colors[i]
+                cell_list[i].info['color'] = colors[i]
         else:
             n_cells = len(cell_list)
         parquet_verified = False
@@ -139,7 +140,7 @@ class Cell:
         if (os.path.exists(output_path) is False or 
             skip_writing is False):
             self.write_parquet(input_path, output_path, cycler)
-        self.procedure[title] = Procedure(output_path)
+        self.procedure[title] = Procedure(output_path, self.info)
         self.processed_data[title] = {}
 
     @staticmethod

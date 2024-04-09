@@ -10,7 +10,8 @@ import os
 class Procedure(Base):
     """A class for a procedure in a battery experiment."""
     def __init__(self, 
-                 data_path: str):
+                 data_path: str,
+                 info: dict,):
         """ Create a procedure class.
         
         Args:
@@ -20,7 +21,7 @@ class Procedure(Base):
         data_folder = os.path.dirname(data_path)
         readme_path = os.path.join(data_folder, 'README.txt')
         self.titles, self.cycles_idx, self.steps_idx, self.step_names = self.process_readme(readme_path)
-        super().__init__(lazyframe)
+        super().__init__(lazyframe, info)
         
     def experiment(self, experiment_name: str)->Experiment:
         """Return an experiment object from the procedure.
@@ -41,7 +42,7 @@ class Procedure(Base):
                             'Pulsing': Pulsing, 
                             'Cycling': Cycling, 
                             'SOC Reset': Experiment}
-        return experiment_types[self.titles[experiment_name]](lf_filtered)
+        return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
     
     @classmethod
     def flatten(cls, lst: list) -> list:

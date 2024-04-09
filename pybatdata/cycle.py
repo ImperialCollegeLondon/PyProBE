@@ -9,13 +9,14 @@ class Cycle(Base):
     """A cycle in a battery procedure."""
 
     def __init__(self, 
-                 lazyframe: pl.LazyFrame):
+                 lazyframe: pl.LazyFrame,
+                 info: dict):
         """Create a cycle.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
         """
-        super().__init__(lazyframe)
+        super().__init__(lazyframe, info)
         
     
     def step(self, step_number: int|list[int] = None, condition: pl.Expr = None) -> Step:
@@ -31,7 +32,7 @@ class Cycle(Base):
             lazyframe= self.filter_numerical(self.lazyframe.filter(condition), '_step', step_number)
         else:
             lazyframe = self.filter_numerical(self.lazyframe, '_step', step_number)
-        return Step(lazyframe)
+        return Step(lazyframe, self.info)
 
     def charge(self, charge_number: int=None) -> Step:
         """Return a charge step object from the cycle.
