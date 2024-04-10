@@ -89,7 +89,7 @@ for i in range(len(selected_indices)):
     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                              y=filtered_data[y_axis], 
                              mode='lines', 
-                             line = dict(color = cell_list[selected_index].color),
+                             line = dict(color = cell_list[selected_index].info['color']),
                              name=cell_list[selected_index].info['Name'],
                              yaxis='y1',
                              showlegend=True))
@@ -99,7 +99,7 @@ for i in range(len(selected_indices)):
         fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                                  y=filtered_data[secondary_y_axis], 
                                  mode='lines', 
-                                 line=dict(color=cell_list[selected_index].color, dash='dash'),
+                                 line=dict(color=cell_list[selected_index].info['color'], dash='dash'),
                                  name=cell_list[selected_index].info['Name'],
                                  yaxis='y2',
                                  showlegend=False))

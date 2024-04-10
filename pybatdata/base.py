@@ -2,6 +2,7 @@
 
 import polars as pl
 import matplotlib.pyplot as plt
+from pybatdata.viewer import Viewer
 # from pybatdata.viewer import Plot
 
 class Base:
@@ -66,13 +67,17 @@ class Base:
                 raise ValueError("No data exists for this filter.")
         return self._raw_data
     
+    @property
+    def RawData(self) -> Viewer:
+        return Viewer(self.lazyframe, self.info)
+
     @staticmethod
     def _get_events(lazyframe: pl.LazyFrame):
         lazyframe = lazyframe.with_columns(((pl.col('Cycle') - pl.col('Cycle').shift() != 0)
-                                    .fill_null(False).cum_sum()
+                                    .fill_null(strategy='zero').cum_sum()
                                     .alias('_cycle')))
         lazyframe = lazyframe.with_columns((((pl.col('Cycle') - pl.col('Cycle').shift() != 0) | (pl.col('Step') - pl.col('Step').shift() != 0))
-                                    .fill_null(False).cum_sum()
+                                    .fill_null(strategy='zero').cum_sum()
                                     .alias('_step')))
         return lazyframe
     
