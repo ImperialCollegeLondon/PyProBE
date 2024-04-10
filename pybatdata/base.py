@@ -60,10 +60,14 @@ class Base(Result):
     def _get_events(lazyframe: pl.LazyFrame):
         lazyframe = lazyframe.with_columns(((pl.col('Cycle') - pl.col('Cycle').shift() != 0)
                                     .fill_null(strategy='zero').cum_sum()
-                                    .alias('_cycle')))
+                                    .alias('_cycle').cast(pl.Int32)))
         lazyframe = lazyframe.with_columns((((pl.col('Cycle') - pl.col('Cycle').shift() != 0) | (pl.col('Step') - pl.col('Step').shift() != 0))
                                     .fill_null(strategy='zero').cum_sum()
-                                    .alias('_step')))
+                                    .alias('_step').cast(pl.Int32)))
+        lazyframe = lazyframe.with_columns([
+            (pl.col('_cycle') - pl.col('_cycle').max() - 1).alias('_cycle_reversed'),
+            (pl.col('_step') - pl.col('_step').max() - 1).alias('_step_reversed')
+        ])
         return lazyframe
     
     def filter_numerical(self, lazyframe: pl.LazyFrame, column: str, condition_number: int|list[int]) -> pl.Expr:
@@ -73,7 +77,7 @@ class Base(Result):
             condition_number = list(range(condition_number[0], condition_number[1] + 1))
         lazyframe = self._get_events(lazyframe)
         if condition_number is not None:
-            return lazyframe.filter(pl.col(column).is_in(condition_number))
+            return lazyframe.filter(pl.col(column).is_in(condition_number) | pl.col(column + '_reversed').is_in(condition_number))
         else: 
             return lazyframe
     
