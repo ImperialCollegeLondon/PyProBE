@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 from sklearn.preprocessing import minmax_scale
 import numpy as np
-class Viewer:
+class Result:
     def __init__(self, data, info):
         self._data = data
         self.info = info

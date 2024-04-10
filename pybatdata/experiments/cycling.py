@@ -4,7 +4,7 @@ from pybatdata.experiment import Experiment
 from pybatdata.step import Step
 import polars as pl
 import numpy as np
-from pybatdata.viewer import Viewer
+from pybatdata.result import Result
 
 class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
@@ -32,4 +32,4 @@ class Cycling(Experiment):
 
         lf = lf.with_columns((pl.col('Charge Capacity (Ah)')/pl.first('Charge Capacity (Ah)')*100).alias('SOH Charge (%)'))
         lf = lf.with_columns((pl.col('Discharge Capacity (Ah)')/pl.first('Discharge Capacity (Ah)')*100).alias('SOH Discharge (%)'))
-        return Viewer(lf, self.info)
+        return Result(lf, self.info)
