@@ -9,6 +9,7 @@ import distinctipy
 import pickle
 import subprocess
 from polars.testing import assert_frame_equal
+import platform
 
 class Cell:
     """A class for a cell in a battery experiment.
@@ -216,4 +217,9 @@ class Cell:
         """
         with open('dashboard_data.pkl', 'wb') as f:
             pickle.dump(cell_list, f)
-        subprocess.Popen(["nohup", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        
+        if platform.system() == 'Windows':
+            #subprocess.run(["streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")])
+            subprocess.Popen(["cmd", "/c", "start", "/B", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py"), ">", "nul", "2>&1"], shell=True)
+        elif platform.system() == 'Darwin':
+            subprocess.Popen(["nohup", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
