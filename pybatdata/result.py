@@ -14,23 +14,27 @@ class Result:
         if isinstance(self._data, pl.LazyFrame):
             self._data = self._data.collect()
         return self._data
-
-    def plot(self, x, y, **kwargs):
-        plt.plot(self.data[x], self.data[y], **kwargs)
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.legend()
     
     def print(self):
         print(self.data)
 
-    def plotly(self, 
+    def plot(self, 
                fig, 
                x, 
                y, 
                color_by=None, 
+               label = None,
                legend_by='Name', 
                colormap='viridis'):
+        
+        title_font_size = 18
+        axis_font_size = 14
+        plot_theme = 'simple_white'
+        x_range = [self.data[x].min(), self.data[x].max()]
+        y_range = [self.data[y].min(), self.data[y].max()]
+        x_buffer = 0.05 * (x_range[1] - x_range[0])
+        y_buffer = 0.05 * (y_range[1] - y_range[0])
+
         if color_by is not None:
             if color_by in self.data.columns:
                 unique_colors = self.data[color_by].unique().to_numpy()
@@ -56,16 +60,14 @@ class Result:
                 )
         else:
             color = self.info['color']
-            fig.add_trace(go.Scatter(x=subset[x], y=subset[y], mode='lines', line=dict(color=color), name=self.info[legend_by]))
+            fig.add_trace(go.Scatter(x=self.data[x], 
+                                     y=self.data[y], 
+                                     mode='lines', 
+                                     line=dict(color=color), 
+                                     name= self.info[legend_by] if label is None else label))
             fig.update_layout(showlegend=True,
                                 legend = dict(font = dict(size=axis_font_size)))
-        title_font_size = 18
-        axis_font_size = 14
-        plot_theme = 'simple_white'
-        x_range = [self.data[x].min(), self.data[x].max()]
-        y_range = [self.data[y].min(), self.data[y].max()]
-        x_buffer = 0.05 * (x_range[1] - x_range[0])
-        y_buffer = 0.05 * (y_range[1] - y_range[0])
+        
         fig.update_xaxes(range=[x_range[0] - x_buffer, x_range[1] + x_buffer])
         fig.update_yaxes(range=[y_range[0] - y_buffer, y_range[1] + y_buffer])
         fig.update_layout(xaxis_title=x, 
