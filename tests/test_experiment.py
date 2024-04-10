@@ -7,8 +7,8 @@ import numpy as np
 
 def test_pulse(Pulsing_fixture):
     pulse = Pulsing_fixture.pulse(0)
-    assert (pulse.raw_data['Step'] == 10).all()
-    assert (pulse.raw_data['Cycle'] == 5).all()
+    assert (pulse.data['Step'] == 10).all()
+    assert (pulse.data['Cycle'] == 5).all()
     
 def test_V0(Pulsing_fixture):
     assert Pulsing_fixture.V0[0] == 4.1919

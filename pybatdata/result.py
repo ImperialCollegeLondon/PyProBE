@@ -12,12 +12,11 @@ class Result:
     @property
     def data(self):
         if isinstance(self._data, pl.LazyFrame):
-            return self._data.collect()
-        else :
-            return self._data
+            self._data = self._data.collect()
+        return self._data
 
-    def plot(self, x, y):
-        plt.plot(self.data[x], self.data[y], color = self.info['color'], label=self.info['Name'])
+    def plot(self, x, y, **kwargs):
+        plt.plot(self.data[x], self.data[y], **kwargs)
         plt.xlabel(x)
         plt.ylabel(y)
         plt.legend()
@@ -55,11 +54,11 @@ class Result:
                         opacity=0,
                     )
                 )
-            else:
-                color = self.info['color']
-                fig.add_trace(go.Scatter(x=subset[x], y=subset[y], mode='lines', line=dict(color=color), name=self.info[legend_by]))
-                fig.update_layout(showlegend=True,
-                                  legend = dict(font = dict(size=axis_font_size)))
+        else:
+            color = self.info['color']
+            fig.add_trace(go.Scatter(x=subset[x], y=subset[y], mode='lines', line=dict(color=color), name=self.info[legend_by]))
+            fig.update_layout(showlegend=True,
+                                legend = dict(font = dict(size=axis_font_size)))
         title_font_size = 18
         axis_font_size = 14
         plot_theme = 'simple_white'

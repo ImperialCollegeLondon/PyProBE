@@ -83,7 +83,7 @@ for i in range(len(selected_indices)):
     else: 
         filtered_data = experiment_data
     
-    filtered_data = filtered_data.raw_data.to_pandas()
+    filtered_data = filtered_data.data.to_pandas()
     selected_data.append(filtered_data)
     # Add a line to the plot for each selected index
     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 

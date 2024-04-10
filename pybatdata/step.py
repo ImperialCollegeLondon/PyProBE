@@ -23,7 +23,7 @@ class Step(Base):
         Returns:
             float: The capacity passed during the step.
         """
-        return abs(self.raw_data['Capacity (Ah)'].max() - self.raw_data['Capacity (Ah)'].min())
+        return abs(self.data['Capacity (Ah)'].max() - self.data['Capacity (Ah)'].min())
     
     def IC(self, deltaV: float) -> tuple[np.ndarray, np.ndarray]:
         """Calculate the normalised incremental capacity ($\frac{1}{Q}\frac{dQ}{dV}$) of the step.
@@ -35,7 +35,7 @@ class Step(Base):
         Returns:
             tuple[np.ndarray, np.ndarray]: The midpints of the voltage sampling intervales and the normalised incremental capacity.
         """
-        V = self.raw_data['Voltage (V)']
+        V = self.data['Voltage (V)']
         
         n = len(V)
         V_range = V.max() - V.min()
