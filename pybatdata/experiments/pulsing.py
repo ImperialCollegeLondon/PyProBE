@@ -8,13 +8,13 @@ import numpy as np
 class Pulsing(Experiment):
     """A pulsing experiment in a battery procedure."""
 
-    def __init__(self, lazyframe):
+    def __init__(self, lazyframe, info):
         """Create a pulsing experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
         """
-        super().__init__(lazyframe)
+        super().__init__(lazyframe, info)
         self.rests = [None]*lazyframe.select('Cycle').collect().n_unique('Cycle')
         self.pulses = [None]*lazyframe.select('Cycle').collect().n_unique('Cycle')
 

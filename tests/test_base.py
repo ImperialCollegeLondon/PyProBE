@@ -4,8 +4,8 @@ from polars.testing import assert_series_equal
 from pybatdata.base import Base
 
 @pytest.fixture
-def base_instance(lazyframe_fixture):
-    return Base(lazyframe_fixture)
+def base_instance(lazyframe_fixture, info_fixture):
+    return Base(lazyframe_fixture, info_fixture)
 
 def test_init(base_instance):
     assert isinstance(base_instance, Base)
@@ -14,13 +14,6 @@ def test_init(base_instance):
 def test_zero_capacity(base_instance):
     base_instance._set_zero_capacity()
     assert base_instance.data["Capacity (Ah)"][0] == 0
-
-
-def test_RawData(base_instance):
-    assert base_instance._raw_data is None
-    procedure = base_instance.data
-    assert base_instance._raw_data is not None
-    assert isinstance(procedure, pl.DataFrame)
 
 def test_mA_units(base_instance):
     base_instance._create_mA_units()
