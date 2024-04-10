@@ -2,10 +2,10 @@
 
 import polars as pl
 import matplotlib.pyplot as plt
-from pybatdata.viewer import Viewer
-# from pybatdata.viewer import Plot
+from pybatdata.result import Result
+# from pybatdata.result import Plot
 
-class Base:
+class Base(Result):
     """Base class for all filtering classes in PyBatData.
 
     Attributes:
@@ -19,13 +19,15 @@ class Base:
             lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
         """
         self.lazyframe = lazyframe
+        self.info = info
         self._set_zero_capacity()
         self._set_zero_time()
         self._create_mA_units()
         self._create_capacity_throughput()
         self.lazyframe = self._get_events(self.lazyframe)
-        self._raw_data = None
-        self.info = info
+        super().__init__(self.lazyframe, self.info)
+        
+
 
     def _set_zero_capacity(self) -> None:
         """Recalculate the capacity column to start from zero at beginning of current selection."""
@@ -53,23 +55,6 @@ class Base:
         self.lazyframe = self.lazyframe.with_columns([
             (pl.col("Capacity (Ah)").diff().abs().cum_sum()).alias("Capacity Throughput (Ah)")
         ])
-    
-    @property
-    def raw_data(self) -> pl.DataFrame:
-        """Collect the LazyFrame of the current selection, if not already collected.
-        
-        Returns:
-            raw_data (polars.DataFrame): The collected data of the current selection.
-        """
-        if self._raw_data is None:
-            self._raw_data = self.lazyframe.collect()
-            if self._raw_data.shape[0] == 0:
-                raise ValueError("No data exists for this filter.")
-        return self._raw_data
-    
-    @property
-    def RawData(self) -> Viewer:
-        return Viewer(self.lazyframe, self.info)
 
     @staticmethod
     def _get_events(lazyframe: pl.LazyFrame):
@@ -92,17 +77,17 @@ class Base:
         else: 
             return lazyframe
     
-    def plot(self, x, y, **kwargs):
-        plt.plot(self.raw_data[x], self.raw_data[y], **kwargs)
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.legend()
+    # def plot(self, x, y, **kwargs):
+    #     plt.plot(self.data[x], self.data[y], **kwargs)
+    #     plt.xlabel(x)
+    #     plt.ylabel(y)
+    #     plt.legend()
         
-    def plot_any(df, x, y):
-        plt.plot(df[x], df[y])
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.legend()
+    # def plot_any(df, x, y):
+    #     plt.plot(df[x], df[y])
+    #     plt.xlabel(x)
+    #     plt.ylabel(y)
+    #     plt.legend()
 
 # class DataHolder:
 #     """A class to hold data to return to a user."""
