@@ -13,6 +13,8 @@ class Result:
     def data(self):
         if isinstance(self._data, pl.LazyFrame):
             self._data = self._data.collect()
+            if self._data.shape[0] == 0:
+                raise ValueError("No data exists for this filter.")
         return self._data
     
     def print(self):
