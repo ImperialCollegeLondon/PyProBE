@@ -7,13 +7,14 @@ from pybatdata.base import Base
 class Experiment(Cycle):
     """ An experiment in a battery procedure."""
     def __init__(self, 
-                 lazyframe: pl.LazyFrame):
+                 lazyframe: pl.LazyFrame,
+                 info: dict):
         """Create an experiment.
 
             Args:
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
         """
-        super().__init__(lazyframe)
+        super().__init__(lazyframe, info)
 
     def cycle(self,cycle_number: int) -> Cycle:
         """Return a cycle object from the experiment.
@@ -24,5 +25,5 @@ class Experiment(Cycle):
         Returns:
             Cycle: A cycle object from the experiment.
         """
-        lf_filtered = self.filter_numerical(self.lazyframe, 'Cycle', cycle_number)
-        return Cycle(lf_filtered)
+        lf_filtered = self.filter_numerical(self.lazyframe, '_cycle', cycle_number)
+        return Cycle(lf_filtered, self.info)

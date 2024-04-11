@@ -9,6 +9,7 @@ import distinctipy
 import pickle
 import subprocess
 from polars.testing import assert_frame_equal
+import platform
 
 class Cell:
     """A class for a cell in a battery experiment.
@@ -30,6 +31,7 @@ class Cell:
         self.info = info
         self.procedure = {}
         self.processed_data = {}
+
 
     @classmethod
     def batch_process(cls,
@@ -65,7 +67,7 @@ class Cell:
             colors = cls.set_color_scheme(n_cells, scheme='distinctipy')
             for i in range(n_cells):
                 cell_list.append(cls(record.row(i, named=True)))
-                cell_list[i].color = colors[i]
+                cell_list[i].info['color'] = colors[i]
         else:
             n_cells = len(cell_list)
         parquet_verified = False
@@ -139,7 +141,7 @@ class Cell:
         if (os.path.exists(output_path) is False or 
             skip_writing is False):
             self.write_parquet(input_path, output_path, cycler)
-        self.procedure[title] = Procedure(output_path)
+        self.procedure[title] = Procedure(output_path, self.info)
         self.processed_data[title] = {}
 
     @staticmethod
@@ -215,4 +217,9 @@ class Cell:
         """
         with open('dashboard_data.pkl', 'wb') as f:
             pickle.dump(cell_list, f)
-        subprocess.Popen(["nohup", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        
+        if platform.system() == 'Windows':
+            #subprocess.run(["streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")])
+            subprocess.Popen(["cmd", "/c", "start", "/B", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py"), ">", "nul", "2>&1"], shell=True)
+        elif platform.system() == 'Darwin':
+            subprocess.Popen(["nohup", "streamlit", "run", os.path.join(os.path.dirname(__file__), "dashboard.py")], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)

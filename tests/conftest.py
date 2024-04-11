@@ -47,8 +47,8 @@ def step_names_fixture():
             'Rest']
 
 @pytest.fixture(scope='module')
-def procedure_fixture():
-    return Procedure('tests/sample_data_neware/sample_data_neware.parquet')
+def procedure_fixture(info_fixture):
+    return Procedure('tests/sample_data_neware/sample_data_neware.parquet', info_fixture)
 
 @pytest.fixture(scope='module')
 def BreakinCycles_fixture(procedure_fixture):

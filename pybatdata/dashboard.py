@@ -83,13 +83,13 @@ for i in range(len(selected_indices)):
     else: 
         filtered_data = experiment_data
     
-    filtered_data = filtered_data.raw_data.to_pandas()
+    filtered_data = filtered_data.data.to_pandas()
     selected_data.append(filtered_data)
     # Add a line to the plot for each selected index
     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                              y=filtered_data[y_axis], 
                              mode='lines', 
-                             line = dict(color = cell_list[selected_index].color),
+                             line = dict(color = cell_list[selected_index].info['color']),
                              name=cell_list[selected_index].info['Name'],
                              yaxis='y1',
                              showlegend=True))
@@ -99,7 +99,7 @@ for i in range(len(selected_indices)):
         fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
                                  y=filtered_data[secondary_y_axis], 
                                  mode='lines', 
-                                 line=dict(color=cell_list[selected_index].color, dash='dash'),
+                                 line=dict(color=cell_list[selected_index].info['color'], dash='dash'),
                                  name=cell_list[selected_index].info['Name'],
                                  yaxis='y2',
                                  showlegend=False))
