@@ -83,60 +83,61 @@ for i in range(len(selected_indices)):
     else: 
         filtered_data = experiment_data
     
+    filtered_data.plot(fig, x_axis, y_axis)
     filtered_data = filtered_data.data.to_pandas()
     selected_data.append(filtered_data)
     # Add a line to the plot for each selected index
-    fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
-                             y=filtered_data[y_axis], 
-                             mode='lines', 
-                             line = dict(color = cell_list[selected_index].info['color']),
-                             name=cell_list[selected_index].info['Name'],
-                             yaxis='y1',
-                             showlegend=True))
+#     fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
+#                              y=filtered_data[y_axis], 
+#                              mode='lines', 
+#                              line = dict(color = cell_list[selected_index].info['color']),
+#                              name=cell_list[selected_index].info['Name'],
+#                              yaxis='y1',
+#                              showlegend=True))
     
-    # Add a line to the secondary y axis if selected
-    if secondary_y_axis != 'None':
-        fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
-                                 y=filtered_data[secondary_y_axis], 
-                                 mode='lines', 
-                                 line=dict(color=cell_list[selected_index].info['color'], dash='dash'),
-                                 name=cell_list[selected_index].info['Name'],
-                                 yaxis='y2',
-                                 showlegend=False))
-if secondary_y_axis != 'None':     
-    # Add a dummy trace to the legend to represent the secondary y-axis
-    fig.add_trace(go.Scatter(x=[None], 
-                            y=[None], 
-                            mode='lines', 
-                            line=dict(color='black', dash='dash'),
-                            name=secondary_y_axis,
-                            showlegend=True))
+#     # Add a line to the secondary y axis if selected
+#     if secondary_y_axis != 'None':
+#         fig.add_trace(go.Scatter(x=filtered_data[x_axis], 
+#                                  y=filtered_data[secondary_y_axis], 
+#                                  mode='lines', 
+#                                  line=dict(color=cell_list[selected_index].info['color'], dash='dash'),
+#                                  name=cell_list[selected_index].info['Name'],
+#                                  yaxis='y2',
+#                                  showlegend=False))
+# if secondary_y_axis != 'None':     
+#     # Add a dummy trace to the legend to represent the secondary y-axis
+#     fig.add_trace(go.Scatter(x=[None], 
+#                             y=[None], 
+#                             mode='lines', 
+#                             line=dict(color='black', dash='dash'),
+#                             name=secondary_y_axis,
+#                             showlegend=True))
 
-title_font_size = 18
-axis_font_size = 14
-# Set the plot's title and labels
-fig.update_layout(xaxis_title=x_axis, 
-                  yaxis_title=y_axis,
-                  yaxis2 = dict(title=secondary_y_axis,
-                                anchor='free',
-                                overlaying='y',
-                                autoshift=True,
-                                tickmode='sync'),
-                  template=plot_theme if plot_theme != 'default' else 'plotly',
-                  title_font=dict(size=title_font_size),
-                  xaxis_title_font=dict(size=title_font_size),
-                  yaxis_title_font=dict(size=title_font_size),
-                  xaxis_tickfont=dict(size=axis_font_size),
-                  yaxis_tickfont=dict(size=axis_font_size),
-                  legend = dict(x=1.2 if secondary_y_axis != 'None' else 1,
-                                y = 1,
-                                font = dict(size=axis_font_size))
-                    )
+# title_font_size = 18
+# axis_font_size = 14
+# # Set the plot's title and labels
+# fig.update_layout(xaxis_title=x_axis, 
+#                   yaxis_title=y_axis,
+#                   yaxis2 = dict(title=secondary_y_axis,
+#                                 anchor='free',
+#                                 overlaying='y',
+#                                 autoshift=True,
+#                                 tickmode='sync'),
+#                   template=plot_theme if plot_theme != 'default' else 'plotly',
+#                   title_font=dict(size=title_font_size),
+#                   xaxis_title_font=dict(size=title_font_size),
+#                   yaxis_title_font=dict(size=title_font_size),
+#                   xaxis_tickfont=dict(size=axis_font_size),
+#                   yaxis_tickfont=dict(size=axis_font_size),
+#                   legend = dict(x=1.2 if secondary_y_axis != 'None' else 1,
+#                                 y = 1,
+#                                 font = dict(size=axis_font_size))
+#                     )
 
-if secondary_y_axis != 'None':
-    fig.update_layout(yaxis2=dict(title=secondary_y_axis, overlaying='y', side='right'),
-                      yaxis2_tickfont=dict(size=axis_font_size),
-                      yaxis2_title_font=dict(size=title_font_size))
+# if secondary_y_axis != 'None':
+#     fig.update_layout(yaxis2=dict(title=secondary_y_axis, overlaying='y', side='right'),
+#                       yaxis2_tickfont=dict(size=axis_font_size),
+#                       yaxis2_title_font=dict(size=title_font_size))
 
 # Show the plot
 graph_placeholder.plotly_chart(fig, theme='streamlit' if plot_theme == 'default' else None) 
