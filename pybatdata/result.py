@@ -24,6 +24,7 @@ class Result:
                fig, 
                x, 
                y, 
+               secondary_y=None,
                color_by=None, 
                label = None,
                legend_by='Name', 
@@ -50,6 +51,15 @@ class Result:
                                              name=str(unique_colors[i]),
                                              showlegend=False
                                              ))
+                if secondary_y != None:
+                    fig.add_trace(go.Scatter(x=subset[x], 
+                                            y=subset[secondary_y], 
+                                            mode='lines', 
+                                            line=dict(color=colors[i], 
+                                                      dash='dash'),
+                                            name=str(unique_colors[i]),
+                                            yaxis='y2',
+                                            showlegend=False))
                     
                 # Dummy heatmap for colorbar
                 fig.add_trace(
@@ -67,6 +77,16 @@ class Result:
                                      mode='lines', 
                                      line=dict(color=color), 
                                      name= self.info[legend_by] if label is None else label))
+            if secondary_y != None:
+                    fig.add_trace(go.Scatter(x=self.data[x], 
+                                            y=self.data[secondary_y], 
+                                            mode='lines', 
+                                            line=dict(color=color, 
+                                                      dash='dash'),
+                                            name=self.info[legend_by] if label is None else label,
+                                            yaxis='y2',
+                                            showlegend=False))
+                    
             fig.update_layout(showlegend=True,
                                 legend = dict(font = dict(size=axis_font_size)))
         
@@ -79,7 +99,18 @@ class Result:
                   xaxis_title_font=dict(size=title_font_size),
                   yaxis_title_font=dict(size=title_font_size),
                   xaxis_tickfont=dict(size=axis_font_size),
-                  yaxis_tickfont=dict(size=axis_font_size),
+                  yaxis_tickfont=dict(size=axis_font_size))
 
-                    )
+        if secondary_y != None:    
+        # Add a dummy trace to the legend to represent the secondary y-axis
+            fig.add_trace(go.Scatter(x=[None], 
+                                    y=[None], 
+                                    mode='lines', 
+                                    line=dict(color='black', dash='dash'),
+                                    name=secondary_y,
+                                    showlegend=True))
+            fig.update_layout(yaxis2=dict(title=secondary_y, overlaying='y', side='right'),
+                                            yaxis2_tickfont=dict(size=axis_font_size),
+                                            yaxis2_title_font=dict(size=title_font_size))
+
         return fig
