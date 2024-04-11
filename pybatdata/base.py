@@ -22,17 +22,14 @@ class Base(Result):
         self.info = info
         self._set_zero_capacity()
         self._set_zero_time()
-        self._create_mA_units()
         self._create_capacity_throughput()
         self.lazyframe = self._get_events(self.lazyframe)
         super().__init__(self.lazyframe, self.info)
-        
-
-
+    
     def _set_zero_capacity(self) -> None:
         """Recalculate the capacity column to start from zero at beginning of current selection."""
         self.lazyframe = self.lazyframe.with_columns([
-            (pl.col("Capacity (Ah)") - pl.col("Capacity (Ah)").first()).alias("Capacity (Ah)")
+            (pl.col("Capacity [Ah]") - pl.col("Capacity [Ah]").first()).alias("Capacity [Ah]")
         ]) 
 
     def _set_zero_time(self) -> None:
@@ -41,19 +38,11 @@ class Base(Result):
             (pl.col("Time (s)") - pl.col("Time (s)").first()).alias("Time (s)")
         ])
 
-    def _create_mA_units(self) -> None:
-        """Convert the current and capacity columns to mA units."""
-        self.lazyframe = self.lazyframe.with_columns([
-            (pl.col("Current (A)") * 1000).alias("Current (mA)")
-        ])
-        self.lazyframe = self.lazyframe.with_columns([
-            (pl.col("Capacity (Ah)") * 1000).alias("Capacity (mAh)")
-        ])
     
     def _create_capacity_throughput(self)->None:
         """Recalculate the capacity column to show the total capacity passed at each point."""
         self.lazyframe = self.lazyframe.with_columns([
-            (pl.col("Capacity (Ah)").diff().abs().cum_sum()).alias("Capacity Throughput (Ah)")
+            (pl.col("Capacity [Ah]").diff().abs().cum_sum()).alias("Capacity Throughput [Ah]")
         ])
 
     @staticmethod

@@ -13,19 +13,19 @@ class Neware:
         column_dict = {'Date': 'Date',
                        'Cycle Index': 'Cycle',
                        'Step Index': 'Step',
-                       'Current(A)': 'Current (A)',
-                       'Voltage(V)': 'Voltage (V)',
-                       'DChg. Cap.(Ah)': 'Discharge Capacity (Ah)',
-                       'Chg. Cap.(Ah)': 'Charge Capacity (Ah)',
+                       'Current(A)': 'Current [A]',
+                       'Voltage(V)': 'Voltage [V]',
+                       'DChg. Cap.(Ah)': 'Discharge Capacity [Ah]',
+                       'Chg. Cap.(Ah)': 'Charge Capacity [Ah]',
                        }
         df = Neware.convert_units(df)
         df = df.select(list(column_dict.keys())).rename(column_dict)
-        df = df.with_columns(pl.col('Charge Capacity (Ah)').diff().alias('dQ_charge'))
-        df = df.with_columns(pl.col('Discharge Capacity (Ah)').diff().alias('dQ_discharge'))
+        df = df.with_columns(pl.col('Charge Capacity [Ah]').diff().alias('dQ_charge'))
+        df = df.with_columns(pl.col('Discharge Capacity [Ah]').diff().alias('dQ_discharge'))
         df = df.with_columns(pl.col('dQ_charge').clip(lower_bound=0).fill_null(strategy="zero"))
         df = df.with_columns(pl.col('dQ_discharge').clip(lower_bound=0).fill_null(strategy="zero"))
         df = df.with_columns(((pl.col('dQ_charge')-pl.col('dQ_discharge')).cum_sum()
-                              + pl.col('Charge Capacity (Ah)').max()).alias('Capacity (Ah)'))
+                              + pl.col('Charge Capacity [Ah]').max()).alias('Capacity [Ah]'))
         if df.dtypes[df.columns.index('Date')] != pl.Datetime:
             df = df.with_columns(pl.col('Date').str.to_datetime().alias('Date'))
         df = df.with_columns(pl.col('Date').dt.timestamp('ms').alias('Time (s)'))
@@ -35,9 +35,9 @@ class Neware:
                        'Time (s)',
                        'Cycle',
                        'Step',
-                       'Current (A)',
-                       'Voltage (V)',
-                       'Capacity (Ah)',
+                       'Current [A]',
+                       'Voltage [V]',
+                       'Capacity [Ah]',
                        ])
         return df
 
