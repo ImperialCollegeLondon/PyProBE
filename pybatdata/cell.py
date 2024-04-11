@@ -200,7 +200,8 @@ class Cell:
         if scheme == 'distinctipy':
             rgb = distinctipy.get_colors(n_colors, 
                                          exclude_colors=[(0,0,0), (1,1,1),(1,1,0)], # Exclude black, white, and yellow
-                                         rng=0, # Set the random seed
+                                         rng=1, # Set the random seed
+                                         n_attempts=5000,
                                          **kwargs,
                                          )
             hex = []
