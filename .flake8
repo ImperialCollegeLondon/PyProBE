@@ -1,0 +1,10 @@
+[flake8]
+max-line-length = 88
+extend-ignore =
+	E203,
+	# D1,  # Uncomment to disable enforcing docstrings 
+required-plugins =
+	flake8-docstring,
+docstring-convention = google
+# per-file-ignores =
+#     tests/*:D100,D104  # Uncomment to disable enforcing module-level docstring in tests/

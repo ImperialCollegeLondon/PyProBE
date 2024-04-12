@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = [
+    "htmlcov",
+] # Exclude the coverage report file from setuptools package finder
+
+[project]
+name = "PyBatData"
+version = "0.1"
+requires-python = ">=3.11"
+dependencies = ["matplotlib", "numpy", "polars", "pandas", "fastexcel", "xlsx2csv", "plotly", "scikit-learn", "distinctipy"]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "flake8-docstrings",
+    "isort",
+    "mypy",
+    "pip-tools",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pytest-mypy",
+    "pytest-mock",
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+
+[tool.mypy]
+disallow_any_explicit = false
+disallow_any_generics = true
+warn_unreachable = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = [".venv/", "docs/"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = "-v --mypy -p no:warnings --cov=pybatdata --cov-report=html --doctest-modules --ignore=docs/"
+
+[tool.coverage.report]
+exclude_also = [
+    "@overload"
+]
