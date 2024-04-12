@@ -1,0 +1,24 @@
+name: "Build and test"
+on:
+  - push
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - uses: pre-commit/action@v3.0.0
+  test:
+    needs: qa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: sudo apt install libngspice0 ngspice
+      - run: sudo ln -s /lib/x86_64-linux-gnu/libngspice.so.0 /lib/x86_64-linux-gnu/libngspice.so
+      - run: pip install -r requirements-dev.txt
+      - run: pytest .
