@@ -11,7 +11,7 @@ exclude = [
 name = "PyBatData"
 version = "0.1"
 requires-python = ">=3.11"
-dependencies = ["matplotlib", "numpy", "polars", "pandas", "fastexcel", "xlsx2csv", "plotly", "scikit-learn", "distinctipy"]
+dependencies = ["matplotlib", "numpy", "polars", "pandas", "fastexcel", "xlsx2csv", "plotly", "scikit-learn", "distinctipy", "streamlit"]
 
 [project.optional-dependencies]
 dev = [
@@ -47,7 +47,7 @@ warn_unused_ignores = false
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "-v --mypy -p no:warnings --cov=pybatdata --cov-report=html --doctest-modules --ignore=docs/"
+addopts = "-v --mypy -p no:warnings --cov=pybatdata --cov-report=html --doctest-modules --ignore=docs/ --ignore=pybatdata/"
 
 [tool.coverage.report]
 exclude_also = [
