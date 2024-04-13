@@ -2,8 +2,9 @@
 import os
 import re
 import polars as pl
+from pybatdata.batterycycler import BatteryCycler
 
-class Neware:
+class Neware(BatteryCycler):
     """A Neware battery cycler object."""
     @staticmethod
     def load_file(filepath: str) -> pl.LazyFrame:
