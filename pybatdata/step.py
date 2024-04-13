@@ -1,11 +1,11 @@
 """A module for the Step class."""
 
 import numpy as np
-from pybatdata.base import Base
+from pybatdata.result import Result
 import polars as pl
 from pybatdata.filter import Filter
 
-class Step(Base):
+class Step(Result):
     """A step in a battery test procedure."""
     def __init__(self, 
                  lazyframe: pl.LazyFrame,

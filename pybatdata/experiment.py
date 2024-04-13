@@ -2,7 +2,7 @@
 
 from pybatdata.cycle import Cycle
 import polars as pl
-from pybatdata.base import Base
+from pybatdata.result import Result
 from pybatdata.filter import Filter
 
 class Experiment(Cycle):

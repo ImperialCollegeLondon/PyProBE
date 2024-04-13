@@ -5,6 +5,7 @@ from pybatdata.step import Step
 import polars as pl
 import numpy as np
 from pybatdata.result import Result
+from pybatdata.filter import Filter
 
 class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
@@ -16,6 +17,13 @@ class Cycling(Experiment):
                 lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
         """
         super().__init__(lazyframe, info)
+        self._create_capacity_throughput()
+
+    def _create_capacity_throughput(self)->None:
+        """Recalculate the capacity column to show the total capacity passed at each point."""
+        self.lazyframe = self.lazyframe.with_columns([
+            (pl.col("Capacity [Ah]").diff().abs().cum_sum()).alias("Capacity Throughput [Ah]")
+        ])
 
     @property
     def SOH_capacity(self) -> np.ndarray:
@@ -24,7 +32,7 @@ class Cycling(Experiment):
         Returns:
             np.ndarray: The state of health of the battery.
         """
-        
+        self.lazyframe = Filter._get_events(self.lazyframe)
         lf_capacity_throughput = self.lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Capacity Throughput [Ah]').first())
         lf_time = self.lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Time [s]').first())
         

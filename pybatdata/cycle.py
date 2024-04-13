@@ -2,11 +2,11 @@
 
 from pybatdata.step import Step
 import polars as pl
-from pybatdata.base import Base
 from typing import Callable
 from pybatdata.filter import Filter
+from pybatdata.result import Result
 
-class Cycle(Base):
+class Cycle(Result):
     """A cycle in a battery procedure."""
 
     def __init__(self, 
