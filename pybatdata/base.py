@@ -20,8 +20,8 @@ class Base(Result):
         """
         self.lazyframe = lazyframe
         self.info = info
-        self._set_zero_capacity()
-        self._set_zero_time()
+        # self._set_zero_capacity()
+        # self._set_zero_time()
         self._create_capacity_throughput()
         self.lazyframe = self._get_events(self.lazyframe)
         super().__init__(self.lazyframe, self.info)
@@ -35,7 +35,7 @@ class Base(Result):
     def _set_zero_time(self) -> None:
         """Recalculate the time column to start from zero at beginning of current selection."""
         self.lazyframe = self.lazyframe.with_columns([
-            (pl.col("Time (s)") - pl.col("Time (s)").first()).alias("Time (s)")
+            (pl.col("Time [s]") - pl.col("Time [s]").first()).alias("Time [s]")
         ])
 
     

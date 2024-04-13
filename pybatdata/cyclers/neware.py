@@ -28,11 +28,11 @@ class Neware:
                               + pl.col('Charge Capacity [Ah]').max()).alias('Capacity [Ah]'))
         if df.dtypes[df.columns.index('Date')] != pl.Datetime:
             df = df.with_columns(pl.col('Date').str.to_datetime().alias('Date'))
-        df = df.with_columns(pl.col('Date').dt.timestamp('ms').alias('Time (s)'))
-        df = df.with_columns(pl.col('Time (s)') - pl.col('Time (s)').first())
-        df = df.with_columns(pl.col('Time (s)')*1e-3)
+        df = df.with_columns(pl.col('Date').dt.timestamp('ms').alias('Time [s]'))
+        df = df.with_columns(pl.col('Time [s]') - pl.col('Time [s]').first())
+        df = df.with_columns(pl.col('Time [s]')*1e-3)
         df = df.select(['Date',
-                       'Time (s)',
+                       'Time [s]',
                        'Cycle',
                        'Step',
                        'Current [A]',

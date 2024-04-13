@@ -26,7 +26,7 @@ class Cycling(Experiment):
         """
         
         lf_capacity_throughput = self.lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Capacity Throughput [Ah]').first())
-        lf_time = self.lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Time (s)').first())
+        lf_time = self.lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Time [s]').first())
         
         lf_charge = self.charge().lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Capacity [Ah]').max()-pl.col('Capacity [Ah]').min()).rename({'Capacity [Ah]': 'Charge Capacity [Ah]'})
         lf_discharge = self.discharge().lazyframe.groupby('_cycle', maintain_order = True).agg(pl.col('Capacity [Ah]').max()-pl.col('Capacity [Ah]').min()).rename({'Capacity [Ah]': 'Discharge Capacity [Ah]'})

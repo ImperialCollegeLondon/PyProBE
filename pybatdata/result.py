@@ -15,6 +15,9 @@ class Result:
         if isinstance(self._data, pl.LazyFrame):
             instruction_list = []
             for column in self._data.columns:
+                new_instruction = Units.set_zero(column)
+                if new_instruction is not None:
+                    instruction_list.extend(new_instruction)
                 new_instruction = Units.convert_units(column)
                 if new_instruction is not None:
                     instruction_list.extend(new_instruction)

@@ -37,7 +37,7 @@ class Step(Base):
         """
         V = self.data['Voltage [V]']
         
-        n = len[V]
+        n = len(V)
         V_range = V.max() - V.min()
         v = np.linspace(V.min(), V.max(), int(V_range/deltaV))
         deltaV = v[1]-v[0]

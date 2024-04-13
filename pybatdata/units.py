@@ -4,25 +4,28 @@ class Units:
     unit_dict = {
         'Current': {
             'units': ['A', 'mA'],
-            'scale_factor': [1, 1000]
+            'scale_factor': [1, 1000],
+            'zero_reference': False
         },
         'Voltage': {
             'units': ['V', 'mV'],
-            'scale_factor': [1, 1000]
+            'scale_factor': [1, 1000],
+            'zero_reference': False
         },
         'Capacity': {
             'units': ['Ah', 'mAh'],
-            'scale_factor': [1, 1000]
+            'scale_factor': [1, 1000],
+            'zero_reference': True
         },
         'Time': {
             'units': ['s', 'min', 'hr'],
-            'scale_factor': [1, 1/60, 1/3600]
+            'scale_factor': [1, 1/60, 1/3600],
+            'zero_reference': True
         },
     }
 
     @staticmethod
     def extract_quantity_and_unit(string):
-        print(string)
         match = re.search(r'\[(.*?)\]', string)
         if match:
             unit = match.group(1)
@@ -41,8 +44,11 @@ class Units:
                 if unit_to != unit_from:
                     scale_factor = cls.unit_dict[quantity]['scale_factor'][cls.unit_dict[quantity]['units'].index(unit_to)]
                     polars_instruction_list.append((pl.col(column) * scale_factor).alias(f'{quantity} ({unit_to})'))
-
             return polars_instruction_list
-
-class DynamicVariables:
-    variable_list = ['Time [s]', 'Capacity [Ah]']
+        
+    @classmethod
+    def set_zero(cls, column):
+        quantity, _ = cls.extract_quantity_and_unit(column)
+        if quantity in cls.unit_dict.keys():
+            if cls.unit_dict[quantity]['zero_reference']==True:
+                return [pl.col(column) - pl.col(column).first()]
