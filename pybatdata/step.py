@@ -3,6 +3,7 @@
 import numpy as np
 from pybatdata.base import Base
 import polars as pl
+from pybatdata.filter import Filter
 
 class Step(Base):
     """A step in a battery test procedure."""

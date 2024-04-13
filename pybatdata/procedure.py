@@ -4,6 +4,7 @@ from pybatdata.experiments.pulsing import Pulsing
 from pybatdata.experiments.cycling import Cycling
 import polars as pl
 from pybatdata.base import Base
+from pybatdata.filter import Filter
 import re
 import os
 

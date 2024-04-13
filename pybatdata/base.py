@@ -3,6 +3,7 @@
 import polars as pl
 import matplotlib.pyplot as plt
 from pybatdata.result import Result
+from pybatdata.filter import Filter
 # from pybatdata.result import Plot
 
 class Base(Result):
@@ -23,7 +24,7 @@ class Base(Result):
         # self._set_zero_capacity()
         # self._set_zero_time()
         self._create_capacity_throughput()
-        self.lazyframe = self._get_events(self.lazyframe)
+        self.lazyframe = Filter._get_events(self.lazyframe)
         super().__init__(self.lazyframe, self.info)
     
     def _set_zero_capacity(self) -> None:
@@ -45,30 +46,7 @@ class Base(Result):
             (pl.col("Capacity [Ah]").diff().abs().cum_sum()).alias("Capacity Throughput [Ah]")
         ])
 
-    @staticmethod
-    def _get_events(lazyframe: pl.LazyFrame):
-        lazyframe = lazyframe.with_columns(((pl.col('Cycle') - pl.col('Cycle').shift() != 0)
-                                    .fill_null(strategy='zero').cum_sum()
-                                    .alias('_cycle').cast(pl.Int32)))
-        lazyframe = lazyframe.with_columns((((pl.col('Cycle') - pl.col('Cycle').shift() != 0) | (pl.col('Step') - pl.col('Step').shift() != 0))
-                                    .fill_null(strategy='zero').cum_sum()
-                                    .alias('_step').cast(pl.Int32)))
-        lazyframe = lazyframe.with_columns([
-            (pl.col('_cycle') - pl.col('_cycle').max() - 1).alias('_cycle_reversed'),
-            (pl.col('_step') - pl.col('_step').max() - 1).alias('_step_reversed')
-        ])
-        return lazyframe
     
-    def filter_numerical(self, lazyframe: pl.LazyFrame, column: str, condition_number: int|list[int]) -> pl.Expr:
-        if isinstance(condition_number, int):
-            condition_number = [condition_number]
-        elif isinstance(condition_number, list):
-            condition_number = list(range(condition_number[0], condition_number[1] + 1))
-        lazyframe = self._get_events(lazyframe)
-        if condition_number is not None:
-            return lazyframe.filter(pl.col(column).is_in(condition_number) | pl.col(column + '_reversed').is_in(condition_number))
-        else: 
-            return lazyframe
     
     # def plot(self, x, y, **kwargs):
     #     plt.plot(self.data[x], self.data[y], **kwargs)

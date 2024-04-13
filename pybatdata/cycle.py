@@ -4,6 +4,7 @@ from pybatdata.step import Step
 import polars as pl
 from pybatdata.base import Base
 from typing import Callable
+from pybatdata.filter import Filter
 
 class Cycle(Base):
     """A cycle in a battery procedure."""
@@ -29,9 +30,9 @@ class Cycle(Base):
             Step: A step object from the cycle.
         """
         if condition is not None:
-            lazyframe= self.filter_numerical(self.lazyframe.filter(condition), '_step', step_number)
+            lazyframe= Filter.filter_numerical(self.lazyframe.filter(condition), '_step', step_number)
         else:
-            lazyframe = self.filter_numerical(self.lazyframe, '_step', step_number)
+            lazyframe = Filter.filter_numerical(self.lazyframe, '_step', step_number)
         return Step(lazyframe, self.info)
 
     def charge(self, charge_number: int=None) -> Step:
@@ -43,7 +44,7 @@ class Cycle(Base):
         Returns:
             Step: A charge step object from the cycle.
         """
-        # lf_filtered = self.filter_numerical(self.lazyframe.filter(pl.col('Current [A]') > 0), '_step', charge_number)
+        # lf_filtered = Filter.filter_numerical(self.lazyframe.filter(pl.col('Current [A]') > 0), '_step', charge_number)
         condition = pl.col('Current [A]') > 0
         return self.step(charge_number, condition)
  
