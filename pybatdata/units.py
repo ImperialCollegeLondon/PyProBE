@@ -1,6 +1,13 @@
+"""A module for unit conversion and zero referencing of data columns."""
+
 import polars as pl
 import re
 class Units:
+    """A class for unit conversion and zero referencing of data columns.
+    
+    Attributes:
+        unit_dict (dict): A dictionary containing the unit conversion information for the different quantities.
+    """
     unit_dict = {
         'Current': {
             'units': ['A', 'mA'],
@@ -25,7 +32,12 @@ class Units:
     }
 
     @staticmethod
-    def extract_quantity_and_unit(string):
+    def extract_quantity_and_unit(string: str) -> tuple[str, str]:
+        """Extracts the quantity and unit from a string.
+        
+        Args:
+            string (str): A string containing the quantity and unit.
+        """
         match = re.search(r'\[(.*?)\]', string)
         if match:
             unit = match.group(1)
@@ -36,7 +48,15 @@ class Units:
         return quantity, unit
     
     @classmethod
-    def convert_units(cls, column):
+    def convert_units(cls, column: str) -> list[pl.Expr]:
+        """For a given column, return a list of polars instructions to calculate the column in different units.
+        
+        Args:
+            column (str): The column to convert units of.
+            
+        Returns:
+            list[pl.Expr]: A list of polars instructions to calculate the column in different units.
+        """
         quantity, unit_from =cls.extract_quantity_and_unit(column)
         if quantity in cls.unit_dict.keys():
             polars_instruction_list = []
@@ -47,7 +67,14 @@ class Units:
             return polars_instruction_list
         
     @classmethod
-    def set_zero(cls, column):
+    def set_zero(cls, column: str) -> list[pl.Expr]:
+        """For a given column, return a list of polars instructions to zero reference the column, making the first value 0.
+        
+        Args:
+            column (str): The column to zero reference.
+            
+        Returns:
+            list[pl.Expr]: A list of polars instructions to zero reference the column."""
         quantity, _ = cls.extract_quantity_and_unit(column)
         if quantity in cls.unit_dict.keys():
             if cls.unit_dict[quantity]['zero_reference']==True:
