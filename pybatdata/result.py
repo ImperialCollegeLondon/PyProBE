@@ -129,11 +129,17 @@ class Result:
                     )
                 )
                 fig.update_xaxes(
-                    range=[x_range[0] - x_buffer, x_range[1] + x_buffer]
-                )  # type: ignore
+                    range=[
+                        x_range[0] - x_buffer,  # type: ignore
+                        x_range[1] + x_buffer,  # type: ignore
+                    ]
+                )
                 fig.update_yaxes(
-                    range=[y_range[0] - y_buffer, y_range[1] + y_buffer]
-                )  # type: ignore
+                    range=[
+                        y_range[0] - y_buffer,  # type: ignore
+                        y_range[1] + y_buffer,  # type: ignore
+                    ]
+                )
         else:
             color = self.info["color"]
             fig.add_trace(
