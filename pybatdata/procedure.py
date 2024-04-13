@@ -3,11 +3,12 @@ from pybatdata.experiment import Experiment
 from pybatdata.experiments.pulsing import Pulsing
 from pybatdata.experiments.cycling import Cycling
 import polars as pl
-from pybatdata.base import Base
+from pybatdata.result import Result
+from pybatdata.filter import Filter
 import re
 import os
 
-class Procedure(Base):
+class Procedure(Result):
     """A class for a procedure in a battery experiment."""
     def __init__(self, 
                  data_path: str,

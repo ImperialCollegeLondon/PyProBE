@@ -25,9 +25,9 @@ class Pulsing(Experiment):
         Returns:
             pl.DataFrame: A dataframe with rows for the start of each pulse.
         """
-        df = self.data.with_columns(pl.col('Current (A)').shift().alias('Prev Current'))
-        df = df.with_columns(pl.col('Voltage (V)').shift().alias('Prev Voltage'))
-        return  df.filter((df['Current (A)'].shift() == 0) & (df['Current (A)'] != 0))
+        df = self.data.with_columns(pl.col('Current [A]').shift().alias('Prev Current'))
+        df = df.with_columns(pl.col('Voltage [V]').shift().alias('Prev Voltage'))
+        return  df.filter((df['Current [A]'].shift() == 0) & (df['Current [A]'] != 0))
 
     @property
     def V0(self) -> np.ndarray:
@@ -45,7 +45,7 @@ class Pulsing(Experiment):
         Returns:
             numpy.ndarray: The voltage values immediately after each pulse.
         """
-        return self.pulse_starts['Voltage (V)'].to_numpy()
+        return self.pulse_starts['Voltage [V]'].to_numpy()
     
     @property
     def I1(self) -> np.ndarray:
@@ -54,7 +54,7 @@ class Pulsing(Experiment):
         Returns:
             numpy.ndarray: The current values immediately after each pulse.
         """
-        return self.pulse_starts['Current (A)'].to_numpy()
+        return self.pulse_starts['Current [A]'].to_numpy()
 
     @property
     def R0(self) -> np.ndarray:
@@ -70,12 +70,12 @@ class Pulsing(Experiment):
         Returns:
             numpy.ndarray: The cell resistance at a given time after each pulse.
         """
-        t_point = self.pulse_starts['Time (s)']+t
+        t_point = self.pulse_starts['Time [s]']+t
         Vt = np.zeros(len(t_point))
         for i in range(len(Vt)):
-            condition = self.data['Time (s)'] >= t_point[i]
-            first_row = self.data.filter(condition).sort('Time (s)').head(1)
-            Vt[i] = first_row['Voltage (V)'].to_numpy()[0]
+            condition = self.data['Time [s]'] >= t_point[i]
+            first_row = self.data.filter(condition).sort('Time [s]').head(1)
+            Vt[i] = first_row['Voltage [V]'].to_numpy()[0]
         return (Vt-self.V0)/self.I1    
         
     def pulse(self, pulse_number: int) -> Step:

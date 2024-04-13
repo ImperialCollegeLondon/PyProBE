@@ -2,7 +2,8 @@
 
 from pybatdata.cycle import Cycle
 import polars as pl
-from pybatdata.base import Base
+from pybatdata.result import Result
+from pybatdata.filter import Filter
 
 class Experiment(Cycle):
     """ An experiment in a battery procedure."""
@@ -25,5 +26,5 @@ class Experiment(Cycle):
         Returns:
             Cycle: A cycle object from the experiment.
         """
-        lf_filtered = self.filter_numerical(self.lazyframe, '_cycle', cycle_number)
+        lf_filtered = Filter.filter_numerical(self.lazyframe, '_cycle', cycle_number)
         return Cycle(lf_filtered, self.info)

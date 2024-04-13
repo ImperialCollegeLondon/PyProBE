@@ -3,19 +3,30 @@ import polars as pl
 import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 from sklearn.preprocessing import minmax_scale
-import numpy as np
+from pybatdata.units import Units
+from pybatdata.filter import Filter
+
 class Result:
-    def __init__(self, data, info):
-        self._data = data
+    def __init__(self, lazyframe, info):
+        self.lazyframe = lazyframe
         self.info = info
 
     @property
     def data(self):
-        if isinstance(self._data, pl.LazyFrame):
-            self._data = self._data.collect()
-            if self._data.shape[0] == 0:
+        if isinstance(self.lazyframe, pl.LazyFrame):
+            instruction_list = []
+            for column in self.lazyframe.columns:
+                new_instruction = Units.set_zero(column)
+                if new_instruction is not None:
+                    instruction_list.extend(new_instruction)
+                new_instruction = Units.convert_units(column)
+                if new_instruction is not None:
+                    instruction_list.extend(new_instruction)
+            self.lazyframe = self.lazyframe.with_columns(instruction_list)
+            self.lazyframe = self.lazyframe.collect()
+            if self.lazyframe.shape[0] == 0:
                 raise ValueError("No data exists for this filter.")
-        return self._data
+        return self.lazyframe
     
     def print(self):
         print(self.data)

@@ -2,10 +2,11 @@
 
 from pybatdata.step import Step
 import polars as pl
-from pybatdata.base import Base
 from typing import Callable
+from pybatdata.filter import Filter
+from pybatdata.result import Result
 
-class Cycle(Base):
+class Cycle(Result):
     """A cycle in a battery procedure."""
 
     def __init__(self, 
@@ -29,9 +30,9 @@ class Cycle(Base):
             Step: A step object from the cycle.
         """
         if condition is not None:
-            lazyframe= self.filter_numerical(self.lazyframe.filter(condition), '_step', step_number)
+            lazyframe= Filter.filter_numerical(self.lazyframe.filter(condition), '_step', step_number)
         else:
-            lazyframe = self.filter_numerical(self.lazyframe, '_step', step_number)
+            lazyframe = Filter.filter_numerical(self.lazyframe, '_step', step_number)
         return Step(lazyframe, self.info)
 
     def charge(self, charge_number: int=None) -> Step:
@@ -43,8 +44,8 @@ class Cycle(Base):
         Returns:
             Step: A charge step object from the cycle.
         """
-        # lf_filtered = self.filter_numerical(self.lazyframe.filter(pl.col('Current (A)') > 0), '_step', charge_number)
-        condition = pl.col('Current (A)') > 0
+        # lf_filtered = Filter.filter_numerical(self.lazyframe.filter(pl.col('Current [A]') > 0), '_step', charge_number)
+        condition = pl.col('Current [A]') > 0
         return self.step(charge_number, condition)
  
     def discharge(self, discharge_number: int=None) -> Step:
@@ -56,7 +57,7 @@ class Cycle(Base):
         Returns:
             Step: A discharge step object from the cycle.
         """
-        condition = pl.col('Current (A)') < 0
+        condition = pl.col('Current [A]') < 0
         return self.step(discharge_number, condition)
     
     def chargeordischarge(self, chargeordischarge_number: int=None) -> Step:
@@ -68,7 +69,7 @@ class Cycle(Base):
         Returns:
             Step: A charge or discharge step object from the cycle.
         # """
-        condition = pl.col('Current (A)') != 0
+        condition = pl.col('Current [A]') != 0
         return self.step(chargeordischarge_number, condition)
 
     def rest(self, rest_number: int=None) -> Step:
@@ -80,5 +81,5 @@ class Cycle(Base):
         Returns:
             Step: A rest step object from the cycle.
         """
-        condition = pl.col('Current (A)') == 0
+        condition = pl.col('Current [A]') == 0
         return self.step(rest_number, condition)

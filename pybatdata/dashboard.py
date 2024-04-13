@@ -51,8 +51,8 @@ selected_experiment = st.sidebar.selectbox('Select an experiment', experiment_na
 
 # Get the cycle and step numbers from the user
 cycle_step_input = st.sidebar.text_input('Enter the cycle and step numbers (e.g., "cycle(1).step(2)")')
-x_options = ['Time (s)', 'Capacity (Ah)', 'Capacity (mAh)', 'Capacity Throughput (Ah)']
-y_options = ['Voltage (V)', 'Current (A)', 'Current (mA)', 'Capacity (Ah)', 'Capacity (mAh)']
+x_options = ['Time [s]', 'Capacity [Ah]', 'Capacity (mAh)', 'Capacity Throughput [Ah]']
+y_options = ['Voltage [V]', 'Current [A]', 'Current [mA]', 'Capacity [Ah]', 'Capacity (mAh)']
 
 graph_placeholder = st.empty()
 
@@ -105,6 +105,6 @@ graph_placeholder.plotly_chart(fig, theme='streamlit' if plot_theme == 'default'
 # Show raw data in tabs
 if selected_data:
     tabs = st.tabs(selected_names)
-    columns = ['Time (s)', 'Cycle', 'Step', 'Current (A)', 'Voltage (V)', 'Capacity (Ah)']
+    columns = ['Time [s]', 'Cycle', 'Step', 'Current [A]', 'Voltage [V]', 'Capacity [Ah]']
     for tab in tabs:
         tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
