@@ -13,7 +13,7 @@ class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
 
     def __init__(self, lazyframe: pl.LazyFrame, info: Dict[str, str | int | float]):
-        """Create an experiment.
+        """Create a cycling experiment.
 
         Args:
             lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
