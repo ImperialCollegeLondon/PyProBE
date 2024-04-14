@@ -43,6 +43,10 @@ module = "tests.*"
 disallow_untyped_defs = false
 warn_unused_ignores = false
 
+[[tool.mypy.overrides]]
+module = "polars"
+follow_imports = "skip"
+
 [tool.isort]
 profile = "black"
 

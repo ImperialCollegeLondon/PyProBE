@@ -25,7 +25,7 @@ class Result:
 
         Args:
             lazyframe (pl.LazyFrame): The filtered lazyframe.
-            info (dict): A dictionary containing info about the test.
+            info (Dict[str, str | int | float]): A dict containing test info.
         """
         self.lazyframe = lazyframe
         self.dataframe: Optional[pl.DataFrame] = None
@@ -85,8 +85,8 @@ class Result:
         plot_theme = "simple_white"
         x_range = [self.data[x].min(), self.data[x].max()]
         y_range = [self.data[y].min(), self.data[y].max()]
-        x_buffer = 0.05 * (x_range[1] - x_range[0])  # type: ignore
-        y_buffer = 0.05 * (y_range[1] - y_range[0])  # type: ignore
+        x_buffer = 0.05 * (x_range[1] - x_range[0])
+        y_buffer = 0.05 * (y_range[1] - y_range[0])
 
         if color_by is not None:
             if color_by in self.data.columns:
@@ -130,14 +130,14 @@ class Result:
                 )
                 fig.update_xaxes(
                     range=[
-                        x_range[0] - x_buffer,  # type: ignore
-                        x_range[1] + x_buffer,  # type: ignore
+                        x_range[0] - x_buffer,
+                        x_range[1] + x_buffer,
                     ]
                 )
                 fig.update_yaxes(
                     range=[
-                        y_range[0] - y_buffer,  # type: ignore
-                        y_range[1] + y_buffer,  # type: ignore
+                        y_range[0] - y_buffer,
+                        y_range[1] + y_buffer,
                     ]
                 )
         else:
