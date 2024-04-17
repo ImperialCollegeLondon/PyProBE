@@ -3,8 +3,8 @@ import polars as pl
 from pybatdata.cell import Cell
 from pybatdata.procedure import Procedure
 from pybatdata.cyclers.neware import Neware
-
-Cell.write_parquet('tests/sample_data_neware/sample_data_neware.xlsx', 'tests/sample_data_neware/sample_data_neware.parquet', Neware)
+neware = Neware()
+Cell.write_parquet('tests/sample_data_neware/sample_data_neware.xlsx', 'tests/sample_data_neware/sample_data_neware.parquet', neware)
 
 @pytest.fixture(scope='module')
 def info_fixture():
