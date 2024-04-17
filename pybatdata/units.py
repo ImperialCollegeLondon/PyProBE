@@ -94,7 +94,7 @@ class Units:
             list[pl.Expr]: A list of polars instructions to zero reference the column.
         """
         quantity, _ = cls.extract_quantity_and_unit(column)
-        if quantity in cls.unit_dict.keys() is True:
+        if quantity in cls.unit_dict.keys():
             if cls.unit_dict[quantity].zero_reference is True:
                 return [pl.col(column) - pl.col(column).first()]
             else:
