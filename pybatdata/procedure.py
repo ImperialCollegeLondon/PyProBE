@@ -1,9 +1,10 @@
 """A module for the Procedure class."""
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import polars as pl
+import yaml
 
 from pybatdata.experiment import Experiment
 from pybatdata.experiments.cycling import Cycling
@@ -27,12 +28,11 @@ class Procedure(Result):
         """
         lazyframe = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
-        readme_path = os.path.join(data_folder, "README.txt")
+        readme_path = os.path.join(data_folder, "README.yaml")
         (
             self.titles,
             self.cycles_idx,
             self.steps_idx,
-            self.step_names,
         ) = self.process_readme(readme_path)
         super().__init__(lazyframe, info)
 
@@ -90,11 +90,9 @@ class Procedure(Result):
         return pl.col(column).is_in(cls.flatten(indices)).alias(column)
 
     @staticmethod
-    def process_readme(
+    def process_txt(
         readme_path: str,
-    ) -> tuple[
-        Dict[str, str], List[List[int]], List[List[list[int]]], List[Optional[str]]
-    ]:
+    ) -> tuple[Dict[str, str], List[List[int]], List[List[list[int]]]]:
         """Function to process the README.txt file and extract the relevant information.
 
         Args:
@@ -105,7 +103,6 @@ class Procedure(Result):
                 Fomat {title: experiment type}.
             list: The cycle numbers inside the procedure.
             list: The step numbers inside the procedure.
-            list: The names of the steps inside the procedure.
         """
         with open(readme_path, "r") as file:
             lines = file.readlines()
@@ -154,15 +151,45 @@ class Procedure(Result):
             cycles[i + 1] = [item + cycles[i][-1] for item in cycles[i + 1]]
         for i in range(len(cycles)):
             cycles[i] = [item + 1 for item in cycles[i]]
+        return titles, cycles, steps
 
-        step_names: List[Optional[str]] = [None for _ in range(steps[-1][-1][-1] + 1)]
-        line_index = 0
-        while line_index < len(lines):
-            if lines[line_index].startswith("#-"):
-                match = re.search(r"Step (\d+)", lines[line_index])
-                if match is not None:
-                    step_names[int(match.group(1))] = (
-                        lines[line_index].split(": ")[1].strip()
-                    )
-            line_index += 1
-        return titles, cycles, steps, step_names
+    @staticmethod
+    def process_readme(
+        readme_path: str,
+    ) -> tuple[Dict[str, str], List[List[int]], List[List[List[int]]]]:
+        """Function to process the README.yaml file.
+
+        Args:
+            readme_path (str): The path to the README.yaml file.
+
+        Returns:
+            dict: The titles of the experiments inside a procddure.
+                Fomat {title: experiment type}.
+            list: The cycle numbers inside the procedure.
+            list: The step numbers inside the procedure.
+        """
+        with open(readme_path, "r") as file:
+            readme_dict = yaml.safe_load(file)
+
+        titles = {
+            experiment: readme_dict[experiment]["Type"] for experiment in readme_dict
+        }
+
+        max_step = 0
+        steps: List[List[List[int]]] = []
+        for experiment in readme_dict:
+            step_list = list(range(len(readme_dict[experiment]["Steps"])))
+            step_list = [x + max_step + 1 for x in step_list]
+            max_step = step_list[-1]
+            steps_and_cycles = [
+                step_list for _ in range(readme_dict[experiment]["Repeat"])
+            ]
+            steps.append(steps_and_cycles)
+
+        cycles = [list(range(len(sublist))) for sublist in steps]
+        for i in range(len(cycles) - 1):
+            cycles[i + 1] = [item + cycles[i][-1] for item in cycles[i + 1]]
+        for i in range(len(cycles)):
+            cycles[i] = [item + 1 for item in cycles[i]]
+
+        return titles, cycles, steps
