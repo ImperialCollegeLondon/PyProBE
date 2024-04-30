@@ -12,14 +12,16 @@ from pybatdata.result import Result
 class Step(Result):
     """A step in a battery test procedure."""
 
-    def __init__(self, lazyframe: pl.LazyFrame, info: Dict[str, str | int | float]):
+    def __init__(
+        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
+    ):
         """Create a step.
 
         Args:
-            lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
+            _data (polars.LazyFrame): The _data of data being filtered.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(lazyframe, info)
+        super().__init__(_data, info)
 
     @property
     def capacity(self) -> float:

@@ -6,16 +6,16 @@ class Filter:
     """A class for filtering data."""
 
     @staticmethod
-    def _get_events(lazyframe: pl.LazyFrame) -> pl.LazyFrame:
+    def _get_events(_data: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
         """Get the events from cycle and step columns.
 
         Args:
-            lazyframe: A LazyFrame object.
+            _data: A LazyFrame object.
 
         Returns:
-            lazyframe: A LazyFrame object with added _cycle and _step columns.
+            _data: A LazyFrame object with added _cycle and _step columns.
         """
-        lazyframe = lazyframe.with_columns(
+        _data = _data.with_columns(
             (
                 (pl.col("Cycle") - pl.col("Cycle").shift() != 0)
                 .fill_null(strategy="zero")
@@ -24,7 +24,7 @@ class Filter:
                 .cast(pl.Int32)
             )
         )
-        lazyframe = lazyframe.with_columns(
+        _data = _data.with_columns(
             (
                 (
                     (pl.col("Cycle") - pl.col("Cycle").shift() != 0)
@@ -36,7 +36,7 @@ class Filter:
                 .cast(pl.Int32)
             )
         )
-        lazyframe = lazyframe.with_columns(
+        _data = _data.with_columns(
             [
                 (pl.col("_cycle") - pl.col("_cycle").max() - 1).alias(
                     "_cycle_reversed"
@@ -44,19 +44,19 @@ class Filter:
                 (pl.col("_step") - pl.col("_step").max() - 1).alias("_step_reversed"),
             ]
         )
-        return lazyframe
+        return _data
 
     @classmethod
     def filter_numerical(
         cls,
-        lazyframe: pl.LazyFrame,
+        _data: pl.LazyFrame | pl.DataFrame,
         column: str,
         condition_number: int | list[int] | None,
     ) -> pl.LazyFrame:
         """Filter a LazyFrame by a numerical condition.
 
         Args:
-            lazyframe (pl.LazyFrame): A LazyFrame object.
+            _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
             column (str): The column to filter on.
             condition_number (int, list): A number or a list of numbers.
         """
@@ -64,11 +64,11 @@ class Filter:
             condition_number = [condition_number]
         elif isinstance(condition_number, list):
             condition_number = list(range(condition_number[0], condition_number[1] + 1))
-        lazyframe = cls._get_events(lazyframe)
+        _data = cls._get_events(_data)
         if condition_number is not None:
-            return lazyframe.filter(
+            return _data.filter(
                 pl.col(column).is_in(condition_number)
                 | pl.col(column + "_reversed").is_in(condition_number)
             )
         else:
-            return lazyframe
+            return _data

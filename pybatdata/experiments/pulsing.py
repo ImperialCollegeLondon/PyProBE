@@ -13,18 +13,20 @@ from pybatdata.step import Step
 class Pulsing(Experiment):
     """A pulsing experiment in a battery procedure."""
 
-    def __init__(self, lazyframe: pl.LazyFrame, info: Dict[str, str | int | float]):
+    def __init__(
+        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
+    ):
         """Create a pulsing experiment.
 
         Args:
-            lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
+            _data (polars.LazyFrame): The _data of data being filtered.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(lazyframe, info)
-        self.rests: List[Optional[Step]] = [None] * lazyframe.select(
+        super().__init__(_data, info)
+        self.rests: List[Optional[Step]] = [None] * _data.select(
             "Cycle"
         ).collect().n_unique("Cycle")
-        self.pulses: List[Optional[Step]] = [None] * lazyframe.select(
+        self.pulses: List[Optional[Step]] = [None] * _data.select(
             "Cycle"
         ).collect().n_unique("Cycle")
 

@@ -25,14 +25,14 @@ class Procedure(Result):
             data_path (str): The path to the data parquet file.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        lazyframe = pl.scan_parquet(data_path)
+        _data = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
         readme_path = os.path.join(data_folder, "README.yaml")
         (
             self.titles,
             self.steps_idx,
         ) = self.process_readme(readme_path)
-        super().__init__(lazyframe, info)
+        super().__init__(_data, info)
 
     def experiment(self, experiment_name: str) -> Experiment:
         """Return an experiment object from the procedure.
@@ -48,7 +48,7 @@ class Procedure(Result):
         conditions = [
             pl.col("Step").is_in(steps_idx),
         ]
-        lf_filtered = self.lazyframe.filter(conditions)
+        lf_filtered = self._data.filter(conditions)
         experiment_types = {
             "Constant Current": Experiment,
             "Pulsing": Pulsing,
