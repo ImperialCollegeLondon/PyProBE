@@ -1,9 +1,9 @@
 """A module for the Procedure class."""
 import os
-import re
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 import polars as pl
+import yaml
 
 from pybatdata.experiment import Experiment
 from pybatdata.experiments.cycling import Cycling
@@ -27,12 +27,10 @@ class Procedure(Result):
         """
         lazyframe = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
-        readme_path = os.path.join(data_folder, "README.txt")
+        readme_path = os.path.join(data_folder, "README.yaml")
         (
             self.titles,
-            self.cycles_idx,
             self.steps_idx,
-            self.step_names,
         ) = self.process_readme(readme_path)
         super().__init__(lazyframe, info)
 
@@ -46,11 +44,9 @@ class Procedure(Result):
             Experiment: An experiment object from the procedure.
         """
         experiment_number = list(self.titles.keys()).index(experiment_name)
-        cycles_idx = self.cycles_idx[experiment_number]
         steps_idx = self.steps_idx[experiment_number]
         conditions = [
-            pl.col("Cycle").is_in(self.flatten(cycles_idx)),
-            pl.col("Step").is_in(self.flatten(steps_idx)),
+            pl.col("Step").is_in(steps_idx),
         ]
         lf_filtered = self.lazyframe.filter(conditions)
         experiment_types = {
@@ -60,21 +56,6 @@ class Procedure(Result):
             "SOC Reset": Experiment,
         }
         return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
-
-    @classmethod
-    def flatten(cls, lst: int | List[Any]) -> List[int]:
-        """Flatten a list of lists into a single list.
-
-        Args:
-            lst (list): The list of lists to flatten.
-
-        Returns:
-            list: The flattened list.
-        """
-        if not isinstance(lst, list):
-            return [lst]
-        else:
-            return [item for sublist in lst for item in cls.flatten(sublist)]
 
     @classmethod
     def get_exp_conditions(cls, column: str, indices: List[int]) -> pl.Expr:
@@ -87,82 +68,39 @@ class Procedure(Result):
         Returns:
             pl.Expr: The polars expression for filtering the column.
         """
-        return pl.col(column).is_in(cls.flatten(indices)).alias(column)
+        return pl.col(column).is_in(indices).alias(column)
 
     @staticmethod
     def process_readme(
         readme_path: str,
-    ) -> tuple[
-        Dict[str, str], List[List[int]], List[List[list[int]]], List[Optional[str]]
-    ]:
-        """Function to process the README.txt file and extract the relevant information.
+    ) -> tuple[Dict[str, str], List[List[int]]]:
+        """Function to process the README.yaml file.
 
         Args:
-            readme_path (str): The path to the README.txt file.
+            readme_path (str): The path to the README.yaml file.
 
         Returns:
             dict: The titles of the experiments inside a procddure.
                 Fomat {title: experiment type}.
             list: The cycle numbers inside the procedure.
             list: The step numbers inside the procedure.
-            list: The names of the steps inside the procedure.
         """
         with open(readme_path, "r") as file:
-            lines = file.readlines()
+            readme_dict = yaml.safe_load(file)
 
-        titles = {}
-        title_index = 0
-        for line in lines:
-            if line.startswith("##"):
-                splitted_line = line[3:].split(":")
-                titles[splitted_line[0].strip()] = splitted_line[1].strip()
+        titles = {
+            experiment: readme_dict[experiment]["Type"] for experiment in readme_dict
+        }
 
-        steps: List[List[List[int]]] = [[[]] for _ in range(len(titles))]
-        cycles: List[List[int]] = [[] for _ in range(len(titles))]
-        line_index = 0
-        title_index = -1
-        cycle_index = 0
-        while line_index < len(lines):
-            if lines[line_index].startswith("##"):
-                title_index += 1
-                cycle_index = 0
-            if lines[line_index].startswith("#-"):
-                match = re.search(r"Step (\d+)", lines[line_index])
-                if match is not None:
-                    steps[title_index][cycle_index].append(
-                        int(match.group(1))
-                    )  # Append step number to the corresponding title's list
-                    latest_step = int(match.group(1))
-            if lines[line_index].startswith("#x"):
-                line_index += 1
-                match = re.search(r"Starting step: (\d+)", lines[line_index])
-                if match is not None:
-                    starting_step = int(match.group(1))
-                line_index += 1
-                match = re.search(r"Cycle count: (\d+)", lines[line_index])
-                if match is not None:
-                    cycle_count = int(match.group(1))
-                for i in range(cycle_count - 1):
-                    steps[title_index].append(
-                        list(range(starting_step, latest_step + 1))
-                    )
-                    cycle_index += 1
-            line_index += 1
+        max_step = 0
+        steps: List[List[int]] = []
+        for experiment in readme_dict:
+            if "Step Numbers" in readme_dict[experiment]:
+                step_list = readme_dict[experiment]["Step Numbers"]
+            else:
+                step_list = list(range(len(readme_dict[experiment]["Steps"])))
+                step_list = [x + max_step + 1 for x in step_list]
+            max_step = step_list[-1]
+            steps.append(step_list)
 
-        cycles = [list(range(len(sublist))) for sublist in steps]
-        for i in range(len(cycles) - 1):
-            cycles[i + 1] = [item + cycles[i][-1] for item in cycles[i + 1]]
-        for i in range(len(cycles)):
-            cycles[i] = [item + 1 for item in cycles[i]]
-
-        step_names: List[Optional[str]] = [None for _ in range(steps[-1][-1][-1] + 1)]
-        line_index = 0
-        while line_index < len(lines):
-            if lines[line_index].startswith("#-"):
-                match = re.search(r"Step (\d+)", lines[line_index])
-                if match is not None:
-                    step_names[int(match.group(1))] = (
-                        lines[line_index].split(": ")[1].strip()
-                    )
-            line_index += 1
-        return titles, cycles, steps, step_names
+        return titles, steps
