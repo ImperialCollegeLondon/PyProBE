@@ -18,15 +18,14 @@ def test_process_readme(
     procedure_fixture, titles_fixture, steps_fixture, cycles_fixture, step_names_fixture
 ):
     """Test processing a readme file in yaml format."""
-    titles, cycles, steps = procedure_fixture.process_readme(
+    titles, steps = procedure_fixture.process_readme(
         "tests/sample_data_neware/README.yaml"
     )
     assert titles == titles_fixture
     assert steps == steps_fixture
-    assert cycles == cycles_fixture
 
     # Test without step numbers
-    titles, cycles, steps = procedure_fixture.process_readme(
+    titles, steps = procedure_fixture.process_readme(
         "tests/sample_data_neware/README_no_step_num.yaml"
     )
     assert titles == titles_fixture

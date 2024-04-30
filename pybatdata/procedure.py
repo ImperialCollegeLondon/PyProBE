@@ -31,7 +31,6 @@ class Procedure(Result):
         readme_path = os.path.join(data_folder, "README.yaml")
         (
             self.titles,
-            self.cycles_idx,
             self.steps_idx,
         ) = self.process_readme(readme_path)
         super().__init__(lazyframe, info)
@@ -46,10 +45,8 @@ class Procedure(Result):
             Experiment: An experiment object from the procedure.
         """
         experiment_number = list(self.titles.keys()).index(experiment_name)
-        cycles_idx = self.cycles_idx[experiment_number]
         steps_idx = self.steps_idx[experiment_number]
         conditions = [
-            pl.col("Cycle").is_in(self.flatten(cycles_idx)),
             pl.col("Step").is_in(self.flatten(steps_idx)),
         ]
         lf_filtered = self.lazyframe.filter(conditions)
@@ -156,7 +153,7 @@ class Procedure(Result):
     @staticmethod
     def process_readme(
         readme_path: str,
-    ) -> tuple[Dict[str, str], List[List[int]], List[List[List[int]]]]:
+    ) -> tuple[Dict[str, str], List[List[List[int]]]]:
         """Function to process the README.yaml file.
 
         Args:
@@ -189,10 +186,4 @@ class Procedure(Result):
             ]
             steps.append(steps_and_cycles)
 
-        cycles = [list(range(len(sublist))) for sublist in steps]
-        for i in range(len(cycles) - 1):
-            cycles[i + 1] = [item + cycles[i][-1] for item in cycles[i + 1]]
-        for i in range(len(cycles)):
-            cycles[i] = [item + 1 for item in cycles[i]]
-
-        return titles, cycles, steps
+        return titles, steps
