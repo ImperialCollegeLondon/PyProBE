@@ -1,6 +1,6 @@
 """A module for the Procedure class."""
 import os
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import polars as pl
 import yaml
@@ -46,7 +46,7 @@ class Procedure(Result):
         experiment_number = list(self.titles.keys()).index(experiment_name)
         steps_idx = self.steps_idx[experiment_number]
         conditions = [
-            pl.col("Step").is_in(self.flatten(steps_idx)),
+            pl.col("Step").is_in(steps_idx),
         ]
         lf_filtered = self.lazyframe.filter(conditions)
         experiment_types = {
@@ -56,21 +56,6 @@ class Procedure(Result):
             "SOC Reset": Experiment,
         }
         return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
-
-    @classmethod
-    def flatten(cls, lst: int | List[Any]) -> List[int]:
-        """Flatten a list of lists into a single list.
-
-        Args:
-            lst (list): The list of lists to flatten.
-
-        Returns:
-            list: The flattened list.
-        """
-        if not isinstance(lst, list):
-            return [lst]
-        else:
-            return [item for sublist in lst for item in cls.flatten(sublist)]
 
     @classmethod
     def get_exp_conditions(cls, column: str, indices: List[int]) -> pl.Expr:
@@ -83,12 +68,12 @@ class Procedure(Result):
         Returns:
             pl.Expr: The polars expression for filtering the column.
         """
-        return pl.col(column).is_in(cls.flatten(indices)).alias(column)
+        return pl.col(column).is_in(indices).alias(column)
 
     @staticmethod
     def process_readme(
         readme_path: str,
-    ) -> tuple[Dict[str, str], List[List[List[int]]]]:
+    ) -> tuple[Dict[str, str], List[List[int]]]:
         """Function to process the README.yaml file.
 
         Args:
@@ -108,7 +93,7 @@ class Procedure(Result):
         }
 
         max_step = 0
-        steps: List[List[List[int]]] = []
+        steps: List[List[int]] = []
         for experiment in readme_dict:
             if "Step Numbers" in readme_dict[experiment]:
                 step_list = readme_dict[experiment]["Step Numbers"]
@@ -116,9 +101,6 @@ class Procedure(Result):
                 step_list = list(range(len(readme_dict[experiment]["Steps"])))
                 step_list = [x + max_step + 1 for x in step_list]
             max_step = step_list[-1]
-            # steps_and_cycles = [
-            #     step_list for _ in range(readme_dict[experiment]["Repeat"])
-            # ]
             steps.append(step_list)
 
         return titles, steps

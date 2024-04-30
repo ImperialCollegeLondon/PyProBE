@@ -34,10 +34,3 @@ def test_process_readme(
         [4, 5, 6, 7],
         [8, 9, 10, 11],
     ]
-
-
-def test_flatten(procedure_fixture):
-    """Test flattening lists."""
-    lst = [[1, 2, 3], [4, 5], 6]
-    flat_list = procedure_fixture.flatten(lst)
-    assert flat_list == [1, 2, 3, 4, 5, 6]
