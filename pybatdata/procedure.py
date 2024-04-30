@@ -178,8 +178,11 @@ class Procedure(Result):
         max_step = 0
         steps: List[List[List[int]]] = []
         for experiment in readme_dict:
-            step_list = list(range(len(readme_dict[experiment]["Steps"])))
-            step_list = [x + max_step + 1 for x in step_list]
+            if "Step Numbers" in readme_dict[experiment]:
+                step_list = readme_dict[experiment]["Step Numbers"]
+            else:
+                step_list = list(range(len(readme_dict[experiment]["Steps"])))
+                step_list = [x + max_step + 1 for x in step_list]
             max_step = step_list[-1]
             steps_and_cycles = [
                 step_list for _ in range(readme_dict[experiment]["Repeat"])
