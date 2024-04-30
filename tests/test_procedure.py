@@ -7,11 +7,11 @@ def test_experiment(
     """Test creating an experiment."""
     experiment = procedure_fixture.experiment("Break-in Cycles")
     assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[1]
-    assert experiment.data["Step"].unique().to_list() == steps_fixture[1][0]
+    assert experiment.data["Step"].unique().to_list() == steps_fixture[1]
 
     experiment = procedure_fixture.experiment("Discharge Pulses")
     assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[2]
-    assert experiment.data["Step"].unique().to_list() == steps_fixture[2][0]
+    assert experiment.data["Step"].unique().to_list() == steps_fixture[2]
 
 
 def test_process_readme(
@@ -30,20 +30,9 @@ def test_process_readme(
     )
     assert titles == titles_fixture
     assert steps == [
-        [[1, 2, 3]],
-        [[4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7], [4, 5, 6, 7]],
-        [
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-            [8, 9, 10, 11],
-        ],
+        [1, 2, 3],
+        [4, 5, 6, 7],
+        [8, 9, 10, 11],
     ]
 
 

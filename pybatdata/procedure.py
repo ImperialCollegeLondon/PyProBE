@@ -116,9 +116,9 @@ class Procedure(Result):
                 step_list = list(range(len(readme_dict[experiment]["Steps"])))
                 step_list = [x + max_step + 1 for x in step_list]
             max_step = step_list[-1]
-            steps_and_cycles = [
-                step_list for _ in range(readme_dict[experiment]["Repeat"])
-            ]
-            steps.append(steps_and_cycles)
+            # steps_and_cycles = [
+            #     step_list for _ in range(readme_dict[experiment]["Repeat"])
+            # ]
+            steps.append(step_list)
 
         return titles, steps
