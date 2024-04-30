@@ -91,7 +91,7 @@ class Cell:
             filename = cls.get_filename(
                 cell_list[i].info, filename_function, filename_inputs
             )
-            data_path = os.path.join(root_directory, record_name, filename)
+            data_path = os.path.join(root_directory, title, filename)
             if fast_mode is True:
                 if i == 0:
                     parquet_verified = cls.verify_parquet(data_path, cycler)
