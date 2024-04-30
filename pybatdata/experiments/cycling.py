@@ -12,19 +12,21 @@ from pybatdata.result import Result
 class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
 
-    def __init__(self, lazyframe: pl.LazyFrame, info: Dict[str, str | int | float]):
+    def __init__(
+        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
+    ):
         """Create a cycling experiment.
 
         Args:
-            lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
+            _data (polars.LazyFrame): The _data of data being filtered.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(lazyframe, info)
+        super().__init__(_data, info)
         self._create_capacity_throughput()
 
     def _create_capacity_throughput(self) -> None:
         """Calculate the capcity throughput of the experiment."""
-        self.lazyframe = self.lazyframe.with_columns(
+        self._data = self._data.with_columns(
             [
                 (pl.col("Capacity [Ah]").diff().abs().cum_sum()).alias(
                     "Capacity Throughput [Ah]"
@@ -39,23 +41,23 @@ class Cycling(Experiment):
         Returns:
             Result: A result object for the capacity SOH of the cell.
         """
-        self.lazyframe = Filter._get_events(self.lazyframe)
-        lf_capacity_throughput = self.lazyframe.groupby(
-            "_cycle", maintain_order=True
-        ).agg(pl.col("Capacity Throughput [Ah]").first())
-        lf_time = self.lazyframe.groupby("_cycle", maintain_order=True).agg(
+        self._data = Filter._get_events(self._data)
+        lf_capacity_throughput = self._data.groupby("_cycle", maintain_order=True).agg(
+            pl.col("Capacity Throughput [Ah]").first()
+        )
+        lf_time = self._data.groupby("_cycle", maintain_order=True).agg(
             pl.col("Time [s]").first()
         )
 
         lf_charge = (
             self.charge()
-            .lazyframe.groupby("_cycle", maintain_order=True)
+            ._data.groupby("_cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
         )
         lf_discharge = (
             self.discharge()
-            .lazyframe.groupby("_cycle", maintain_order=True)
+            ._data.groupby("_cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
         )

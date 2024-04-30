@@ -12,14 +12,16 @@ from pybatdata.step import Step
 class Cycle(Result):
     """A cycle in a battery procedure."""
 
-    def __init__(self, lazyframe: pl.LazyFrame, info: Dict[str, str | int | float]):
+    def __init__(
+        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
+    ):
         """Create a cycle.
 
         Args:
-            lazyframe (polars.LazyFrame): The lazyframe of data being filtered.
+            _data (polars.LazyFrame): The _data of data being filtered.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(lazyframe, info)
+        super().__init__(_data, info)
 
     def step(
         self,
@@ -35,12 +37,12 @@ class Cycle(Result):
             Step: A step object from the cycle.
         """
         if condition is not None:
-            lazyframe = Filter.filter_numerical(
-                self.lazyframe.filter(condition), "_step", step_number
+            _data = Filter.filter_numerical(
+                self._data.filter(condition), "_step", step_number
             )
         else:
-            lazyframe = Filter.filter_numerical(self.lazyframe, "_step", step_number)
-        return Step(lazyframe, self.info)
+            _data = Filter.filter_numerical(self._data, "_step", step_number)
+        return Step(_data, self.info)
 
     def charge(self, charge_number: Optional[int] = None) -> Step:
         """Return a charge step object from the cycle.

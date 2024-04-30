@@ -13,22 +13,24 @@ class Result:
     """A result object for returning data and plotting.
 
     Attributes:
-        lazyframe (pl.LazyFrame): The filtered lazyframe.
+        _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
         dataframe (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
     def __init__(
-        self, lazyframe: pl.LazyFrame, info: Dict[str, str | int | float]
+        self,
+        _data: pl.LazyFrame | pl.DataFrame | pl.DataFrame,
+        info: Dict[str, str | int | float],
     ) -> None:
         """Initialize the Result object.
 
         Args:
-            lazyframe (pl.LazyFrame): The filtered lazyframe.
+            _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        self.lazyframe = lazyframe
-        self.dataframe: Optional[pl.DataFrame] = None
+        self._data = _data
+        self.data_property_called = False
         self.info = info
 
     @property
@@ -38,20 +40,22 @@ class Result:
         Returns:
             pl.DataFrame: The data as a polars DataFrame.
         """
-        if self.dataframe is None:
+        if self.data_property_called is False:
             instruction_list = []
-            for column in self.lazyframe.columns:
+            for column in self._data.columns:
                 new_instruction = Units.set_zero(column)
                 if new_instruction is not None:
                     instruction_list.extend(new_instruction)
                 new_instruction = Units.convert_units(column)
                 if new_instruction is not None:
                     instruction_list.extend(new_instruction)
-            self.lazyframe = self.lazyframe.with_columns(instruction_list)
-            self.dataframe = self.lazyframe.collect()
-            if self.dataframe.shape[0] == 0:
-                raise ValueError("No data exists for this filter.")
-        return self.dataframe
+            self._data = self._data.with_columns(instruction_list)
+        if isinstance(self._data, pl.LazyFrame):
+            self._data = self._data.collect()
+        if self._data.shape[0] == 0:
+            raise ValueError("No data exists for this filter.")
+        self.data_property_called = True
+        return self._data
 
     def print(self) -> None:
         """Print the data."""
