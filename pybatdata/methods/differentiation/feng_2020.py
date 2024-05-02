@@ -1,15 +1,17 @@
 """Module for the Feng et al. (2020) method for ICA."""
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
 from pybatdata.result import Result
-from pybatdata.step import Step
+
+if TYPE_CHECKING:
+    from pybatdata.step import Step
 
 
-def IC(step: Step, parameter_dict: Dict[str, float]) -> Result:
+def IC(step: "Step", parameter_dict: Dict[str, float]) -> Result:
     """Calculate the normalised incremental capacity of the step.
 
     Method from: 10.1016/j.etran.2020.100051
