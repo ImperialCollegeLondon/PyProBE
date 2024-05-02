@@ -40,6 +40,7 @@ class Neware(BatteryCycler):
                     lf = lf.vstack(pl.read_excel(filepath, engine="calamine"))
                 elif file_ext == ".csv":
                     lf = lf.vstack(pl.read_csv(filepath))
+
         column_dict = {
             "Date": "Date",
             "Cycle Index": "Cycle",
@@ -49,6 +50,10 @@ class Neware(BatteryCycler):
             "DChg. Cap.(Ah)": "Discharge Capacity [Ah]",
             "Chg. Cap.(Ah)": "Charge Capacity [Ah]",
         }
+        if lf.dtypes[lf.columns.index("Date")] != pl.Datetime:
+            lf = lf.with_columns(pl.col("Date").str.to_datetime().alias("Date"))
+        if len(filepaths) > 1:
+            lf = lf.sort("Date")
         lf = Neware.convert_units(lf)
         lf = lf.select(list(column_dict.keys())).rename(column_dict)
         lf = lf.with_columns(pl.col("Charge Capacity [Ah]").diff().alias("dQ_charge"))
