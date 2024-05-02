@@ -79,5 +79,4 @@ class Cycling(Experiment):
                 * 100
             ).alias("SOH Discharge (%)")
         )
-        print(lf.collect())
         return Result(lf, self.info)
