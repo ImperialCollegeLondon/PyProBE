@@ -8,6 +8,7 @@ import plotly
 
 # Add the parent directory of pybatdata to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pybatdata.plot import Plot
 
 with open('dashboard_data.pkl', 'rb') as f:
     cell_list = pickle.load(f)
@@ -71,7 +72,8 @@ themes.insert(0, 'default')
 plot_theme = 'simple_white'
 
 # Create a figure
-fig = go.Figure()
+fig = Plot()
+
 selected_data = []
 for i in range(len(selected_indices)):
     selected_index = selected_indices[i]
@@ -85,22 +87,14 @@ for i in range(len(selected_indices)):
     
     if secondary_y_axis == 'None':
         secondary_y_axis = None
-    filtered_data.plot(fig, x_axis, y_axis, secondary_y=secondary_y_axis)
-    
-            
+
+    fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
     filtered_data = filtered_data.data.to_pandas()
     selected_data.append(filtered_data)
-    
-if secondary_y_axis != None:    
-        # Add a dummy trace to the legend to represent the secondary y-axis
-            fig.add_trace(go.Scatter(x=[None], 
-                                    y=[None], 
-                                    mode='lines', 
-                                    line=dict(color='black', dash='dash'),
-                                    name=secondary_y_axis,
-                                    showlegend=True))
+
 # Show the plot
-graph_placeholder.plotly_chart(fig, theme='streamlit' if plot_theme == 'default' else None) 
+if len(selected_data) > 0:  
+    graph_placeholder.plotly_chart(fig.fig, theme='streamlit' if plot_theme == 'default' else None) 
 
 # Show raw data in tabs
 if selected_data:

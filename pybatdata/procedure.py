@@ -7,6 +7,7 @@ import yaml
 
 from pybatdata.experiment import Experiment
 from pybatdata.experiments.cycling import Cycling
+from pybatdata.experiments.pOCV import pOCV
 from pybatdata.experiments.pulsing import Pulsing
 from pybatdata.result import Result
 
@@ -53,6 +54,7 @@ class Procedure(Result):
             "Constant Current": Experiment,
             "Pulsing": Pulsing,
             "Cycling": Cycling,
+            "pOCV": pOCV,
             "SOC Reset": Experiment,
         }
         return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
