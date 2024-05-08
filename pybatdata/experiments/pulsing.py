@@ -7,7 +7,7 @@ import polars as pl
 from numpy.typing import NDArray
 
 from pybatdata.experiment import Experiment
-from pybatdata.step import Step
+from pybatdata.result import Result
 
 
 class Pulsing(Experiment):
@@ -23,10 +23,10 @@ class Pulsing(Experiment):
             info (Dict[str, str | int | float]): A dict containing test info.
         """
         super().__init__(_data, info)
-        self.rests: List[Optional[Step]] = [None] * _data.select(
+        self.rests: List[Optional[Result]] = [None] * _data.select(
             "Cycle"
         ).collect().n_unique("Cycle")
-        self.pulses: List[Optional[Step]] = [None] * _data.select(
+        self.pulses: List[Optional[Result]] = [None] * _data.select(
             "Cycle"
         ).collect().n_unique("Cycle")
 
@@ -91,27 +91,27 @@ class Pulsing(Experiment):
             Vt[i] = first_row["Voltage [V]"].to_numpy()[0]
         return (Vt - self.V0) / self.I1
 
-    def pulse(self, pulse_number: int) -> Optional[Step]:
+    def pulse(self, pulse_number: int) -> Optional[Result]:
         """Return a step object for a pulse in the pulsing experiment.
 
         Args:
             pulse_number (int): The pulse number to return.
 
         Returns:
-            Step: A step object for a pulse in the pulsing experiment.
+            Result: A step object for a pulse in the pulsing experiment.
         """
         if self.pulses[pulse_number] is None:
             self.pulses[pulse_number] = self.cycle(pulse_number).chargeordischarge(0)
         return self.pulses[pulse_number]
 
-    def pulse_rest(self, rest_number: int) -> Optional[Step]:
+    def pulse_rest(self, rest_number: int) -> Optional[Result]:
         """Return a step object for a rest in the pulsing experiment.
 
         Args:
             rest_number (int): The rest number to return.
 
         Returns:
-            Step: A step object for a rest in the pulsing experiment.
+            Result: A step object for a rest in the pulsing experiment.
         """
         if self.rests[rest_number] is None:
             self.rests[rest_number] = self.cycle(rest_number).rest(0)

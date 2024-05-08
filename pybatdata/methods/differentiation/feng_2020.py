@@ -1,60 +1,73 @@
 """Module for the Feng et al. (2020) method for ICA."""
-from typing import TYPE_CHECKING, Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
-import polars as pl
 from numpy.typing import NDArray
 
+from pybatdata.method import Method
 from pybatdata.result import Result
 
-if TYPE_CHECKING:
-    from pybatdata.step import Step
 
+class Feng2020(Method):
+    """A method for calculating the incremental capacity analysis."""
 
-def IC(step: "Step", parameter_dict: Dict[str, float]) -> Result:
-    """Calculate the normalised incremental capacity of the step.
+    def __init__(self, rawdata: "Result", parameters: Dict[str, float]):
+        """Initialize the Feng2020 method.
 
-    Method from: 10.1016/j.etran.2020.100051
+        Args:
+            rawdata (Result): The input data to the method.
+            parameters (Dict[str, float]): The parameters for the method.
+        """
+        super().__init__(rawdata, parameters)
+        self.voltage = self.variable("Voltage [V]")
+        self.deltaV = self.parameter("deltaV")
+        self.set_outputs(["Voltage [V]", "IC [Ah/V]"])
+        self.assign_outputs(self.dQdV(self.voltage, self.deltaV))
 
-    Args:
-        step (Step): A step object.
-        parameter_dict (Dict[str, float]): A dictionary containing
-            the parameters for the method
+    @classmethod
+    def dQdV(
+        cls, voltage: NDArray[np.float64], deltaV: float
+    ) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Calculate the normalised incremental capacity of the step.
 
-    Returns:
-        Result: a result object containing the normalised incremental capacity
-    """
-    V = step.data["Voltage [V]"]
-    deltaV = parameter_dict["deltaV"]
-    n = len(V)
-    V_range = V.max() - V.min()
-    v = np.linspace(V.min(), V.max(), int(V_range / deltaV))
-    deltaV = v[1] - v[0]
+        Method from: 10.1016/j.etran.2020.100051
 
-    N, _ = np.histogram(V, bins=v)
-    IC = N / n * 1 / deltaV
-    v_midpoints = v[:-1] + np.diff(v) / 2
+        Args:
+            step (Step): A step object.
+            parameter_dict (Dict[str, float]): A dictionary containing
+                the parameters for the method
 
-    IC = smooth_IC(IC, [0.0668, 0.2417, 0.3830, 0.2417, 0.0668])
-    result = pl.DataFrame({"Voltage [V]": v_midpoints, "IC [Ah/V]": IC})
-    return Result(result, step.info)
+        Returns:
+            Result: a result object containing the normalised incremental capacity
+        """
+        n = len(voltage)
+        V_range = voltage.max() - voltage.min()
+        v = np.linspace(voltage.min(), voltage.max(), int(V_range / deltaV))
+        deltaV = v[1] - v[0]
 
+        N, _ = np.histogram(voltage, bins=v)
+        IC = N / n * 1 / deltaV
+        v_midpoints = v[:-1] + np.diff(v) / 2
 
-def smooth_IC(IC: NDArray[np.float64], alpha: List[float]) -> NDArray[np.float64]:
-    """Smooth the incremental capacity.
+        IC = cls.smooth_IC(IC, [0.0668, 0.2417, 0.3830, 0.2417, 0.0668])
+        return v_midpoints, IC
 
-    Args:
-        IC (NDArray[np.float64]): The incremental capacity vector.
-        alpha (list[float]): The smoothing coefficients.
+    @staticmethod
+    def smooth_IC(IC: NDArray[np.float64], alpha: List[float]) -> NDArray[np.float64]:
+        """Smooth the incremental capacity.
 
-    Returns:
-        NDArray[float]: The smoothed incremental capacity.
-    """
-    A = np.zeros((len(IC), len(IC)))
-    w = np.floor(len(alpha) / 2)
-    for n in range(len(alpha)):
-        k = n - w
-        vector = np.ones(int(len(IC) - abs(k)))
-        diag = np.diag(vector, int(k))
-        A += alpha[n] * diag
-    return A @ IC
+        Args:
+            IC (NDArray[np.float64]): The incremental capacity vector.
+            alpha (list[float]): The smoothing coefficients.
+
+        Returns:
+            NDArray[float]: The smoothed incremental capacity.
+        """
+        A = np.zeros((len(IC), len(IC)))
+        w = np.floor(len(alpha) / 2)
+        for n in range(len(alpha)):
+            k = n - w
+            vector = np.ones(int(len(IC) - abs(k)))
+            diag = np.diag(vector, int(k))
+            A += alpha[n] * diag
+        return A @ IC
