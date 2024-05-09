@@ -11,7 +11,7 @@ from pybatdata.result import Result
 class Feng2020(Method):
     """A method for calculating the incremental capacity analysis."""
 
-    def __init__(self, rawdata: "Result", parameters: Dict[str, float]):
+    def __init__(self, rawdata: Result, parameters: Dict[str, float]):
         """Initialize the Feng2020 method.
 
         Args:

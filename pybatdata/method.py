@@ -19,7 +19,7 @@ class Method:
         output_dict (Dict[str, NDArray]): The dictionary of outputs from the method.
     """
 
-    def __init__(self, input_data: "Result", parameters: Dict[str, float]) -> None:
+    def __init__(self, input_data: Result, parameters: Dict[str, float]) -> None:
         """Initialize the Method object.
 
         Args:
@@ -77,4 +77,4 @@ class Method:
     @property
     def result(self) -> Result:
         """Return the result object of the method."""
-        return Result(pl.DataFrame(self.output_dict), self.result.info)
+        return Result(pl.DataFrame(self.output_dict), self.input_data.info)
