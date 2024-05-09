@@ -59,6 +59,15 @@ class Procedure(Filter):
         }
         return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
 
+    @property
+    def experiment_names(self) -> List[str]:
+        """Return the names of the experiments in the procedure.
+
+        Returns:
+            List[str]: The names of the experiments in the procedure.
+        """
+        return list(self.titles.keys())
+
     @staticmethod
     def process_readme(
         readme_path: str,
