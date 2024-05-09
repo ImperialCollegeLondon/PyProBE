@@ -77,6 +77,19 @@ class Pulsing(Experiment):
         """
         return (self.V1 - self.V0) / self.I1
 
+    def R_result(self) -> Result:
+        """Find the resistance values for each pulse.
+
+        Returns:
+            Result: A result object containing resistance values for each pulse.
+        """
+        return Result(
+            pl.DataFrame(
+                {"Pulse number": list(range(len(self.R0))), "R0 [Ohm]": self.R0}
+            ),
+            self.info,
+        )
+
     def Rt(self, t: float) -> NDArray[np.float64]:
         """Find the cell resistance at a given time after each pulse.
 
