@@ -60,6 +60,19 @@ class Plot:
         self.y2_min: Optional[float] = None
         self.y2_max: Optional[float] = None
 
+    title_font_size = 18
+    axis_font_size = 14
+    default_layout = go.Layout(
+        template="simple_white",
+        title_font=dict(size=title_font_size),
+        xaxis_title_font=dict(size=title_font_size),
+        yaxis_title_font=dict(size=title_font_size),
+        xaxis_tickfont=dict(size=axis_font_size),
+        yaxis_tickfont=dict(size=axis_font_size),
+        width=800,
+        height=600,
+    )
+
     def check_limits(
         self, x_data: pl.DataFrame, y_data: pl.DataFrame, secondary_y: bool = False
     ) -> None:
