@@ -38,7 +38,7 @@ class RawData(Result):
         Returns:
             pl.DataFrame: The data as a polars DataFrame.
         """
-        if self.data_property_called is False:
+        if isinstance(self._data, pl.LazyFrame):
             instruction_list = []
             for column in self._data.columns:
                 new_instruction = Units.set_zero(column)
@@ -47,9 +47,7 @@ class RawData(Result):
                 new_instruction = Units.convert_units(column)
                 if new_instruction is not None:
                     instruction_list.extend(new_instruction)
-            self._data = self._data.with_columns(instruction_list)
-        if isinstance(self._data, pl.LazyFrame):
-            self._data = self._data.collect()
+            self._data = self._data.with_columns(instruction_list).collect()
         if self._data.shape[0] == 0:
             raise ValueError("No data exists for this filter.")
         self.data_property_called = True
