@@ -77,7 +77,7 @@ class Units:
                         cls.unit_dict[quantity].units.index(unit_to)
                     ]
                     polars_instruction_list.append(
-                        (pl.col(column) * scale_factor).alias(f"{quantity} ({unit_to})")
+                        (pl.col(column) * scale_factor).alias(f"{quantity} [{unit_to}]")
                     )
             return polars_instruction_list
         else:
