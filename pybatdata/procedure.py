@@ -9,10 +9,10 @@ from pybatdata.experiment import Experiment
 from pybatdata.experiments.cycling import Cycling
 from pybatdata.experiments.pOCV import pOCV
 from pybatdata.experiments.pulsing import Pulsing
-from pybatdata.result import Result
+from pybatdata.filter import Filter
 
 
-class Procedure(Result):
+class Procedure(Filter):
     """A class for a procedure in a battery experiment."""
 
     def __init__(
@@ -59,18 +59,14 @@ class Procedure(Result):
         }
         return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
 
-    @classmethod
-    def get_exp_conditions(cls, column: str, indices: List[int]) -> pl.Expr:
-        """Convert a list of indices for a column into a polars expr for filtering.
-
-        Args:
-            column (str): The column to filter.
-            indices (List[int]): The indices to filter.
+    @property
+    def experiment_names(self) -> List[str]:
+        """Return the names of the experiments in the procedure.
 
         Returns:
-            pl.Expr: The polars expression for filtering the column.
+            List[str]: The names of the experiments in the procedure.
         """
-        return pl.col(column).is_in(indices).alias(column)
+        return list(self.titles.keys())
 
     @staticmethod
     def process_readme(
