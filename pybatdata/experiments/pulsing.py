@@ -23,12 +23,13 @@ class Pulsing(Experiment):
             info (Dict[str, str | int | float]): A dict containing test info.
         """
         super().__init__(_data, info)
-        self.rests: List[Optional[Result]] = [None] * _data.select(
+
+        self.rests: List[Optional[Result]] = [None] * self.data.select(
             "Cycle"
-        ).collect().n_unique("Cycle")
-        self.pulses: List[Optional[Result]] = [None] * _data.select(
+        ).n_unique("Cycle")
+        self.pulses: List[Optional[Result]] = [None] * self.data.select(
             "Cycle"
-        ).collect().n_unique("Cycle")
+        ).n_unique("Cycle")
 
     @property
     def pulse_starts(self) -> pl.DataFrame:
@@ -77,7 +78,8 @@ class Pulsing(Experiment):
         """
         return (self.V1 - self.V0) / self.I1
 
-    def R_result(self) -> Result:
+    @property
+    def pulse_summary(self) -> Result:
         """Find the resistance values for each pulse.
 
         Returns:
@@ -85,7 +87,11 @@ class Pulsing(Experiment):
         """
         return Result(
             pl.DataFrame(
-                {"Pulse number": list(range(len(self.R0))), "R0 [Ohm]": self.R0}
+                {
+                    "Pulse number": list(range(len(self.R0))),
+                    "R0 [Ohm]": self.R0,
+                    "V0 [V]": self.V0,
+                }
             ),
             self.info,
         )
