@@ -1,5 +1,5 @@
 """Module for the base Method class."""
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import polars as pl
 from numpy.typing import NDArray
@@ -32,7 +32,7 @@ class Method:
         self.parameter_list: List[str] = []
         self.output_list: List[str] = []
 
-    def variable(self, name: str) -> NDArray:
+    def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
 
         Args:
@@ -64,7 +64,7 @@ class Method:
         """
         self.output_list = output_list
 
-    def assign_outputs(self, function_call: Tuple[NDArray, NDArray]) -> None:
+    def assign_outputs(self, function_call: Tuple[NDArray[Any], NDArray[Any]]) -> None:
         """Assign the outputs of the method.
 
         Args:
