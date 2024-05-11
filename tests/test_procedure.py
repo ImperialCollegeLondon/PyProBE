@@ -36,10 +36,6 @@ def test_process_readme(
     ]
 
 
-def test_experiment_names(procedure_fixture):
+def test_experiment_names(procedure_fixture, titles_fixture):
     """Test the experiment_names method."""
-    assert procedure_fixture.experiment_names == [
-        "Initial Charge",
-        "Break-in Cycles",
-        "Discharge Pulses",
-    ]
+    assert procedure_fixture.experiment_names == list(titles_fixture.keys())
