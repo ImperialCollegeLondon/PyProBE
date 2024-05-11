@@ -178,8 +178,6 @@ class Cell:
             return False
         test_data = cycler.load_file(input_path).head()
         parquet_data = pl.scan_parquet(output_path).head()
-        if not isinstance(test_data, pl.LazyFrame):
-            parquet_data = parquet_data.collect()
         try:
             assert_frame_equal(test_data, parquet_data)
             return True
