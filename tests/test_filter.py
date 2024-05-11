@@ -33,6 +33,12 @@ def test_step(BreakinCycles_fixture):
     assert (step.data["Step"] == 5).all()
 
 
+def test_multi_step(BreakinCycles_fixture):
+    """Test the step method."""
+    step = BreakinCycles_fixture.cycle(0).step([1, 3])
+    assert (step.data["Step"].unique() == [5, 6, 7]).all()
+
+
 def test_charge(BreakinCycles_fixture):
     """Test the charge method."""
     charge = BreakinCycles_fixture.cycle(0).charge(0)
@@ -69,8 +75,28 @@ def test_rest(BreakinCycles_fixture):
     assert (rest.data["Current [A]"] == 0).all()
 
 
+def test_negative_cycle_index(BreakinCycles_fixture):
+    """Test the negative index."""
+    cycle = BreakinCycles_fixture.cycle(-1)
+    assert (cycle.data["Cycle"] == 5).all()
+    assert (cycle.data["Step"].unique() == [4, 5, 6, 7]).all()
+
+
+def test_negative_step_index(BreakinCycles_fixture):
+    """Test the negative index."""
+    step = BreakinCycles_fixture.cycle(0).step(-1)
+    assert (step.data["Step"] == 7).all()
+
+
 def test_cycle(BreakinCycles_fixture):
     """Test the cycle method."""
     cycle = BreakinCycles_fixture.cycle(0)
     assert (cycle.data["Cycle"] == 1).all()
     assert (cycle.data["Step"].unique() == [4, 5, 6, 7]).all()
+
+
+def test_all_steps(BreakinCycles_fixture):
+    """Test the all_steps method."""
+    all_steps = BreakinCycles_fixture.cycle(0).step()
+    assert (all_steps.data["Cycle"] == 1).all()
+    assert (all_steps.data["Step"].unique() == [4, 5, 6, 7]).all()
