@@ -129,3 +129,6 @@ dmypy.json
 
 # VScode settings
 .vscode
+
+# asv
+.asv/
