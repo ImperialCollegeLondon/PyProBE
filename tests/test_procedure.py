@@ -34,3 +34,12 @@ def test_process_readme(
         [4, 5, 6, 7],
         [8, 9, 10, 11],
     ]
+
+
+def test_experiment_names(procedure_fixture):
+    """Test the experiment_names method."""
+    assert procedure_fixture.experiment_names == [
+        "Initial Charge",
+        "Break-in Cycles",
+        "Discharge Pulses",
+    ]
