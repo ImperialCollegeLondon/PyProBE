@@ -1,4 +1,6 @@
 """Tests for the filter module."""
+import pytest
+
 from pybatdata.filter import Filter
 
 
@@ -51,6 +53,10 @@ def test_discharge(BreakinCycles_fixture):
     discharge = BreakinCycles_fixture.cycle(0).discharge(0)
     assert (discharge.data["Step"] == 4).all()
     assert (discharge.data["Current [A]"] < 0).all()
+
+    # test invalid input
+    with pytest.raises(ValueError):
+        BreakinCycles_fixture.cycle(6).data
 
 
 def test_chargeordischarge(BreakinCycles_fixture):
