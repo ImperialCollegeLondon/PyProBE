@@ -28,7 +28,8 @@ dev = [
     "pytest-mock",
     "sphinx",
     "sphinx-rtd-theme",
-    "types-PyYAML"
+    "types-PyYAML",
+    "asv"
 ]
 
 [tool.mypy]
