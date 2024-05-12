@@ -28,8 +28,6 @@ def test_make_cell_list(info_fixture):
     record_name = "sample_data_neware"
     cell_list = Cell.make_cell_list(root_directory, record_name)
     expected_info = copy.copy(info_fixture)
-    expected_info["root_directory"] = root_directory
-    expected_info["record_name"] = record_name
     expected_info["color"] = "#ff00ff"
     assert cell_list[0].info == expected_info
 

@@ -61,8 +61,6 @@ class Cell:
         for i in range(n_cells):
             cell_list.append(cls(record.row(i, named=True)))
             cell_list[i].info["color"] = colors[i]
-            cell_list[i].info["root_directory"] = root_directory
-            cell_list[i].info["record_name"] = record_name
         return cell_list
 
     def process_cycler_file(
