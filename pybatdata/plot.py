@@ -28,9 +28,22 @@ class Plot:
         y2_max (Optional[float]): The maximum secondary y-axis value.
     """
 
+    title_font_size = 18
+    axis_font_size = 14
+    default_layout = go.Layout(
+        template="simple_white",
+        title_font=dict(size=title_font_size),
+        xaxis_title_font=dict(size=title_font_size),
+        yaxis_title_font=dict(size=title_font_size),
+        xaxis_tickfont=dict(size=axis_font_size),
+        yaxis_tickfont=dict(size=axis_font_size),
+        width=800,
+        height=600,
+    )
+
     def __init__(
         self,
-        layout: go.Layout = go.Layout(template="simple_white", width=800, height=600),
+        layout: go.Layout = default_layout,
     ):
         """Initialize the Plot object.
 
@@ -48,30 +61,18 @@ class Plot:
             y2_max (Optional[float]): The maximum secondary y-axis value.
         """
         self.layout = layout
-        self.title_font_size = 18
-        self.axis_font_size = 14
         self._fig = make_subplots(specs=[[{"secondary_y": True}]])
         self._fig.update_layout(layout)
         self.x_min: Optional[float] = None
         self.x_max: Optional[float] = None
         self.y_min: Optional[float] = None
         self.y_max: Optional[float] = None
-        self.secondary_y: Optional[str] = None
         self.y2_min: Optional[float] = None
         self.y2_max: Optional[float] = None
 
-    title_font_size = 18
-    axis_font_size = 14
-    default_layout = go.Layout(
-        template="simple_white",
-        title_font=dict(size=title_font_size),
-        xaxis_title_font=dict(size=title_font_size),
-        yaxis_title_font=dict(size=title_font_size),
-        xaxis_tickfont=dict(size=axis_font_size),
-        yaxis_tickfont=dict(size=axis_font_size),
-        width=800,
-        height=600,
-    )
+        self.xaxis_title: Optional[str] = None
+        self.yaxis_title: Optional[str] = None
+        self.secondary_y: Optional[str] = None
 
     def check_limits(
         self, x_data: pl.DataFrame, y_data: pl.DataFrame, secondary_y: bool = False
@@ -287,12 +288,12 @@ class Plot:
         self._fig.update_layout(
             xaxis_title=self.xaxis_title,
             yaxis_title=self.yaxis_title,
-            title_font=dict(size=self.title_font_size),
-            xaxis_title_font=dict(size=self.title_font_size),
-            yaxis_title_font=dict(size=self.title_font_size),
-            xaxis_tickfont=dict(size=self.axis_font_size),
-            yaxis_tickfont=dict(size=self.axis_font_size),
-            legend_font=dict(size=self.axis_font_size),
+            title_font=dict(size=Plot.title_font_size),
+            xaxis_title_font=dict(size=Plot.title_font_size),
+            yaxis_title_font=dict(size=Plot.title_font_size),
+            xaxis_tickfont=dict(size=Plot.axis_font_size),
+            yaxis_tickfont=dict(size=Plot.axis_font_size),
+            legend_font=dict(size=Plot.axis_font_size),
         )
         if self.secondary_y is not None:  # check if secondary y-axis exists
             self._fig.update_yaxes(
@@ -301,8 +302,8 @@ class Plot:
             self.add_secondary_y_legend(self.secondary_y)
             self._fig.update_layout(
                 yaxis2=dict(title=self.secondary_y, overlaying="y", side="right"),
-                yaxis2_tickfont=dict(size=self.axis_font_size),
-                yaxis2_title_font=dict(size=self.title_font_size),
+                yaxis2_tickfont=dict(size=Plot.axis_font_size),
+                yaxis2_title_font=dict(size=Plot.title_font_size),
                 legend=dict(x=1.2),
             )
         return self._fig
