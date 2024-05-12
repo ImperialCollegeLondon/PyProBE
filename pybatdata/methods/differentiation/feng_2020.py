@@ -21,7 +21,7 @@ class Feng2020(Method):
         super().__init__(rawdata, parameters)
         self.voltage = self.variable("Voltage [V]")
         self.deltaV = self.parameter("deltaV")
-        self.set_outputs(["Voltage [V]", "IC [Ah/V]"])
+        self.define_outputs(["Voltage [V]", "IC [Ah/V]"])
         self.assign_outputs(self.dQdV(self.voltage, self.deltaV))
 
     @classmethod
