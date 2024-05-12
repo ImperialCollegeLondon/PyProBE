@@ -40,68 +40,80 @@ class Cell:
         self.processed_data: Dict[str, pl.DataFrame] = {}
 
     @classmethod
-    def batch_process(
+    def make_cell_list(
         cls,
         root_directory: str,
         record_name: str,
-        cycler: BatteryCycler,
-        filename_function: Callable[[str], str],
-        filename_inputs: List[str],
-        cell_list: Optional[List["Cell"]] = None,
-        title: Optional[str] = None,
-        fast_mode: bool = False,
     ) -> List["Cell"]:
-        """Function to batch process all data files in a record.
+        """Function to make a list of cell objects from a record of tests.
 
         Args:
             root_directory (str): The root directory containing the
                 Experiment_Record.xlsx file.
-            record_name (str): The name of the record (worksheet name) in the
-                Experiment_Record.xlsx file.
-            cycler (BatteryCycler): The cycler used to produce the data.
-            filename_function (function): The function to generate the data file name.
-            filename_inputs (list): The list of inputs to filename_function.
-                These must be keys of the cell info.
-            cell_list (list, optional): An existing list of cell objects to
-                append data to.
-            title (str, optional): A custom title for the data in the
-                Cell.procedure dictionary.
-            fast_mode (bool): Whether to skip rewriting the parquet files
-                if it already exists.
-
-        Returns:
-            list: A list of cell objects with the data added.
+            record_name (str): The name of the record (worksheet name)
+                in the Experiment_Record.xlsx file.
         """
-        print("Batch pre-processing running...")
         record = cls.read_record(root_directory, record_name)
 
-        if cell_list is None:
-            n_cells = len(record)
-            cell_list = []
-            colors = cls.set_color_scheme(n_cells, scheme="distinctipy")
-            for i in range(n_cells):
-                cell_list.append(cls(record.row(i, named=True)))
-                cell_list[i].info["color"] = colors[i]
-        else:
-            n_cells = len(cell_list)
-        parquet_verified = False
-        if title is None:
-            title = record_name
+        n_cells = len(record)
+        cell_list = []
+        colors = cls.set_color_scheme(n_cells, scheme="distinctipy")
         for i in range(n_cells):
-            filename = cls.get_filename(
-                cell_list[i].info, filename_function, filename_inputs
-            )
-            data_path = os.path.join(root_directory, title, filename)
-            if fast_mode is True:
-                if i == 0:
-                    parquet_verified = cls.verify_parquet(data_path, cycler)
-                if parquet_verified is True:
-                    cell_list[i].add_data(data_path, title, cycler, skip_writing=True)
-                else:
-                    cell_list[i].add_data(data_path, title, cycler, skip_writing=False)
-            else:
-                cell_list[i].add_data(data_path, title, cycler, skip_writing=False)
+            cell_list.append(cls(record.row(i, named=True)))
+            cell_list[i].info["color"] = colors[i]
         return cell_list
+
+    def process_cycler_file(
+        self,
+        cycler: BatteryCycler,
+        folder_path: str,
+        filename_function: Callable[[str], str],
+        filename_inputs: List[str],
+    ) -> None:
+        """Convert cycler file into PyBatData format.
+
+        Args:
+            cycler (BatteryCycler): The cycler used to produce the data.
+            folder_path (str): The path to the folder containing the data file.
+            filename_function (function): The function to generate the file name.
+            filename_inputs (list): The list of inputs to filename_function.
+                These must be keys of the cell info.
+            root_directory (str): The root directory containing the subfolder.
+        """
+        filename = self.get_filename(self.info, filename_function, filename_inputs)
+        input_data_path = os.path.join(folder_path, filename)
+        output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
+        self.write_parquet(input_data_path, output_data_path, cycler)
+
+    def add_data(
+        self,
+        title: str,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
+    ) -> None:
+        """Function to add data to the cell object.
+
+        Args:
+            title (str): The title of the procedure.
+            folder_path (str): The path to the folder containing the data file.
+            filename (str | function): The function to generate the file name.
+            filename_inputs (Optional[list]): The list of inputs to filename_function.
+                These must be keys of the cell info.
+        """
+        if isinstance(filename, str):
+            filename_str = filename
+        else:
+            if filename_inputs is None:
+                raise ValueError(
+                    "filename_inputs must be provided when filename is a function."
+                )
+            filename_str = self.get_filename(self.info, filename, filename_inputs)
+
+        input_data_path = os.path.join(folder_path, filename_str)
+        output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
+        self.procedure[title] = Procedure(output_data_path, self.info)
+        self.processed_data[title] = {}
 
     @staticmethod
     def read_record(root_directory: str, record_name: str) -> pl.DataFrame:
@@ -140,28 +152,6 @@ class Cell:
             *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs)))
         )
 
-    def add_data(
-        self,
-        input_path: str,
-        title: str,
-        cycler: BatteryCycler,
-        skip_writing: bool = False,
-    ) -> None:
-        """Function to add data to the cell object.
-
-        Args:
-            input_path (str): The path to the data file to add.
-            title (str): The title to give the data in the procedure dictionary.
-            cycler (BatteryCycler): The cycler used to produce the data.
-            skip_writing (bool): Whether to skip rewriting the parquet
-                file if it already exists.
-        """
-        output_path = os.path.splitext(input_path)[0] + ".parquet"
-        if os.path.exists(output_path) is False or skip_writing is False:
-            self.write_parquet(input_path, output_path, cycler)
-        self.procedure[title] = Procedure(output_path, self.info)
-        self.processed_data[title] = {}
-
     @staticmethod
     def verify_parquet(input_path: str, cycler: BatteryCycler) -> bool:
         """Function to verify that the data in a parquet file is correct.
@@ -178,8 +168,6 @@ class Cell:
             return False
         test_data = cycler.load_file(input_path).head()
         parquet_data = pl.scan_parquet(output_path).head()
-        if not isinstance(test_data, pl.LazyFrame):
-            parquet_data = parquet_data.collect()
         try:
             assert_frame_equal(test_data, parquet_data)
             return True
@@ -196,6 +184,7 @@ class Cell:
             cycler (BatteryCycler): The cycler used to produce the data.
         """
         print(f"Processing file: {os.path.basename(input_path)}")
+        output_path = os.path.splitext(input_path)[0] + ".parquet"
         filepath = os.path.join(input_path)
         t1 = time.time()
         test_data = cycler.load_file(filepath)

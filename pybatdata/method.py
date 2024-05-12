@@ -31,6 +31,7 @@ class Method:
         self.variable_list: List[str] = []
         self.parameter_list: List[str] = []
         self.output_list: List[str] = []
+        self.output_dict: Dict[str, NDArray[Any]] = {}
 
     def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
@@ -56,7 +57,7 @@ class Method:
         self.parameter_list.append(name)
         return self.parameters[name]
 
-    def set_outputs(self, output_list: List[str]) -> None:
+    def define_outputs(self, output_list: List[str]) -> None:
         """Set the output list.
 
         Args:
@@ -70,7 +71,6 @@ class Method:
         Args:
             function_call (Tuple): The tuple of outputs from the method.
         """
-        self.output_dict = {}
         for i, name in enumerate(self.output_list):
             self.output_dict[name] = function_call[i]
 

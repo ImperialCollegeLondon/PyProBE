@@ -3,7 +3,6 @@
 import os
 
 from pybatdata.cell import Cell
-from pybatdata.cyclers.neware import Neware
 from pybatdata.experiment import Experiment
 from pybatdata.procedure import Procedure
 
@@ -17,15 +16,16 @@ def add_data_from_parquet() -> Cell:
     """Add data to a Cell object from a parquet file."""
     cell = create_cell()
     cell.add_data(
-        os.path.join(
-            os.path.dirname(__file__),
-            "../tests/sample_data_neware/sample_data_neware.parquet",
+        title="sample procedure",
+        folder_path=os.path.join(
+            os.path.dirname(__file__), "../tests/sample_data_neware/"
         ),
-        "sample procedure",
-        Neware(),
-        skip_writing=True,
+        filename="sample_data_neware.parquet",
     )
     return cell
+
+
+add_data_from_parquet()
 
 
 def return_procedure() -> Procedure:

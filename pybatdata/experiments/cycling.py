@@ -28,9 +28,13 @@ class Cycling(Experiment):
         """Calculate the capcity throughput of the experiment."""
         self._data = self._data.with_columns(
             [
-                (pl.col("Capacity [Ah]").diff().abs().cum_sum()).alias(
-                    "Capacity Throughput [Ah]"
-                )
+                (
+                    pl.col("Capacity [Ah]")
+                    .diff()
+                    .fill_null(strategy="zero")
+                    .abs()
+                    .cum_sum()
+                ).alias("Capacity Throughput [Ah]")
             ]
         )
 
@@ -70,13 +74,13 @@ class Cycling(Experiment):
         lf = lf.with_columns(
             (
                 pl.col("Charge Capacity [Ah]") / pl.first("Charge Capacity [Ah]") * 100
-            ).alias("SOH Charge (%)")
+            ).alias("SOH Charge [%]")
         )
         lf = lf.with_columns(
             (
                 pl.col("Discharge Capacity [Ah]")
                 / pl.first("Discharge Capacity [Ah]")
                 * 100
-            ).alias("SOH Discharge (%)")
+            ).alias("SOH Discharge [%]")
         )
         return Result(lf, self.info)
