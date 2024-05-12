@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from pybatdata.result import Result
+
 
 def test_pulse(Pulsing_fixture):
     """Test the pulse method."""
@@ -38,3 +40,8 @@ def test_Rt(Pulsing_fixture):
     """Test the Rt method."""
     assert np.isclose(Pulsing_fixture.Rt(10)[0], (4.1337 - 4.1919) / -0.0199936)
     assert len(Pulsing_fixture.Rt(10)) == 10
+
+
+def test_pulse_summary(Pulsing_fixture):
+    """Test the pulse_summary method."""
+    assert isinstance(Pulsing_fixture.pulse_summary, Result)
