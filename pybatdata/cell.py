@@ -4,7 +4,7 @@ import pickle
 import platform
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 import distinctipy
 import polars as pl
@@ -68,60 +68,54 @@ class Cell:
     def process_cycler_file(
         self,
         cycler: BatteryCycler,
-        sub_folder: str,
+        folder_path: str,
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
-        root_directory: Optional[str] = None,
     ) -> None:
         """Convert cycler file into PyBatData format.
 
         Args:
             cycler (BatteryCycler): The cycler used to produce the data.
-            sub_folder (str): The subfolder containing the data file.
+            folder_path (str): The path to the folder containing the data file.
             filename_function (function): The function to generate the file name.
             filename_inputs (list): The list of inputs to filename_function.
                 These must be keys of the cell info.
             root_directory (str): The root directory containing the subfolder.
         """
-        if root_directory is None:
-            root_directory = str(self.info["root_directory"])
         filename = self.get_filename(self.info, filename_function, filename_inputs)
-        input_data_path = os.path.join(root_directory, sub_folder, filename)
+        input_data_path = os.path.join(folder_path, filename)
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
         self.write_parquet(input_data_path, output_data_path, cycler)
 
-    def add_data(self, data_path: str, title: str) -> None:
+    def add_data(self, file_path: str, title: str) -> None:
         """Function to add data to the cell object.
 
         Args:
-            data_path (str): The path to the input data file.
+            file_path (str): The path to the input data file.
             title (str): The title of the procedure.
         """
-        self.procedure[title] = Procedure(data_path, self.info)
+        self.procedure[title] = Procedure(file_path, self.info)
         self.processed_data[title] = {}
 
     def add_data_auto(
         self,
         title: str,
-        sub_folder: str,
+        folder_path: str,
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
-        root_directory: Optional[str] = None,
     ) -> None:
         """Function to add data to the cell object.
 
         Args:
             title (str): The title of the procedure.
-            sub_folder (str): The subfolder containing the data file.
+            folder_path (str): The path to the folder containing the data file.
             filename_function (function): The function to generate the file name.
             filename_inputs (list): The list of inputs to filename_function.
                 These must be keys of the cell info.
             root_directory (str): The root directory containing the subfolder.
         """
-        if root_directory is None:
-            root_directory = str(self.info["root_directory"])
         filename = self.get_filename(self.info, filename_function, filename_inputs)
-        input_data_path = os.path.join(root_directory, sub_folder, filename)
+        input_data_path = os.path.join(folder_path, filename)
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
         self.add_data(output_data_path, title)
 
