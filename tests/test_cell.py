@@ -1,4 +1,6 @@
 """Tests for the Cell class."""
+import copy
+
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
@@ -20,6 +22,18 @@ def test_init(cell_instance, info_fixture):
     assert cell_instance.processed_data == {}
 
 
+def test_make_cell_list(info_fixture):
+    """Test the make_cell_list method."""
+    root_directory = "tests/sample_data_neware"
+    record_name = "sample_data_neware"
+    cell_list = Cell.make_cell_list(root_directory, record_name)
+    expected_info = copy.copy(info_fixture)
+    expected_info["root_directory"] = root_directory
+    expected_info["record_name"] = record_name
+    expected_info["color"] = "#ff00ff"
+    assert cell_list[0].info == expected_info
+
+
 def test_read_record(info_fixture):
     """Test the read_record method."""
     root_directory = "tests/sample_data_neware"
@@ -28,30 +42,23 @@ def test_read_record(info_fixture):
     pl.testing.assert_frame_equal(record, pl.DataFrame([info_fixture]))
 
 
-@pytest.fixture
-def filename_function():
-    """Return a function that returns a filename."""
+def test_get_filename(info_fixture):
+    """Test the get_filename method."""
+    filename_inputs = ["Name"]
 
     def filename(name):
         return f"Cell_named_{name}.xlsx"
 
-    return filename
-
-
-def test_get_filename(info_fixture, filename_function):
-    """Test the get_filename method."""
-    filename_inputs = ["Name"]
-    filename = Cell.get_filename(info_fixture, filename_function, filename_inputs)
-    assert filename == "Cell_named_Test_Cell.xlsx"
+    file = Cell.get_filename(info_fixture, filename, filename_inputs)
+    assert file == "Cell_named_Test_Cell.xlsx"
 
 
 def test_add_data(cell_instance, procedure_fixture):
     """Test the add_data method."""
-    input_path = "tests/sample_data_neware/sample_data_neware.xlsx"
+    input_path = "tests/sample_data_neware"
+    file_name = "sample_data_neware.parquet"
     title = "Test"
-    cycler = Neware
-    skip_writing = False
-    cell_instance.add_data(input_path, title, cycler, skip_writing)
+    cell_instance.add_data(title, input_path, file_name)
     assert_frame_equal(cell_instance.procedure[title].data, procedure_fixture.data)
 
 

@@ -4,7 +4,7 @@ import pickle
 import platform
 import subprocess
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
@@ -87,37 +87,35 @@ class Cell:
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
         self.write_parquet(input_data_path, output_data_path, cycler)
 
-    def add_data(self, file_path: str, title: str) -> None:
-        """Function to add data to the cell object.
-
-        Args:
-            file_path (str): The path to the input data file.
-            title (str): The title of the procedure.
-        """
-        self.procedure[title] = Procedure(file_path, self.info)
-        self.processed_data[title] = {}
-
-    def add_data_auto(
+    def add_data(
         self,
         title: str,
         folder_path: str,
-        filename_function: Callable[[str], str],
-        filename_inputs: List[str],
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
     ) -> None:
         """Function to add data to the cell object.
 
         Args:
             title (str): The title of the procedure.
             folder_path (str): The path to the folder containing the data file.
-            filename_function (function): The function to generate the file name.
-            filename_inputs (list): The list of inputs to filename_function.
+            filename (str | function): The function to generate the file name.
+            filename_inputs (Optional[list]): The list of inputs to filename_function.
                 These must be keys of the cell info.
-            root_directory (str): The root directory containing the subfolder.
         """
-        filename = self.get_filename(self.info, filename_function, filename_inputs)
-        input_data_path = os.path.join(folder_path, filename)
+        if isinstance(filename, str):
+            filename_str = filename
+        else:
+            if filename_inputs is None:
+                raise ValueError(
+                    "filename_inputs must be provided when filename is a function."
+                )
+            filename_str = self.get_filename(self.info, filename, filename_inputs)
+
+        input_data_path = os.path.join(folder_path, filename_str)
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
-        self.add_data(output_data_path, title)
+        self.procedure[title] = Procedure(output_data_path, self.info)
+        self.processed_data[title] = {}
 
     @staticmethod
     def read_record(root_directory: str, record_name: str) -> pl.DataFrame:
