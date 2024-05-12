@@ -90,7 +90,17 @@ class Cell:
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
         self.write_parquet(input_data_path, output_data_path, cycler)
 
-    def add_data(
+    def add_data(self, data_path: str, title: str) -> None:
+        """Function to add data to the cell object.
+
+        Args:
+            data_path (str): The path to the input data file.
+            title (str): The title of the procedure.
+        """
+        self.procedure[title] = Procedure(data_path, self.info)
+        self.processed_data[title] = {}
+
+    def add_data_auto(
         self,
         title: str,
         sub_folder: str,
@@ -113,8 +123,7 @@ class Cell:
         filename = self.get_filename(self.info, filename_function, filename_inputs)
         input_data_path = os.path.join(root_directory, sub_folder, filename)
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
-        self.procedure[title] = Procedure(output_data_path, self.info)
-        self.processed_data[title] = {}
+        self.add_data(output_data_path, title)
 
     @staticmethod
     def read_record(root_directory: str, record_name: str) -> pl.DataFrame:
