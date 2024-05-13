@@ -49,3 +49,19 @@ def test_dQdV(BreakinCycles_fixture):
     dQdV_data = dQdV.data.filter(pl.col("Voltage [V]") < 4)
     assert dQdV_data.columns == ["Voltage [V]", "IC [Ah/V]"]
     assert math.isclose(dQdV_data["IC [Ah/V]"].max(), 3.04952, rel_tol=1e-5)
+
+
+def test_set_SOC(BreakinCycles_fixture):
+    """Test the set_SOC method."""
+    with_charge_specified = BreakinCycles_fixture
+    with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
+
+    without_charge_specified = BreakinCycles_fixture
+    without_charge_specified.set_SOC(0.04)
+
+    assert (
+        with_charge_specified.data["SOC [%]"]
+        == without_charge_specified.data["SOC [%]"]
+    ).all()
+    assert max(without_charge_specified.data["SOC [%]"]) == 1
+    assert max(with_charge_specified.data["SOC [%]"]) == 1
