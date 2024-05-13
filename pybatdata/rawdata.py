@@ -84,9 +84,15 @@ class RawData(Result):
         return method_dict[method](self, parameters).result
 
     def set_SOC(
-        self, reference_capacity: float, reference_charge: Optional["RawData"] = None
+        self,
+        reference_capacity: Optional[float] = None,
+        reference_charge: Optional["RawData"] = None,
     ) -> None:
         """Add an SOC column to the data."""
+        if reference_capacity is None:
+            reference_capacity = (
+                pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
+            )
         if reference_charge is None:
             # capacity_reference = pl.select(pl.col("Capacity [Ah]").max())
             self._data = self._data.with_columns(
