@@ -37,7 +37,7 @@ def test_step(BreakinCycles_fixture):
 
 def test_multi_step(BreakinCycles_fixture):
     """Test the step method."""
-    step = BreakinCycles_fixture.cycle(0).step([1, 3])
+    step = BreakinCycles_fixture.cycle(0).step(range(1, 4))
     assert (step.data["Step"].unique() == [5, 6, 7]).all()
 
 
