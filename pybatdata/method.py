@@ -87,7 +87,10 @@ class Method:
             function_call (Tuple): The tuple of outputs from the method.
         """
         for i, name in enumerate(self.output_list):
-            self.output_dict[name] = function_call[i]
+            if isinstance(function_call[i], NDArray):
+                self.output_dict[name] = function_call[i]
+            else:
+                self.output_dict[name] = np.array(function_call[i])
 
     @property
     def result(self) -> Result:

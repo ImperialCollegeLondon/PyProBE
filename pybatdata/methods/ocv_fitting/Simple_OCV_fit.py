@@ -30,7 +30,7 @@ class Simple_OCV_fit(Method):
             [
                 "Cathode Stoichiometry Limits",
                 "Anode Stoichiometry Limits",
-                "Cathode Capacity",
+                "Cell Capacity" "Cathode Capacity",
                 "Anode Capacity",
                 "Stoichiometry Offset",
             ]
@@ -50,7 +50,12 @@ class Simple_OCV_fit(Method):
         pe_data: NDArray[np.float64],
         z_guess: List[float],
     ) -> Tuple[
-        List[List[float]], List[List[float]], List[float], List[float], List[float]
+        List[List[float]],
+        List[List[float]],
+        List[float],
+        List[float],
+        List[float],
+        List[float],
     ]:
         """Fit the OCV curve.
 
@@ -86,20 +91,42 @@ class Simple_OCV_fit(Method):
         )
         pe_stoich_limits = [z_out[0][0], z_out[0][1]]
         ne_stoich_limits = [z_out[0][2], z_out[0][3]]
+
+        pe_capacity, ne_capacity, stoich_offset = cls.calc_electrode_capacities(
+            pe_stoich_limits, ne_stoich_limits, cell_capacity
+        )
+
+        return (
+            [pe_stoich_limits],
+            [ne_stoich_limits],
+            [cell_capacity],
+            [pe_capacity],
+            [ne_capacity],
+            [stoich_offset],
+        )
+
+    @staticmethod
+    def calc_electrode_capacities(
+        pe_stoich_limits: NDArray[np.float64],
+        ne_stoich_limits: NDArray[np.float64],
+        cell_capacity: NDArray[np.float64],
+    ) -> Tuple[float, float, float]:
+        """Calculate the electrode capacities.
+
+        Args:
+            pe_stoich_limits (NDArray[np.float64]): The cathode stoichiometry limits.
+            ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
+            cell_capacity (NDArray[np.float64]): The cell capacity.
+        """
         pe_capacity = cell_capacity / (pe_stoich_limits[1] - pe_stoich_limits[0])
         ne_capacity = cell_capacity / (ne_stoich_limits[1] - ne_stoich_limits[0])
         stoich_offset = (pe_stoich_limits[0] * pe_capacity) - (
             ne_stoich_limits[0] * ne_capacity
         )
 
-        return (
-            [pe_stoich_limits],
-            [ne_stoich_limits],
-            [pe_capacity],
-            [ne_capacity],
-            [stoich_offset],
-        )
+        return pe_capacity, ne_capacity, stoich_offset
 
+    @staticmethod
     def calc_full_cell_OCV(
         SOC: NDArray[np.float64],
         z_pe_lo: NDArray[np.float64],
