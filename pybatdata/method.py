@@ -1,5 +1,5 @@
 """Module for the base Method class."""
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import polars as pl
@@ -21,7 +21,9 @@ class Method:
     """
 
     def __init__(
-        self, input_data: Result | List[Result], parameters: Dict[str, float]
+        self,
+        input_data: Result | List[Result],
+        parameters: Optional[Dict[str, float]] = None,
     ) -> None:
         """Initialize the Method object.
 
@@ -61,6 +63,10 @@ class Method:
         Returns:
             float: The parameter.
         """
+        if self.parameters is None:
+            raise ValueError("No parameters provided to method.")
+        if name not in self.parameters:
+            raise KeyError(f"Parameter {name} not found in parameter dict provided.")
         self.parameter_list.append(name)
         return self.parameters[name]
 
