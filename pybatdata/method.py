@@ -36,7 +36,7 @@ class Method:
         self.variable_list: List[str] = []
         self.parameter_list: List[str] = []
         self.output_list: List[str] = []
-        self.output_dict: Dict[str, NDArray[Any] | List[Any]] = {}
+        self.output_dict: Dict[str, NDArray[Any]] = {}
 
     def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
@@ -79,18 +79,23 @@ class Method:
         self.output_list = output_list
 
     def assign_outputs(
-        self, function_call: Tuple[Union[NDArray[Any], List[Any]], ...]
+        self, function_call: Tuple[Union[NDArray[np.float64], float], ...]
     ) -> None:
         """Assign the outputs of the method.
 
         Args:
             function_call (Tuple): The tuple of outputs from the method.
         """
-        for i, name in enumerate(self.output_list):
-            if isinstance(function_call[i], NDArray):
-                self.output_dict[name] = function_call[i]
-            else:
-                self.output_dict[name] = np.array(function_call[i])
+        if any(isinstance(item, float) for item in function_call) and any(
+            isinstance(item, np.ndarray) for item in function_call
+        ):
+            for i, name in enumerate(self.output_list):
+                self.output_dict[name] = np.expand_dims(
+                    np.asarray(function_call[i]), axis=0
+                )
+        else:
+            for i, name in enumerate(self.output_list):
+                self.output_dict[name] = np.asarray(function_call[i])
 
     @property
     def result(self) -> Result:

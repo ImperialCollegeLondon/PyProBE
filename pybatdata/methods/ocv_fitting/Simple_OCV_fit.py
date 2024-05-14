@@ -49,14 +49,7 @@ class Simple_OCV_fit(Method):
         ne_data: NDArray[np.float64],
         pe_data: NDArray[np.float64],
         z_guess: List[float],
-    ) -> Tuple[
-        List[List[float]],
-        List[List[float]],
-        List[float],
-        List[float],
-        List[float],
-        List[float],
-    ]:
+    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], float, float, float, float,]:
         """Fit the OCV curve.
 
         Args:
@@ -75,9 +68,7 @@ class Simple_OCV_fit(Method):
             z_pe_hi: float,
             z_ne_lo: float,
             z_ne_hi: float,
-        ) -> Tuple[
-            List[List[float]], List[List[float]], List[float], List[float], List[float]
-        ]:
+        ) -> NDArray[np.float64]:
             return cls.calc_full_cell_OCV(
                 SOC, z_pe_lo, z_pe_hi, z_ne_lo, z_ne_hi, ne_data, pe_data
             )
@@ -89,27 +80,27 @@ class Simple_OCV_fit(Method):
             p0=z_guess,
             bounds=([0, 0, 0, 0], [1, 1, 1, 1]),
         )
-        pe_stoich_limits = [z_out[0][0], z_out[0][1]]
-        ne_stoich_limits = [z_out[0][2], z_out[0][3]]
+        pe_stoich_limits = np.array([z_out[0][0], z_out[0][1]])
+        ne_stoich_limits = np.array([z_out[0][2], z_out[0][3]])
 
         pe_capacity, ne_capacity, stoich_offset = cls.calc_electrode_capacities(
             pe_stoich_limits, ne_stoich_limits, cell_capacity
         )
 
         return (
-            [pe_stoich_limits],
-            [ne_stoich_limits],
-            [cell_capacity],
-            [pe_capacity],
-            [ne_capacity],
-            [stoich_offset],
+            pe_stoich_limits,
+            ne_stoich_limits,
+            cell_capacity,
+            pe_capacity,
+            ne_capacity,
+            stoich_offset,
         )
 
     @staticmethod
     def calc_electrode_capacities(
         pe_stoich_limits: NDArray[np.float64],
         ne_stoich_limits: NDArray[np.float64],
-        cell_capacity: NDArray[np.float64],
+        cell_capacity: float,
     ) -> Tuple[float, float, float]:
         """Calculate the electrode capacities.
 

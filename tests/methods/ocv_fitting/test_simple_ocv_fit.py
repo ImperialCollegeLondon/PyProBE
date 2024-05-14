@@ -31,5 +31,5 @@ def test_fit_ocv():
         capacity, voltage, ne_data, pe_data, z_guess
     )
 
-    np.testing.assert_allclose(cathode_limits, [z_real[:2]], rtol=1e-5)
-    np.testing.assert_allclose(anode_limits, [z_real[2:]], rtol=1e-5)
+    np.testing.assert_allclose(cathode_limits, z_real[:2], rtol=1e-5)
+    np.testing.assert_allclose(anode_limits, z_real[2:], rtol=1e-5)
