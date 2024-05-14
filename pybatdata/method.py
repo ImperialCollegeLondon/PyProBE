@@ -1,6 +1,7 @@
 """Module for the base Method class."""
 from typing import Any, Dict, List, Tuple, Union
 
+import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
@@ -19,7 +20,9 @@ class Method:
         output_dict (Dict[str, NDArray]): The dictionary of outputs from the method.
     """
 
-    def __init__(self, input_data: Result, parameters: Dict[str, float]) -> None:
+    def __init__(
+        self, input_data: Result | List[Result], parameters: Dict[str, float]
+    ) -> None:
         """Initialize the Method object.
 
         Args:
@@ -43,7 +46,11 @@ class Method:
             NDArray: The variable as a numpy array.
         """
         self.variable_list.append(name)
-        return self.input_data.data[name].to_numpy()
+
+        if not isinstance(self.input_data, list):
+            return self.input_data.data[name].to_numpy()
+        else:
+            return np.vstack([input.data[name].to_numpy() for input in self.input_data])
 
     def parameter(self, name: str) -> float:
         """Return a parameter.
@@ -79,4 +86,8 @@ class Method:
     @property
     def result(self) -> Result:
         """Return the result object of the method."""
-        return Result(pl.DataFrame(self.output_dict), self.input_data.info)
+        if isinstance(self.input_data, list):
+            info = self.input_data[0].info
+        else:
+            info = self.input_data.info
+        return Result(pl.DataFrame(self.output_dict), info)

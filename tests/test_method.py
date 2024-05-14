@@ -36,10 +36,13 @@ def test_init(method_fixture):
     assert method_fixture.output_dict == {}
 
 
-def test_variable(method_fixture):
+def test_variable(method_fixture, input_data_fixture, parameters_fixture):
     """Test the variable method."""
     assert np.array_equal(method_fixture.variable("x"), np.array([1, 2, 3]))
     assert method_fixture.variable_list == ["x"]
+
+    method = Method([input_data_fixture, input_data_fixture], parameters_fixture)
+    assert np.array_equal(method.variable("x"), np.array([[1, 2, 3], [1, 2, 3]]))
 
 
 def test_parameter(method_fixture):
