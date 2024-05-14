@@ -102,30 +102,32 @@ plot_theme = "simple_white"
 fig = Plot()
 
 selected_data = []
-if len(selected_experiment) > 0:
-    for i in range(len(selected_indices)):
-        selected_index = selected_indices[i]
+for i in range(len(selected_indices)):
+    selected_index = selected_indices[i]
+    if len(selected_experiment) == 0:
+        experiment_data = cell_list[selected_index].procedure[selected_raw_data]
+    else:
         experiment_data = (
             cell_list[selected_index]
             .procedure[selected_raw_data]
             .experiment(*selected_experiment)
         )
-        # Check if the input is not empty
-        if cycle_step_input:
-            # Use eval to evaluate the input as Python code
-            filtered_data = eval(f"experiment_data.{cycle_step_input}")
-        else:
-            filtered_data = experiment_data
+    # Check if the input is not empty
+    if cycle_step_input:
+        # Use eval to evaluate the input as Python code
+        filtered_data = eval(f"experiment_data.{cycle_step_input}")
+    else:
+        filtered_data = experiment_data
 
-        if secondary_y_axis == "None":
-            secondary_y_axis = None
+    if secondary_y_axis == "None":
+        secondary_y_axis = None
 
-        fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
-        filtered_data = filtered_data.data.to_pandas()
-        selected_data.append(filtered_data)
+    fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
+    filtered_data = filtered_data.data.to_pandas()
+    selected_data.append(filtered_data)
 
 # Show the plot
-if len(selected_data) > 0 and len(selected_experiment) > 0:
+if len(selected_data) > 0:
     graph_placeholder.plotly_chart(
         fig.fig, theme="streamlit" if plot_theme == "default" else None
     )
