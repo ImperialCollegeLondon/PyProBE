@@ -1,6 +1,6 @@
 """A module for the Procedure class."""
 import os
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import polars as pl
 import yaml
@@ -35,21 +35,16 @@ class Procedure(Filter):
         ) = self.process_readme(readme_path)
         super().__init__(_data, info)
 
-    def experiment(self, experiment_name: str) -> Experiment:
+    def experiment(self, *experiment_names: str) -> Experiment:
         """Return an experiment object from the procedure.
 
         Args:
-            experiment_name (str): The name of the experiment.
+            experiment_names (str): Variable-length argument list of
+                experiment names.
 
         Returns:
             Experiment: An experiment object from the procedure.
         """
-        experiment_number = list(self.titles.keys()).index(experiment_name)
-        steps_idx = self.steps_idx[experiment_number]
-        conditions = [
-            pl.col("Step").is_in(steps_idx),
-        ]
-        lf_filtered = self._data.filter(conditions)
         experiment_types = {
             "Constant Current": Experiment,
             "Pulsing": Pulsing,
@@ -57,7 +52,22 @@ class Procedure(Filter):
             "pOCV": pOCV,
             "SOC Reset": Experiment,
         }
-        return experiment_types[self.titles[experiment_name]](lf_filtered, self.info)
+        steps_idx = []
+        for experiment_name in experiment_names:
+            if experiment_name not in self.titles:
+                raise ValueError(f"{experiment_name} not in procedure.")
+            experiment_number = list(self.titles.keys()).index(experiment_name)
+            steps_idx.append(self.steps_idx[experiment_number])
+        flattened_steps = self.flatten(steps_idx)
+        conditions = [
+            pl.col("Step").is_in(flattened_steps),
+        ]
+        lf_filtered = self._data.filter(conditions)
+        if len(experiment_names) == 1:
+            experiment_obj = experiment_types[self.titles[experiment_names[0]]]
+        else:
+            experiment_obj = Experiment
+        return experiment_obj(lf_filtered, self.info)
 
     @property
     def experiment_names(self) -> List[str]:
@@ -78,7 +88,7 @@ class Procedure(Filter):
             readme_path (str): The path to the README.yaml file.
 
         Returns:
-            dict: The titles of the experiments inside a procddure.
+            dict: The titles of the experiments inside a procedure.
                 Fomat {title: experiment type}.
             list: The cycle numbers inside the procedure.
             list: The step numbers inside the procedure.
@@ -102,3 +112,18 @@ class Procedure(Filter):
             steps.append(step_list)
 
         return titles, steps
+
+    @classmethod
+    def flatten(cls, lst: int | List[Any]) -> List[int]:
+        """Flatten a list of lists into a single list.
+
+        Args:
+            lst (list): The list of lists to flatten.
+
+        Returns:
+            list: The flattened list.
+        """
+        if not isinstance(lst, list):
+            return [lst]
+        else:
+            return [item for sublist in lst for item in cls.flatten(sublist)]

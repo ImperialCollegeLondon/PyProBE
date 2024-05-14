@@ -59,7 +59,8 @@ selected_raw_data = st.sidebar.selectbox("Select a procedure", procedure_names)
 
 # Select an experiment
 experiment_names = cell_list[0].procedure[selected_raw_data].titles.keys()
-selected_experiment = st.sidebar.selectbox("Select an experiment", experiment_names)
+selected_experiment = st.sidebar.multiselect("Select an experiment", experiment_names)
+selected_experiment = tuple(selected_experiment)
 
 # Get the cycle and step numbers from the user
 cycle_step_input = st.sidebar.text_input(
@@ -101,29 +102,30 @@ plot_theme = "simple_white"
 fig = Plot()
 
 selected_data = []
-for i in range(len(selected_indices)):
-    selected_index = selected_indices[i]
-    experiment_data = (
-        cell_list[selected_index]
-        .procedure[selected_raw_data]
-        .experiment(selected_experiment)
-    )
-    # Check if the input is not empty
-    if cycle_step_input:
-        # Use eval to evaluate the input as Python code
-        filtered_data = eval(f"experiment_data.{cycle_step_input}")
-    else:
-        filtered_data = experiment_data
+if len(selected_experiment) > 0:
+    for i in range(len(selected_indices)):
+        selected_index = selected_indices[i]
+        experiment_data = (
+            cell_list[selected_index]
+            .procedure[selected_raw_data]
+            .experiment(*selected_experiment)
+        )
+        # Check if the input is not empty
+        if cycle_step_input:
+            # Use eval to evaluate the input as Python code
+            filtered_data = eval(f"experiment_data.{cycle_step_input}")
+        else:
+            filtered_data = experiment_data
 
-    if secondary_y_axis == "None":
-        secondary_y_axis = None
+        if secondary_y_axis == "None":
+            secondary_y_axis = None
 
-    fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
-    filtered_data = filtered_data.data.to_pandas()
-    selected_data.append(filtered_data)
+        fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
+        filtered_data = filtered_data.data.to_pandas()
+        selected_data.append(filtered_data)
 
 # Show the plot
-if len(selected_data) > 0:
+if len(selected_data) > 0 and len(selected_experiment) > 0:
     graph_placeholder.plotly_chart(
         fig.fig, theme="streamlit" if plot_theme == "default" else None
     )
