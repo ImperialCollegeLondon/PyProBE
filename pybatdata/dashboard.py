@@ -59,7 +59,8 @@ selected_raw_data = st.sidebar.selectbox("Select a procedure", procedure_names)
 
 # Select an experiment
 experiment_names = cell_list[0].procedure[selected_raw_data].titles.keys()
-selected_experiment = st.sidebar.selectbox("Select an experiment", experiment_names)
+selected_experiment = st.sidebar.multiselect("Select an experiment", experiment_names)
+selected_experiment = tuple(selected_experiment)
 
 # Get the cycle and step numbers from the user
 cycle_step_input = st.sidebar.text_input(
@@ -103,11 +104,14 @@ fig = Plot()
 selected_data = []
 for i in range(len(selected_indices)):
     selected_index = selected_indices[i]
-    experiment_data = (
-        cell_list[selected_index]
-        .procedure[selected_raw_data]
-        .experiment(selected_experiment)
-    )
+    if len(selected_experiment) == 0:
+        experiment_data = cell_list[selected_index].procedure[selected_raw_data]
+    else:
+        experiment_data = (
+            cell_list[selected_index]
+            .procedure[selected_raw_data]
+            .experiment(*selected_experiment)
+        )
     # Check if the input is not empty
     if cycle_step_input:
         # Use eval to evaluate the input as Python code

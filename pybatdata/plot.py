@@ -1,8 +1,10 @@
 """A module to contain plotting functions for PyBatData."""
 from typing import TYPE_CHECKING, List, Optional
 
+import numpy as np
 import plotly.graph_objects as go
 import polars as pl
+from numpy.typing import NDArray
 from plotly.express.colors import sample_colorscale
 from plotly.subplots import make_subplots
 from sklearn.preprocessing import minmax_scale
@@ -208,6 +210,19 @@ class Plot:
 
         return self
 
+    @staticmethod
+    def make_colorscale(
+        points: NDArray[np.float64], colormap: str = "viridis"
+    ) -> List[str]:
+        """Create a colorscale across discrete points.
+
+        Args:
+            colormap (str): The colormap to use.
+            points (NDArray): An array of colors to generate colors for.
+        """
+        colors = sample_colorscale(colormap, minmax_scale(points))
+        return colors
+
     def add_colorscaled_line(
         self, result: "Result", x: str, y: str, color_by: str, colormap: str = "viridis"
     ) -> "Plot":
@@ -225,7 +240,7 @@ class Plot:
         self.yaxis_title = y
 
         unique_colors = result.data[color_by].unique(maintain_order=True).to_numpy()
-        colors = sample_colorscale(colormap, minmax_scale(unique_colors))
+        colors = self.make_colorscale(unique_colors, colormap)
         for i, condition in enumerate(unique_colors):
             subset = result.data.filter(pl.col(color_by) == condition)
             self._fig.add_trace(

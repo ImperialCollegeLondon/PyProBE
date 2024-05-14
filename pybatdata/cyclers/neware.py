@@ -33,7 +33,9 @@ class Neware(BatteryCycler):
             elif file_ext == ".csv":
                 lf = pl.scan_csv(filepath)
         elif len(filepaths) == 0:
-            raise FileNotFoundError(f"No files found with the name {file} in {path}.")
+            raise FileNotFoundError(
+                f"No files found with the name {file} in {filepath}."
+            )
         else:
             for filepath in filepaths:
                 if file_ext == ".xlsx":

@@ -1,5 +1,6 @@
 """Tests for the Plot class."""
 
+import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 import pytest
@@ -72,6 +73,21 @@ def plot_result_fixture():
     )
 
     return Result(data, info)
+
+
+def test_make_colorscale(Plot_fixture):
+    """Test the make_colorscale method."""
+    colormap = "viridis"
+    points = np.array([0, 3, 1, 2])
+    colors = Plot_fixture.make_colorscale(points, colormap)
+
+    assert isinstance(colors, list)
+    assert colors == [
+        "rgb(68, 1, 84)",
+        "rgb(253, 231, 37)",
+        "rgb(49, 104, 142)",
+        "rgb(53, 183, 121)",
+    ]
 
 
 def test_add_line(Plot_fixture, plot_result_fixture):

@@ -1,5 +1,5 @@
 """A module for filtering data."""
-from typing import List, Optional
+from typing import Optional, Tuple, Union
 
 import polars as pl
 
@@ -66,107 +66,115 @@ class Filter(RawData):
         cls,
         _data: pl.LazyFrame | pl.DataFrame,
         column: str,
-        condition_number: int | list[int] | None,
+        indices: Tuple[Union[int, range], ...],
     ) -> pl.LazyFrame:
         """Filter a LazyFrame by a numerical condition.
 
         Args:
             _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
             column (str): The column to filter on.
-            condition_number (int, list): A number or a list of numbers.
+            indices (int, list): A number or a list of numbers to filter by.
         """
-        if isinstance(condition_number, int):
-            condition_number = [condition_number]
-        elif isinstance(condition_number, list):
-            condition_number = list(range(condition_number[0], condition_number[1] + 1))
+        index_list = []
+        for index in indices:
+            if isinstance(index, range):
+                index_list.extend(list(index))
+            else:
+                index_list.extend([index])
         _data = cls._get_events(_data)
-        if condition_number is not None:
+        if len(indices) > 0:
             return _data.filter(
-                pl.col(column).is_in(condition_number)
-                | pl.col(column + "_reversed").is_in(condition_number)
+                pl.col(column).is_in(index_list)
+                | pl.col(column + "_reversed").is_in(index_list)
             )
         else:
             return _data
 
     def step(
         self,
-        step_number: Optional[int | List[int]] = None,
+        *step_numbers: Union[int, range],
         condition: Optional[pl.Expr] = None,
     ) -> RawData:
         """Return a step object from the cycle.
 
         Args:
-            step_number (int): The step number to return.
+            step_number (int | range): Variable-length argument list of
+                step numbers or a range object.
 
         Returns:
-            Result: A step object from the cycle.
+            RawData: A step object from the cycle.
         """
         if condition is not None:
             _data = self.filter_numerical(
-                self._data.filter(condition), "_step", step_number
+                self._data.filter(condition), "_step", step_numbers
             )
         else:
-            _data = self.filter_numerical(self._data, "_step", step_number)
+            _data = self.filter_numerical(self._data, "_step", step_numbers)
         return RawData(_data, self.info)
 
-    def cycle(self, cycle_number: int) -> "Filter":
+    def cycle(self, *cycle_numbers: Union[int, range]) -> "Filter":
         """Return a cycle object from the experiment.
 
         Args:
-            cycle_number (int): The cycle number to return.
+            cycle_number (int | range): Variable-length argument list of
+                cycle numbers or a range object.
 
         Returns:
-            Cycle: A cycle object from the experiment.
+            Filter: A filter object for the specified cycles.
         """
-        lf_filtered = self.filter_numerical(self._data, "_cycle", cycle_number)
+        lf_filtered = self.filter_numerical(self._data, "_cycle", cycle_numbers)
         return Filter(lf_filtered, self.info)
 
-    def charge(self, charge_number: Optional[int] = None) -> RawData:
+    def charge(self, *charge_numbers: Union[int, range]) -> RawData:
         """Return a charge step object from the cycle.
 
         Args:
-            charge_number (int): The charge number to return.
+            charge_number (int | range): Variable-length argument list of
+                charge numbers or a range object.
 
         Returns:
             RawData: A charge step object from the cycle.
         """
         condition = pl.col("Current [A]") > 0
-        return self.step(charge_number, condition)
+        return self.step(*charge_numbers, condition=condition)
 
-    def discharge(self, discharge_number: Optional[int] = None) -> RawData:
+    def discharge(self, *discharge_numbers: Union[int, range]) -> RawData:
         """Return a discharge step object from the cycle.
 
         Args:
-            discharge_number (int): The discharge number to return.
+            discharge_number (int | range): Variable-length argument list of
+                discharge numbers or a range object.
 
         Returns:
             RawData: A discharge step object from the cycle.
         """
         condition = pl.col("Current [A]") < 0
-        return self.step(discharge_number, condition)
+        return self.step(*discharge_numbers, condition=condition)
 
     def chargeordischarge(
-        self, chargeordischarge_number: Optional[int] = None
+        self, *chargeordischarge_numbers: Union[int, range]
     ) -> RawData:
         """Return a charge or discharge step object from the cycle.
 
         Args:
-            chargeordischarge_number (int): The charge or discharge number to return.
+            chargeordischarge_number (int | range): Variable-length argument list of
+                charge or discharge numbers or a range object.
 
         Returns:
             RawData: A charge or discharge step object from the cycle.
         """
         condition = pl.col("Current [A]") != 0
-        return self.step(chargeordischarge_number, condition)
+        return self.step(*chargeordischarge_numbers, condition=condition)
 
-    def rest(self, rest_number: Optional[int] = None) -> RawData:
+    def rest(self, *rest_numbers: Union[int, range]) -> RawData:
         """Return a rest step object from the cycle.
 
         Args:
-            rest_number (int): The rest number to return.
+            rest_number (int | range): Variable-length argument list of rest
+                numbers or a range object.
 
         Returns:
             RawData: A rest step object from the cycle.
         """
         condition = pl.col("Current [A]") == 0
-        return self.step(rest_number, condition)
+        return self.step(*rest_numbers, condition=condition)
