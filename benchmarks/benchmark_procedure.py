@@ -9,12 +9,12 @@ def time_return_procedure() -> None:
 
 def time_return_procedure_data() -> None:
     """Benchmark the return of the data attribute of a Procedure object."""
-    cell = benchmark_functions.add_data_from_parquet()
+    cell = benchmark_functions.add_procedure_from_parquet()
     cell.procedure["sample procedure"].data
 
 
 def time_return_procedure_data_twice() -> None:
     """Benchmark the return of the data attribute of a Procedure object twice."""
-    cell = benchmark_functions.add_data_from_parquet()
+    cell = benchmark_functions.add_procedure_from_parquet()
     cell.procedure["sample procedure"].data
     cell.procedure["sample procedure"].data

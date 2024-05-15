@@ -86,9 +86,9 @@ class Cell:
         )
         self.write_parquet(input_data_path, output_data_path, cycler)
 
-    def add_data(
+    def add_procedure(
         self,
-        title: str,
+        procedure_name: str,
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
@@ -96,7 +96,8 @@ class Cell:
         """Function to add data to the cell object.
 
         Args:
-            title (str): The title of the procedure.
+            procedure_name (str): A name to give the procedure. This will be used
+                when calling cell.procedure[procedure_name].
             folder_path (str): The path to the folder containing the data file.
             filename (str | function): A filename string or a function to generate
                 the file name.
@@ -106,8 +107,8 @@ class Cell:
         _, output_data_path = self.get_data_paths(
             folder_path, filename, filename_inputs
         )
-        self.procedure[title] = Procedure(output_data_path, self.info)
-        self.processed_data[title] = {}
+        self.procedure[procedure_name] = Procedure(output_data_path, self.info)
+        self.processed_data[procedure_name] = {}
 
     @staticmethod
     def read_record(root_directory: str, record_name: str) -> pl.DataFrame:
