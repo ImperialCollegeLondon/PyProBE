@@ -90,12 +90,12 @@ conda (in any directory):
   ```
 </details>
 
-## Citing PyECN
+## Citing PyProBE
 
 TBC
 
 
-## Contributing to PyECN
+## Contributing to PyProBE
 
 Contributions to PyECN are welcome. Please see the [contributing guidelines](CONTRIBUTING.md).
 
