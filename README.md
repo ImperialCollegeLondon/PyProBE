@@ -97,12 +97,12 @@ TBC
 
 ## Contributing to PyProBE
 
-Contributions to PyECN are welcome. Please see the [contributing guidelines](CONTRIBUTING.md).
+Contributions to PyProBE are welcome. Please see the [contributing guidelines](CONTRIBUTING.md).
 
 
 ## License
 
-PyECN is fully open source. For more information about its license, see [LICENSE](LICENSE.md).
+PyProBE is fully open source. For more information about its license, see [LICENSE](LICENSE.md).
 
 
 ## Contributors
