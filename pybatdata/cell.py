@@ -4,7 +4,7 @@ import pickle
 import platform
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import distinctipy
 import polars as pl
@@ -67,22 +67,23 @@ class Cell:
         self,
         cycler: BatteryCycler,
         folder_path: str,
-        filename_function: Callable[[str], str],
-        filename_inputs: List[str],
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
     ) -> None:
         """Convert cycler file into PyBatData format.
 
         Args:
             cycler (BatteryCycler): The cycler used to produce the data.
             folder_path (str): The path to the folder containing the data file.
-            filename_function (function): The function to generate the file name.
+            filename (str | function): A filename string or a function to generate
+                the file name.
             filename_inputs (list): The list of inputs to filename_function.
                 These must be keys of the cell info.
             root_directory (str): The root directory containing the subfolder.
         """
-        filename = self.get_filename(self.info, filename_function, filename_inputs)
-        input_data_path = os.path.join(folder_path, filename)
-        output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
+        input_data_path, output_data_path = self.get_data_paths(
+            folder_path, filename, filename_inputs
+        )
         self.write_parquet(input_data_path, output_data_path, cycler)
 
     def add_data(
@@ -97,21 +98,14 @@ class Cell:
         Args:
             title (str): The title of the procedure.
             folder_path (str): The path to the folder containing the data file.
-            filename (str | function): The function to generate the file name.
+            filename (str | function): A filename string or a function to generate
+                the file name.
             filename_inputs (Optional[list]): The list of inputs to filename_function.
                 These must be keys of the cell info.
         """
-        if isinstance(filename, str):
-            filename_str = filename
-        else:
-            if filename_inputs is None:
-                raise ValueError(
-                    "filename_inputs must be provided when filename is a function."
-                )
-            filename_str = self.get_filename(self.info, filename, filename_inputs)
-
-        input_data_path = os.path.join(folder_path, filename_str)
-        output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
+        _, output_data_path = self.get_data_paths(
+            folder_path, filename, filename_inputs
+        )
         self.procedure[title] = Procedure(output_data_path, self.info)
         self.processed_data[title] = {}
 
@@ -151,6 +145,37 @@ class Cell:
         return filename_function(
             *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs)))
         )
+
+    def get_data_paths(
+        self,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
+    ) -> Tuple[str, str]:
+        """Function to generate the input and output paths for the data file.
+
+        Args:
+            folder_path (str): The path to the folder containing the data file.
+            filename (str | function): A filename string or a function to generate
+                the file name.
+            filename_inputs (Optional[list]): The list of inputs to filename_function.
+                These must be keys of the cell info.
+
+        Returns:
+            Tuple[str, str]: The input and output paths for the data file.
+        """
+        if isinstance(filename, str):
+            filename_str = filename
+        else:
+            if filename_inputs is None:
+                raise ValueError(
+                    "filename_inputs must be provided when filename is a function."
+                )
+            filename_str = self.get_filename(self.info, filename, filename_inputs)
+
+        input_data_path = os.path.join(folder_path, filename_str)
+        output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
+        return input_data_path, output_data_path
 
     @staticmethod
     def verify_parquet(input_path: str, cycler: BatteryCycler) -> bool:
