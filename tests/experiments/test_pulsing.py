@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pybatdata.result import Result
+from pyprobe.result import Result
 
 
 def test_pulse(Pulsing_fixture):

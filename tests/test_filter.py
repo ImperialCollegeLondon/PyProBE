@@ -1,7 +1,7 @@
 """Tests for the filter module."""
 import pytest
 
-from pybatdata.filter import Filter
+from pyprobe.filter import Filter
 
 
 def test_get_events(lazyframe_fixture):

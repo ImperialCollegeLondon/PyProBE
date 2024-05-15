@@ -5,11 +5,11 @@ from typing import Any, Dict, List
 import polars as pl
 import yaml
 
-from pybatdata.experiment import Experiment
-from pybatdata.experiments.cycling import Cycling
-from pybatdata.experiments.pOCV import pOCV
-from pybatdata.experiments.pulsing import Pulsing
-from pybatdata.filter import Filter
+from pyprobe.experiment import Experiment
+from pyprobe.experiments.cycling import Cycling
+from pyprobe.experiments.pOCV import pOCV
+from pyprobe.experiments.pulsing import Pulsing
+from pyprobe.filter import Filter
 
 
 class Procedure(Filter):

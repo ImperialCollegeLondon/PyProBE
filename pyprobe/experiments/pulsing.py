@@ -6,8 +6,8 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
-from pybatdata.experiment import Experiment
-from pybatdata.result import Result
+from pyprobe.experiment import Experiment
+from pyprobe.result import Result
 
 
 class Pulsing(Experiment):

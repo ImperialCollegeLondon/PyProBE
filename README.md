@@ -5,7 +5,7 @@ PyProBE is a Python library for the analysis of battery cycling data.
 PyProBE should be imported as a package into an external post-processing script or jupyter notebook.
 
 ```python
-from pybatdata.cell import Cell
+from pyprobe.cell import Cell
 ```
 
 You can make a PyProBE Cell object with only a dictionary of metadata about the cell being cycled:
@@ -50,8 +50,8 @@ $ source .venv/bin/activate
 ```
 conda (in any directory):
 ```bash
-$ conda create -n pybatdata python=3.12
-$ conda activate pybatdata
+$ conda create -n pyprobe python=3.12
+$ conda activate pyprobe
 ```
 
 
@@ -79,8 +79,8 @@ $ conda activate pybatdata
 ```
 conda (in any directory):
 ```bash
-> conda create -n pybatdata python=3.12
-> conda activate pybatdata
+> conda create -n pyprobe python=3.12
+> conda activate pyprobe
 ```
 
   3. Install PyProBE as a package into your virtual environment:

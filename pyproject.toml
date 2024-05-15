@@ -53,7 +53,7 @@ follow_imports = "skip"
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "-v --mypy -p no:warnings --cov=pybatdata --cov-report=html --doctest-modules --ignore=docs/ --ignore=pybatdata/"
+addopts = "-v --mypy -p no:warnings --cov=pyprobe --cov-report=html --doctest-modules --ignore=docs/ --ignore=pyprobe/"
 
 [tool.coverage.report]
 exclude_also = [

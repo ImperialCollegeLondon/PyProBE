@@ -7,8 +7,8 @@ import pytest
 from plotly.express.colors import sample_colorscale
 from sklearn.preprocessing import minmax_scale
 
-from pybatdata.plot import Plot
-from pybatdata.result import Result
+from pyprobe.plot import Plot
+from pyprobe.result import Result
 
 
 @pytest.fixture

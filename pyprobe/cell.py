@@ -10,8 +10,8 @@ import distinctipy
 import polars as pl
 from polars.testing import assert_frame_equal
 
-from pybatdata.batterycycler import BatteryCycler
-from pybatdata.procedure import Procedure
+from pyprobe.batterycycler import BatteryCycler
+from pyprobe.procedure import Procedure
 
 
 class Cell:

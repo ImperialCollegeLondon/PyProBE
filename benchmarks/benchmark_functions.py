@@ -2,9 +2,9 @@
 
 import os
 
-from pybatdata.cell import Cell
-from pybatdata.experiment import Experiment
-from pybatdata.procedure import Procedure
+from pyprobe.cell import Cell
+from pyprobe.experiment import Experiment
+from pyprobe.procedure import Procedure
 
 
 def create_cell() -> Cell:

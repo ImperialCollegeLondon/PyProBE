@@ -10,7 +10,7 @@ from plotly.subplots import make_subplots
 from sklearn.preprocessing import minmax_scale
 
 if TYPE_CHECKING:
-    from pybatdata.result import Result
+    from pyprobe.result import Result
 
 
 class Plot:

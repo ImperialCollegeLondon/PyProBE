@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from pybatdata.experiments.cycling import Cycling
-from pybatdata.result import Result
+from pyprobe.experiments.cycling import Cycling
+from pyprobe.result import Result
 
 
 @pytest.fixture

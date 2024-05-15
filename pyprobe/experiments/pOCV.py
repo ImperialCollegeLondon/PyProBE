@@ -1,19 +1,18 @@
-"""A module for the Experiment class."""
-
+"""A module for the pOCV class."""
 from typing import Dict
 
 import polars as pl
 
-from pybatdata.filter import Filter
+from pyprobe.experiment import Experiment
 
 
-class Experiment(Filter):
-    """An experiment in a battery procedure."""
+class pOCV(Experiment):
+    """A pOCV experiment in a battery procedure."""
 
     def __init__(
         self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
     ):
-        """Create an experiment.
+        """Create a pOCV experiment.
 
         Args:
             _data (polars.LazyFrame): The _data of data being filtered.

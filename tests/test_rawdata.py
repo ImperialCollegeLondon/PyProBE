@@ -5,8 +5,8 @@ import numpy as np
 import polars as pl
 import pytest
 
-from pybatdata.rawdata import RawData
-from pybatdata.units import Units
+from pyprobe.rawdata import RawData
+from pyprobe.units import Units
 
 
 @pytest.fixture

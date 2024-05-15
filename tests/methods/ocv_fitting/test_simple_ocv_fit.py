@@ -1,7 +1,7 @@
 """Tests for the Simple_OCV_fit module."""
 import numpy as np
 
-from pybatdata.methods.ocv_fitting.Simple_OCV_fit import Simple_OCV_fit
+from pyprobe.methods.ocv_fitting.Simple_OCV_fit import Simple_OCV_fit
 
 
 def test_fit_ocv():

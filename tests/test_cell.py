@@ -5,8 +5,8 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from pybatdata.cell import Cell
-from pybatdata.cyclers.neware import Neware
+from pyprobe.cell import Cell
+from pyprobe.cyclers.neware import Neware
 
 
 @pytest.fixture

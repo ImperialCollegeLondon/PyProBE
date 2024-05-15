@@ -6,7 +6,7 @@ import pandas as pd
 import plotly
 import streamlit as st
 
-from pybatdata.plot import Plot
+from pyprobe.plot import Plot
 
 with open("dashboard_data.pkl", "rb") as f:
     cell_list = pickle.load(f)

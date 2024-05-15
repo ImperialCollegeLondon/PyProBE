@@ -5,7 +5,7 @@ import re
 
 import polars as pl
 
-from pybatdata.batterycycler import BatteryCycler
+from pyprobe.batterycycler import BatteryCycler
 
 
 class Neware(BatteryCycler):

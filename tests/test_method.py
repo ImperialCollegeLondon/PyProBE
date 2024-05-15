@@ -4,8 +4,8 @@ import numpy as np
 import polars as pl
 import pytest
 
-from pybatdata.method import Method
-from pybatdata.result import Result
+from pyprobe.method import Method
+from pyprobe.result import Result
 
 
 @pytest.fixture
