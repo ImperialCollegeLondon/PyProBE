@@ -16,7 +16,7 @@ cell = Cell(info)
 
 To add data to your cell object, it must first be converted into the standard format used by PyProBE. See the list of currently supported cyclers and file formats in the documentation.
 
-```puthon
+```python
 cell.process_cycler_file(cycler = 'supported_cycler',
                          folder_path = 'root_directory/subfolder',
                          file_name = 'cell_data.anyfomat')
@@ -25,9 +25,9 @@ cell.process_cycler_file(cycler = 'supported_cycler',
 To add the newly created ```.parquet``` file to the cell object, you must have a ```README.yaml``` file saved alongside your raw data, following the guidance in the documentation.
 
 ```python
-cell.add_data(title = 'procedure title', 
-              input_path = 'root_directory/subfolder', 
-              file_name = 'cell_data.parquet')
+cell.add_procedure(procedure_name = 'procedure name', 
+                   input_path = 'root_directory/subfolder', 
+                   file_name = 'cell_data.parquet')
 ```
 
 Batch processing can also be done. This requires an ```Experiment_Record.xlsx``` in the ```root directory```, according to the guidelines in the documentation. For more information see the documentation and this example.
