@@ -25,9 +25,9 @@ contourpy==1.2.1
 cycler==0.12.1
     # via matplotlib
 distinctipy==1.3.4
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 fastexcel==0.10.4
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 fastjsonschema==2.19.1
     # via nbformat
 fonttools==4.51.0
@@ -59,14 +59,14 @@ markdown-it-py==3.0.0
 markupsafe==2.1.5
     # via jinja2
 matplotlib==3.8.4
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 mdurl==0.1.2
     # via markdown-it-py
 nbformat==5.10.4
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 numpy==1.26.4
     # via
-    #   PyBatData (pyproject.toml)
+    #   PyProBE (pyproject.toml)
     #   altair
     #   contourpy
     #   distinctipy
@@ -85,7 +85,7 @@ packaging==24.0
     #   streamlit
 pandas==2.2.2
     # via
-    #   PyBatData (pyproject.toml)
+    #   PyProBE (pyproject.toml)
     #   altair
     #   streamlit
 pillow==10.3.0
@@ -95,9 +95,9 @@ pillow==10.3.0
 platformdirs==4.2.1
     # via jupyter-core
 plotly==5.20.0
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 polars==0.20.19
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 protobuf==4.25.3
     # via streamlit
 pyarrow==15.0.2
@@ -117,7 +117,7 @@ python-dateutil==2.9.0.post0
 pytz==2024.1
     # via pandas
 pyyaml==6.0.1
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 referencing==0.34.0
     # via
     #   jsonschema
@@ -131,7 +131,7 @@ rpds-py==0.18.0
     #   jsonschema
     #   referencing
 scikit-learn==1.4.2
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 scipy==1.13.0
     # via scikit-learn
 six==1.16.0
@@ -139,7 +139,7 @@ six==1.16.0
 smmap==5.0.1
     # via gitdb
 streamlit==1.33.0
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)
 tenacity==8.2.3
     # via
     #   plotly
@@ -163,4 +163,4 @@ tzdata==2024.1
 urllib3==2.2.1
     # via requests
 xlsx2csv==0.8.2
-    # via PyBatData (pyproject.toml)
+    # via PyProBE (pyproject.toml)

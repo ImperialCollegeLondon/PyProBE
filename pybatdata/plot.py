@@ -1,4 +1,4 @@
-"""A module to contain plotting functions for PyBatData."""
+"""A module to contain plotting functions for PyProBE."""
 from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np

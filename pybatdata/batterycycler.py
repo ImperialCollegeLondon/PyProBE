@@ -7,7 +7,7 @@ class BatteryCycler:
 
     @classmethod
     def load_file(cls, filepath: str) -> pl.LazyFrame:
-        """Load a battery cycler file into PyBatData format.
+        """Load a battery cycler file into PyProBE format.
 
         Args:
             filepath: The path to the file.

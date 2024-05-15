@@ -1,20 +1,20 @@
-# PyBatData
-PyBatData is a Python library for the analysis of battery cycling data.
+# PyProBE
+PyProBE is a Python library for the analysis of battery cycling data.
 
-## Using PyBatData
-PyBatData should be imported as a package into an external post-processing script or jupyter notebook.
+## Using PyProBE
+PyProBE should be imported as a package into an external post-processing script or jupyter notebook.
 
 ```python
 from pybatdata.cell import Cell
 ```
 
-You can make a PyBatData Cell object with only a dictionary of metadata about the cell being cycled:
+You can make a PyProBE Cell object with only a dictionary of metadata about the cell being cycled:
 ```python
 info = dict({'metadata item': value})
 cell = Cell(info)
 ```
 
-To add data to your cell object, it must first be converted into the standard format used by PyBatData. See the list of currently supported cyclers and file formats in the documentation.
+To add data to your cell object, it must first be converted into the standard format used by PyProBE. See the list of currently supported cyclers and file formats in the documentation.
 
 ```puthon
 cell.process_cycler_file(cycler = 'supported_cycler',
@@ -32,7 +32,7 @@ cell.add_data(title = 'procedure title',
 
 Batch processing can also be done. This requires an ```Experiment_Record.xlsx``` in the ```root directory```, according to the guidelines in the documentation. For more information see the documentation and this example.
 
-## Installing PyBatData
+## Installing PyProBE
 <details>
   <summary>Linux/macOS</summary>
 
@@ -55,9 +55,9 @@ $ conda activate pybatdata
 ```
 
 
-  3. Install PyBatData as a package into your virtual environment:
+  3. Install PyProBE as a package into your virtual environment:
   ```bash
-  $ cd PyBatData
+  $ cd PyProBE
   $ pip install .
   ```
 </details>
@@ -83,9 +83,9 @@ conda (in any directory):
 > conda activate pybatdata
 ```
 
-  3. Install PyBatData as a package into your virtual environment:
+  3. Install PyProBE as a package into your virtual environment:
   ```bat
-  > cd PyBatData
+  > cd PyProBE
   > pip install .
   ```
 </details>

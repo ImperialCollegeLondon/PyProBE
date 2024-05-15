@@ -8,7 +8,7 @@ exclude = [
 ] # Exclude the coverage report file from setuptools package finder
 
 [project]
-name = "PyBatData"
+name = "PyProBE"
 version = "0.1"
 requires-python = ">=3.11"
 dependencies = ["matplotlib", "numpy", "polars", "pandas", "fastexcel", "xlsx2csv", "plotly", "scikit-learn", "distinctipy", "streamlit", "PyYAML", "nbformat"]

@@ -70,7 +70,7 @@ class Cell:
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
     ) -> None:
-        """Convert cycler file into PyBatData format.
+        """Convert cycler file into PyProBE format.
 
         Args:
             cycler (BatteryCycler): The cycler used to produce the data.
