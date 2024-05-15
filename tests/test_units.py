@@ -1,7 +1,7 @@
 """Unit tests for the Units class."""
 
 
-from pybatdata.units import Units
+from pyprobe.units import Units
 
 
 def test_set_zero(BreakinCycles_fixture):

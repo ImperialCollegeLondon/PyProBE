@@ -1,4 +1,4 @@
-"""Script to create a Streamlit dashboard for PyBatData."""
+"""Script to create a Streamlit dashboard for PyProBE."""
 import pickle
 from typing import List
 
@@ -6,12 +6,12 @@ import pandas as pd
 import plotly
 import streamlit as st
 
-from pybatdata.plot import Plot
+from pyprobe.plot import Plot
 
 with open("dashboard_data.pkl", "rb") as f:
     cell_list = pickle.load(f)
 
-st.title("PyBatData Dashboard")
+st.title("PyProBE Dashboard")
 st.sidebar.title("Select data to plot")
 
 info_list = []

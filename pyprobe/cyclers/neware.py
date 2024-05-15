@@ -5,7 +5,7 @@ import re
 
 import polars as pl
 
-from pybatdata.batterycycler import BatteryCycler
+from pyprobe.batterycycler import BatteryCycler
 
 
 class Neware(BatteryCycler):
@@ -13,13 +13,13 @@ class Neware(BatteryCycler):
 
     @staticmethod
     def load_file(filepath: str) -> pl.LazyFrame:
-        """Load a Neware battery cycler file into PyBatData format.
+        """Load a Neware battery cycler file into PyProBE format.
 
         Args:
             filepath: The path to the file.
 
         Returns:
-            A LazyFrame containing the data in PyBatData format.
+            A LazyFrame containing the data in PyProBE format.
         """
         file = os.path.basename(filepath)
         path = os.path.dirname(filepath)

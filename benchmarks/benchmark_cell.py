@@ -7,6 +7,6 @@ def time_create_cell() -> None:
     benchmark_functions.create_cell()
 
 
-def time_add_data_from_parquet() -> None:
+def time_add_procedure_from_parquet() -> None:
     """Benchmark adding data to a Cell object from a parquet file."""
-    benchmark_functions.add_data_from_parquet()
+    benchmark_functions.add_procedure_from_parquet()

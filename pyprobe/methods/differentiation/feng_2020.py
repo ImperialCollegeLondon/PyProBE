@@ -4,8 +4,8 @@ from typing import Dict, List, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from pybatdata.method import Method
-from pybatdata.result import Result
+from pyprobe.method import Method
+from pyprobe.result import Result
 
 
 class Feng2020(Method):

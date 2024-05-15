@@ -1,4 +1,4 @@
-"""A module to contain plotting functions for PyBatData."""
+"""A module to contain plotting functions for PyProBE."""
 from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
@@ -10,7 +10,7 @@ from plotly.subplots import make_subplots
 from sklearn.preprocessing import minmax_scale
 
 if TYPE_CHECKING:
-    from pybatdata.result import Result
+    from pyprobe.result import Result
 
 
 class Plot:

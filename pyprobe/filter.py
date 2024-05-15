@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 
 import polars as pl
 
-from pybatdata.rawdata import RawData
+from pyprobe.rawdata import RawData
 
 
 class Filter(RawData):

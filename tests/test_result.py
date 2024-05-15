@@ -3,7 +3,7 @@
 import polars as pl
 import pytest
 
-from pybatdata.result import Result
+from pyprobe.result import Result
 
 
 @pytest.fixture

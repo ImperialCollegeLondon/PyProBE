@@ -4,9 +4,9 @@ from typing import Dict
 
 import polars as pl
 
-from pybatdata.experiment import Experiment
-from pybatdata.filter import Filter
-from pybatdata.result import Result
+from pyprobe.experiment import Experiment
+from pyprobe.filter import Filter
+from pyprobe.result import Result
 
 
 class Cycling(Experiment):

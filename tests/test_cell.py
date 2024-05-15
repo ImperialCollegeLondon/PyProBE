@@ -5,8 +5,8 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from pybatdata.cell import Cell
-from pybatdata.cyclers.neware import Neware
+from pyprobe.cell import Cell
+from pyprobe.cyclers.neware import Neware
 
 
 @pytest.fixture
@@ -51,12 +51,12 @@ def test_get_filename(info_fixture):
     assert file == "Cell_named_Test_Cell.xlsx"
 
 
-def test_add_data(cell_instance, procedure_fixture):
-    """Test the add_data method."""
+def test_add_procedure(cell_instance, procedure_fixture):
+    """Test the add_procedure method."""
     input_path = "tests/sample_data_neware"
     file_name = "sample_data_neware.parquet"
     title = "Test"
-    cell_instance.add_data(title, input_path, file_name)
+    cell_instance.add_procedure(title, input_path, file_name)
     assert_frame_equal(cell_instance.procedure[title].data, procedure_fixture.data)
 
 
