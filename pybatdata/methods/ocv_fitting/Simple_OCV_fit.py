@@ -138,11 +138,17 @@ class Simple_OCV_fit(Method):
             ne_data (NDArray[np.float64]): The anode half cell data.
             pe_data (NDArray[np.float64]): The cathode half cell data.
         """
-        n_points = len(SOC)
+        n_points = 10000
+        # make vectors between stoichiometry limits
         z_ne = np.linspace(z_ne_lo, z_ne_hi, n_points)
         z_pe = np.linspace(z_pe_lo, z_pe_hi, n_points)
+        # make an SOC vector with the same number of points
+        SOC_sampling = np.linspace(0, 1, n_points)
 
+        # interpolate the real electrode OCP data with the created stoichiometry vectors
         OCP_ne = np.interp(z_ne, ne_data[:, 0], ne_data[:, 1])
         OCP_pe = np.interp(z_pe, pe_data[:, 0], pe_data[:, 1])
 
-        return OCP_pe - OCP_ne
+        # interpolate the final OCV curve with the original SOC vector
+        OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
+        return OCV
