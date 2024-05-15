@@ -1,5 +1,5 @@
 """A module for the RawData class."""
-from typing import Dict
+from typing import Dict, Optional
 
 import polars as pl
 
@@ -82,3 +82,43 @@ class RawData(Result):
             }
         )
         return method_dict[method](self, parameters).result
+
+    def set_SOC(
+        self,
+        reference_capacity: Optional[float] = None,
+        reference_charge: Optional["RawData"] = None,
+    ) -> None:
+        """Add an SOC column to the data."""
+        if reference_capacity is None:
+            reference_capacity = (
+                pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
+            )
+        if reference_charge is None:
+            # capacity_reference = pl.select(pl.col("Capacity [Ah]").max())
+            self._data = self._data.with_columns(
+                (
+                    (
+                        pl.col("Capacity [Ah]")
+                        - pl.col("Capacity [Ah]").max()
+                        + reference_capacity
+                    )
+                    / reference_capacity
+                ).alias("SOC [%]")
+            )
+        else:
+            self.data
+            fully_charged_reference_point = reference_charge.data.select(
+                pl.col("Date").max()
+            )[0][0]
+            capacity_reference = (
+                self._data.filter(pl.col("Date") == fully_charged_reference_point)
+                .select("Capacity [Ah]")
+                .head(1)
+            )
+            self._data = self._data.with_columns(
+                (
+                    (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
+                    / reference_capacity
+                ).alias("SOC [%]")
+            )
+        print(self._data["SOC [%]"].head(5))

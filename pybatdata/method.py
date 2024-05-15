@@ -1,6 +1,7 @@
 """Module for the base Method class."""
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
@@ -19,7 +20,11 @@ class Method:
         output_dict (Dict[str, NDArray]): The dictionary of outputs from the method.
     """
 
-    def __init__(self, input_data: Result, parameters: Dict[str, float]) -> None:
+    def __init__(
+        self,
+        input_data: Result | List[Result],
+        parameters: Optional[Dict[str, float]] = None,
+    ) -> None:
         """Initialize the Method object.
 
         Args:
@@ -43,7 +48,11 @@ class Method:
             NDArray: The variable as a numpy array.
         """
         self.variable_list.append(name)
-        return self.input_data.data[name].to_numpy()
+
+        if not isinstance(self.input_data, list):
+            return self.input_data.data[name].to_numpy()
+        else:
+            return np.vstack([input.data[name].to_numpy() for input in self.input_data])
 
     def parameter(self, name: str) -> float:
         """Return a parameter.
@@ -54,6 +63,10 @@ class Method:
         Returns:
             float: The parameter.
         """
+        if self.parameters is None:
+            raise ValueError("No parameters provided to method.")
+        if name not in self.parameters:
+            raise KeyError(f"Parameter {name} not found in parameter dict provided.")
         self.parameter_list.append(name)
         return self.parameters[name]
 
@@ -65,16 +78,30 @@ class Method:
         """
         self.output_list = output_list
 
-    def assign_outputs(self, function_call: Tuple[NDArray[Any], NDArray[Any]]) -> None:
+    def assign_outputs(
+        self, function_call: Tuple[Union[NDArray[np.float64], float], ...]
+    ) -> None:
         """Assign the outputs of the method.
 
         Args:
             function_call (Tuple): The tuple of outputs from the method.
         """
-        for i, name in enumerate(self.output_list):
-            self.output_dict[name] = function_call[i]
+        if any(isinstance(item, float) for item in function_call) and any(
+            isinstance(item, np.ndarray) for item in function_call
+        ):
+            for i, name in enumerate(self.output_list):
+                self.output_dict[name] = np.expand_dims(
+                    np.asarray(function_call[i]), axis=0
+                )
+        else:
+            for i, name in enumerate(self.output_list):
+                self.output_dict[name] = np.asarray(function_call[i])
 
     @property
     def result(self) -> Result:
         """Return the result object of the method."""
-        return Result(pl.DataFrame(self.output_dict), self.input_data.info)
+        if isinstance(self.input_data, list):
+            info = self.input_data[0].info
+        else:
+            info = self.input_data.info
+        return Result(pl.DataFrame(self.output_dict), info)
