@@ -106,3 +106,5 @@ PyProBE is fully open source. For more information about its license, see [LICEN
 
 
 ## Contributors
+<!-- readme: contributors -start -->
+<!-- readme: contributors -end -->
