@@ -1,0 +1,37 @@
+pyprobe.experiments package
+===========================
+
+Submodules
+----------
+
+pyprobe.experiments.cycling module
+----------------------------------
+
+.. automodule:: pyprobe.experiments.cycling
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyprobe.experiments.pOCV module
+-------------------------------
+
+.. automodule:: pyprobe.experiments.pOCV
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyprobe.experiments.pulsing module
+----------------------------------
+
+.. automodule:: pyprobe.experiments.pulsing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pyprobe.experiments
+   :members:
+   :undoc-members:
+   :show-inheritance:
