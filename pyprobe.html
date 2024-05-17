@@ -20,7 +20,9 @@
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyprobe.experiments package" href="pyprobe.experiments.html" />
+    <link rel="prev" title="API Reference" href="modules.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,156 +44,66 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">pyprobe package</a><ul>
-<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pyprobe.batterycycler">pyprobe.batterycycler module</a><ul>
-<li><a class="reference internal" href="#pyprobe.batterycycler.BatteryCycler"><code class="docutils literal notranslate"><span class="pre">BatteryCycler</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.batterycycler.BatteryCycler.convert_units"><code class="docutils literal notranslate"><span class="pre">BatteryCycler.convert_units()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.batterycycler.BatteryCycler.load_file"><code class="docutils literal notranslate"><span class="pre">BatteryCycler.load_file()</span></code></a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyprobe package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.experiments.html">pyprobe.experiments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html">pyprobe.methods package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.batterycycler">pyprobe.batterycycler module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.batterycycler.BatteryCycler"><code class="docutils literal notranslate"><span class="pre">BatteryCycler</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.cell">pyprobe.cell module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.cell.Cell"><code class="docutils literal notranslate"><span class="pre">Cell</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.experiment">pyprobe.experiment module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.filter">pyprobe.filter module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.filter.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.method">pyprobe.method module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.method.Method"><code class="docutils literal notranslate"><span class="pre">Method</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.plot">pyprobe.plot module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.plot.Plot"><code class="docutils literal notranslate"><span class="pre">Plot</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.procedure">pyprobe.procedure module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.procedure.Procedure"><code class="docutils literal notranslate"><span class="pre">Procedure</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.rawdata">pyprobe.rawdata module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.rawdata.RawData"><code class="docutils literal notranslate"><span class="pre">RawData</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.result">pyprobe.result module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.result.Result"><code class="docutils literal notranslate"><span class="pre">Result</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.units">pyprobe.units module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.units.UnitInfo"><code class="docutils literal notranslate"><span class="pre">UnitInfo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pyprobe.units.Units"><code class="docutils literal notranslate"><span class="pre">Units</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe">Module contents</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-pyprobe.cell">pyprobe.cell module</a><ul>
-<li><a class="reference internal" href="#pyprobe.cell.Cell"><code class="docutils literal notranslate"><span class="pre">Cell</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.info"><code class="docutils literal notranslate"><span class="pre">Cell.info</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.procedure"><code class="docutils literal notranslate"><span class="pre">Cell.procedure</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.processed_data"><code class="docutils literal notranslate"><span class="pre">Cell.processed_data</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.get_data_paths"><code class="docutils literal notranslate"><span class="pre">Cell.get_data_paths()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.get_filename"><code class="docutils literal notranslate"><span class="pre">Cell.get_filename()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.launch_dashboard"><code class="docutils literal notranslate"><span class="pre">Cell.launch_dashboard()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.make_cell_list"><code class="docutils literal notranslate"><span class="pre">Cell.make_cell_list()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.process_cycler_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_cycler_file()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.read_record"><code class="docutils literal notranslate"><span class="pre">Cell.read_record()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.set_color_scheme"><code class="docutils literal notranslate"><span class="pre">Cell.set_color_scheme()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.verify_parquet"><code class="docutils literal notranslate"><span class="pre">Cell.verify_parquet()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.cell.Cell.write_parquet"><code class="docutils literal notranslate"><span class="pre">Cell.write_parquet()</span></code></a></li>
 </ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
-<li><a class="reference internal" href="#module-pyprobe.experiment">pyprobe.experiment module</a><ul>
-<li><a class="reference internal" href="#pyprobe.experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.filter">pyprobe.filter module</a><ul>
-<li><a class="reference internal" href="#pyprobe.filter.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.charge"><code class="docutils literal notranslate"><span class="pre">Filter.charge()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.chargeordischarge"><code class="docutils literal notranslate"><span class="pre">Filter.chargeordischarge()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.cycle"><code class="docutils literal notranslate"><span class="pre">Filter.cycle()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.discharge"><code class="docutils literal notranslate"><span class="pre">Filter.discharge()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.filter_numerical"><code class="docutils literal notranslate"><span class="pre">Filter.filter_numerical()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.rest"><code class="docutils literal notranslate"><span class="pre">Filter.rest()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.filter.Filter.step"><code class="docutils literal notranslate"><span class="pre">Filter.step()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.method">pyprobe.method module</a><ul>
-<li><a class="reference internal" href="#pyprobe.method.Method"><code class="docutils literal notranslate"><span class="pre">Method</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.method.Method.input_data"><code class="docutils literal notranslate"><span class="pre">Method.input_data</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.parameters"><code class="docutils literal notranslate"><span class="pre">Method.parameters</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.variable_list"><code class="docutils literal notranslate"><span class="pre">Method.variable_list</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.parameter_list"><code class="docutils literal notranslate"><span class="pre">Method.parameter_list</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.output_list"><code class="docutils literal notranslate"><span class="pre">Method.output_list</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.output_dict"><code class="docutils literal notranslate"><span class="pre">Method.output_dict</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.assign_outputs"><code class="docutils literal notranslate"><span class="pre">Method.assign_outputs()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.define_outputs"><code class="docutils literal notranslate"><span class="pre">Method.define_outputs()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.parameter"><code class="docutils literal notranslate"><span class="pre">Method.parameter()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.result"><code class="docutils literal notranslate"><span class="pre">Method.result</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.method.Method.variable"><code class="docutils literal notranslate"><span class="pre">Method.variable()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.plot">pyprobe.plot module</a><ul>
-<li><a class="reference internal" href="#pyprobe.plot.Plot"><code class="docutils literal notranslate"><span class="pre">Plot</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.layout"><code class="docutils literal notranslate"><span class="pre">Plot.layout</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.title_font_size"><code class="docutils literal notranslate"><span class="pre">Plot.title_font_size</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.axis_font_size"><code class="docutils literal notranslate"><span class="pre">Plot.axis_font_size</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot._fig"><code class="docutils literal notranslate"><span class="pre">Plot._fig</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.x_min"><code class="docutils literal notranslate"><span class="pre">Plot.x_min</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.x_max"><code class="docutils literal notranslate"><span class="pre">Plot.x_max</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.y_min"><code class="docutils literal notranslate"><span class="pre">Plot.y_min</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.y_max"><code class="docutils literal notranslate"><span class="pre">Plot.y_max</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.secondary_y"><code class="docutils literal notranslate"><span class="pre">Plot.secondary_y</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.y2_min"><code class="docutils literal notranslate"><span class="pre">Plot.y2_min</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.y2_max"><code class="docutils literal notranslate"><span class="pre">Plot.y2_max</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.add_colorbar"><code class="docutils literal notranslate"><span class="pre">Plot.add_colorbar()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.add_colorscaled_line"><code class="docutils literal notranslate"><span class="pre">Plot.add_colorscaled_line()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.add_line"><code class="docutils literal notranslate"><span class="pre">Plot.add_line()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.add_secondary_y_legend"><code class="docutils literal notranslate"><span class="pre">Plot.add_secondary_y_legend()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.add_secondary_y_line"><code class="docutils literal notranslate"><span class="pre">Plot.add_secondary_y_line()</span></code></a></li>
-<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Plot.axis_font_size</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.check_limits"><code class="docutils literal notranslate"><span class="pre">Plot.check_limits()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.default_layout"><code class="docutils literal notranslate"><span class="pre">Plot.default_layout</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.fig"><code class="docutils literal notranslate"><span class="pre">Plot.fig</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.make_colorscale"><code class="docutils literal notranslate"><span class="pre">Plot.make_colorscale()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.show"><code class="docutils literal notranslate"><span class="pre">Plot.show()</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Plot.title_font_size</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.x_range"><code class="docutils literal notranslate"><span class="pre">Plot.x_range</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.y2_range"><code class="docutils literal notranslate"><span class="pre">Plot.y2_range</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.plot.Plot.y_range"><code class="docutils literal notranslate"><span class="pre">Plot.y_range</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.procedure">pyprobe.procedure module</a><ul>
-<li><a class="reference internal" href="#pyprobe.procedure.Procedure"><code class="docutils literal notranslate"><span class="pre">Procedure</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.procedure.Procedure.experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.procedure.Procedure.experiment_names"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment_names</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.procedure.Procedure.flatten"><code class="docutils literal notranslate"><span class="pre">Procedure.flatten()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.procedure.Procedure.process_readme"><code class="docutils literal notranslate"><span class="pre">Procedure.process_readme()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.rawdata">pyprobe.rawdata module</a><ul>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData"><code class="docutils literal notranslate"><span class="pre">RawData</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData._data"><code class="docutils literal notranslate"><span class="pre">RawData._data</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData.dataframe"><code class="docutils literal notranslate"><span class="pre">RawData.dataframe</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData.info"><code class="docutils literal notranslate"><span class="pre">RawData.info</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData.capacity"><code class="docutils literal notranslate"><span class="pre">RawData.capacity</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData.dQdV"><code class="docutils literal notranslate"><span class="pre">RawData.dQdV()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData.data"><code class="docutils literal notranslate"><span class="pre">RawData.data</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.rawdata.RawData.set_SOC"><code class="docutils literal notranslate"><span class="pre">RawData.set_SOC()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.result">pyprobe.result module</a><ul>
-<li><a class="reference internal" href="#pyprobe.result.Result"><code class="docutils literal notranslate"><span class="pre">Result</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.result.Result._data"><code class="docutils literal notranslate"><span class="pre">Result._data</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.result.Result.dataframe"><code class="docutils literal notranslate"><span class="pre">Result.dataframe</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.result.Result.info"><code class="docutils literal notranslate"><span class="pre">Result.info</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.result.Result.data"><code class="docutils literal notranslate"><span class="pre">Result.data</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.result.Result.print"><code class="docutils literal notranslate"><span class="pre">Result.print()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.units">pyprobe.units module</a><ul>
-<li><a class="reference internal" href="#pyprobe.units.UnitInfo"><code class="docutils literal notranslate"><span class="pre">UnitInfo</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.units.Units"><code class="docutils literal notranslate"><span class="pre">Units</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.units.Units.unit_dict"><code class="docutils literal notranslate"><span class="pre">Units.unit_dict</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.units.Units.convert_units"><code class="docutils literal notranslate"><span class="pre">Units.convert_units()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.units.Units.extract_quantity_and_unit"><code class="docutils literal notranslate"><span class="pre">Units.extract_quantity_and_unit()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.units.Units.set_zero"><code class="docutils literal notranslate"><span class="pre">Units.set_zero()</span></code></a></li>
-<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Units.unit_dict</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -206,6 +118,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">API Reference</a></li>
       <li class="breadcrumb-item active">pyprobe package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pyprobe.rst.txt" rel="nofollow"> View page source</a>
@@ -1450,7 +1363,10 @@ different quantities.</p>
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pyprobe.experiments.html" class="btn btn-neutral float-right" title="pyprobe.experiments package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

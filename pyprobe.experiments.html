@@ -20,7 +20,9 @@
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyprobe.methods package" href="pyprobe.methods.html" />
+    <link rel="prev" title="pyprobe package" href="pyprobe.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,41 +44,35 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">pyprobe.experiments package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pyprobe.experiments.cycling">pyprobe.experiments.cycling module</a><ul>
-<li><a class="reference internal" href="#pyprobe.experiments.cycling.Cycling"><code class="docutils literal notranslate"><span class="pre">Cycling</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.experiments.cycling.Cycling.SOH_capacity"><code class="docutils literal notranslate"><span class="pre">Cycling.SOH_capacity</span></code></a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pyprobe.html">pyprobe package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pyprobe.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pyprobe.experiments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html">pyprobe.methods package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.batterycycler">pyprobe.batterycycler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.cell">pyprobe.cell module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.experiment">pyprobe.experiment module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.filter">pyprobe.filter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.method">pyprobe.method module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.plot">pyprobe.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.procedure">pyprobe.procedure module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.rawdata">pyprobe.rawdata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.result">pyprobe.result module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.units">pyprobe.units module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe">Module contents</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-pyprobe.experiments.pOCV">pyprobe.experiments.pOCV module</a><ul>
-<li><a class="reference internal" href="#pyprobe.experiments.pOCV.pOCV"><code class="docutils literal notranslate"><span class="pre">pOCV</span></code></a></li>
 </ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.experiments.pulsing">pyprobe.experiments.pulsing module</a><ul>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing"><code class="docutils literal notranslate"><span class="pre">Pulsing</span></code></a><ul>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.I1"><code class="docutils literal notranslate"><span class="pre">Pulsing.I1</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.R0"><code class="docutils literal notranslate"><span class="pre">Pulsing.R0</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.Rt"><code class="docutils literal notranslate"><span class="pre">Pulsing.Rt()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.V0"><code class="docutils literal notranslate"><span class="pre">Pulsing.V0</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.V1"><code class="docutils literal notranslate"><span class="pre">Pulsing.V1</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.pulse"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.pulse_rest"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse_rest()</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.pulse_starts"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse_starts</span></code></a></li>
-<li><a class="reference internal" href="#pyprobe.experiments.pulsing.Pulsing.pulse_summary"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse_summary</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-pyprobe.experiments">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -91,6 +87,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="pyprobe.html">pyprobe package</a></li>
       <li class="breadcrumb-item active">pyprobe.experiments package</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pyprobe.experiments.rst.txt" rel="nofollow"> View page source</a>
@@ -294,7 +292,10 @@
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pyprobe.html" class="btn btn-neutral float-left" title="pyprobe package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pyprobe.methods.html" class="btn btn-neutral float-right" title="pyprobe.methods package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

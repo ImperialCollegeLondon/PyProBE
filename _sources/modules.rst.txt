@@ -1,4 +1,4 @@
-pyprobe
+API Reference
 =======
 
 .. toctree::
