@@ -7,9 +7,11 @@ Welcome to PyProBE's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
+   getting_started
+   modules
 
 
 Indices and tables
