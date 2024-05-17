@@ -173,7 +173,9 @@ class Cell:
                 These must be keys of the cell info.
 
         Returns:
-            Tuple[str, str]: The input and output paths for the data file.
+            Tuple[str, str]:
+                - str: The input path for the data file.
+                - str: The output path for the parquet file.
         """
         if isinstance(filename, str):
             filename_str = filename
