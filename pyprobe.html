@@ -295,7 +295,11 @@ These must be keys of the cell info.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The input and output paths for the data file.</p>
+<dd class="field-even"><p><ul class="simple">
+<li><p>str: The input path for the data file.</p></li>
+<li><p>str: The output path for the parquet file.</p></li>
+</ul>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Tuple[str, str]</p>
@@ -556,7 +560,8 @@ discharge numbers or a range object.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>_data</strong> (<em>pl.LazyFrame</em><em> | </em><em>pl.DataFrame</em>) – A LazyFrame object.</p></li>
 <li><p><strong>column</strong> (<em>str</em>) – The column to filter on.</p></li>
-<li><p><strong>indices</strong> (<em>int</em><em>, </em><em>list</em>) – A number or a list of numbers to filter by.</p></li>
+<li><p><strong>indices</strong> (<em>Tuple</em><em>[</em><em>Union</em><em>[</em><em>int</em><em>, </em><em>range</em><em>]</em><em>, </em><em>...</em><em>]</em>) – A tuple of index
+values to filter by.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1091,16 +1096,19 @@ experiment names.</p>
 <dd class="field-odd"><p><strong>readme_path</strong> (<em>str</em>) – The path to the README.yaml file.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>The titles of the experiments inside a procedure.</dt><dd><p>Fomat {title: experiment type}.</p>
+<dd class="field-even"><p><ul class="simple">
+<li><dl class="simple">
+<dt>dict: The titles of the experiments inside a procedure.</dt><dd><p>Format {title: experiment type}.</p>
 </dd>
 </dl>
-<p>list: The cycle numbers inside the procedure.
-list: The step numbers inside the procedure.</p>
+</li>
+<li><p>list: The cycle numbers inside the procedure.</p></li>
+<li><p>list: The step numbers inside the procedure.</p></li>
+</ul>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-odd"><p>Tuple[Dict[str, str], List[int], List[int]]</p>
 </dd>
 </dl>
 </dd></dl>
