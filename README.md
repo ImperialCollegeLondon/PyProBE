@@ -2,6 +2,10 @@
 PyProBE is a Python library for the analysis of battery cycling data.
 
 ## Using PyProBE
+See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed getting started guide.
+
+You can find example notebooks in the [examples folder](examples/).
+
 PyProBE should be imported as a package into an external post-processing script or jupyter notebook.
 
 ```python

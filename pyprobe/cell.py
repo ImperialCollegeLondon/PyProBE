@@ -36,6 +36,16 @@ class Cell:
                 e.g. cycler number, thermocouple channel.
         """
         self.info = info
+        self.info["color"] = distinctipy.get_hex(
+            distinctipy.get_colors(
+                1,
+                exclude_colors=[
+                    (0, 0, 0),
+                    (1, 1, 1),
+                    (1, 1, 0),
+                ],
+            )[0]
+        )
         self.procedure: Dict[str, Procedure] = {}
         self.processed_data: Dict[str, pl.DataFrame] = {}
 
