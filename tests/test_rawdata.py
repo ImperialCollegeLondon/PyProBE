@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 
 from pyprobe.rawdata import RawData
-from pyprobe.units import Units
+from pyprobe.unitconverter import UnitConverter
 
 
 @pytest.fixture
@@ -29,12 +29,8 @@ def test_data(RawData_fixture):
     assert isinstance(RawData_fixture._data, pl.DataFrame)
     pl.testing.assert_frame_equal(RawData_fixture.data, RawData_fixture._data)
 
-    unit_dict = Units.unit_dict
-    for quantity in unit_dict:
-        for unit in unit_dict[quantity].units:
-            assert f"{quantity} [{unit}]" in RawData_fixture.data.columns
-            if unit_dict[quantity].zero_reference:
-                assert RawData_fixture.data[f"{quantity} [{unit}]"][0] == 0
+    for column in UnitConverter.zero_reference_list:
+        assert RawData_fixture.data[column][0] == 0
 
 
 def test_capacity(BreakinCycles_fixture):
