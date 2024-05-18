@@ -5,7 +5,6 @@ import polars as pl
 
 from pyprobe.methods.differentiation.feng_2020 import Feng2020
 from pyprobe.result import Result
-from pyprobe.unitconverter import UnitConverter
 
 
 class RawData(Result):
@@ -39,8 +38,9 @@ class RawData(Result):
             pl.DataFrame: The data as a polars DataFrame.
         """
         instruction_list = []
-        for column in UnitConverter.zero_reference_list:
-            instruction_list.extend(UnitConverter(column).zero_reference())
+        zero_reference_list = ["Capacity [Ah]", "Time [s]"]
+        for column in zero_reference_list:
+            instruction_list.extend([pl.col(column) - pl.col(column).first()])
         self._data = self._data.with_columns(instruction_list)
         if isinstance(self._data, pl.LazyFrame):
             self._data = self._data.collect()

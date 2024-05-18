@@ -3,6 +3,8 @@ from typing import Dict
 
 import polars as pl
 
+from pyprobe.unitconverter import UnitConverter
+
 
 class Result:
     """A result object for returning data and plotting.
@@ -41,3 +43,13 @@ class Result:
     def print(self) -> None:
         """Print the data."""
         print(self.data)
+
+    def check_units(self, column_name: str) -> None:
+        """Check if a column exists and convert the units if it does not.
+
+        Args:
+            column_name (str): The column name to convert to.
+        """
+        if column_name not in self.data.columns:
+            instruction = UnitConverter(column_name).from_default()
+            self._data = self.data.with_columns(instruction)

@@ -12,7 +12,6 @@ class UnitConverter:
     prefix_dict = {"m": 1e-3, "µ": 1e-6, "n": 1e-9, "p": 1e-12, "k": 1e3, "M": 1e6}
     time_unit_dict = {"min": 60, "hr": 3600}
     default_unit_dict = {"Current": "A", "Voltage": "V", "Capacity": "Ah", "Time": "s"}
-    zero_reference_list = ["Capacity [Ah]", "Time [s]"]
 
     def __init__(
         self,
@@ -75,14 +74,6 @@ class UnitConverter:
             return self.input_quantity
         else:
             raise ValueError(f"Quantity {self.input_quantity} not recognised.")
-
-    def zero_reference(self) -> pl.Expr:
-        """Return the polars expression to zero reference the column.
-
-        Returns:
-            pl.Expr: The zero referenced column expression.
-        """
-        return [pl.col(self.name) - pl.col(self.name).first()]
 
     def _convert(self, operation: str) -> pl.Expr:
         """Make a unit conversion from or to the default unit.

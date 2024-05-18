@@ -6,7 +6,6 @@ import polars as pl
 import pytest
 
 from pyprobe.rawdata import RawData
-from pyprobe.unitconverter import UnitConverter
 
 
 @pytest.fixture
@@ -29,7 +28,7 @@ def test_data(RawData_fixture):
     assert isinstance(RawData_fixture._data, pl.DataFrame)
     pl.testing.assert_frame_equal(RawData_fixture.data, RawData_fixture._data)
 
-    for column in UnitConverter.zero_reference_list:
+    for column in ["Capacity [Ah]", "Time [s]"]:
         assert RawData_fixture.data[column][0] == 0
 
 
