@@ -41,16 +41,20 @@ class Units:
     }
 
     @staticmethod
-    def extract_quantity_and_unit(string: str) -> tuple[str, str | None]:
+    def extract_quantity_and_unit(
+        string: str, pattern: str = r"(\w+)\s*\[(\w+)\]"
+    ) -> tuple[str, str | None]:
         """Extracts the quantity and unit from a string.
 
         Args:
             string (str): A string containing the quantity and unit.
+            pattern (str): A regular expression pattern to extract the
+                quantity and unit.
         """
-        match = re.search(r"\[(.*?)\]", string)
+        match = re.search(pattern, string)
         if match:
-            unit = match.group(1)
-            quantity = string.replace(f"[{unit}]", "").strip()
+            quantity = match.groups()[0]
+            unit = match.groups()[1]
         else:
             quantity = string
             unit = None
