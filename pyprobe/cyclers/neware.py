@@ -1,119 +1,66 @@
 """A module to load and process Neware battery cycler data."""
-import glob
-import os
-import re
 
 import polars as pl
 
-from pyprobe.batterycycler import BatteryCycler
+from pyprobe.unitconverter import UnitConverter
 
 
-class Neware(BatteryCycler):
-    """A Neware battery cycler object."""
+def neware(dataframe: pl.DataFrame) -> pl.DataFrame:
+    """Process a DataFrame from Neware cycler data.
 
-    @staticmethod
-    def load_file(filepath: str) -> pl.LazyFrame:
-        """Load a Neware battery cycler file into PyProBE format.
+    Args:
+        dataframe: The DataFrame to process.
 
-        Args:
-            filepath: The path to the file.
+    Returns:
+        pl.DataFrame: The dataframe in PyProBE format.
+    """
+    columns = dataframe.columns
 
-        Returns:
-            A LazyFrame containing the data in PyProBE format.
-        """
-        file = os.path.basename(filepath)
-        path = os.path.dirname(filepath)
-        file_name = os.path.splitext(file)[0]
-        file_ext = os.path.splitext(file)[1]
-        filepaths = glob.glob(f"{path}/{file_name}*{file_ext}")
-        lf = pl.DataFrame()
-        if len(filepaths) == 1:
-            if file_ext == ".xlsx":
-                lf = pl.read_excel(filepath, engine="calamine").lazy()
-            elif file_ext == ".csv":
-                lf = pl.scan_csv(filepath)
-        elif len(filepaths) == 0:
-            raise FileNotFoundError(
-                f"No files found with the name {file} in {filepath}."
-            )
-        else:
-            for filepath in filepaths:
-                if file_ext == ".xlsx":
-                    lf = lf.vstack(pl.read_excel(filepath, engine="calamine"))
-                elif file_ext == ".csv":
-                    lf = lf.vstack(pl.read_csv(filepath))
+    date = pl.col("Date").cast(pl.Datetime("ms")).alias("Date")
+    dataframe = dataframe.with_columns(date)
 
-        column_dict = {
-            "Date": "Date",
-            "Cycle Index": "Cycle",
-            "Step Index": "Step",
-            "Current(A)": "Current [A]",
-            "Voltage(V)": "Voltage [V]",
-            "DChg. Cap.(Ah)": "Discharge Capacity [Ah]",
-            "Chg. Cap.(Ah)": "Charge Capacity [Ah]",
-        }
-        if lf.dtypes[lf.columns.index("Date")] != pl.Datetime:
-            lf = lf.with_columns(pl.col("Date").str.to_datetime().alias("Date"))
-        if len(filepaths) > 1:
-            lf = lf.sort("Date")
-        lf = Neware.convert_units(lf)
-        lf = lf.select(list(column_dict.keys())).rename(column_dict)
-        lf = lf.with_columns(pl.col("Charge Capacity [Ah]").diff().alias("dQ_charge"))
-        lf = lf.with_columns(
-            pl.col("Discharge Capacity [Ah]").diff().alias("dQ_discharge")
-        )
-        lf = lf.with_columns(
-            pl.col("dQ_charge").clip(lower_bound=0).fill_null(strategy="zero")
-        )
-        lf = lf.with_columns(
-            pl.col("dQ_discharge").clip(lower_bound=0).fill_null(strategy="zero")
-        )
-        lf = lf.with_columns(
-            (
-                (pl.col("dQ_charge") - pl.col("dQ_discharge")).cum_sum()
-                + pl.col("Charge Capacity [Ah]").max()
-            ).alias("Capacity [Ah]")
-        )
-        if lf.dtypes[lf.columns.index("Date")] != pl.Datetime:
-            lf = lf.with_columns(pl.col("Date").str.to_datetime().alias("Date"))
-        lf = lf.with_columns(pl.col("Date").dt.timestamp("ms").alias("Time [s]"))
-        lf = lf.with_columns(pl.col("Time [s]") - pl.col("Time [s]").first())
-        lf = lf.with_columns(pl.col("Time [s]") * 1e-3)
-        lf = lf.select(
-            [
-                "Date",
-                "Time [s]",
-                "Cycle",
-                "Step",
-                "Current [A]",
-                "Voltage [V]",
-                "Capacity [Ah]",
-            ]
-        )
-        return lf
+    # Time
+    time = (
+        (pl.col("Date").diff().dt.total_microseconds().cum_sum() / 1e6)
+        .fill_null(strategy="zero")
+        .alias("Time [s]")
+    )
 
-    @staticmethod
-    def convert_units(lf: pl.LazyFrame) -> pl.LazyFrame:
-        """Convert units of a LazyFrame to SI.
+    # Cycle and step
+    cycle = pl.col("Cycle Index").alias("Cycle")
+    step = pl.col("Step Index").alias("Step")
 
-        Args:
-            lf: The LazyFrame to convert units of.
+    # Measured data
+    column_name_pattern = r"(.+)\((.+)\)"
+    current = UnitConverter.search_columns(
+        columns, "Current", column_name_pattern, "Current"
+    ).to_default()
+    voltage = UnitConverter.search_columns(
+        columns, "Voltage", column_name_pattern, "Voltage"
+    ).to_default()
 
-        Returns:
-            The LazyFrame with converted units to SI.
-        """
-        conversion_dict = {"m": 1e-3, "µ": 1e-6, "n": 1e-9, "p": 1e-12}
-        for column in lf.columns:
-            match = re.search(r"\((.*?)\)", column)
-            if match:
-                unit = match.group(1)
-                prefix = next((x for x in unit if not x.isupper()), None)
-                if prefix in conversion_dict:
-                    lf = lf.with_columns(
-                        (pl.col(column) * conversion_dict[prefix]).alias(
-                            column.replace(
-                                "(" + unit + ")", "(" + unit.replace(prefix, "") + ")"
-                            )
-                        )
-                    )
-        return lf
+    dataframe = dataframe.with_columns(time, cycle, step, current, voltage)
+
+    make_charge_capacity = UnitConverter.search_columns(
+        columns, "Chg. Cap.", column_name_pattern, "Capacity"
+    ).to_default(keep_name=True)
+    make_discharge_capacity = UnitConverter.search_columns(
+        columns, "DChg. Cap.", column_name_pattern, "Capacity"
+    ).to_default(keep_name=True)
+
+    dataframe = dataframe.with_columns(make_charge_capacity, make_discharge_capacity)
+
+    diff_charge_capacity = (
+        pl.col("Chg. Cap. [Ah]").diff().clip(lower_bound=0).fill_null(strategy="zero")
+    )
+    diff_discharge_capacity = (
+        pl.col("DChg. Cap. [Ah]").diff().clip(lower_bound=0).fill_null(strategy="zero")
+    )
+    make_capacity = (
+        (diff_charge_capacity - diff_discharge_capacity).cum_sum()
+        + pl.col("Chg. Cap. [Ah]").max()
+    ).alias("Capacity [Ah]")
+
+    dataframe = dataframe.with_columns(make_capacity)
+
+    return dataframe
