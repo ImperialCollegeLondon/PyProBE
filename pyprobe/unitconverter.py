@@ -117,7 +117,6 @@ class UnitConverter:
             pl.Expr: The converted column expression.
         """
         if keep_name:
-            print(f"{self.input_quantity} [{self.default_unit}]")
             return self._convert("to").alias(
                 f"{self.input_quantity} [{self.default_unit}]"
             )
