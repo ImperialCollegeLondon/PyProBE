@@ -1,12 +1,32 @@
 """A module to load and process Neware battery cycler data."""
 
+import os
+
 import polars as pl
 
+from pyprobe.cyclers.basecycler import BaseCycler
 from pyprobe.unitconverter import UnitConverter
 
 
-def neware(dataframe: pl.DataFrame) -> pl.DataFrame:
-    """Process a DataFrame from Neware cycler data.
+def read_file(filepath: str) -> pl.DataFrame:
+    """Read a battery cycler file into a DataFrame.
+
+    Args:
+        filepath: The path to the file.
+    """
+    file = os.path.basename(filepath)
+    file_ext = os.path.splitext(file)[1]
+    match file_ext:
+        case ".xlsx":
+            return pl.read_excel(filepath, engine="calamine")
+        case ".csv":
+            return pl.read_csv(filepath)
+        case _:
+            raise ValueError(f"Unsupported file extension: {file_ext}")
+
+
+def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
+    """Process a DataFrame from battery cycler data.
 
     Args:
         dataframe: The DataFrame to process.
@@ -64,3 +84,6 @@ def neware(dataframe: pl.DataFrame) -> pl.DataFrame:
     dataframe = dataframe.with_columns(make_capacity)
 
     return dataframe
+
+
+neware = BaseCycler(read_file, process_dataframe)

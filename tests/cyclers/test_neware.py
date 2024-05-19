@@ -3,10 +3,18 @@ from datetime import datetime
 
 import polars as pl
 
-from pyprobe.cyclers.neware import neware
+from pyprobe.cyclers.neware import process_dataframe, read_file
 
 
-def test_neware():
+def test_read_file():
+    """Test the read_file method."""
+    unprocessed_dataframe = read_file(
+        "tests/sample_data_neware/sample_data_neware.xlsx"
+    )
+    assert isinstance(unprocessed_dataframe, pl.DataFrame)
+
+
+def test_process_dataframe():
     """Test the neware method."""
     dataframe = pl.DataFrame(
         {
@@ -24,7 +32,7 @@ def test_neware():
             "DChg. Cap.(Ah)": [0, 0, 10, 20],
         }
     )
-    processed_dataframe = neware(dataframe)
+    processed_dataframe = process_dataframe(dataframe)
     processed_dataframe = processed_dataframe.select(
         ["Time [s]", "Cycle", "Step", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
     )

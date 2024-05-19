@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import distinctipy
 import polars as pl
 
-from pyprobe.dataimporter import DataImporter
+from pyprobe.cyclers import neware
 from pyprobe.procedure import Procedure
 
 
@@ -94,7 +94,7 @@ class Cell:
             folder_path, filename, filename_inputs
         )
         t1 = time.time()
-        importer = DataImporter(cycler)
+        importer = neware
         dataframe = importer.read_file(input_data_path)
         dataframe = importer.process_dataframe(dataframe)
         dataframe.write_parquet(output_data_path)
