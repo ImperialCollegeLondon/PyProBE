@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import distinctipy
 import polars as pl
 
-from pyprobe.cyclers import neware
+from pyprobe.cyclers import biologic, neware
 from pyprobe.procedure import Procedure
 
 
@@ -93,8 +93,9 @@ class Cell:
         input_data_path, output_data_path = self.get_data_paths(
             folder_path, filename, filename_inputs
         )
+        cycler_dict = {"neware": neware.neware, "biologic": biologic.biologic}
         t1 = time.time()
-        importer = neware
+        importer = cycler_dict[cycler]
         dataframe = importer.read_file(input_data_path)
         dataframe = importer.process_dataframe(dataframe)
         dataframe.write_parquet(output_data_path)
