@@ -1,7 +1,7 @@
 """A module for unit conversion and zero referencing of data columns."""
 
 import re
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import polars as pl
 
@@ -37,6 +37,7 @@ class UnitConverter:
             self.default_quantity = default_quantity
         else:
             self.default_quantity = self.check_quantity()
+
         self.default_unit = self.default_unit_dict[self.default_quantity]
         self.default_name = f"{self.default_quantity} [{self.default_unit}]"
 
@@ -93,9 +94,9 @@ class UnitConverter:
             )
 
         if operation == "from":
-            return (pl.col(self.default_name) / factor).alias(self.name)
+            return pl.col(self.default_name) / factor
         elif operation == "to":
-            return (pl.col(self.name) * factor).alias(self.default_name)
+            return pl.col(self.name) * factor
 
     def from_default(self) -> pl.Expr:
         """Convert the column from the default unit.
@@ -103,12 +104,53 @@ class UnitConverter:
         Returns:
             pl.Expr: The converted column expression.
         """
-        return self._convert("from")
+        return self._convert("from").alias(self.name)
 
-    def to_default(self) -> pl.Expr:
+    def to_default(self, keep_name: bool = False) -> pl.Expr:
         """Convert the column to the default unit.
+
+        Args:
+            keep_name (bool): Whether to keep the original quantity name.
+                False by default, converts quantity to default name.
 
         Returns:
             pl.Expr: The converted column expression.
         """
-        return self._convert("to")
+        if keep_name:
+            print(f"{self.input_quantity} [{self.default_unit}]")
+            return self._convert("to").alias(
+                f"{self.input_quantity} [{self.default_unit}]"
+            )
+        else:
+            return self._convert("to").alias(self.default_name)
+
+    @staticmethod
+    def search_columns(
+        columns: List[str],
+        search_quantity: str,
+        name_pattern: str,
+        default_quantity: str,
+    ) -> "UnitConverter":
+        """Search for a quantity in the columns of the DataFrame.
+
+        Args:
+            columns: The columns to search.
+            search_quantity: The quantity to search for.
+            name_pattern: The pattern to match the column name.
+            default_quantity: The default quantity name.
+        """
+        for column_name in columns:
+            try:
+                quantity, _ = UnitConverter.get_quantity_and_unit(
+                    column_name, name_pattern
+                )
+            except ValueError:
+                continue
+
+            if quantity == search_quantity:
+                return UnitConverter(
+                    name=column_name,
+                    name_pattern=name_pattern,
+                    default_quantity=default_quantity,
+                )
+        raise ValueError(f"Quantity {search_quantity} not found in columns.")

@@ -138,3 +138,15 @@ def test_to_default(I_from_cycler_quantity):
     pl.testing.assert_series_equal(
         updated_frame["Current [A]"], original_frame["I/mA"] * 1e-3, check_names=False
     )
+
+    original_frame = pl.DataFrame({"Chg. Cap.(Ah)": [1.0, 2.0, 3.0]})
+    instruction = UnitConverter(
+        "Chg. Cap.(Ah)", r"(.+)\((.+)\)", "Capacity"
+    ).to_default(keep_name=True)
+    updated_frame = original_frame.with_columns(instruction)
+    assert "Chg. Cap. [Ah]" in updated_frame.columns
+    pl.testing.assert_series_equal(
+        updated_frame["Chg. Cap. [Ah]"],
+        original_frame["Chg. Cap.(Ah)"],
+        check_names=False,
+    )
