@@ -35,9 +35,9 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: The dataframe in PyProBE format.
     """
     columns = dataframe.columns
-
-    date = pl.col("Date").cast(pl.Datetime("ms")).alias("Date")
-    dataframe = dataframe.with_columns(date)
+    if dataframe.dtypes[dataframe.columns.index("Date")] != pl.Datetime:
+        date = pl.col("Date").str.to_datetime().alias("Date")
+        dataframe = dataframe.with_columns(date)
 
     # Time
     time = (

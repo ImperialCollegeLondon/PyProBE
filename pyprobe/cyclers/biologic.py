@@ -42,12 +42,9 @@ def read_file(filepath: str) -> pl.DataFrame:
         case _:
             raise ValueError(f"Unsupported file extension: {file_ext}")
 
-    time_col = dataframe.select(pl.col("time/s")).to_numpy()
-    start_epoch = start_time.timestamp()
-    time_col = time_col + start_epoch
     start = pl.DataFrame({"start": [start_time]})
     dataframe = dataframe.with_columns(
-        (pl.col("time/s") + start).cast(pl.Datetime).alias("Date")
+        (pl.col("time/s") * 1000000 + start).cast(pl.Datetime).alias("Date")
     )
     return dataframe
 
@@ -65,7 +62,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     time = pl.col("time/s").alias("Time [s]")
 
     # Cycle and step
-    cycle = pl.col("cycle number").alias("Cycle")
+    cycle = pl.col("counter inc.").alias("Cycle")
     step = pl.col("Ns").alias("Step")
 
     # Measured data
