@@ -37,18 +37,16 @@ def test_fit_ocv():
     """Test the fit_ocv method."""
     n_points = 1000
     capacity = np.linspace(0, 1, n_points)
-    x_real = [0.2, 0.9, 0.1, 0.7]
+    x_real = [0.8, 0.1, 0.1, 0.7]
     x_pe_real = np.linspace(x_real[0], x_real[1], n_points)
     x_ne_real = np.linspace(x_real[2], x_real[3], n_points)
-    voltage = nmc_LGM50_ocp_Chen2020(1 - x_pe_real) - graphite_LGM50_ocp_Chen2020(
-        x_ne_real
-    )
+    voltage = nmc_LGM50_ocp_Chen2020(x_pe_real) - graphite_LGM50_ocp_Chen2020(x_ne_real)
 
     z = np.linspace(0, 1, n_points)
     ocp_pe = nmc_LGM50_ocp_Chen2020(z)
     ocp_ne = graphite_LGM50_ocp_Chen2020(z)
 
-    x_guess = [0.4, 0.8, 0.2, 0.6]
+    x_guess = [0.8, 0.4, 0.2, 0.6]
     x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, _, _, _, _ = Simple_OCV_fit.fit_ocv(
         capacity, voltage, x_ne=z, ocp_ne=ocp_ne, x_pe=z, ocp_pe=ocp_pe, x_guess=x_guess
     )
@@ -77,26 +75,22 @@ def ocp_pe_fixture():
 @pytest.fixture
 def full_cell_voltage_fixture():
     """Return the full cell voltage data."""
-    x_real = [0.2, 0.9, 0.1, 0.7]
+    x_real = [0.9, 0.2, 0.1, 0.7]
     n_points = 1000
     x_pe_real = np.linspace(x_real[0], x_real[1], n_points)
     x_ne_real = np.linspace(x_real[2], x_real[3], n_points)
-    voltage = nmc_LGM50_ocp_Chen2020(1 - x_pe_real) - graphite_LGM50_ocp_Chen2020(
-        x_ne_real
-    )
+    voltage = nmc_LGM50_ocp_Chen2020(x_pe_real) - graphite_LGM50_ocp_Chen2020(x_ne_real)
     return voltage
 
 
 @pytest.fixture
 def OCP_result_fixture():
     """Return a Result instance."""
-    x_real = [0.2, 0.9, 0.1, 0.7]
+    x_real = [0.9, 0.2, 0.1, 0.7]
     n_points = 1000
     x_pe_real = np.linspace(x_real[0], x_real[1], n_points)
     x_ne_real = np.linspace(x_real[2], x_real[3], n_points)
-    voltage = nmc_LGM50_ocp_Chen2020(1 - x_pe_real) - graphite_LGM50_ocp_Chen2020(
-        x_ne_real
-    )
+    voltage = nmc_LGM50_ocp_Chen2020(x_pe_real) - graphite_LGM50_ocp_Chen2020(x_ne_real)
     z = np.linspace(0, 1, n_points)
     _data = pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": z})
     return Result(_data=_data, info={})
@@ -112,7 +106,7 @@ def test_init(
         "Cathode Stoichiometry": np.linspace(0, 1, 1000),
         "Anode OCP [V]": ocp_ne_fixture,
         "Cathode OCP [V]": ocp_pe_fixture,
-        "Initial Guess": [0.1, 0.9, 0.1, 0.9],
+        "Initial Guess": [0.9, 0.1, 0.1, 0.9],
     }
     method = Simple_OCV_fit(result, parameters)
 
@@ -122,7 +116,7 @@ def test_init(
     np.testing.assert_allclose(method.x_pe, np.linspace(0, 1, 1000))
     np.testing.assert_allclose(method.ocp_ne, ocp_ne_fixture)
     np.testing.assert_allclose(method.ocp_pe, ocp_pe_fixture)
-    np.testing.assert_allclose(method.x_guess, [0.1, 0.9, 0.1, 0.9])
+    np.testing.assert_allclose(method.x_guess, [0.9, 0.1, 0.1, 0.9])
     assert method.variable_list == ["Voltage [V]", "Capacity [Ah]"]
     assert method.variable_list == ["Voltage [V]", "Capacity [Ah]"]
     assert method.parameter_list == [
@@ -133,10 +127,10 @@ def test_init(
         "Initial Guess",
     ]
     assert method.output_list == [
-        "Cathode Lower Stoichiometry Limit",
-        "Cathode Upper Stoichiometry Limit",
-        "Anode Lower Stoichiometry Limit",
-        "Anode Upper Stoichiometry Limit",
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
         "Cell Capacity",
         "Cathode Capacity",
         "Anode Capacity",
@@ -151,15 +145,15 @@ def test_result(OCP_result_fixture, ocp_ne_fixture, ocp_pe_fixture):
         "Cathode Stoichiometry": np.linspace(0, 1, 1000),
         "Anode OCP [V]": ocp_ne_fixture,
         "Cathode OCP [V]": ocp_pe_fixture,
-        "Initial Guess": [0.4, 0.8, 0.2, 0.6],
+        "Initial Guess": [0.8, 0.4, 0.2, 0.6],
     }
     method = Simple_OCV_fit(OCP_result_fixture, parameters)
     assert isinstance(method.result, Result)
     assert method.result.data.columns == [
-        "Cathode Lower Stoichiometry Limit",
-        "Cathode Upper Stoichiometry Limit",
-        "Anode Lower Stoichiometry Limit",
-        "Anode Upper Stoichiometry Limit",
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
         "Cell Capacity",
         "Cathode Capacity",
         "Anode Capacity",

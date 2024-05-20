@@ -31,10 +31,10 @@ class Simple_OCV_fit(Method):
 
         self.define_outputs(
             [
-                "Cathode Lower Stoichiometry Limit",
-                "Cathode Upper Stoichiometry Limit",
-                "Anode Lower Stoichiometry Limit",
-                "Anode Upper Stoichiometry Limit",
+                "x_pe low SOC",
+                "x_pe high SOC",
+                "x_ne low SOC",
+                "x_ne high SOC",
                 "Cell Capacity",
                 "Cathode Capacity",
                 "Anode Capacity",
@@ -86,10 +86,10 @@ class Simple_OCV_fit(Method):
 
         Returns:
             Tuple[float, float, float, float, float, float, float, float]:
-                - NDArray[np.float64]: The cathode lower stoichiometry limit.
-                - NDArray[np.float64]: The cathode upper stoichiometry limit.
-                - NDArray[np.float64]: The anode lower stoichiometry limit.
-                - NDArray[np.float64]: The anode upper stoichiometry limit.
+                - NDArray[np.float64]: The cathode stoihiometry at lowest cell SOC.
+                - NDArray[np.float64]: The cathode stoihiometry at highest cell SOC.
+                - NDArray[np.float64]: The anode stoihiometry at lowest cell SOC.
+                - NDArray[np.float64]: The anode stoihiometry at highest cell SOC.
                 - NDArray[np.float64]: The cell capacity.
                 - NDArray[np.float64]: The cathode capacity.
                 - NDArray[np.float64]: The anode capacity.
@@ -146,9 +146,10 @@ class Simple_OCV_fit(Method):
         """Calculate the electrode capacities.
 
         Args:
-            pe_stoich_limits (NDArray[np.float64]): The cathode stoichiometry limits.
-            ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
-            cell_capacity (NDArray[np.float64]): The cell capacity.
+            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
+            x_ne_lo (float): The anode stoichiometry at lowest cell SOC.
+            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
 
         Returns:
             Tuple[float, float, float]:
@@ -178,10 +179,10 @@ class Simple_OCV_fit(Method):
 
         Args:
             SOC (NDArray[np.float64]): The full cell SOC.
-            x_pe_lo (float): The cathode upper stoichiomteric limit.
-            x_pe_hi (float): The cathode lower stoichiomteric limit.
-            x_ne_lo (float): The anode upper stoichiomteric limit.
-            x_ne_hi (float): The anode lower stoichiomteric limit.
+            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
+            x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
             x_pe (NDArray[np.float64]): The cathode stoichiometry data.
             ocp_pe (NDArray[np.float64]): The cathode OCP data.
             x_ne (NDArray[np.float64]): The anode stoichiometry data.
@@ -194,7 +195,7 @@ class Simple_OCV_fit(Method):
         # make vectors between stoichiometry limits during charge
         z_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
         z_pe = np.linspace(
-            1 - x_pe_lo, 1 - x_pe_hi, n_points
+            x_pe_lo, x_pe_hi, n_points
         )  # flip the cathode limits to match charge direction
 
         # make an SOC vector with the same number of points
