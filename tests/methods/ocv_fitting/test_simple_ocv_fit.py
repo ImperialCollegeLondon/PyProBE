@@ -4,32 +4,51 @@ import numpy as np
 from pyprobe.methods.ocv_fitting.Simple_OCV_fit import Simple_OCV_fit
 
 
-def test_fit_ocv():
-    """Test the fit_ocv method."""
-
-    def _f_pe(z):
-        return z**2 + 3
-
-    def _f_ne(z):
-        return np.log(-0.3 * z + 1) + 5 * np.sin(z)
-
-    n_points = 1000
-    capacity = np.linspace(0, 1, n_points)
-    z_real = [0.2, 0.9, 0.1, 0.6]
-    z_pe_real = np.linspace(z_real[0], z_real[1], n_points)
-    z_ne_real = np.linspace(z_real[2], z_real[3], n_points)
-    voltage = _f_pe(z_pe_real) - _f_ne(z_ne_real)
-
-    z = np.linspace(0, 1, n_points)
-    pe_data = _f_pe(z)
-    ne_data = _f_ne(z)
-
-    ne_data = np.vstack((z, ne_data)).T
-    pe_data = np.vstack((z, pe_data)).T
-    z_guess = [0.4, 0.8, 0.2, 0.6]
-    cathode_limits, anode_limits, _, _, _, _ = Simple_OCV_fit.fit_ocv(
-        capacity, voltage, ne_data, pe_data, z_guess
+def graphite_LGM50_ocp_Chen2020(sto):
+    """Chen2020 graphite ocp fit."""
+    u_eq = (
+        1.9793 * np.exp(-39.3631 * sto)
+        + 0.2482
+        - 0.0909 * np.tanh(29.8538 * (sto - 0.1234))
+        - 0.04478 * np.tanh(14.9159 * (sto - 0.2769))
+        - 0.0205 * np.tanh(30.4444 * (sto - 0.6103))
     )
 
-    np.testing.assert_allclose(cathode_limits, z_real[:2], rtol=1e-5)
-    np.testing.assert_allclose(anode_limits, z_real[2:], rtol=1e-5)
+    return u_eq
+
+
+def nmc_LGM50_ocp_Chen2020(sto):
+    """Chen2020 nmc ocp fit."""
+    u_eq = (
+        -0.8090 * sto
+        + 4.4875
+        - 0.0428 * np.tanh(18.5138 * (sto - 0.5542))
+        - 17.7326 * np.tanh(15.7890 * (sto - 0.3117))
+        + 17.5842 * np.tanh(15.9308 * (sto - 0.3120))
+    )
+
+    return u_eq
+
+
+def test_fit_ocv():
+    """Test the fit_ocv method."""
+    n_points = 1000
+    capacity = np.linspace(0, 1, n_points)
+    x_real = [0.2, 0.9, 0.1, 0.7]
+    x_pe_real = np.linspace(x_real[0], x_real[1], n_points)
+    x_ne_real = np.linspace(x_real[2], x_real[3], n_points)
+    voltage = nmc_LGM50_ocp_Chen2020(1 - x_pe_real) - graphite_LGM50_ocp_Chen2020(
+        x_ne_real
+    )
+
+    z = np.linspace(0, 1, n_points)
+    ocp_pe = nmc_LGM50_ocp_Chen2020(z)
+    ocp_ne = graphite_LGM50_ocp_Chen2020(z)
+
+    x_guess = [0.4, 0.8, 0.2, 0.6]
+    cathode_limits, anode_limits, _, _, _, _ = Simple_OCV_fit.fit_ocv(
+        capacity, voltage, x_ne=z, ocp_ne=ocp_ne, x_pe=z, ocp_pe=ocp_pe, z_guess=x_guess
+    )
+
+    np.testing.assert_allclose(cathode_limits, x_real[:2], rtol=1e-4)
+    np.testing.assert_allclose(anode_limits, x_real[2:], rtol=1e-4)

@@ -54,7 +54,7 @@ class Method:
         else:
             return np.vstack([input.data[name].to_numpy() for input in self.input_data])
 
-    def parameter(self, name: str) -> float:
+    def parameter(self, name: str) -> Any:
         """Return a parameter.
 
         Args:

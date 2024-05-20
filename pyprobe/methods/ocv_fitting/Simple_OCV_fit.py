@@ -23,21 +23,30 @@ class Simple_OCV_fit(Method):
         super().__init__(rawdata, parameters)
         self.voltage = self.variable("Voltage [V]")
         self.capacity = self.variable("Capacity [Ah]")
-        self.ne_data = self.variable("Anode Data")
-        self.pe_data = self.variable("Cathode Data")
-        self.z_guess = self.variable("Initial Guess")
+        self.x_ne = self.parameter("Anode Stoichiometry")
+        self.x_pe = self.parameter("Cathode Stoichiometry")
+        self.ocp_ne = self.parameter("Anode OCP [V]")
+        self.ocp_pe = self.parameter("Cathode OCP [V]")
+        self.z_guess = self.parameter("Initial Guess")
         self.define_outputs(
             [
                 "Cathode Stoichiometry Limits",
                 "Anode Stoichiometry Limits",
-                "Cell Capacity" "Cathode Capacity",
+                "Cell Capacity",
+                "Cathode Capacity",
                 "Anode Capacity",
                 "Stoichiometry Offset",
             ]
         )
         self.assign_outputs(
             self.fit_ocv(
-                self.capacity, self.voltage, self.ne_data, self.pe_data, self.z_guess
+                self.capacity,
+                self.voltage,
+                self.x_pe,
+                self.ocp_pe,
+                self.x_ne,
+                self.ocp_ne,
+                self.z_guess,
             )
         )
 
@@ -46,8 +55,10 @@ class Simple_OCV_fit(Method):
         cls,
         capacity: NDArray[np.float64],
         voltage: NDArray[np.float64],
-        ne_data: NDArray[np.float64],
-        pe_data: NDArray[np.float64],
+        x_pe: NDArray[np.float64],
+        ocp_pe: NDArray[np.float64],
+        x_ne: NDArray[np.float64],
+        ocp_ne: NDArray[np.float64],
         z_guess: List[float],
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64], float, float, float, float,]:
         """Fit the OCV curve.
@@ -55,8 +66,10 @@ class Simple_OCV_fit(Method):
         Args:
             capacity (NDArray[np.float64]): The capacity data.
             voltage (NDArray[np.float64]): The voltage data.
-            ne_data (NDArray[np.float64]): The anode half cell data.
-            pe_data (NDArray[np.float64]): The cathode half cell data.
+            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+            ocp_pe (NDArray[np.float64]): The cathode OCP data.
+            x_ne (NDArray[np.float64]): The anode stoichiometry data.
+            ocp_ne (NDArray[np.float64]): The anode OCP data.
             z_guess (List[float]): The initial guess for the fit.
         """
         cell_capacity = np.ptp(capacity)
@@ -64,13 +77,13 @@ class Simple_OCV_fit(Method):
 
         def objective_func(
             SOC: NDArray[np.float64],
-            z_pe_lo: float,
-            z_pe_hi: float,
-            z_ne_lo: float,
-            z_ne_hi: float,
+            x_pe_lo: float,
+            x_pe_hi: float,
+            x_ne_lo: float,
+            x_ne_hi: float,
         ) -> NDArray[np.float64]:
             return cls.calc_full_cell_OCV(
-                SOC, z_pe_lo, z_pe_hi, z_ne_lo, z_ne_hi, ne_data, pe_data
+                SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
             )
 
         z_out = curve_fit(
@@ -126,34 +139,45 @@ class Simple_OCV_fit(Method):
     @staticmethod
     def calc_full_cell_OCV(
         SOC: NDArray[np.float64],
-        z_pe_lo: NDArray[np.float64],
-        z_pe_hi: NDArray[np.float64],
-        z_ne_lo: NDArray[np.float64],
-        z_ne_hi: NDArray[np.float64],
-        ne_data: NDArray[np.float64],
-        pe_data: NDArray[np.float64],
+        x_pe_lo: NDArray[np.float64],
+        x_pe_hi: NDArray[np.float64],
+        x_ne_lo: NDArray[np.float64],
+        x_ne_hi: NDArray[np.float64],
+        x_pe: NDArray[np.float64],
+        ocp_pe: NDArray[np.float64],
+        x_ne: NDArray[np.float64],
+        ocp_ne: NDArray[np.float64],
     ) -> NDArray[np.float64]:
         """Calculate the full cell OCV.
 
         Args:
             SOC (NDArray[np.float64]): The full cell SOC.
-            z_pe_lo (float): The cathode upper stoichiomteric limit.
-            z_pe_hi (float): The cathode lower stoichiomteric limit.
-            z_ne_lo (float): The anode upper stoichiomteric limit.
-            z_ne_hi (float): The anode lower stoichiomteric limit.
-            ne_data (NDArray[np.float64]): The anode half cell data.
-            pe_data (NDArray[np.float64]): The cathode half cell data.
+            x_pe_lo (float): The cathode upper stoichiomteric limit.
+            x_pe_hi (float): The cathode lower stoichiomteric limit.
+            x_ne_lo (float): The anode upper stoichiomteric limit.
+            x_ne_hi (float): The anode lower stoichiomteric limit.
+            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+            ocp_pe (NDArray[np.float64]): The cathode OCP data.
+            x_ne (NDArray[np.float64]): The anode stoichiometry data.
+            ocp_ne (NDArray[np.float64]): The anode OCP data.
+
+        Returns:
+            NDArray: The full cell OCV.
         """
         n_points = 10000
-        # make vectors between stoichiometry limits
-        z_ne = np.linspace(z_ne_lo, z_ne_hi, n_points)
-        z_pe = np.linspace(z_pe_lo, z_pe_hi, n_points)
+        # make vectors between stoichiometry limits during charge
+        z_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
+        z_pe = np.linspace(
+            1 - x_pe_lo, 1 - x_pe_hi, n_points
+        )  # flip the cathode limits to match charge direction
+
         # make an SOC vector with the same number of points
         SOC_sampling = np.linspace(0, 1, n_points)
 
         # interpolate the real electrode OCP data with the created stoichiometry vectors
-        OCP_ne = np.interp(z_ne, ne_data[:, 0], ne_data[:, 1])
-        OCP_pe = np.interp(z_pe, pe_data[:, 0], pe_data[:, 1])
+        OCP_ne = np.interp(z_ne, x_ne, ocp_ne)
+        OCP_pe = np.interp(z_pe, x_pe, ocp_pe)
+        # OCP_pe = np.flip(OCP_pe) # flip the cathode OCP to match charge direction
 
         # interpolate the final OCV curve with the original SOC vector
         OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
