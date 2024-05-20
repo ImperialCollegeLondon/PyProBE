@@ -27,11 +27,13 @@ class Simple_OCV_fit(Method):
         self.x_pe = self.parameter("Cathode Stoichiometry")
         self.ocp_ne = self.parameter("Anode OCP [V]")
         self.ocp_pe = self.parameter("Cathode OCP [V]")
-        self.z_guess = self.parameter("Initial Guess")
+        self.x_guess = self.parameter("Initial Guess")
         self.define_outputs(
             [
-                "Cathode Stoichiometry Limits",
-                "Anode Stoichiometry Limits",
+                "Cathode Lower Stoichiometry Limit",
+                "Cathode Upper Stoichiometry Limit",
+                "Anode Lower Stoichiometry Limit",
+                "Anode Upper Stoichiometry Limit",
                 "Cell Capacity",
                 "Cathode Capacity",
                 "Anode Capacity",
@@ -46,7 +48,7 @@ class Simple_OCV_fit(Method):
                 self.ocp_pe,
                 self.x_ne,
                 self.ocp_ne,
-                self.z_guess,
+                self.x_guess,
             )
         )
 
@@ -59,8 +61,8 @@ class Simple_OCV_fit(Method):
         ocp_pe: NDArray[np.float64],
         x_ne: NDArray[np.float64],
         ocp_ne: NDArray[np.float64],
-        z_guess: List[float],
-    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], float, float, float, float,]:
+        x_guess: List[float],
+    ) -> Tuple[float, float, float, float, float, float, float, float,]:
         """Fit the OCV curve.
 
         Args:
@@ -70,7 +72,18 @@ class Simple_OCV_fit(Method):
             ocp_pe (NDArray[np.float64]): The cathode OCP data.
             x_ne (NDArray[np.float64]): The anode stoichiometry data.
             ocp_ne (NDArray[np.float64]): The anode OCP data.
-            z_guess (List[float]): The initial guess for the fit.
+            x_guess (List[float]): The initial guess for the fit.
+
+        Returns:
+            Tuple[float, float, float, float, float, float, float, float]:
+                - float: The cathode lower stoichiometry limit.
+                - float: The cathode upper stoichiometry limit.
+                - float: The anode lower stoichiometry limit.
+                - float: The anode upper stoichiometry limit.
+                - float: The cell capacity.
+                - float: The cathode capacity.
+                - float: The anode capacity.
+                - float: The stoichiometry offset.
         """
         cell_capacity = np.ptp(capacity)
         SOC = capacity / cell_capacity
@@ -86,23 +99,27 @@ class Simple_OCV_fit(Method):
                 SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
             )
 
-        z_out = curve_fit(
+        x_out = curve_fit(
             objective_func,
             SOC,
             voltage,
-            p0=z_guess,
+            p0=x_guess,
             bounds=([0, 0, 0, 0], [1, 1, 1, 1]),
         )
-        pe_stoich_limits = np.array([z_out[0][0], z_out[0][1]])
-        ne_stoich_limits = np.array([z_out[0][2], z_out[0][3]])
+        x_pe_lo_out = x_out[0][0]
+        x_pe_hi_out = x_out[0][1]
+        x_ne_lo_out = x_out[0][2]
+        x_ne_hi_out = x_out[0][3]
 
         pe_capacity, ne_capacity, stoich_offset = cls.calc_electrode_capacities(
-            pe_stoich_limits, ne_stoich_limits, cell_capacity
+            x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_lo_out, cell_capacity
         )
 
         return (
-            pe_stoich_limits,
-            ne_stoich_limits,
+            x_pe_lo_out,
+            x_pe_hi_out,
+            x_ne_lo_out,
+            x_ne_hi_out,
             cell_capacity,
             pe_capacity,
             ne_capacity,
@@ -111,8 +128,10 @@ class Simple_OCV_fit(Method):
 
     @staticmethod
     def calc_electrode_capacities(
-        pe_stoich_limits: NDArray[np.float64],
-        ne_stoich_limits: NDArray[np.float64],
+        x_pe_lo: float,
+        x_pe_hi: float,
+        x_ne_lo: float,
+        x_ne_hi: float,
         cell_capacity: float,
     ) -> Tuple[float, float, float]:
         """Calculate the electrode capacities.
@@ -128,11 +147,9 @@ class Simple_OCV_fit(Method):
                 - NDArray: The anode capacity.
                 - NDArray: The stoichiometry offset.
         """
-        pe_capacity = cell_capacity / (pe_stoich_limits[1] - pe_stoich_limits[0])
-        ne_capacity = cell_capacity / (ne_stoich_limits[1] - ne_stoich_limits[0])
-        stoich_offset = (pe_stoich_limits[0] * pe_capacity) - (
-            ne_stoich_limits[0] * ne_capacity
-        )
+        pe_capacity = cell_capacity / (x_pe_hi - x_pe_lo)
+        ne_capacity = cell_capacity / (x_ne_hi - x_ne_lo)
+        stoich_offset = ((1 - x_pe_hi) * pe_capacity) - (x_pe_lo * ne_capacity)
 
         return pe_capacity, ne_capacity, stoich_offset
 

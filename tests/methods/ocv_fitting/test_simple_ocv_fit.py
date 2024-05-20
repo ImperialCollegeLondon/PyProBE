@@ -46,9 +46,10 @@ def test_fit_ocv():
     ocp_ne = graphite_LGM50_ocp_Chen2020(z)
 
     x_guess = [0.4, 0.8, 0.2, 0.6]
-    cathode_limits, anode_limits, _, _, _, _ = Simple_OCV_fit.fit_ocv(
-        capacity, voltage, x_ne=z, ocp_ne=ocp_ne, x_pe=z, ocp_pe=ocp_pe, z_guess=x_guess
+    x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, _, _, _, _ = Simple_OCV_fit.fit_ocv(
+        capacity, voltage, x_ne=z, ocp_ne=ocp_ne, x_pe=z, ocp_pe=ocp_pe, x_guess=x_guess
     )
 
-    np.testing.assert_allclose(cathode_limits, x_real[:2], rtol=1e-4)
-    np.testing.assert_allclose(anode_limits, x_real[2:], rtol=1e-4)
+    np.testing.assert_allclose(
+        np.array([x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi]), np.array(x_real), rtol=1e-4
+    )
