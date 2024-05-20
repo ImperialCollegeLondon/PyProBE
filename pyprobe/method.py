@@ -1,5 +1,5 @@
 """Module for the base Method class."""
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import polars as pl
@@ -78,24 +78,18 @@ class Method:
         """
         self.output_list = output_list
 
-    def assign_outputs(
-        self, function_call: Tuple[Union[NDArray[np.float64], float], ...]
-    ) -> None:
+    def assign_outputs(self, function_call: Tuple[NDArray[np.float64], ...]) -> None:
         """Assign the outputs of the method.
 
         Args:
             function_call (Tuple): The tuple of outputs from the method.
         """
-        if any(isinstance(item, float) for item in function_call) and any(
-            isinstance(item, np.ndarray) for item in function_call
-        ):
+        if all([np.ndim(item) == np.ndim(function_call[0]) for item in function_call]):
             for i, name in enumerate(self.output_list):
-                self.output_dict[name] = np.expand_dims(
-                    np.asarray(function_call[i]), axis=0
-                )
+                self.output_dict[name] = np.asarray(function_call[i]).reshape(-1)
         else:
             for i, name in enumerate(self.output_list):
-                self.output_dict[name] = np.asarray(function_call[i])
+                self.output_dict[name] = function_call[i]
 
     @property
     def result(self) -> Result:
