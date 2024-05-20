@@ -28,6 +28,7 @@ class Simple_OCV_fit(Method):
         self.ocp_ne = self.parameter("Anode OCP [V]")
         self.ocp_pe = self.parameter("Cathode OCP [V]")
         self.x_guess = self.parameter("Initial Guess")
+
         self.define_outputs(
             [
                 "Cathode Lower Stoichiometry Limit",
@@ -62,7 +63,16 @@ class Simple_OCV_fit(Method):
         x_ne: NDArray[np.float64],
         ocp_ne: NDArray[np.float64],
         x_guess: List[float],
-    ) -> Tuple[float, float, float, float, float, float, float, float,]:
+    ) -> Tuple[
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+        NDArray[np.float64],
+    ]:
         """Fit the OCV curve.
 
         Args:
@@ -76,14 +86,14 @@ class Simple_OCV_fit(Method):
 
         Returns:
             Tuple[float, float, float, float, float, float, float, float]:
-                - float: The cathode lower stoichiometry limit.
-                - float: The cathode upper stoichiometry limit.
-                - float: The anode lower stoichiometry limit.
-                - float: The anode upper stoichiometry limit.
-                - float: The cell capacity.
-                - float: The cathode capacity.
-                - float: The anode capacity.
-                - float: The stoichiometry offset.
+                - NDArray[np.float64]: The cathode lower stoichiometry limit.
+                - NDArray[np.float64]: The cathode upper stoichiometry limit.
+                - NDArray[np.float64]: The anode lower stoichiometry limit.
+                - NDArray[np.float64]: The anode upper stoichiometry limit.
+                - NDArray[np.float64]: The cell capacity.
+                - NDArray[np.float64]: The cathode capacity.
+                - NDArray[np.float64]: The anode capacity.
+                - NDArray[np.float64]: The stoichiometry offset.
         """
         cell_capacity = np.ptp(capacity)
         SOC = capacity / cell_capacity
@@ -112,18 +122,17 @@ class Simple_OCV_fit(Method):
         x_ne_hi_out = x_out[0][3]
 
         pe_capacity, ne_capacity, stoich_offset = cls.calc_electrode_capacities(
-            x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_lo_out, cell_capacity
+            x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_hi_out, cell_capacity
         )
-
         return (
-            x_pe_lo_out,
-            x_pe_hi_out,
-            x_ne_lo_out,
-            x_ne_hi_out,
-            cell_capacity,
-            pe_capacity,
-            ne_capacity,
-            stoich_offset,
+            np.array([x_pe_lo_out]),
+            np.array([x_pe_hi_out]),
+            np.array([x_ne_lo_out]),
+            np.array([x_ne_hi_out]),
+            np.array([cell_capacity]),
+            np.array([pe_capacity]),
+            np.array([ne_capacity]),
+            np.array([stoich_offset]),
         )
 
     @staticmethod
