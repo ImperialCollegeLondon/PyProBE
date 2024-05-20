@@ -11,7 +11,12 @@ class UnitConverter:
 
     prefix_dict = {"m": 1e-3, "µ": 1e-6, "n": 1e-9, "p": 1e-12, "k": 1e3, "M": 1e6}
     time_unit_dict = {"min": 60, "hr": 3600}
-    default_unit_dict = {"Current": "A", "Voltage": "V", "Capacity": "Ah", "Time": "s"}
+    unit_dict = {
+        "Current": ["A"],
+        "Voltage": ["V"],
+        "Capacity": ["Ah", "A.h"],
+        "Time": ["s"],
+    }
 
     def __init__(
         self,
@@ -37,15 +42,19 @@ class UnitConverter:
             self.default_quantity = default_quantity
         else:
             self.default_quantity = self.check_quantity()
-
-        self.default_unit = self.default_unit_dict[self.default_quantity]
+        base_units = self.unit_dict[self.default_quantity]
+        for unit in base_units:
+            if unit in self.input_unit:
+                self.base_unit = unit
+                break
+        self.default_unit = self.unit_dict[self.default_quantity][0]
         self.default_name = f"{self.default_quantity} [{self.default_unit}]"
 
         # find the prefix
         if self.default_quantity == "Time":
             self.prefix = ""
         else:
-            self.prefix = self.input_unit.rstrip(self.default_unit)
+            self.prefix = self.input_unit.rstrip(self.base_unit)
 
     @staticmethod
     def get_quantity_and_unit(name: str, name_pattern: str) -> Tuple[str | Any, ...]:
@@ -71,7 +80,7 @@ class UnitConverter:
         Raises:
             ValueError: If the quantity is not recognised.
         """
-        if self.input_quantity in self.default_unit_dict.keys():
+        if self.input_quantity in self.unit_dict.keys():
             return self.input_quantity
         else:
             raise ValueError(f"Quantity {self.input_quantity} not recognised.")

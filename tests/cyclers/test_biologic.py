@@ -17,11 +17,12 @@ def test_process_dataframe():
         {
             "time/s": [0.0, 1.0, 2.0, 3.0],
             "cycle number": [1, 1, 1, 1],
+            "counter inc.": [1, 1, 1, 1],
             "Ns": [1, 2, 3, 4],
             "I/mA": [1, 2, 3, 4],
             "Ecell/V": [4, 5, 6, 7],
-            "Q charge/mAh": [0, 20, 0, 0],
-            "Q discharge/mAh": [0, 0, 10, 20],
+            "Q charge/mA.h": [0, 20, 0, 0],
+            "Q discharge/mA.h": [0, 0, 10, 20],
         }
     )
     processed_dataframe = process_dataframe(dataframe)
