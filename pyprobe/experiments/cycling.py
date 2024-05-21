@@ -83,4 +83,11 @@ class Cycling(Experiment):
                 * 100
             ).alias("SOH Discharge [%]")
         )
+
+        lf = lf.with_columns(
+            (
+                pl.col("Discharge Capacity [Ah]")
+                / pl.col("Charge Capacity [Ah]").shift()
+            ).alias("Coulombic Efficiency")
+        )
         return Result(lf, self.info)
