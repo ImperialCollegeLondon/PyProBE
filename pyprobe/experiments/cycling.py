@@ -39,7 +39,7 @@ class Cycling(Experiment):
         )
 
     @property
-    def SOH_capacity(self) -> Result:
+    def summary(self) -> Result:
         """Calculate the state of health of the battery.
 
         Returns:
