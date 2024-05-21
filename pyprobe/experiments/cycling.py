@@ -65,6 +65,7 @@ class Cycling(Experiment):
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
         )
+
         lf = (
             lf_capacity_throughput.join(lf_time, on="_cycle", how="outer_coalesce")
             .join(lf_charge, on="_cycle", how="outer_coalesce")
