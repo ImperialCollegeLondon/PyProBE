@@ -108,6 +108,12 @@ class Simple_OCV_fit(Method):
             pe_stoich_limits (NDArray[np.float64]): The cathode stoichiometry limits.
             ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
             cell_capacity (NDArray[np.float64]): The cell capacity.
+
+        Returns:
+            Tuple[float, float, float]:
+                - NDArray: The cathode capacity.
+                - NDArray: The anode capacity.
+                - NDArray: The stoichiometry offset.
         """
         pe_capacity = cell_capacity / (pe_stoich_limits[1] - pe_stoich_limits[0])
         ne_capacity = cell_capacity / (ne_stoich_limits[1] - ne_stoich_limits[0])

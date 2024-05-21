@@ -38,7 +38,7 @@ gitpython==3.1.43
     # via streamlit
 idna==3.7
     # via requests
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   altair
     #   pydeck
@@ -122,7 +122,7 @@ referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.0
     # via streamlit
 rich==13.7.1
     # via streamlit

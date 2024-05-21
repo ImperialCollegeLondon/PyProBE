@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - develop
 jobs:
   contrib-readme-job:
     runs-on: ubuntu-latest

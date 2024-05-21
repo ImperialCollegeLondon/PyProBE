@@ -36,6 +36,16 @@ class Cell:
                 e.g. cycler number, thermocouple channel.
         """
         self.info = info
+        self.info["color"] = distinctipy.get_hex(
+            distinctipy.get_colors(
+                1,
+                exclude_colors=[
+                    (0, 0, 0),
+                    (1, 1, 1),
+                    (1, 1, 0),
+                ],
+            )[0]
+        )
         self.procedure: Dict[str, Procedure] = {}
         self.processed_data: Dict[str, pl.DataFrame] = {}
 
@@ -163,7 +173,9 @@ class Cell:
                 These must be keys of the cell info.
 
         Returns:
-            Tuple[str, str]: The input and output paths for the data file.
+            Tuple[str, str]:
+                - str: The input path for the data file.
+                - str: The output path for the parquet file.
         """
         if isinstance(filename, str):
             filename_str = filename

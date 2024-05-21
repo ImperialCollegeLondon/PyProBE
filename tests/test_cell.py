@@ -37,7 +37,7 @@ def test_read_record(info_fixture):
     root_directory = "tests/sample_data_neware"
     record_name = "sample_data_neware"
     record = Cell.read_record(root_directory, record_name)
-    pl.testing.assert_frame_equal(record, pl.DataFrame([info_fixture]))
+    pl.testing.assert_frame_equal(record, pl.DataFrame({"Name": "Test_Cell"}))
 
 
 def test_get_filename(info_fixture):

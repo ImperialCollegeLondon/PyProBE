@@ -38,7 +38,9 @@ class Feng2020(Method):
                 the parameters for the method
 
         Returns:
-            Result: a result object containing the normalised incremental capacity
+            Tuple[NDArray[np.float64], NDArray[np.float64]]:
+                - NDArray: The voltage values.
+                - NDArray: The incremental capacity values.
         """
         n = len(voltage)
         V_range = voltage.max() - voltage.min()

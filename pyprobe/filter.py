@@ -73,7 +73,8 @@ class Filter(RawData):
         Args:
             _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
             column (str): The column to filter on.
-            indices (int, list): A number or a list of numbers to filter by.
+            indices (Tuple[Union[int, range], ...]): A tuple of index
+                values to filter by.
         """
         index_list = []
         for index in indices:
