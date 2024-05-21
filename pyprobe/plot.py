@@ -39,6 +39,7 @@ class Plot:
         yaxis_title_font=dict(size=title_font_size),
         xaxis_tickfont=dict(size=axis_font_size),
         yaxis_tickfont=dict(size=axis_font_size),
+        legend_font=dict(size=axis_font_size),
         width=800,
         height=600,
     )
@@ -301,15 +302,9 @@ class Plot:
         self._fig.update_xaxes(range=self.x_range)
         self._fig.update_yaxes(range=self.y_range)
         self._fig.update_layout(
-            xaxis_title=self.xaxis_title,
-            yaxis_title=self.yaxis_title,
-            title_font=dict(size=Plot.title_font_size),
-            xaxis_title_font=dict(size=Plot.title_font_size),
-            yaxis_title_font=dict(size=Plot.title_font_size),
-            xaxis_tickfont=dict(size=Plot.axis_font_size),
-            yaxis_tickfont=dict(size=Plot.axis_font_size),
-            legend_font=dict(size=Plot.axis_font_size),
+            xaxis_title=self.xaxis_title, yaxis_title=self.yaxis_title
         )
+
         if self.secondary_y is not None:  # check if secondary y-axis exists
             self._fig.update_yaxes(
                 range=self.y2_range, secondary_y=True
@@ -321,6 +316,9 @@ class Plot:
                 yaxis2_title_font=dict(size=Plot.title_font_size),
                 legend=dict(x=1.2),
             )
+        self._fig.update_layout(
+            self.default_layout,
+        )
         return self._fig
 
     def show(self) -> None:
