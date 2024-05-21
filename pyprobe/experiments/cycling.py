@@ -38,9 +38,12 @@ class Cycling(Experiment):
             ]
         )
 
-    @property
-    def summary(self) -> Result:
+    def summary(self, dchg_before_chg: bool = True) -> Result:
         """Calculate the state of health of the battery.
+
+        Args:
+            dchg_before_chg (bool): Whether the discharge comes before the
+                charge in the cycle loop. Default is True.
 
         Returns:
             Result: A result object for the capacity SOH of the cell.
@@ -85,10 +88,16 @@ class Cycling(Experiment):
             ).alias("SOH Discharge [%]")
         )
 
-        lf = lf.with_columns(
+        if dchg_before_chg:
+            lf = lf.with_columns(
+                (
+                    pl.col("Discharge Capacity [Ah]")
+                    / pl.col("Charge Capacity [Ah]").shift()
+                ).alias("Coulombic Efficiency")
+            )
+        else:
             (
-                pl.col("Discharge Capacity [Ah]")
-                / pl.col("Charge Capacity [Ah]").shift()
+                pl.col("Discharge Capacity [Ah]").shift()
+                / pl.col("Charge Capacity [Ah]")
             ).alias("Coulombic Efficiency")
-        )
         return Result(lf, self.info)
