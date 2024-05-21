@@ -31,8 +31,8 @@ def test_set_capacity_throughput(Cycling_fixture):
 
 def test_summary(BreakinCycles_fixture):
     """Test the summary property."""
-    assert isinstance(BreakinCycles_fixture.summary, Result)
-    columns = BreakinCycles_fixture.summary.data.columns
+    assert isinstance(BreakinCycles_fixture.summary(), Result)
+    columns = BreakinCycles_fixture.summary().data.columns
     required_columns = [
         "Capacity Throughput [Ah]",
         "Time [s]",
@@ -43,22 +43,22 @@ def test_summary(BreakinCycles_fixture):
         "Coulombic Efficiency",
     ]
     assert all(item in columns for item in required_columns)
-    assert BreakinCycles_fixture.summary.data.shape[0] == 5
-    assert BreakinCycles_fixture.summary.data["SOH Charge [%]"].head(1)[0] == 100
-    assert BreakinCycles_fixture.summary.data["SOH Discharge [%]"].head(1)[0] == 100
+    assert BreakinCycles_fixture.summary().data.shape[0] == 5
+    assert BreakinCycles_fixture.summary().data["SOH Charge [%]"].head(1)[0] == 100
+    assert BreakinCycles_fixture.summary().data["SOH Discharge [%]"].head(1)[0] == 100
     assert math.isclose(
-        BreakinCycles_fixture.summary.data["Charge Capacity [Ah]"].tail(1)[0],
+        BreakinCycles_fixture.summary().data["Charge Capacity [Ah]"].tail(1)[0],
         0.04139,
         rel_tol=1e-5,
     )
     assert math.isclose(
-        BreakinCycles_fixture.summary.data["Discharge Capacity [Ah]"].tail(1)[0],
+        BreakinCycles_fixture.summary().data["Discharge Capacity [Ah]"].tail(1)[0],
         0.0413295,
         rel_tol=1e-5,
     )
 
     assert math.isclose(
-        BreakinCycles_fixture.summary.data["Coulombic Efficiency"].tail(1)[0],
+        BreakinCycles_fixture.summary().data["Coulombic Efficiency"].tail(1)[0],
         0.999212,
         rel_tol=1e-7,
     )
