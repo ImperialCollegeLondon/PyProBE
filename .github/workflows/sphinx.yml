@@ -6,7 +6,6 @@ on:
       - ready_for_review
     branches:
       - main
-      - develop
     paths:
       - docs/**
   workflow_dispatch:
