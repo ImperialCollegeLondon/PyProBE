@@ -38,7 +38,7 @@ class Simple_OCV_fit(Method):
                 "Cell Capacity",
                 "Cathode Capacity",
                 "Anode Capacity",
-                "Stoichiometry Offset",
+                "Li Inventory",
             ]
         )
         self.assign_outputs(
@@ -93,7 +93,7 @@ class Simple_OCV_fit(Method):
                 - NDArray[np.float64]: The cell capacity.
                 - NDArray[np.float64]: The cathode capacity.
                 - NDArray[np.float64]: The anode capacity.
-                - NDArray[np.float64]: The stoichiometry offset.
+                - NDArray[np.float64]: The lithium inventory.
         """
         cell_capacity = np.ptp(capacity)
         SOC = capacity / cell_capacity
@@ -121,7 +121,7 @@ class Simple_OCV_fit(Method):
         x_ne_lo_out = x_out[0][2]
         x_ne_hi_out = x_out[0][3]
 
-        pe_capacity, ne_capacity, stoich_offset = cls.calc_electrode_capacities(
+        pe_capacity, ne_capacity, li_inventory = cls.calc_electrode_capacities(
             x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_hi_out, cell_capacity
         )
         return (
@@ -132,7 +132,7 @@ class Simple_OCV_fit(Method):
             np.array([cell_capacity]),
             np.array([pe_capacity]),
             np.array([ne_capacity]),
-            np.array([stoich_offset]),
+            np.array([li_inventory]),
         )
 
     @staticmethod
@@ -155,13 +155,12 @@ class Simple_OCV_fit(Method):
             Tuple[float, float, float]:
                 - NDArray: The cathode capacity.
                 - NDArray: The anode capacity.
-                - NDArray: The stoichiometry offset.
+                - NDArray: The lithium inventory.
         """
-        pe_capacity = cell_capacity / (x_pe_hi - x_pe_lo)
+        pe_capacity = cell_capacity / (x_pe_lo - x_pe_hi)
         ne_capacity = cell_capacity / (x_ne_hi - x_ne_lo)
-        stoich_offset = ((1 - x_pe_hi) * pe_capacity) - (x_pe_lo * ne_capacity)
-
-        return pe_capacity, ne_capacity, stoich_offset
+        li_inventory = (pe_capacity * x_pe_lo) + (ne_capacity * x_ne_lo)
+        return pe_capacity, ne_capacity, li_inventory
 
     @staticmethod
     def calc_full_cell_OCV(

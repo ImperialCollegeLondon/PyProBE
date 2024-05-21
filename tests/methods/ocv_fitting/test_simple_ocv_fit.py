@@ -134,7 +134,7 @@ def test_init(
         "Cell Capacity",
         "Cathode Capacity",
         "Anode Capacity",
-        "Stoichiometry Offset",
+        "Li Inventory",
     ]
 
 
@@ -157,5 +157,5 @@ def test_result(OCP_result_fixture, ocp_ne_fixture, ocp_pe_fixture):
         "Cell Capacity",
         "Cathode Capacity",
         "Anode Capacity",
-        "Stoichiometry Offset",
+        "Li Inventory",
     ]

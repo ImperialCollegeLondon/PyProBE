@@ -18,14 +18,14 @@ class DMA(Method):
         self.cell_capacity = self.variable("Cell Capacity")
         self.pe_capacity = self.variable("Cathode Capacity")
         self.ne_capacity = self.variable("Anode Capacity")
-        self.offset = self.variable("Stoichiometry Offset")
+        self.li_inventory = self.variable("Li Inventory")
         self.define_outputs(["SOH", "LAM_pe", "LAM_ne", "LLI"])
         self.assign_outputs(
             self.calculate_dma_parameters(
                 self.cell_capacity,
                 self.pe_capacity,
                 self.ne_capacity,
-                self.offset,
+                self.li_inventory,
             )
         )
 
@@ -35,7 +35,7 @@ class DMA(Method):
         cell_capacity: NDArray[np.float64],
         pe_capacity: NDArray[np.float64],
         ne_capacity: NDArray[np.float64],
-        offset: NDArray[np.float64],
+        li_inventory: NDArray[np.float64],
     ) -> Tuple[
         NDArray[np.float64],
         NDArray[np.float64],
@@ -49,7 +49,7 @@ class DMA(Method):
             ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
             pe_capacity (NDArray[np.float64]): The cathode capacity.
             ne_capacity (NDArray[np.float64]): The anode capacity.
-            offset (NDArray[np.float64]): The stoichiometry offset.
+            li_inventory (NDArray[np.float64]): The lithium inventory.
 
         Returns:
             Tuple[float, float, float, float]: The SOH, LAM_pe, LAM_ne, and LLI.
@@ -57,5 +57,5 @@ class DMA(Method):
         SOH = cell_capacity / cell_capacity[0]
         LAM_pe = 1 - pe_capacity / pe_capacity[0]
         LAM_ne = 1 - ne_capacity / ne_capacity[0]
-        LLI = (pe_capacity[0] - pe_capacity - (offset[0] - offset)) / cell_capacity[0]
+        LLI = 1 - li_inventory / li_inventory[0]
         return SOH, LAM_pe, LAM_ne, LLI

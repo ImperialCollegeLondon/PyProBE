@@ -36,28 +36,28 @@ def eol_pe_limits_fixture():
 def bol_capacity_fixture(bol_ne_limits_fixture, bol_pe_limits_fixture):
     """Return the cell and electrode capacities."""
     cell_capacity = 5
-    pe_capacity, ne_capacity, stoich_offset = Simple_OCV_fit.calc_electrode_capacities(
+    pe_capacity, ne_capacity, li_inventory = Simple_OCV_fit.calc_electrode_capacities(
         bol_pe_limits_fixture[0],
         bol_pe_limits_fixture[1],
         bol_ne_limits_fixture[0],
         bol_ne_limits_fixture[1],
         cell_capacity,
     )
-    return [cell_capacity, pe_capacity, ne_capacity, stoich_offset]
+    return [cell_capacity, pe_capacity, ne_capacity, li_inventory]
 
 
 @pytest.fixture
 def eol_capacity_fixture(eol_ne_limits_fixture, eol_pe_limits_fixture):
     """Return the cell and electrode capacities."""
     cell_capacity = 4.5
-    pe_capacity, ne_capacity, stoich_offset = Simple_OCV_fit.calc_electrode_capacities(
+    pe_capacity, ne_capacity, li_inventory = Simple_OCV_fit.calc_electrode_capacities(
         eol_pe_limits_fixture[0],
         eol_pe_limits_fixture[1],
         eol_ne_limits_fixture[0],
         eol_ne_limits_fixture[1],
         cell_capacity,
     )
-    return [cell_capacity, pe_capacity, ne_capacity, stoich_offset]
+    return [cell_capacity, pe_capacity, ne_capacity, li_inventory]
 
 
 @pytest.fixture
@@ -69,7 +69,7 @@ def bol_result_fixture(bol_capacity_fixture):
                 "Cell Capacity": bol_capacity_fixture[0],
                 "Cathode Capacity": bol_capacity_fixture[1],
                 "Anode Capacity": bol_capacity_fixture[2],
-                "Stoichiometry Offset": bol_capacity_fixture[3],
+                "Li Inventory": bol_capacity_fixture[3],
             }
         ),
         info={},
@@ -85,7 +85,7 @@ def eol_result_fixture(eol_capacity_fixture):
                 "Cell Capacity": eol_capacity_fixture[0],
                 "Cathode Capacity": eol_capacity_fixture[1],
                 "Anode Capacity": eol_capacity_fixture[2],
-                "Stoichiometry Offset": eol_capacity_fixture[3],
+                "Li Inventory": eol_capacity_fixture[3],
             }
         ),
         info={},
@@ -118,10 +118,8 @@ def test_calculate_dma_parameters(
     expected_LAM_pe = 1 - eol_capacity_fixture[1] / bol_capacity_fixture[1]
     expected_LAM_ne = 1 - eol_capacity_fixture[2] / bol_capacity_fixture[2]
     expected_LLI = (
-        bol_capacity_fixture[1]
-        - eol_capacity_fixture[1]
-        - (bol_capacity_fixture[3] - eol_capacity_fixture[3])
-    ) / bol_capacity_fixture[0]
+        bol_capacity_fixture[3] - eol_capacity_fixture[3]
+    ) / bol_capacity_fixture[3]
 
     result = dma_fixture.result
     assert result.data["SOH"].to_numpy()[1] == expected_SOH
