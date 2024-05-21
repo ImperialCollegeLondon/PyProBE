@@ -1,8 +1,6 @@
 name: "Build and test"
 on:
   pull_request:
-    types:
-      - ready_for_review
     branches:
       - main
   workflow_dispatch:
