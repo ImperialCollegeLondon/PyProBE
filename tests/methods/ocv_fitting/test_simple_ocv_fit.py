@@ -58,6 +58,31 @@ def test_fit_ocv():
     )
 
 
+def test_fit_ocv_discharge():
+    """Test the fit_ocv method for a discharge curve."""
+    n_points = 1000
+    capacity = np.linspace(1, 0, n_points)
+    x_real = [0.8, 0.1, 0.1, 0.7]
+    x_pe_real = np.linspace(x_real[1], x_real[0], n_points)
+    x_ne_real = np.linspace(x_real[3], x_real[2], n_points)
+    voltage = nmc_LGM50_ocp_Chen2020(x_pe_real) - graphite_LGM50_ocp_Chen2020(x_ne_real)
+
+    z = np.linspace(0, 1, n_points)
+    ocp_pe = nmc_LGM50_ocp_Chen2020(z)
+    ocp_ne = graphite_LGM50_ocp_Chen2020(z)
+
+    x_guess = [0.8, 0.4, 0.2, 0.6]
+    x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, _, _, _, _ = Simple_OCV_fit.fit_ocv(
+        capacity, voltage, x_ne=z, ocp_ne=ocp_ne, x_pe=z, ocp_pe=ocp_pe, x_guess=x_guess
+    )
+
+    np.testing.assert_allclose(
+        np.concatenate((x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)),
+        np.array(x_real),
+        rtol=1e-4,
+    )
+
+
 @pytest.fixture
 def ocp_ne_fixture():
     """Return the anode OCP data."""

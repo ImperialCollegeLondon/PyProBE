@@ -94,7 +94,7 @@ class Simple_OCV_fit(Method):
                 - NDArray[np.float64]: The lithium inventory.
         """
         cell_capacity = np.ptp(capacity)
-        SOC = capacity / cell_capacity
+        SOC = (capacity - capacity.min()) / cell_capacity
 
         def objective_func(
             SOC: NDArray[np.float64],
