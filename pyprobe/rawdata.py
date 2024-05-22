@@ -103,7 +103,7 @@ class RawData(Result):
                         + reference_capacity
                     )
                     / reference_capacity
-                ).alias("SOC [%]")
+                ).alias("SOC")
             )
         else:
             self.data
@@ -119,6 +119,5 @@ class RawData(Result):
                 (
                     (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
                     / reference_capacity
-                ).alias("SOC [%]")
+                ).alias("SOC")
             )
-        print(self._data["SOC [%]"].head(5))

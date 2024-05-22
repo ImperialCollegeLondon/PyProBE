@@ -60,8 +60,7 @@ def test_set_SOC(BreakinCycles_fixture):
     without_charge_specified.set_SOC(0.04)
 
     assert (
-        with_charge_specified.data["SOC [%]"]
-        == without_charge_specified.data["SOC [%]"]
+        with_charge_specified.data["SOC"] == without_charge_specified.data["SOC"]
     ).all()
-    assert max(without_charge_specified.data["SOC [%]"]) == 1
-    assert max(with_charge_specified.data["SOC [%]"]) == 1
+    assert max(without_charge_specified.data["SOC"]) == 1
+    assert max(with_charge_specified.data["SOC"]) == 1
