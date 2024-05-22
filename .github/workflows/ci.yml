@@ -1,16 +1,13 @@
 name: "Build and test"
 on:
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+  - push
 jobs:
   qa:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
       - uses: pre-commit/action@v3.0.0
@@ -19,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
       - run: pip install -r requirements-dev.txt
