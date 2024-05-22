@@ -19,14 +19,14 @@ class DMA(Method):
         self.pe_capacity = self.variable("Cathode Capacity")
         self.ne_capacity = self.variable("Anode Capacity")
         self.li_inventory = self.variable("Li Inventory")
-        self.define_outputs(["SOH", "LAM_pe", "LAM_ne", "LLI"])
-        self.assign_outputs(
+        self.dma_result = self.assign_outputs(
+            ["SOH", "LAM_pe", "LAM_ne", "LLI"],
             self.calculate_dma_parameters(
                 self.cell_capacity,
                 self.pe_capacity,
                 self.ne_capacity,
                 self.li_inventory,
-            )
+            ),
         )
 
     @classmethod

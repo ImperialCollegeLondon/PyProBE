@@ -21,11 +21,12 @@ class Feng2020(Method):
         super().__init__(rawdata, parameters)
         self.voltage = self.variable("Voltage [V]")
         self.deltaV = self.parameter("deltaV")
-        self.define_outputs(["Voltage [V]", "IC [Ah/V]"])
-        self.assign_outputs(self.dQdV(self.voltage, self.deltaV))
+        self.dQdV = self.assign_outputs(
+            ["Voltage [V]", "IC [Ah/V]"], self.calculate_dQdV(self.voltage, self.deltaV)
+        )
 
     @classmethod
-    def dQdV(
+    def calculate_dQdV(
         cls, voltage: NDArray[np.float64], deltaV: float
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Calculate the normalised incremental capacity of the step.

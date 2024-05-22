@@ -121,7 +121,7 @@ def test_calculate_dma_parameters(
         bol_capacity_fixture[3] - eol_capacity_fixture[3]
     ) / bol_capacity_fixture[3]
 
-    result = dma_fixture.result
+    result = dma_fixture.dma_result
     assert result.data["SOH"].to_numpy()[1] == expected_SOH
     assert result.data["LAM_pe"].to_numpy()[1] == expected_LAM_pe
     assert result.data["LAM_ne"].to_numpy()[1] == expected_LAM_ne

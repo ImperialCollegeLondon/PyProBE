@@ -35,7 +35,6 @@ class Method:
         self.parameters = parameters
         self.variable_list: List[str] = []
         self.parameter_list: List[str] = []
-        self.output_list: List[str] = []
         self.output_dict: Dict[str, NDArray[Any]] = {}
 
     def variable(self, name: str) -> NDArray[Any]:
@@ -70,32 +69,28 @@ class Method:
         self.parameter_list.append(name)
         return self.parameters[name]
 
-    def define_outputs(self, output_list: List[str]) -> None:
-        """Set the output list.
-
-        Args:
-            output_list (List[str]): The list of outputs.
-        """
-        self.output_list = output_list
-
-    def assign_outputs(self, function_call: Tuple[NDArray[np.float64], ...]) -> None:
+    def assign_outputs(
+        self, output_list: List[str], function_call: Tuple[NDArray[np.float64], ...]
+    ) -> Result:
         """Assign the outputs of the method.
 
         Args:
+            output_list (List[str]): The list of output names.
             function_call (Tuple): The tuple of outputs from the method.
+
+        Returns:
+            Result: A result object containing the method outputs.
         """
         if all([np.ndim(item) == np.ndim(function_call[0]) for item in function_call]):
-            for i, name in enumerate(self.output_list):
+            for i, name in enumerate(output_list):
                 self.output_dict[name] = np.asarray(function_call[i]).reshape(-1)
         else:
-            for i, name in enumerate(self.output_list):
+            for i, name in enumerate(output_list):
                 self.output_dict[name] = function_call[i]
 
-    @property
-    def result(self) -> Result:
-        """Return the result object of the method."""
         if isinstance(self.input_data, list):
             info = self.input_data[0].info
         else:
             info = self.input_data.info
+
         return Result(pl.DataFrame(self.output_dict), info)

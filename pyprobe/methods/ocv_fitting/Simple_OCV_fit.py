@@ -29,7 +29,7 @@ class Simple_OCV_fit(Method):
         self.ocp_pe = self.parameter("Cathode OCP [V]")
         self.x_guess = self.parameter("Initial Guess")
 
-        self.define_outputs(
+        self.stoichiometry_limits = self.assign_outputs(
             [
                 "x_pe low SOC",
                 "x_pe high SOC",
@@ -39,9 +39,7 @@ class Simple_OCV_fit(Method):
                 "Cathode Capacity",
                 "Anode Capacity",
                 "Li Inventory",
-            ]
-        )
-        self.assign_outputs(
+            ],
             self.fit_ocv(
                 self.capacity,
                 self.voltage,
@@ -50,7 +48,7 @@ class Simple_OCV_fit(Method):
                 self.x_ne,
                 self.ocp_ne,
                 self.x_guess,
-            )
+            ),
         )
 
     @classmethod
@@ -105,9 +103,10 @@ class Simple_OCV_fit(Method):
             x_ne_lo: float,
             x_ne_hi: float,
         ) -> NDArray[np.float64]:
-            return cls.calc_full_cell_OCV(
+            _, modelled_OCV = cls.calc_full_cell_OCV(
                 SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
             )
+            return modelled_OCV
 
         x_out = curve_fit(
             objective_func,
@@ -207,4 +206,4 @@ class Simple_OCV_fit(Method):
 
         # interpolate the final OCV curve with the original SOC vector
         OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
-        return OCV
+        return SOC, OCV

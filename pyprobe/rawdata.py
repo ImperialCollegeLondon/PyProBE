@@ -81,7 +81,7 @@ class RawData(Result):
                 "feng_2020": Feng2020,
             }
         )
-        return method_dict[method](self, parameters).result
+        return method_dict[method](self, parameters).dQdV
 
     def set_SOC(
         self,

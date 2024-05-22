@@ -126,16 +126,6 @@ def test_init(
         "Cathode OCP [V]",
         "Initial Guess",
     ]
-    assert method.output_list == [
-        "x_pe low SOC",
-        "x_pe high SOC",
-        "x_ne low SOC",
-        "x_ne high SOC",
-        "Cell Capacity",
-        "Cathode Capacity",
-        "Anode Capacity",
-        "Li Inventory",
-    ]
 
 
 def test_result(OCP_result_fixture, ocp_ne_fixture, ocp_pe_fixture):
@@ -148,8 +138,8 @@ def test_result(OCP_result_fixture, ocp_ne_fixture, ocp_pe_fixture):
         "Initial Guess": [0.8, 0.4, 0.2, 0.6],
     }
     method = Simple_OCV_fit(OCP_result_fixture, parameters)
-    assert isinstance(method.result, Result)
-    assert method.result.data.columns == [
+    assert isinstance(method.stoichiometry_limits, Result)
+    assert method.stoichiometry_limits.data.columns == [
         "x_pe low SOC",
         "x_pe high SOC",
         "x_ne low SOC",
