@@ -1,6 +1,9 @@
 name: "Build and test"
 on:
-  - push
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 jobs:
   qa:
     if: github.event.pull_request.draft == false
