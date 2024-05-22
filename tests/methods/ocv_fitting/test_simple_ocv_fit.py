@@ -52,7 +52,7 @@ def test_fit_ocv():
     )
 
     np.testing.assert_allclose(
-        np.concatenate((x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)),
+        [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi],
         np.array(x_real),
         rtol=1e-4,
     )
@@ -77,7 +77,7 @@ def test_fit_ocv_discharge():
     )
 
     np.testing.assert_allclose(
-        np.concatenate((x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)),
+        [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi],
         np.array(x_real),
         rtol=1e-4,
     )

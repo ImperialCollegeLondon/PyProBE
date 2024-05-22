@@ -50,16 +50,29 @@ class Simple_OCV_fit(Method):
 
         self.stoichiometry_limits = self.assign_outputs(
             {
-                "x_pe low SOC": x_pe_lo,
-                "x_pe high SOC": x_pe_hi,
-                "x_ne low SOC": x_ne_lo,
-                "x_ne high SOC": x_ne_hi,
-                "Cell Capacity": cell_capacity,
-                "Cathode Capacity": pe_capacity,
-                "Anode Capacity": ne_capacity,
-                "Li Inventory": li_inventory,
+                "x_pe low SOC": np.array([x_pe_lo]),
+                "x_pe high SOC": np.array([x_pe_hi]),
+                "x_ne low SOC": np.array([x_ne_lo]),
+                "x_ne high SOC": np.array([x_ne_hi]),
+                "Cell Capacity": np.array([cell_capacity]),
+                "Cathode Capacity": np.array([pe_capacity]),
+                "Anode Capacity": np.array([ne_capacity]),
+                "Li Inventory": np.array([li_inventory]),
             }
         )
+        SOC = np.linspace(0, 1, 10000)
+        OCV = self.calc_full_cell_OCV(
+            SOC,
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
+            self.x_pe,
+            self.ocp_pe,
+            self.x_ne,
+            self.ocp_ne,
+        )
+        self.fitted_OCV = self.assign_outputs({"SOC": SOC, "Voltage [V]": OCV})
 
     @classmethod
     def fit_ocv(
@@ -71,16 +84,7 @@ class Simple_OCV_fit(Method):
         x_ne: NDArray[np.float64],
         ocp_ne: NDArray[np.float64],
         x_guess: List[float],
-    ) -> Tuple[
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-        NDArray[np.float64],
-    ]:
+    ) -> Tuple[float, float, float, float, float, float, float, float,]:
         """Fit the OCV curve.
 
         Args:
@@ -94,14 +98,14 @@ class Simple_OCV_fit(Method):
 
         Returns:
             Tuple[float, float, float, float, float, float, float, float]:
-                - NDArray[np.float64]: The cathode stoihiometry at lowest cell SOC.
-                - NDArray[np.float64]: The cathode stoihiometry at highest cell SOC.
-                - NDArray[np.float64]: The anode stoihiometry at lowest cell SOC.
-                - NDArray[np.float64]: The anode stoihiometry at highest cell SOC.
-                - NDArray[np.float64]: The cell capacity.
-                - NDArray[np.float64]: The cathode capacity.
-                - NDArray[np.float64]: The anode capacity.
-                - NDArray[np.float64]: The lithium inventory.
+                - float: The cathode stoihiometry at lowest cell SOC.
+                - float: The cathode stoihiometry at highest cell SOC.
+                - float: The anode stoihiometry at lowest cell SOC.
+                - float: The anode stoihiometry at highest cell SOC.
+                - float: The cell capacity.
+                - float: The cathode capacity.
+                - float: The anode capacity.
+                - float: The lithium inventory.
         """
         cell_capacity = np.ptp(capacity)
         SOC = (capacity - capacity.min()) / cell_capacity
@@ -113,7 +117,7 @@ class Simple_OCV_fit(Method):
             x_ne_lo: float,
             x_ne_hi: float,
         ) -> NDArray[np.float64]:
-            _, modelled_OCV = cls.calc_full_cell_OCV(
+            modelled_OCV = cls.calc_full_cell_OCV(
                 SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
             )
             return modelled_OCV
@@ -134,14 +138,14 @@ class Simple_OCV_fit(Method):
             x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_hi_out, cell_capacity
         )
         return (
-            np.array([x_pe_lo_out]),
-            np.array([x_pe_hi_out]),
-            np.array([x_ne_lo_out]),
-            np.array([x_ne_hi_out]),
-            np.array([cell_capacity]),
-            np.array([pe_capacity]),
-            np.array([ne_capacity]),
-            np.array([li_inventory]),
+            x_pe_lo_out,
+            x_pe_hi_out,
+            x_ne_lo_out,
+            x_ne_hi_out,
+            cell_capacity,
+            pe_capacity,
+            ne_capacity,
+            li_inventory,
         )
 
     @staticmethod
@@ -216,4 +220,4 @@ class Simple_OCV_fit(Method):
 
         # interpolate the final OCV curve with the original SOC vector
         OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
-        return SOC, OCV
+        return OCV
