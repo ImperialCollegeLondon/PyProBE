@@ -30,14 +30,14 @@ class Simple_OCV_fit(Method):
         self.x_guess = self.parameter("Initial Guess")
 
         (
-            x_pe_lo,
-            x_pe_hi,
-            x_ne_lo,
-            x_ne_hi,
-            cell_capacity,
-            pe_capacity,
-            ne_capacity,
-            li_inventory,
+            self.x_pe_lo,
+            self.x_pe_hi,
+            self.x_ne_lo,
+            self.x_ne_hi,
+            self.cell_capacity,
+            self.pe_capacity,
+            self.ne_capacity,
+            self.li_inventory,
         ) = self.fit_ocv(
             self.capacity,
             self.voltage,
@@ -50,23 +50,23 @@ class Simple_OCV_fit(Method):
 
         self.stoichiometry_limits = self.assign_outputs(
             {
-                "x_pe low SOC": np.array([x_pe_lo]),
-                "x_pe high SOC": np.array([x_pe_hi]),
-                "x_ne low SOC": np.array([x_ne_lo]),
-                "x_ne high SOC": np.array([x_ne_hi]),
-                "Cell Capacity": np.array([cell_capacity]),
-                "Cathode Capacity": np.array([pe_capacity]),
-                "Anode Capacity": np.array([ne_capacity]),
-                "Li Inventory": np.array([li_inventory]),
+                "x_pe low SOC": np.array([self.x_pe_lo]),
+                "x_pe high SOC": np.array([self.x_pe_hi]),
+                "x_ne low SOC": np.array([self.x_ne_lo]),
+                "x_ne high SOC": np.array([self.x_ne_hi]),
+                "Cell Capacity": np.array([self.cell_capacity]),
+                "Cathode Capacity": np.array([self.pe_capacity]),
+                "Anode Capacity": np.array([self.ne_capacity]),
+                "Li Inventory": np.array([self.li_inventory]),
             }
         )
         SOC = np.linspace(0, 1, 10000)
         OCV = self.calc_full_cell_OCV(
             SOC,
-            x_pe_lo,
-            x_pe_hi,
-            x_ne_lo,
-            x_ne_hi,
+            self.x_pe_lo,
+            self.x_pe_hi,
+            self.x_ne_lo,
+            self.x_ne_hi,
             self.x_pe,
             self.ocp_pe,
             self.x_ne,
