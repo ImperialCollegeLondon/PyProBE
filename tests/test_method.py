@@ -32,7 +32,6 @@ def test_init(method_fixture):
     assert method_fixture.parameters == {"a": 1, "b": 2}
     assert method_fixture.variable_list == []
     assert method_fixture.parameter_list == []
-    assert method_fixture.output_dict == {}
 
 
 def test_variable(method_fixture, input_data_fixture, parameters_fixture):
@@ -53,18 +52,13 @@ def test_parameter(method_fixture):
 def test_assign_outputs(method_fixture):
     """Test the assign_outputs method."""
     result = method_fixture.assign_outputs(
-        ["y", "z"], (np.array([4, 5, 6]), np.array([7, 8, 9]))
+        {"y": np.array([4, 5, 6]), "z": np.array([7, 8, 9])}
     )
     expected_result = pl.DataFrame({"y": np.array([4, 5, 6]), "z": np.array([7, 8, 9])})
-    assert method_fixture.output_dict.keys() == {"y", "z"}
-    assert np.array_equal(method_fixture.output_dict["y"], np.array([4, 5, 6]))
-    assert np.array_equal(method_fixture.output_dict["z"], np.array([7, 8, 9]))
     pl.testing.assert_frame_equal(result.data, expected_result)
 
     result = method_fixture.assign_outputs(
-        ["y", "z"], (np.array([[10, 11]]), np.array([12]))
+        {"y": np.array([[10, 11]]), "z": np.array([12])}
     )
     expected_result = pl.DataFrame({"y": np.array([[10, 11]]), "z": np.array([12])})
-    assert (method_fixture.output_dict["y"] == np.array([[10, 11]])).all()
-    assert (method_fixture.output_dict["z"] == np.array([12])).all()
     pl.testing.assert_frame_equal(result.data, expected_result)

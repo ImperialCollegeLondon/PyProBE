@@ -29,26 +29,36 @@ class Simple_OCV_fit(Method):
         self.ocp_pe = self.parameter("Cathode OCP [V]")
         self.x_guess = self.parameter("Initial Guess")
 
+        (
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
+            cell_capacity,
+            pe_capacity,
+            ne_capacity,
+            li_inventory,
+        ) = self.fit_ocv(
+            self.capacity,
+            self.voltage,
+            self.x_pe,
+            self.ocp_pe,
+            self.x_ne,
+            self.ocp_ne,
+            self.x_guess,
+        )
+
         self.stoichiometry_limits = self.assign_outputs(
-            [
-                "x_pe low SOC",
-                "x_pe high SOC",
-                "x_ne low SOC",
-                "x_ne high SOC",
-                "Cell Capacity",
-                "Cathode Capacity",
-                "Anode Capacity",
-                "Li Inventory",
-            ],
-            self.fit_ocv(
-                self.capacity,
-                self.voltage,
-                self.x_pe,
-                self.ocp_pe,
-                self.x_ne,
-                self.ocp_ne,
-                self.x_guess,
-            ),
+            {
+                "x_pe low SOC": x_pe_lo,
+                "x_pe high SOC": x_pe_hi,
+                "x_ne low SOC": x_ne_lo,
+                "x_ne high SOC": x_ne_hi,
+                "Cell Capacity": cell_capacity,
+                "Cathode Capacity": pe_capacity,
+                "Anode Capacity": ne_capacity,
+                "Li Inventory": li_inventory,
+            }
         )
 
     @classmethod

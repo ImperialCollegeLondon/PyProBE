@@ -1,5 +1,5 @@
 """Module for the base Method class."""
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import polars as pl
@@ -35,7 +35,6 @@ class Method:
         self.parameters = parameters
         self.variable_list: List[str] = []
         self.parameter_list: List[str] = []
-        self.output_dict: Dict[str, NDArray[Any]] = {}
 
     def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
@@ -69,28 +68,23 @@ class Method:
         self.parameter_list.append(name)
         return self.parameters[name]
 
-    def assign_outputs(
-        self, output_list: List[str], function_call: Tuple[NDArray[np.float64], ...]
-    ) -> Result:
+    def assign_outputs(self, output_dict: Dict[str, NDArray[Any]]) -> Result:
         """Assign the outputs of the method.
 
         Args:
-            output_list (List[str]): The list of output names.
-            function_call (Tuple): The tuple of outputs from the method.
+            Dict[str, NDArray]: A dictionary of the outputs.
 
         Returns:
             Result: A result object containing the method outputs.
         """
-        if all([np.ndim(item) == np.ndim(function_call[0]) for item in function_call]):
-            for i, name in enumerate(output_list):
-                self.output_dict[name] = np.asarray(function_call[i]).reshape(-1)
-        else:
-            for i, name in enumerate(output_list):
-                self.output_dict[name] = function_call[i]
+        first_dim = np.ndim(list(output_dict.values())[0])
+        if all(np.ndim(array) == first_dim for array in output_dict.values()):
+            for name in output_dict.keys():
+                output_dict[name] = np.asarray(output_dict[name]).reshape(-1)
 
         if isinstance(self.input_data, list):
             info = self.input_data[0].info
         else:
             info = self.input_data.info
 
-        return Result(pl.DataFrame(self.output_dict), info)
+        return Result(pl.DataFrame(output_dict), info)
