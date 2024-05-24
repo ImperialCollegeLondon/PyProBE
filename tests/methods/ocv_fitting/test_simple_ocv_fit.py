@@ -126,14 +126,14 @@ def test_init(
 ):
     """Test the __init__ method."""
     result = OCP_result_fixture
-    parameters = {
-        "Anode Stoichiometry": np.linspace(0, 1, 1000),
-        "Cathode Stoichiometry": np.linspace(0, 1, 1000),
-        "Anode OCP [V]": ocp_ne_fixture,
-        "Cathode OCP [V]": ocp_pe_fixture,
-        "Initial Guess": [0.9, 0.1, 0.1, 0.9],
-    }
-    method = Simple_OCV_fit(result, parameters)
+    method = Simple_OCV_fit(
+        result,
+        np.linspace(0, 1, 1000),
+        np.linspace(0, 1, 1000),
+        ocp_ne_fixture,
+        ocp_pe_fixture,
+        [0.9, 0.1, 0.1, 0.9],
+    )
 
     np.testing.assert_allclose(method.voltage, full_cell_voltage_fixture)
     np.testing.assert_allclose(method.capacity, np.linspace(0, 1, 1000))
@@ -144,25 +144,18 @@ def test_init(
     np.testing.assert_allclose(method.x_guess, [0.9, 0.1, 0.1, 0.9])
     assert method.variable_list == ["Voltage [V]", "Capacity [Ah]"]
     assert method.variable_list == ["Voltage [V]", "Capacity [Ah]"]
-    assert method.parameter_list == [
-        "Anode Stoichiometry",
-        "Cathode Stoichiometry",
-        "Anode OCP [V]",
-        "Cathode OCP [V]",
-        "Initial Guess",
-    ]
 
 
 def test_result(OCP_result_fixture, ocp_ne_fixture, ocp_pe_fixture):
     """Test the result method."""
-    parameters = {
-        "Anode Stoichiometry": np.linspace(0, 1, 1000),
-        "Cathode Stoichiometry": np.linspace(0, 1, 1000),
-        "Anode OCP [V]": ocp_ne_fixture,
-        "Cathode OCP [V]": ocp_pe_fixture,
-        "Initial Guess": [0.8, 0.4, 0.2, 0.6],
-    }
-    method = Simple_OCV_fit(OCP_result_fixture, parameters)
+    method = Simple_OCV_fit(
+        OCP_result_fixture,
+        np.linspace(0, 1, 1000),
+        np.linspace(0, 1, 1000),
+        ocp_ne_fixture,
+        ocp_pe_fixture,
+        [0.8, 0.4, 0.2, 0.6],
+    )
     assert isinstance(method.stoichiometry_limits, Result)
     assert method.stoichiometry_limits.data.columns == [
         "x_pe low SOC",

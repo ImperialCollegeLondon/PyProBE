@@ -1,6 +1,6 @@
 """Module for simple OCV fitting."""
 
-from typing import Any, Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,21 +13,33 @@ from pyprobe.rawdata import RawData
 class Simple_OCV_fit(Method):
     """A method for fitting OCV curves."""
 
-    def __init__(self, rawdata: RawData, parameters: Dict[str, Any]):
+    def __init__(
+        self,
+        rawdata: RawData,
+        x_ne: NDArray[np.float64],
+        x_pe: NDArray[np.float64],
+        ocp_ne: NDArray[np.float64],
+        ocp_pe: NDArray[np.float64],
+        x_guess: NDArray[np.float64],
+    ):
         """Initialize the Simple_OCV_fit method.
 
         Args:
             rawdata (Result): The input data to the method.
-            parameters (Dict[str, float]): The parameters for the method.
+            x_ne (NDArray[np.float64]): The anode stoichiometry data.
+            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+            ocp_ne (NDArray[np.float64]): The anode OCP data.
+            ocp_pe (NDArray[np.float64]): The cathode OCP data.
+            x_guess (NDArray[np.float64]): The initial guess for the fit.
         """
-        super().__init__(rawdata, parameters)
+        super().__init__(rawdata)
         self.voltage = self.variable("Voltage [V]")
         self.capacity = self.variable("Capacity [Ah]")
-        self.x_ne = self.parameter("Anode Stoichiometry")
-        self.x_pe = self.parameter("Cathode Stoichiometry")
-        self.ocp_ne = self.parameter("Anode OCP [V]")
-        self.ocp_pe = self.parameter("Cathode OCP [V]")
-        self.x_guess = self.parameter("Initial Guess")
+        self.x_ne = x_ne
+        self.x_pe = x_pe
+        self.ocp_ne = ocp_ne
+        self.ocp_pe = ocp_pe
+        self.x_guess = x_guess
 
         (
             self.x_pe_lo,

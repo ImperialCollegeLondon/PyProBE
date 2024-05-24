@@ -15,38 +15,24 @@ def input_data_fixture():
 
 
 @pytest.fixture
-def parameters_fixture():
-    """Return a dictionary of parameters."""
-    return {"a": 1, "b": 2}
-
-
-@pytest.fixture
-def method_fixture(input_data_fixture, parameters_fixture):
+def method_fixture(input_data_fixture):
     """Return a Method instance."""
-    return Method(input_data_fixture, parameters_fixture)
+    return Method(input_data_fixture)
 
 
 def test_init(method_fixture):
     """Test the __init__ method."""
     assert isinstance(method_fixture, Method)
-    assert method_fixture.parameters == {"a": 1, "b": 2}
     assert method_fixture.variable_list == []
-    assert method_fixture.parameter_list == []
 
 
-def test_variable(method_fixture, input_data_fixture, parameters_fixture):
+def test_variable(method_fixture, input_data_fixture):
     """Test the variable method."""
     assert np.array_equal(method_fixture.variable("x"), np.array([1, 2, 3]))
     assert method_fixture.variable_list == ["x"]
 
-    method = Method([input_data_fixture, input_data_fixture], parameters_fixture)
+    method = Method([input_data_fixture, input_data_fixture])
     assert np.array_equal(method.variable("x"), np.array([[1, 2, 3], [1, 2, 3]]))
-
-
-def test_parameter(method_fixture):
-    """Test the parameter method."""
-    assert method_fixture.parameter("a") == 1
-    assert method_fixture.parameter_list == ["a"]
 
 
 def test_assign_outputs(method_fixture):

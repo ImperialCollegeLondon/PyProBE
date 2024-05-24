@@ -1,5 +1,5 @@
 """Module for the base Method class."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 import polars as pl
@@ -13,9 +13,7 @@ class Method:
 
     Attributes:
         input_data (Result): The input data to the method, a result object.
-        parameters (Dict[str, float]): The parameters for the method.
         variable_list (List[str]): The list of variables used in the method.
-        parameter_list (List[str]): The list of parameters used in the method.
         output_list (List[str]): The list of outputs from the method.
         output_dict (Dict[str, NDArray]): The dictionary of outputs from the method.
     """
@@ -23,18 +21,14 @@ class Method:
     def __init__(
         self,
         input_data: Result | List[Result],
-        parameters: Optional[Dict[str, float]] = None,
     ) -> None:
         """Initialize the Method object.
 
         Args:
             input_data (Result): The result object.
-            parameters (Dict[str, float]): The parameters for the method.
         """
         self.input_data = input_data
-        self.parameters = parameters
         self.variable_list: List[str] = []
-        self.parameter_list: List[str] = []
 
     def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
@@ -51,22 +45,6 @@ class Method:
             return self.input_data.data[name].to_numpy()
         else:
             return np.vstack([input.data[name].to_numpy() for input in self.input_data])
-
-    def parameter(self, name: str) -> Any:
-        """Return a parameter.
-
-        Args:
-            name (str): The name of the parameter.
-
-        Returns:
-            float: The parameter.
-        """
-        if self.parameters is None:
-            raise ValueError("No parameters provided to method.")
-        if name not in self.parameters:
-            raise KeyError(f"Parameter {name} not found in parameter dict provided.")
-        self.parameter_list.append(name)
-        return self.parameters[name]
 
     def assign_outputs(self, output_dict: Dict[str, NDArray[Any]]) -> Result:
         """Assign the outputs of the method.

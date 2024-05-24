@@ -45,7 +45,7 @@ def test_capacity(BreakinCycles_fixture):
 
 def test_dQdV(BreakinCycles_fixture):
     """Test the dQdV method."""
-    dQdV = BreakinCycles_fixture.cycle(0).charge(0).dQdV("feng_2020", {"deltaV": 0.006})
+    dQdV = BreakinCycles_fixture.cycle(0).charge(0).dQdV("feng_2020", 0.006)
     dQdV_data = dQdV.data.filter(pl.col("Voltage [V]") < 4)
     assert dQdV_data.columns == ["Voltage [V]", "IC [Ah/V]"]
     assert math.isclose(dQdV_data["IC [Ah/V]"].max(), 3.04952, rel_tol=1e-5)
