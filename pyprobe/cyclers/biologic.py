@@ -1,8 +1,11 @@
 """A module to load and process Biologic battery cycler data."""
 
 
+import glob
 import os
+import re
 from datetime import datetime
+from typing import List
 
 import polars as pl
 
@@ -39,6 +42,10 @@ def read_file(filepath: str) -> pl.DataFrame:
             dataframe = pl.read_csv(
                 filepath, skip_rows=n_header_lines - 1, separator="\t"
             )
+        case ".txt":
+            dataframe = pl.read_csv(
+                filepath, skip_rows=n_header_lines - 1, separator="\t"
+            )
         case _:
             raise ValueError(f"Unsupported file extension: {file_ext}")
 
@@ -47,6 +54,49 @@ def read_file(filepath: str) -> pl.DataFrame:
         (pl.col("time/s") * 1000000 + start).cast(pl.Datetime).alias("Date")
     )
     return dataframe
+
+
+def sort_key(filepath: str) -> int:
+    """Sort key for the files.
+
+    Args:
+        filepath (str): The path to the file.
+
+    Returns:
+        int: The integer in the filename.
+    """
+    match = re.search(r"\d+_MB", filepath)
+    return int(match.group()[:-3]) if match else 0
+
+
+def sort_files(file_list: List[str]) -> List[str]:
+    """Sort a list of files by the integer in the filename.
+
+    Args:
+        file_list: The list of files.
+
+    Returns:
+        list: The sorted list of files.
+    """
+    return sorted(file_list, key=sort_key)
+
+
+def read_all_files(filepath: str) -> pl.DataFrame:
+    """Read a battery cycler file into a DataFrame.
+
+    Args:
+        filepath: The path to the file.
+    """
+    files = glob.glob(filepath)
+    files = sort_files(files)
+    dataframes = [read_file(file) for file in files]
+
+    for i in range(1, len(dataframes)):
+        dataframes[i] = dataframes[i].with_columns(
+            pl.col("Ns") + dataframes[i - 1]["Ns"].max()
+        )
+
+    return pl.concat(dataframes, how="vertical")
 
 
 def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
@@ -62,7 +112,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     time = pl.col("time/s").alias("Time [s]")
 
     # Cycle and step
-    cycle = pl.col("counter inc.").alias("Cycle")
+    cycle = pl.col("cycle number").alias("Cycle")
     step = pl.col("Ns").alias("Step")
 
     # Measured data
@@ -100,4 +150,4 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     return dataframe
 
 
-biologic = BaseCycler(reader=read_file, processor=process_dataframe)
+biologic = BaseCycler(reader=read_all_files, processor=process_dataframe)
