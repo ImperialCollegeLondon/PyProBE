@@ -4,7 +4,7 @@ import pytest
 from pyprobe.filter import Filter
 
 
-def test_get_events(lazyframe_fixture):
+def test_get_events(lazyframe_fixture, benchmark):
     """Test the _get_events method."""
     result = Filter._get_events(lazyframe_fixture)
 
@@ -29,80 +29,120 @@ def test_get_events(lazyframe_fixture):
     assert result["_step_reversed"].max() == -1
 
 
-def test_step(BreakinCycles_fixture):
+def test_step(BreakinCycles_fixture, benchmark):
     """Test the step method."""
-    step = BreakinCycles_fixture.cycle(0).step(1)
-    assert (step.data["Step"] == 5).all()
+
+    def step():
+        return BreakinCycles_fixture.cycle(0).step(1).data
+
+    data = benchmark(step)
+    assert (data["Step"] == 5).all()
 
 
-def test_multi_step(BreakinCycles_fixture):
+def test_multi_step(BreakinCycles_fixture, benchmark):
     """Test the step method."""
-    step = BreakinCycles_fixture.cycle(0).step(range(1, 4))
-    assert (step.data["Step"].unique() == [5, 6, 7]).all()
+
+    def multi_step():
+        return BreakinCycles_fixture.cycle(0).step(range(1, 4)).data
+
+    data = benchmark(multi_step)
+    assert (data["Step"].unique() == [5, 6, 7]).all()
 
 
-def test_charge(BreakinCycles_fixture):
+def test_charge(BreakinCycles_fixture, benchmark):
     """Test the charge method."""
-    charge = BreakinCycles_fixture.cycle(0).charge(0)
-    assert (charge.data["Step"] == 6).all()
-    assert (charge.data["Current [A]"] > 0).all()
+
+    def charge():
+        return BreakinCycles_fixture.cycle(0).charge(0).data
+
+    data = benchmark(charge)
+    assert (data["Step"] == 6).all()
+    assert (data["Current [A]"] > 0).all()
 
 
-def test_discharge(BreakinCycles_fixture):
+def test_discharge(BreakinCycles_fixture, benchmark):
     """Test the discharge method."""
-    discharge = BreakinCycles_fixture.cycle(0).discharge(0)
-    assert (discharge.data["Step"] == 4).all()
-    assert (discharge.data["Current [A]"] < 0).all()
+
+    def discharge():
+        return BreakinCycles_fixture.cycle(0).discharge(0).data
+
+    data = benchmark(discharge)
+    assert (data["Step"] == 4).all()
+    assert (data["Current [A]"] < 0).all()
 
     # test invalid input
     with pytest.raises(ValueError):
         BreakinCycles_fixture.cycle(6).data
 
 
-def test_chargeordischarge(BreakinCycles_fixture):
+def test_chargeordischarge(BreakinCycles_fixture, benchmark):
     """Test the chargeordischarge method."""
-    charge = BreakinCycles_fixture.cycle(0).chargeordischarge(0)
-    assert (charge.data["Step"] == 4).all()
-    assert (charge.data["Current [A]"] < 0).all()
 
-    discharge = BreakinCycles_fixture.cycle(0).chargeordischarge(1)
-    assert (discharge.data["Step"] == 6).all()
-    assert (discharge.data["Current [A]"] > 0).all()
+    def chargeordischarge():
+        return BreakinCycles_fixture.cycle(0).chargeordischarge(0).data
+
+    data = benchmark(chargeordischarge)
+    assert (data["Step"] == 4).all()
+    assert (data["Current [A]"] < 0).all()
+
+    data = BreakinCycles_fixture.cycle(0).chargeordischarge(1).data
+    assert (data["Step"] == 6).all()
+    assert (data["Current [A]"] > 0).all()
 
 
-def test_rest(BreakinCycles_fixture):
+def test_rest(BreakinCycles_fixture, benchmark):
     """Test the rest method."""
-    rest = BreakinCycles_fixture.cycle(0).rest(0)
-    assert (rest.data["Step"] == 5).all()
-    assert (rest.data["Current [A]"] == 0).all()
 
-    rest = BreakinCycles_fixture.cycle(0).rest(1)
-    assert (rest.data["Step"] == 7).all()
-    assert (rest.data["Current [A]"] == 0).all()
+    def rest():
+        return BreakinCycles_fixture.cycle(0).rest(0).data
+
+    data = benchmark(rest)
+    assert (data["Step"] == 5).all()
+    assert (data["Current [A]"] == 0).all()
+
+    data = BreakinCycles_fixture.cycle(0).rest(1).data
+    assert (data["Step"] == 7).all()
+    assert (data["Current [A]"] == 0).all()
 
 
-def test_negative_cycle_index(BreakinCycles_fixture):
+def test_negative_cycle_index(BreakinCycles_fixture, benchmark):
     """Test the negative index."""
-    cycle = BreakinCycles_fixture.cycle(-1)
-    assert (cycle.data["Cycle"] == 5).all()
-    assert (cycle.data["Step"].unique() == [4, 5, 6, 7]).all()
+
+    def negative_cycle_index():
+        return BreakinCycles_fixture.cycle(-1).data
+
+    data = benchmark(negative_cycle_index)
+    assert (data["Cycle"] == 5).all()
+    assert (data["Step"].unique() == [4, 5, 6, 7]).all()
 
 
-def test_negative_step_index(BreakinCycles_fixture):
+def test_negative_step_index(BreakinCycles_fixture, benchmark):
     """Test the negative index."""
-    step = BreakinCycles_fixture.cycle(0).step(-1)
-    assert (step.data["Step"] == 7).all()
+
+    def negative_step_index():
+        return BreakinCycles_fixture.cycle(0).step(-1).data
+
+    data = benchmark(negative_step_index)
+    assert (data["Step"] == 7).all()
 
 
-def test_cycle(BreakinCycles_fixture):
+def test_cycle(BreakinCycles_fixture, benchmark):
     """Test the cycle method."""
-    cycle = BreakinCycles_fixture.cycle(0)
-    assert (cycle.data["Cycle"] == 1).all()
-    assert (cycle.data["Step"].unique() == [4, 5, 6, 7]).all()
+
+    def cycle():
+        return BreakinCycles_fixture.cycle(0).data
+
+    data = benchmark(cycle)
+    assert (data["Cycle"] == 1).all()
+    assert (data["Step"].unique() == [4, 5, 6, 7]).all()
 
 
-def test_all_steps(BreakinCycles_fixture):
+def test_all_steps(BreakinCycles_fixture, benchmark):
     """Test the all_steps method."""
-    all_steps = BreakinCycles_fixture.cycle(0).step()
-    assert (all_steps.data["Cycle"] == 1).all()
-    assert (all_steps.data["Step"].unique() == [4, 5, 6, 7]).all()
+
+    def all_steps():
+        return BreakinCycles_fixture.cycle(0).step().data
+
+    data = benchmark(all_steps)
+    assert (data["Cycle"] == 1).all()
+    assert (data["Step"].unique() == [4, 5, 6, 7]).all()
