@@ -61,12 +61,16 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     assert_frame_equal(expected_dataframe, saved_dataframe)
 
 
-def test_add_procedure(cell_instance, procedure_fixture):
+def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     """Test the add_procedure method."""
     input_path = "tests/sample_data_neware"
     file_name = "sample_data_neware.parquet"
     title = "Test"
-    cell_instance.add_procedure(title, input_path, file_name)
+
+    def add_procedure():
+        return cell_instance.add_procedure(title, input_path, file_name)
+
+    benchmark(add_procedure)
     assert_frame_equal(cell_instance.procedure[title].data, procedure_fixture.data)
 
 

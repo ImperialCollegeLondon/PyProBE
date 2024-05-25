@@ -46,13 +46,18 @@ def test_dQdV(BreakinCycles_fixture):
     assert math.isclose(dQdV_data["IC [Ah/V]"].max(), 3.04952, rel_tol=1e-5)
 
 
-def test_set_SOC(BreakinCycles_fixture):
+def test_set_SOC(BreakinCycles_fixture, benchmark):
     """Test the set_SOC method."""
     with_charge_specified = BreakinCycles_fixture
+
     with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
 
     without_charge_specified = BreakinCycles_fixture
-    without_charge_specified.set_SOC(0.04)
+
+    def set_SOC():
+        return without_charge_specified.set_SOC(0.04)
+
+    benchmark(set_SOC)
 
     assert (
         with_charge_specified.data["SOC"] == without_charge_specified.data["SOC"]
