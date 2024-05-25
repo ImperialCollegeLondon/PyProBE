@@ -1,6 +1,6 @@
 """Module for simple OCV fitting."""
 
-from typing import Any, Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,147 +13,222 @@ from pyprobe.rawdata import RawData
 class Simple_OCV_fit(Method):
     """A method for fitting OCV curves."""
 
-    def __init__(self, rawdata: RawData, parameters: Dict[str, Any]):
+    def __init__(
+        self,
+        rawdata: RawData,
+        x_ne: NDArray[np.float64],
+        x_pe: NDArray[np.float64],
+        ocp_ne: NDArray[np.float64],
+        ocp_pe: NDArray[np.float64],
+        x_guess: NDArray[np.float64],
+    ):
         """Initialize the Simple_OCV_fit method.
 
         Args:
             rawdata (Result): The input data to the method.
-            parameters (Dict[str, float]): The parameters for the method.
+            x_ne (NDArray[np.float64]): The anode stoichiometry data.
+            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+            ocp_ne (NDArray[np.float64]): The anode OCP data.
+            ocp_pe (NDArray[np.float64]): The cathode OCP data.
+            x_guess (NDArray[np.float64]): The initial guess for the fit.
         """
-        super().__init__(rawdata, parameters)
+        super().__init__(rawdata)
         self.voltage = self.variable("Voltage [V]")
         self.capacity = self.variable("Capacity [Ah]")
-        self.ne_data = self.variable("Anode Data")
-        self.pe_data = self.variable("Cathode Data")
-        self.z_guess = self.variable("Initial Guess")
-        self.define_outputs(
-            [
-                "Cathode Stoichiometry Limits",
-                "Anode Stoichiometry Limits",
-                "Cell Capacity" "Cathode Capacity",
-                "Anode Capacity",
-                "Stoichiometry Offset",
-            ]
+        self.x_ne = x_ne
+        self.x_pe = x_pe
+        self.ocp_ne = ocp_ne
+        self.ocp_pe = ocp_pe
+        self.x_guess = x_guess
+
+        (
+            self.x_pe_lo,
+            self.x_pe_hi,
+            self.x_ne_lo,
+            self.x_ne_hi,
+            self.cell_capacity,
+            self.pe_capacity,
+            self.ne_capacity,
+            self.li_inventory,
+        ) = self.fit_ocv(
+            self.capacity,
+            self.voltage,
+            self.x_pe,
+            self.ocp_pe,
+            self.x_ne,
+            self.ocp_ne,
+            self.x_guess,
         )
-        self.assign_outputs(
-            self.fit_ocv(
-                self.capacity, self.voltage, self.ne_data, self.pe_data, self.z_guess
-            )
+
+        self.stoichiometry_limits = self.assign_outputs(
+            {
+                "x_pe low SOC": np.array([self.x_pe_lo]),
+                "x_pe high SOC": np.array([self.x_pe_hi]),
+                "x_ne low SOC": np.array([self.x_ne_lo]),
+                "x_ne high SOC": np.array([self.x_ne_hi]),
+                "Cell Capacity": np.array([self.cell_capacity]),
+                "Cathode Capacity": np.array([self.pe_capacity]),
+                "Anode Capacity": np.array([self.ne_capacity]),
+                "Li Inventory": np.array([self.li_inventory]),
+            }
         )
+        SOC = np.linspace(0, 1, 10000)
+        OCV = self.calc_full_cell_OCV(
+            SOC,
+            self.x_pe_lo,
+            self.x_pe_hi,
+            self.x_ne_lo,
+            self.x_ne_hi,
+            self.x_pe,
+            self.ocp_pe,
+            self.x_ne,
+            self.ocp_ne,
+        )
+        self.fitted_OCV = self.assign_outputs({"SOC": SOC, "Voltage [V]": OCV})
 
     @classmethod
     def fit_ocv(
         cls,
         capacity: NDArray[np.float64],
         voltage: NDArray[np.float64],
-        ne_data: NDArray[np.float64],
-        pe_data: NDArray[np.float64],
-        z_guess: List[float],
-    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], float, float, float, float,]:
+        x_pe: NDArray[np.float64],
+        ocp_pe: NDArray[np.float64],
+        x_ne: NDArray[np.float64],
+        ocp_ne: NDArray[np.float64],
+        x_guess: List[float],
+    ) -> Tuple[float, float, float, float, float, float, float, float,]:
         """Fit the OCV curve.
 
         Args:
             capacity (NDArray[np.float64]): The capacity data.
             voltage (NDArray[np.float64]): The voltage data.
-            ne_data (NDArray[np.float64]): The anode half cell data.
-            pe_data (NDArray[np.float64]): The cathode half cell data.
-            z_guess (List[float]): The initial guess for the fit.
+            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+            ocp_pe (NDArray[np.float64]): The cathode OCP data.
+            x_ne (NDArray[np.float64]): The anode stoichiometry data.
+            ocp_ne (NDArray[np.float64]): The anode OCP data.
+            x_guess (List[float]): The initial guess for the fit.
+
+        Returns:
+            Tuple[float, float, float, float, float, float, float, float]:
+                - float: The cathode stoihiometry at lowest cell SOC.
+                - float: The cathode stoihiometry at highest cell SOC.
+                - float: The anode stoihiometry at lowest cell SOC.
+                - float: The anode stoihiometry at highest cell SOC.
+                - float: The cell capacity.
+                - float: The cathode capacity.
+                - float: The anode capacity.
+                - float: The lithium inventory.
         """
         cell_capacity = np.ptp(capacity)
-        SOC = capacity / cell_capacity
+        SOC = (capacity - capacity.min()) / cell_capacity
 
         def objective_func(
             SOC: NDArray[np.float64],
-            z_pe_lo: float,
-            z_pe_hi: float,
-            z_ne_lo: float,
-            z_ne_hi: float,
+            x_pe_lo: float,
+            x_pe_hi: float,
+            x_ne_lo: float,
+            x_ne_hi: float,
         ) -> NDArray[np.float64]:
-            return cls.calc_full_cell_OCV(
-                SOC, z_pe_lo, z_pe_hi, z_ne_lo, z_ne_hi, ne_data, pe_data
+            modelled_OCV = cls.calc_full_cell_OCV(
+                SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
             )
+            return modelled_OCV
 
-        z_out = curve_fit(
+        x_out = curve_fit(
             objective_func,
             SOC,
             voltage,
-            p0=z_guess,
+            p0=x_guess,
             bounds=([0, 0, 0, 0], [1, 1, 1, 1]),
         )
-        pe_stoich_limits = np.array([z_out[0][0], z_out[0][1]])
-        ne_stoich_limits = np.array([z_out[0][2], z_out[0][3]])
+        x_pe_lo_out = x_out[0][0]
+        x_pe_hi_out = x_out[0][1]
+        x_ne_lo_out = x_out[0][2]
+        x_ne_hi_out = x_out[0][3]
 
-        pe_capacity, ne_capacity, stoich_offset = cls.calc_electrode_capacities(
-            pe_stoich_limits, ne_stoich_limits, cell_capacity
+        pe_capacity, ne_capacity, li_inventory = cls.calc_electrode_capacities(
+            x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_hi_out, cell_capacity
         )
-
         return (
-            pe_stoich_limits,
-            ne_stoich_limits,
+            x_pe_lo_out,
+            x_pe_hi_out,
+            x_ne_lo_out,
+            x_ne_hi_out,
             cell_capacity,
             pe_capacity,
             ne_capacity,
-            stoich_offset,
+            li_inventory,
         )
 
     @staticmethod
     def calc_electrode_capacities(
-        pe_stoich_limits: NDArray[np.float64],
-        ne_stoich_limits: NDArray[np.float64],
+        x_pe_lo: float,
+        x_pe_hi: float,
+        x_ne_lo: float,
+        x_ne_hi: float,
         cell_capacity: float,
     ) -> Tuple[float, float, float]:
         """Calculate the electrode capacities.
 
         Args:
-            pe_stoich_limits (NDArray[np.float64]): The cathode stoichiometry limits.
-            ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
-            cell_capacity (NDArray[np.float64]): The cell capacity.
+            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
+            x_ne_lo (float): The anode stoichiometry at lowest cell SOC.
+            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
 
         Returns:
             Tuple[float, float, float]:
                 - NDArray: The cathode capacity.
                 - NDArray: The anode capacity.
-                - NDArray: The stoichiometry offset.
+                - NDArray: The lithium inventory.
         """
-        pe_capacity = cell_capacity / (pe_stoich_limits[1] - pe_stoich_limits[0])
-        ne_capacity = cell_capacity / (ne_stoich_limits[1] - ne_stoich_limits[0])
-        stoich_offset = (pe_stoich_limits[0] * pe_capacity) - (
-            ne_stoich_limits[0] * ne_capacity
-        )
-
-        return pe_capacity, ne_capacity, stoich_offset
+        pe_capacity = cell_capacity / (x_pe_lo - x_pe_hi)
+        ne_capacity = cell_capacity / (x_ne_hi - x_ne_lo)
+        li_inventory = (pe_capacity * x_pe_lo) + (ne_capacity * x_ne_lo)
+        return pe_capacity, ne_capacity, li_inventory
 
     @staticmethod
     def calc_full_cell_OCV(
         SOC: NDArray[np.float64],
-        z_pe_lo: NDArray[np.float64],
-        z_pe_hi: NDArray[np.float64],
-        z_ne_lo: NDArray[np.float64],
-        z_ne_hi: NDArray[np.float64],
-        ne_data: NDArray[np.float64],
-        pe_data: NDArray[np.float64],
+        x_pe_lo: NDArray[np.float64],
+        x_pe_hi: NDArray[np.float64],
+        x_ne_lo: NDArray[np.float64],
+        x_ne_hi: NDArray[np.float64],
+        x_pe: NDArray[np.float64],
+        ocp_pe: NDArray[np.float64],
+        x_ne: NDArray[np.float64],
+        ocp_ne: NDArray[np.float64],
     ) -> NDArray[np.float64]:
         """Calculate the full cell OCV.
 
         Args:
             SOC (NDArray[np.float64]): The full cell SOC.
-            z_pe_lo (float): The cathode upper stoichiomteric limit.
-            z_pe_hi (float): The cathode lower stoichiomteric limit.
-            z_ne_lo (float): The anode upper stoichiomteric limit.
-            z_ne_hi (float): The anode lower stoichiomteric limit.
-            ne_data (NDArray[np.float64]): The anode half cell data.
-            pe_data (NDArray[np.float64]): The cathode half cell data.
+            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
+            x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
+            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+            ocp_pe (NDArray[np.float64]): The cathode OCP data.
+            x_ne (NDArray[np.float64]): The anode stoichiometry data.
+            ocp_ne (NDArray[np.float64]): The anode OCP data.
+
+        Returns:
+            NDArray: The full cell OCV.
         """
         n_points = 10000
-        # make vectors between stoichiometry limits
-        z_ne = np.linspace(z_ne_lo, z_ne_hi, n_points)
-        z_pe = np.linspace(z_pe_lo, z_pe_hi, n_points)
+        # make vectors between stoichiometry limits during charge
+        z_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
+        z_pe = np.linspace(
+            x_pe_lo, x_pe_hi, n_points
+        )  # flip the cathode limits to match charge direction
+
         # make an SOC vector with the same number of points
         SOC_sampling = np.linspace(0, 1, n_points)
 
         # interpolate the real electrode OCP data with the created stoichiometry vectors
-        OCP_ne = np.interp(z_ne, ne_data[:, 0], ne_data[:, 1])
-        OCP_pe = np.interp(z_pe, pe_data[:, 0], pe_data[:, 1])
+        OCP_ne = np.interp(z_ne, x_ne, ocp_ne)
+        OCP_pe = np.interp(z_pe, x_pe, ocp_pe)
+        # OCP_pe = np.flip(OCP_pe) # flip the cathode OCP to match charge direction
 
         # interpolate the final OCV curve with the original SOC vector
         OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)

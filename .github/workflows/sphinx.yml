@@ -2,8 +2,6 @@ name: "Sphinx: Render docs"
 
 on:
   pull_request:
-    types:
-      - ready_for_review
     branches:
       - main
     paths:
@@ -12,13 +10,14 @@ on:
 
 jobs:
   build:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v4
       with:
         python-version: "3.11"
 

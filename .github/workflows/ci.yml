@@ -1,8 +1,6 @@
 name: "Build and test"
 on:
   pull_request:
-    types:
-      - ready_for_review
     branches:
       - main
   workflow_dispatch:
@@ -12,17 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: "3.11"
       - uses: pre-commit/action@v3.0.0
   test:
     needs: qa
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: "3.11"
       - run: pip install -r requirements-dev.txt
       - run: pytest tests

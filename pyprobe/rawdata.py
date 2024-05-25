@@ -1,5 +1,5 @@
 """A module for the RawData class."""
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import polars as pl
 
@@ -66,7 +66,7 @@ class RawData(Result):
         """
         return abs(self.data["Capacity [Ah]"].max() - self.data["Capacity [Ah]"].min())
 
-    def dQdV(self, method: str, parameters: Dict[str, float]) -> Result:
+    def dQdV(self, method: str, *parameters: Any) -> Result:
         """Calculate the dQdV curves for the experiment.
 
         Args:
@@ -81,7 +81,7 @@ class RawData(Result):
                 "feng_2020": Feng2020,
             }
         )
-        return method_dict[method](self, parameters).result
+        return method_dict[method](self, *parameters).dQdV
 
     def set_SOC(
         self,
@@ -103,7 +103,7 @@ class RawData(Result):
                         + reference_capacity
                     )
                     / reference_capacity
-                ).alias("SOC [%]")
+                ).alias("SOC")
             )
         else:
             self.data
@@ -119,6 +119,5 @@ class RawData(Result):
                 (
                     (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
                     / reference_capacity
-                ).alias("SOC [%]")
+                ).alias("SOC")
             )
-        print(self._data["SOC [%]"].head(5))

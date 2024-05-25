@@ -1,5 +1,5 @@
 """Module for the Feng et al. (2020) method for ICA."""
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,21 +11,21 @@ from pyprobe.result import Result
 class Feng2020(Method):
     """A method for calculating the incremental capacity analysis."""
 
-    def __init__(self, rawdata: Result, parameters: Dict[str, float]):
+    def __init__(self, rawdata: Result, deltaV: float):
         """Initialize the Feng2020 method.
 
         Args:
             rawdata (Result): The input data to the method.
-            parameters (Dict[str, float]): The parameters for the method.
+            deltaV (float): The voltage step size.
         """
-        super().__init__(rawdata, parameters)
+        super().__init__(rawdata)
         self.voltage = self.variable("Voltage [V]")
-        self.deltaV = self.parameter("deltaV")
-        self.define_outputs(["Voltage [V]", "IC [Ah/V]"])
-        self.assign_outputs(self.dQdV(self.voltage, self.deltaV))
+        self.deltaV = deltaV
+        v_points, IC = self.calculate_dQdV(self.voltage, self.deltaV)
+        self.dQdV = self.assign_outputs({"Voltage [V]": v_points, "IC [Ah/V]": IC})
 
     @classmethod
-    def dQdV(
+    def calculate_dQdV(
         cls, voltage: NDArray[np.float64], deltaV: float
     ) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Calculate the normalised incremental capacity of the step.
