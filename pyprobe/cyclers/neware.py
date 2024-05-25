@@ -2,6 +2,8 @@
 
 import glob
 import os
+import re
+from typing import List
 
 import polars as pl
 
@@ -9,7 +11,7 @@ from pyprobe.cyclers.basecycler import BaseCycler
 from pyprobe.unitconverter import UnitConverter
 
 
-def read_formats(filepath: str) -> pl.DataFrame:
+def read_file(filepath: str) -> pl.DataFrame:
     """Read a battery cycler file into a DataFrame.
 
     Args:
@@ -29,14 +31,40 @@ def read_formats(filepath: str) -> pl.DataFrame:
             raise ValueError(f"Unsupported file extension: {file_ext}")
 
 
-def read_file(filepath: str) -> pl.DataFrame:
+def sort_key(filepath: str) -> int:
+    """Sort key for the files.
+
+    Args:
+        filepath (str): The path to the file.
+
+    Returns:
+        int: The integer in the filename.
+    """
+    match = re.search(r"(\d+)(?=\.)", filepath)
+    return int(match.group()) if match else 0
+
+
+def sort_files(file_list: List[str]) -> List[str]:
+    """Sort a list of files by the integer in the filename.
+
+    Args:
+        file_list (List[str]): The list of files.
+
+    Returns:
+        List[str]: The sorted list of files.
+    """
+    return sorted(file_list, key=sort_key)
+
+
+def read_all_files(filepath: str) -> pl.DataFrame:
     """Read a battery cycler file into a DataFrame.
 
     Args:
         filepath (str): The path to the file.
     """
     files = glob.glob(filepath)
-    dataframes = [read_formats(file) for file in files]
+    files = sort_files(files)
+    dataframes = [read_file(file) for file in files]
     return pl.concat(dataframes, how="vertical")
 
 
@@ -53,7 +81,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     if dataframe.dtypes[dataframe.columns.index("Date")] != pl.Datetime:
         date = pl.col("Date").str.to_datetime().alias("Date")
         dataframe = dataframe.with_columns(date)
-    dataframe = dataframe.sort("Date")
+
     # Time
     time = (
         (pl.col("Date").diff().dt.total_microseconds().cum_sum() / 1e6)
@@ -101,4 +129,4 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     return dataframe
 
 
-neware = BaseCycler(read_file, process_dataframe)
+neware = BaseCycler(read_all_files, process_dataframe)

@@ -4,7 +4,12 @@ from datetime import datetime
 import polars as pl
 import polars.testing as pl_testing
 
-from pyprobe.cyclers.neware import process_dataframe, read_file
+from pyprobe.cyclers.neware import (
+    process_dataframe,
+    read_all_files,
+    read_file,
+    sort_files,
+)
 
 
 def test_read_file():
@@ -15,9 +20,26 @@ def test_read_file():
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
 
+def test_sort_files():
+    """Test the sort_files method."""
+    file_list = [
+        "test_2_experiment_3_file_1.xlsx",
+        "test_2_experiment_3_file_3.xlsx",
+        "test_2_experiment_3_file.xlsx",
+        "test_2_experiment_3_file_2.xlsx",
+    ]
+    sorted_files = sort_files(file_list)
+    assert sorted_files == [
+        "test_2_experiment_3_file.xlsx",
+        "test_2_experiment_3_file_1.xlsx",
+        "test_2_experiment_3_file_2.xlsx",
+        "test_2_experiment_3_file_3.xlsx",
+    ]
+
+
 def test_read_multiple_files():
     """Test the read_file method with multiple files."""
-    unprocessed_dataframe = read_file(
+    unprocessed_dataframe = read_all_files(
         "tests/sample_data_neware/sample_data_neware*.xlsx"
     )
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
@@ -27,7 +49,7 @@ def test_read_and_process_file(benchmark):
     """Test the full process of reading and processing a file."""
 
     def read_and_process():
-        unprocessed_dataframe = read_file(
+        unprocessed_dataframe = read_all_files(
             "tests/sample_data_neware/sample_data_neware.xlsx"
         )
         processed_dataframe = process_dataframe(unprocessed_dataframe)
@@ -47,7 +69,7 @@ def test_read_and_process_file(benchmark):
     assert isinstance(processed_dataframe, pl.DataFrame)
     all(col in processed_dataframe.columns for col in expected_columns)
 
-    unprocessed_dataframe = read_file(
+    unprocessed_dataframe = read_all_files(
         "tests/sample_data_neware/sample_data_neware*.xlsx"
     )
     processed_dataframe = process_dataframe(unprocessed_dataframe)
@@ -60,22 +82,22 @@ def test_process_dataframe():
     dataframe = pl.DataFrame(
         {
             "Date": [
-                datetime(2022, 2, 2, 2, 2, 2),
-                datetime(2022, 2, 2, 2, 2, 3),
                 datetime(2022, 2, 2, 2, 2, 0),
                 datetime(2022, 2, 2, 2, 2, 1),
+                datetime(2022, 2, 2, 2, 2, 2),
+                datetime(2022, 2, 2, 2, 2, 3),
             ],
             "Cycle Index": [1, 1, 1, 1],
-            "Step Index": [3, 4, 1, 2],
-            "Current(mA)": [3, 4, 1, 2],
-            "Voltage(V)": [6, 7, 4, 5],
+            "Step Index": [1, 2, 3, 4],
+            "Current(mA)": [1, 2, 3, 4],
+            "Voltage(V)": [4, 5, 6, 7],
             "Chg. Cap.(Ah)": [
                 0,
-                0,
-                0,
                 20,
+                0,
+                0,
             ],
-            "DChg. Cap.(Ah)": [10, 20, 0, 0],
+            "DChg. Cap.(Ah)": [0, 0, 10, 20],
         }
     )
     processed_dataframe = process_dataframe(dataframe)
