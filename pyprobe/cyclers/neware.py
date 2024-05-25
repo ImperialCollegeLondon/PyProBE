@@ -1,5 +1,6 @@
 """A module to load and process Neware battery cycler data."""
 
+import glob
 import os
 
 import polars as pl
@@ -8,11 +9,14 @@ from pyprobe.cyclers.basecycler import BaseCycler
 from pyprobe.unitconverter import UnitConverter
 
 
-def read_file(filepath: str) -> pl.DataFrame:
+def read_formats(filepath: str) -> pl.DataFrame:
     """Read a battery cycler file into a DataFrame.
 
     Args:
-        filepath: The path to the file.
+        filepath (str): The path to the file.
+
+    Returns:
+        pl.DataFrame: The DataFrame.
     """
     file = os.path.basename(filepath)
     file_ext = os.path.splitext(file)[1]
@@ -23,6 +27,17 @@ def read_file(filepath: str) -> pl.DataFrame:
             return pl.read_csv(filepath)
         case _:
             raise ValueError(f"Unsupported file extension: {file_ext}")
+
+
+def read_file(filepath: str) -> pl.DataFrame:
+    """Read a battery cycler file into a DataFrame.
+
+    Args:
+        filepath (str): The path to the file.
+    """
+    files = glob.glob(filepath)
+    dataframes = [read_formats(file) for file in files]
+    return pl.concat(dataframes, how="vertical")
 
 
 def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
@@ -38,7 +53,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     if dataframe.dtypes[dataframe.columns.index("Date")] != pl.Datetime:
         date = pl.col("Date").str.to_datetime().alias("Date")
         dataframe = dataframe.with_columns(date)
-
+    dataframe = dataframe.sort("Date")
     # Time
     time = (
         (pl.col("Date").diff().dt.total_microseconds().cum_sum() / 1e6)
