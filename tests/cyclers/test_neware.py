@@ -45,7 +45,7 @@ def test_read_multiple_files():
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
 
-def test_read_and_process_file(benchmark):
+def test_read_and_process(benchmark):
     """Test the full process of reading and processing a file."""
 
     def read_and_process():

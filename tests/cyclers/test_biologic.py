@@ -59,8 +59,8 @@ def test_read_and_process(benchmark):
             pl.col("Date").diff().fill_null(strategy="zero").alias("dd"),
         ]
     )
-    assert all(processed_dataframe.select((pl.col("dt") < 0)).to_numpy() is False)
-    assert all(processed_dataframe.select((pl.col("dd") < 0)).to_numpy() is False)
+    assert not any(processed_dataframe.select(pl.col("dt") < 0).to_numpy())
+    assert not any(processed_dataframe.select(pl.col("dd") < 0).to_numpy())
 
 
 def test_process_dataframe():
