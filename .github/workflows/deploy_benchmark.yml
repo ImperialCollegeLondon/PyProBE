@@ -1,0 +1,33 @@
+name: "Deploy benchmark results"
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+    # deployments permission to deploy GitHub pages website
+    deployments: write
+    # contents permission to update benchmark contents in gh-pages branch
+    contents: write
+
+jobs:
+    benchmark:
+        name: Performance regression check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v4
+              with:
+                python-version: "3.11"
+            - run: pip install -r requirements-dev.txt
+            - run: pytest tests --benchmark-only --benchmark-json output.json
+            - name: Store benchmark result
+              uses: benchmark-action/github-action-benchmark@v1
+              with:
+                name: Python Benchmark with pytest-benchmark
+                tool: 'pytest'
+                output-file-path: output.json
+                # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
+                github-token: ${{ secrets.GITHUB_TOKEN }}
+                # Push and deploy GitHub pages branch automatically
+                auto-push: true
