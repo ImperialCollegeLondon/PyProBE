@@ -30,7 +30,6 @@ dev = [
     "sphinx",
     "sphinx-rtd-theme",
     "types-PyYAML",
-    "asv"
 ]
 
 [tool.mypy]
