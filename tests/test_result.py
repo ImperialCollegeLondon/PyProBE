@@ -1,6 +1,7 @@
 """Tests for the result module."""
 
 import polars as pl
+import polars.testing as pl_testing
 import pytest
 
 from pyprobe.result import Result
@@ -24,7 +25,14 @@ def test_data(Result_fixture):
     assert isinstance(Result_fixture._data, pl.LazyFrame)
     assert isinstance(Result_fixture.data, pl.DataFrame)
     assert isinstance(Result_fixture._data, pl.DataFrame)
-    pl.testing.assert_frame_equal(Result_fixture.data, Result_fixture._data)
+    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture._data)
+
+
+def test_check_units(Result_fixture):
+    """Test the check_units method."""
+    assert "Current [mA]" not in Result_fixture.data.columns
+    Result_fixture.check_units("Current [mA]")
+    assert "Current [mA]" in Result_fixture.data.columns
 
 
 def test_print(Result_fixture, capsys):

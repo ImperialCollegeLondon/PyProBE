@@ -50,6 +50,6 @@ class Result:
         Args:
             column_name (str): The column name to convert to.
         """
-        if column_name not in self.data.columns:
+        if column_name not in self._data.columns:
             instruction = UnitConverter(column_name).from_default()
-            self._data = self.data.with_columns(instruction)
+            self._data = self._data.with_columns(instruction)
