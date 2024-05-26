@@ -8,10 +8,6 @@ alabaster==0.7.16
     # via sphinx
 altair==5.3.0
     # via streamlit
-asv==0.6.3
-    # via PyProBE (pyproject.toml)
-asv-runner==0.2.1
-    # via asv
 attrs==23.2.0
     # via
     #   jsonschema
@@ -24,9 +20,7 @@ black==24.3.0
 blinker==1.8.2
     # via streamlit
 build==1.2.1
-    # via
-    #   asv
-    #   pip-tools
+    # via pip-tools
 cachetools==5.3.3
     # via streamlit
 certifi==2024.2.2
@@ -80,8 +74,6 @@ idna==3.7
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.1.0
-    # via asv-runner
 iniconfig==2.0.0
     # via pytest
 isort==5.13.2
@@ -93,8 +85,6 @@ jinja2==3.1.4
     #   sphinx
 joblib==1.4.0
     # via scikit-learn
-json5==0.9.25
-    # via asv
 jsonschema==4.22.0
     # via
     #   altair
@@ -178,6 +168,8 @@ pre-commit==3.7.0
     # via PyProBE (pyproject.toml)
 protobuf==4.25.3
     # via streamlit
+py-cpuinfo==9.0.0
+    # via pytest-benchmark
 pyarrow==15.0.2
     # via
     #   fastexcel
@@ -194,8 +186,6 @@ pygments==2.17.2
     # via
     #   rich
     #   sphinx
-pympler==1.0.1
-    # via asv
 pyparsing==3.1.2
     # via matplotlib
 pyproject-hooks==1.0.0
@@ -205,9 +195,12 @@ pyproject-hooks==1.0.0
 pytest==8.1.1
     # via
     #   PyProBE (pyproject.toml)
+    #   pytest-benchmark
     #   pytest-cov
     #   pytest-mock
     #   pytest-mypy
+pytest-benchmark==4.0.0
+    # via PyProBE (pyproject.toml)
 pytest-cov==5.0.0
     # via PyProBE (pyproject.toml)
 pytest-mock==3.14.0
@@ -223,7 +216,6 @@ pytz==2024.1
 pyyaml==6.0.1
     # via
     #   PyProBE (pyproject.toml)
-    #   asv
     #   pre-commit
 referencing==0.35.1
     # via
@@ -274,8 +266,6 @@ sphinxcontrib-serializinghtml==1.1.10
     # via sphinx
 streamlit==1.34.0
     # via PyProBE (pyproject.toml)
-tabulate==0.9.0
-    # via asv
 tenacity==8.2.3
     # via
     #   plotly
@@ -284,8 +274,6 @@ threadpoolctl==3.4.0
     # via scikit-learn
 toml==0.10.2
     # via streamlit
-tomli==2.0.1
-    # via asv
 toolz==0.12.1
     # via altair
 tornado==6.4
@@ -305,15 +293,11 @@ tzdata==2024.1
 urllib3==2.2.1
     # via requests
 virtualenv==20.25.1
-    # via
-    #   asv
-    #   pre-commit
+    # via pre-commit
 wheel==0.43.0
     # via pip-tools
 xlsx2csv==0.8.2
     # via PyProBE (pyproject.toml)
-zipp==3.18.1
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

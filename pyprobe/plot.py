@@ -128,6 +128,18 @@ class Plot:
         else:
             return [0, 1]  # default range
 
+    def run_data_checks(self, result: "Result", x: str, y: str) -> None:
+        """Run data checks before plotting.
+
+        Args:
+            result (Result): The result object.
+            x (str): The x-axis column.
+            y (str): The y-axis column.
+        """
+        result.check_units(x)
+        result.check_units(y)
+        self.check_limits(result.data[x], result.data[y])
+
     def add_line(
         self,
         result: "Result",
@@ -154,7 +166,7 @@ class Plot:
         if label is None:
             label = str(result.info["Name"])
 
-        self.check_limits(result.data[x], result.data[y])
+        self.run_data_checks(result, x, y)
         self.xaxis_title = x
         self.yaxis_title = y
 
@@ -195,7 +207,9 @@ class Plot:
             color = str(result.info["color"])
         if label is None:
             label = str(result.info["Name"])
-        self.check_limits(result.data[x], result.data[y], secondary_y=True)
+
+        self.run_data_checks(result, x, y)
+
         self._fig.add_trace(
             go.Scatter(
                 x=result.data[x],
@@ -236,7 +250,7 @@ class Plot:
             color_by (str): The column to color by.
             colormap (str): The colormap to use.
         """
-        self.check_limits(result.data[x], result.data[y])
+        self.run_data_checks(result, x, y)
         self.xaxis_title = x
         self.yaxis_title = y
 

@@ -6,7 +6,6 @@ import polars as pl
 import pytest
 
 from pyprobe.rawdata import RawData
-from pyprobe.units import Units
 
 
 @pytest.fixture
@@ -29,12 +28,8 @@ def test_data(RawData_fixture):
     assert isinstance(RawData_fixture._data, pl.DataFrame)
     pl.testing.assert_frame_equal(RawData_fixture.data, RawData_fixture._data)
 
-    unit_dict = Units.unit_dict
-    for quantity in unit_dict:
-        for unit in unit_dict[quantity].units:
-            assert f"{quantity} [{unit}]" in RawData_fixture.data.columns
-            if unit_dict[quantity].zero_reference:
-                assert RawData_fixture.data[f"{quantity} [{unit}]"][0] == 0
+    for column in ["Capacity [Ah]", "Time [s]"]:
+        assert RawData_fixture.data[column][0] == 0
 
 
 def test_capacity(BreakinCycles_fixture):
@@ -51,13 +46,18 @@ def test_dQdV(BreakinCycles_fixture):
     assert math.isclose(dQdV_data["IC [Ah/V]"].max(), 3.04952, rel_tol=1e-5)
 
 
-def test_set_SOC(BreakinCycles_fixture):
+def test_set_SOC(BreakinCycles_fixture, benchmark):
     """Test the set_SOC method."""
     with_charge_specified = BreakinCycles_fixture
+
     with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
 
     without_charge_specified = BreakinCycles_fixture
-    without_charge_specified.set_SOC(0.04)
+
+    def set_SOC():
+        return without_charge_specified.set_SOC(0.04)
+
+    benchmark(set_SOC)
 
     assert (
         with_charge_specified.data["SOC"] == without_charge_specified.data["SOC"]

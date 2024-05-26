@@ -5,7 +5,6 @@ import polars as pl
 
 from pyprobe.methods.differentiation.feng_2020 import Feng2020
 from pyprobe.result import Result
-from pyprobe.units import Units
 
 
 class RawData(Result):
@@ -38,23 +37,15 @@ class RawData(Result):
         Returns:
             pl.DataFrame: The data as a polars DataFrame.
         """
+        instruction_list = []
+        zero_reference_list = ["Capacity [Ah]", "Time [s]"]
+        for column in zero_reference_list:
+            instruction_list.extend([pl.col(column) - pl.col(column).first()])
+        self._data = self._data.with_columns(instruction_list)
         if isinstance(self._data, pl.LazyFrame):
-            instruction_list = []
-            for column in self._data.columns:
-                new_instruction = Units.convert_units(column)
-                if new_instruction is not None:
-                    instruction_list.extend(new_instruction)
-            self._data = self._data.with_columns(instruction_list).collect()
-        if self.data_property_called is False:
-            instruction_list = []
-            for column in self._data.columns:
-                new_instruction = Units.set_zero(column)
-                if new_instruction is not None:
-                    instruction_list.extend(new_instruction)
-                self._data = self._data.with_columns(instruction_list)
+            self._data = self._data.collect()
         if self._data.shape[0] == 0:
             raise ValueError("No data exists for this filter.")
-        self.data_property_called = True
         return self._data
 
     @property

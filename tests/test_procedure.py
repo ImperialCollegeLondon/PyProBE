@@ -1,11 +1,13 @@
 """Module containing tests of the procedure class."""
 
 
-def test_experiment(
-    procedure_fixture, cycles_fixture, steps_fixture, step_names_fixture
-):
+def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark):
     """Test creating an experiment."""
-    experiment = procedure_fixture.experiment("Break-in Cycles")
+
+    def make_experiment():
+        return procedure_fixture.experiment("Break-in Cycles")
+
+    experiment = benchmark(make_experiment)
     assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[1]
     assert experiment.data["Step"].unique().to_list() == steps_fixture[1]
 
@@ -23,19 +25,19 @@ def test_experiment(
     )
 
 
-def test_process_readme(
-    procedure_fixture, titles_fixture, steps_fixture, cycles_fixture, step_names_fixture
-):
+def test_process_readme(procedure_fixture, titles_fixture, steps_fixture, benchmark):
     """Test processing a readme file in yaml format."""
-    titles, steps = procedure_fixture.process_readme(
-        "tests/sample_data_neware/README.yaml"
-    )
+
+    def process_readme():
+        return procedure_fixture.process_readme("tests/sample_data/neware/README.yaml")
+
+    titles, steps = benchmark(process_readme)
     assert titles == titles_fixture
     assert steps == steps_fixture
 
     # Test without step numbers
     titles, steps = procedure_fixture.process_readme(
-        "tests/sample_data_neware/README_no_step_num.yaml"
+        "tests/sample_data/neware/README_no_step_num.yaml"
     )
     assert titles == titles_fixture
     assert steps == [

@@ -8,9 +8,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import distinctipy
 import polars as pl
-from polars.testing import assert_frame_equal
 
-from pyprobe.batterycycler import BatteryCycler
+from pyprobe.cyclers import biologic, neware
 from pyprobe.procedure import Procedure
 
 
@@ -75,7 +74,7 @@ class Cell:
 
     def process_cycler_file(
         self,
-        cycler: BatteryCycler,
+        cycler: str,
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
@@ -83,10 +82,10 @@ class Cell:
         """Convert cycler file into PyProBE format.
 
         Args:
-            cycler (BatteryCycler): The cycler used to produce the data.
+            cycler (DataImporter): The cycler used to produce the data.
             folder_path (str): The path to the folder containing the data file.
-            filename (str | function): A filename string or a function to generate
-                the file name.
+            filename (str | function): A filename string or a function to
+                generate the file name.
             filename_inputs (list): The list of inputs to filename_function.
                 These must be keys of the cell info.
             root_directory (str): The root directory containing the subfolder.
@@ -94,7 +93,13 @@ class Cell:
         input_data_path, output_data_path = self.get_data_paths(
             folder_path, filename, filename_inputs
         )
-        self.write_parquet(input_data_path, output_data_path, cycler)
+        cycler_dict = {"neware": neware.neware, "biologic": biologic.biologic}
+        t1 = time.time()
+        importer = cycler_dict[cycler]
+        dataframe = importer.read_file(input_data_path)
+        dataframe = importer.process_dataframe(dataframe)
+        dataframe.write_parquet(output_data_path)
+        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
     def add_procedure(
         self,
@@ -189,47 +194,6 @@ class Cell:
         input_data_path = os.path.join(folder_path, filename_str)
         output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
         return input_data_path, output_data_path
-
-    @staticmethod
-    def verify_parquet(input_path: str, cycler: BatteryCycler) -> bool:
-        """Function to verify that the data in a parquet file is correct.
-
-        Args:
-            input_path (str): The path to the input data file.
-            cycler (BatteryCycler): The cycler used to produce the data.
-
-        Returns:
-            bool: True if the data is correct, False otherwise.
-        """
-        output_path = os.path.splitext(input_path)[0] + ".parquet"
-        if os.path.exists(output_path) is False:
-            return False
-        test_data = cycler.load_file(input_path).head()
-        parquet_data = pl.scan_parquet(output_path).head()
-        try:
-            assert_frame_equal(test_data, parquet_data)
-            return True
-        except AssertionError:
-            return False
-
-    @staticmethod
-    def write_parquet(input_path: str, output_path: str, cycler: BatteryCycler) -> None:
-        """Function to write the data to a parquet file.
-
-        Args:
-            input_path (str): The path to the input data file.
-            output_path (str): The path to the output parquet file.
-            cycler (BatteryCycler): The cycler used to produce the data.
-        """
-        print(f"Processing file: {os.path.basename(input_path)}")
-        output_path = os.path.splitext(input_path)[0] + ".parquet"
-        filepath = os.path.join(input_path)
-        t1 = time.time()
-        test_data = cycler.load_file(filepath)
-        if isinstance(test_data, pl.LazyFrame):
-            test_data = test_data.collect()
-        test_data.write_parquet(output_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
     @staticmethod
     def set_color_scheme(

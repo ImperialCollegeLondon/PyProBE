@@ -2,16 +2,7 @@
 import polars as pl
 import pytest
 
-from pyprobe.cell import Cell
-from pyprobe.cyclers.neware import Neware
 from pyprobe.procedure import Procedure
-
-neware = Neware()
-Cell.write_parquet(
-    "tests/sample_data_neware/sample_data_neware.xlsx",
-    "tests/sample_data_neware/sample_data_neware.parquet",
-    neware,
-)
 
 
 @pytest.fixture(scope="module")
@@ -23,7 +14,7 @@ def info_fixture():
 @pytest.fixture(scope="module")
 def lazyframe_fixture():
     """Pytest fixture for example lazyframe."""
-    return pl.scan_parquet("tests/sample_data_neware/sample_data_neware.parquet")
+    return pl.scan_parquet("tests/sample_data/neware/sample_data_neware_ref.parquet")
 
 
 @pytest.fixture(scope="module")
@@ -72,7 +63,7 @@ def step_names_fixture():
 def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
     return Procedure(
-        "tests/sample_data_neware/sample_data_neware.parquet", info_fixture
+        "tests/sample_data/neware/sample_data_neware.parquet", info_fixture
     )
 
 

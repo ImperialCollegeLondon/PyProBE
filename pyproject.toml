@@ -26,10 +26,10 @@ dev = [
     "pytest-cov",
     "pytest-mypy",
     "pytest-mock",
+    "pytest-benchmark",
     "sphinx",
     "sphinx-rtd-theme",
     "types-PyYAML",
-    "asv"
 ]
 
 [tool.mypy]
