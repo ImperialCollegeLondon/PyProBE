@@ -62,7 +62,8 @@ class Procedure(Filter):
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
-        lf_filtered = self._data.filter(conditions)
+        lf_filtered = Filter._get_events(self._data)
+        lf_filtered = lf_filtered.filter(conditions)
         if len(experiment_names) == 1:
             experiment_obj = experiment_types[self.titles[experiment_names[0]]]
         else:

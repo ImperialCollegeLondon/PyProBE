@@ -82,12 +82,9 @@ class Filter(RawData):
                 index_list.extend(list(index))
             else:
                 index_list.extend([index])
-        _data = cls._get_events(_data)
+        index_list = [item + 1 for item in index_list]
         if len(indices) > 0:
-            return _data.filter(
-                pl.col(column).is_in(index_list)
-                | pl.col(column + "_reversed").is_in(index_list)
-            )
+            return _data.filter(pl.col(column).rank("dense").is_in(index_list))
         else:
             return _data
 
@@ -113,7 +110,7 @@ class Filter(RawData):
             _data = self.filter_numerical(self._data, "_step", step_numbers)
         return RawData(_data, self.info)
 
-    def cycle(self, *cycle_numbers: Union[int, range]) -> "Filter":
+    def cycle(self, *cycle_numbers: Union[int]) -> "Filter":
         """Return a cycle object from the experiment.
 
         Args:

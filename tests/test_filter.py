@@ -130,10 +130,10 @@ def test_cycle(BreakinCycles_fixture, benchmark):
     """Test the cycle method."""
 
     def cycle():
-        return BreakinCycles_fixture.cycle(0).data
+        return BreakinCycles_fixture.cycle(2).data
 
     data = benchmark(cycle)
-    assert (data["Cycle"] == 1).all()
+    assert (data["Cycle"] == 3).all()
     assert (data["Step"].unique() == [4, 5, 6, 7]).all()
 
 
