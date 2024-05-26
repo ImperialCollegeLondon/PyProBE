@@ -20,7 +20,7 @@ jobs:
               with:
                 python-version: "3.11"
             - run: pip install -r requirements-dev.txt
-            - run: pytest tests --benchmark-only --benchmark-json output.json
+            - run: pytest tests --benchmark-json output.json
             - name: Store benchmark result
               uses: benchmark-action/github-action-benchmark@v1
               with:
