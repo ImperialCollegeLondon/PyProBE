@@ -1,5 +1,6 @@
 """Tests for the result module."""
 
+import numpy.testing as np_testing
 import polars as pl
 import polars.testing as pl_testing
 import pytest
@@ -18,6 +19,22 @@ def test_init(Result_fixture):
     assert isinstance(Result_fixture, Result)
     assert isinstance(Result_fixture._data, pl.LazyFrame)
     assert isinstance(Result_fixture.info, dict)
+
+
+def test_call(Result_fixture):
+    """Test the __call__ method."""
+    np_testing.assert_array_equal(
+        Result_fixture("Current [A]"), Result_fixture.data["Current [A]"].to_numpy()
+    )
+    current, voltage = Result_fixture("Current [A]", "Voltage [V]")
+    np_testing.assert_array_equal(
+        current, Result_fixture.data["Current [A]"].to_numpy()
+    )
+    np_testing.assert_array_equal(
+        voltage, Result_fixture.data["Voltage [V]"].to_numpy()
+    )
+    current_mA = Result_fixture("Current [mA]")
+    np_testing.assert_array_equal(current_mA, current * 1000)
 
 
 def test_data(Result_fixture):

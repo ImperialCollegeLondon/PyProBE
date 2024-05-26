@@ -1,7 +1,9 @@
 """A module for the Result class."""
-from typing import Dict
+from typing import Dict, Tuple, Union
 
+import numpy as np
 import polars as pl
+from numpy.typing import NDArray
 
 from pyprobe.unitconverter import UnitConverter
 
@@ -28,6 +30,26 @@ class Result:
         """
         self._data = _data
         self.info = info
+
+    def __call__(
+        self, *args: str
+    ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+        """Return columns of the data as numpy arrays.
+
+        Args:
+            *args (str): The column names to return.
+
+        Returns:
+            Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+                The columns as numpy arrays.
+        """
+        arrays = []
+        for col in args:
+            self.check_units(col)
+            if col not in self.data.columns:
+                raise ValueError(f"Column '{col}' not in data.")
+            arrays.append(self.data[col].to_numpy())
+        return arrays[0] if len(arrays) == 1 else tuple(arrays)
 
     @property
     def data(self) -> pl.DataFrame:
