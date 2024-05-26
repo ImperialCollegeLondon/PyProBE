@@ -15,7 +15,7 @@ from pyprobe.cyclers.neware import (
 def test_read_file():
     """Test the read_file method."""
     unprocessed_dataframe = read_file(
-        "tests/sample_data_neware/sample_data_neware.xlsx"
+        "tests/sample_data/neware/sample_data_neware.xlsx"
     )
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
@@ -40,7 +40,7 @@ def test_sort_files():
 def test_read_multiple_files():
     """Test the read_file method with multiple files."""
     unprocessed_dataframe = read_all_files(
-        "tests/sample_data_neware/sample_data_neware*.xlsx"
+        "tests/sample_data/neware/sample_data_neware*.xlsx"
     )
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
@@ -50,7 +50,7 @@ def test_read_and_process(benchmark):
 
     def read_and_process():
         unprocessed_dataframe = read_all_files(
-            "tests/sample_data_neware/sample_data_neware.xlsx"
+            "tests/sample_data/neware/sample_data_neware.xlsx"
         )
         processed_dataframe = process_dataframe(unprocessed_dataframe)
         return processed_dataframe
@@ -70,7 +70,7 @@ def test_read_and_process(benchmark):
     all(col in processed_dataframe.columns for col in expected_columns)
 
     unprocessed_dataframe = read_all_files(
-        "tests/sample_data_neware/sample_data_neware*.xlsx"
+        "tests/sample_data/neware/sample_data_neware*.xlsx"
     )
     processed_dataframe = process_dataframe(unprocessed_dataframe)
     assert processed_dataframe.shape[0] == rows * 2

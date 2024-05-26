@@ -29,7 +29,7 @@ def test_process_readme(procedure_fixture, titles_fixture, steps_fixture, benchm
     """Test processing a readme file in yaml format."""
 
     def process_readme():
-        return procedure_fixture.process_readme("tests/sample_data_neware/README.yaml")
+        return procedure_fixture.process_readme("tests/sample_data/neware/README.yaml")
 
     titles, steps = benchmark(process_readme)
     assert titles == titles_fixture
@@ -37,7 +37,7 @@ def test_process_readme(procedure_fixture, titles_fixture, steps_fixture, benchm
 
     # Test without step numbers
     titles, steps = procedure_fixture.process_readme(
-        "tests/sample_data_neware/README_no_step_num.yaml"
+        "tests/sample_data/neware/README_no_step_num.yaml"
     )
     assert titles == titles_fixture
     assert steps == [

@@ -23,7 +23,7 @@ def test_init(cell_instance, info_fixture):
 
 def test_make_cell_list(info_fixture):
     """Test the make_cell_list method."""
-    root_directory = "tests/sample_data_neware"
+    root_directory = "tests/sample_data/neware/"
     record_name = "sample_data_neware"
     cell_list = Cell.make_cell_list(root_directory, record_name)
     expected_info = copy.copy(info_fixture)
@@ -33,7 +33,7 @@ def test_make_cell_list(info_fixture):
 
 def test_read_record():
     """Test the read_record method."""
-    root_directory = "tests/sample_data_neware"
+    root_directory = "tests/sample_data/neware/"
     record_name = "sample_data_neware"
     record = Cell.read_record(root_directory, record_name)
     pl.testing.assert_frame_equal(record, pl.DataFrame({"Name": "Test_Cell"}))
@@ -52,7 +52,7 @@ def test_get_filename(info_fixture):
 
 def test_process_cycler_file(cell_instance, lazyframe_fixture):
     """Test the process_cycler_file method."""
-    folder_path = "tests/sample_data_neware"
+    folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
     output_name = "sample_data_neware.parquet"
     cell_instance.process_cycler_file("neware", folder_path, file_name)
@@ -63,7 +63,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
 
 def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     """Test the add_procedure method."""
-    input_path = "tests/sample_data_neware"
+    input_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.parquet"
     title = "Test"
 

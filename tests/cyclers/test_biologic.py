@@ -9,7 +9,7 @@ from pyprobe.cyclers.biologic import process_dataframe, read_all_files, sort_fil
 def test_read_file():
     """Test the read_file method."""
     unprocessed_dataframe = read_all_files(
-        "tests/sample_data_biologic/Sample_data_biologic_*_MB_CA1.txt"
+        "tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
     )
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
@@ -36,7 +36,7 @@ def test_read_and_process(benchmark):
 
     def read_and_process():
         unprocessed_dataframe = read_all_files(
-            "tests/sample_data_biologic/Sample_data_biologic_*_MB_CA1.txt"
+            "tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
         )
         processed_dataframe = process_dataframe(unprocessed_dataframe)
         return processed_dataframe
