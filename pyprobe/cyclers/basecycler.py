@@ -12,6 +12,7 @@ class BaseCycler:
         "Time [s]",
         "Cycle",
         "Step",
+        "Event",
         "Current [A]",
         "Voltage [V]",
         "Capacity [Ah]",

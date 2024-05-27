@@ -9,7 +9,7 @@ def test_pulse(Pulsing_fixture):
     """Test the pulse method."""
     pulse = Pulsing_fixture.pulse(0)
     assert (pulse.data["Step"] == 10).all()
-    assert (pulse.data["Cycle"] == 5).all()
+    assert (pulse.data["Cycle"] == 4).all()
 
 
 def test_V0(Pulsing_fixture):

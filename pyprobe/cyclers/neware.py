@@ -90,8 +90,23 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     )
 
     # Cycle and step
-    cycle = pl.col("Cycle Index").alias("Cycle")
     step = pl.col("Step Index").alias("Step")
+
+    cycle = (
+        (pl.col("Step Index") - pl.col("Step Index").shift() < 0)
+        .fill_null(strategy="zero")
+        .cum_sum()
+        .alias("Cycle")
+        .cast(pl.Int64)
+    )
+
+    event = (
+        (pl.col("Step Index") - pl.col("Step Index").shift() != 0)
+        .fill_null(strategy="zero")
+        .cum_sum()
+        .alias("Event")
+        .cast(pl.Int64)
+    )
 
     # Measured data
     column_name_pattern = r"(.+)\((.+)\)"
@@ -102,7 +117,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
         columns, "Voltage", column_name_pattern, "Voltage"
     ).to_default()
 
-    dataframe = dataframe.with_columns(time, cycle, step, current, voltage)
+    dataframe = dataframe.with_columns(time, step, cycle, event, current, voltage)
 
     make_charge_capacity = UnitConverter.search_columns(
         columns, "Chg. Cap.", column_name_pattern, "Capacity"
@@ -125,7 +140,6 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     ).alias("Capacity [Ah]")
 
     dataframe = dataframe.with_columns(make_capacity)
-
     return dataframe
 
 

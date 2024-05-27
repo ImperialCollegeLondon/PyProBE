@@ -104,10 +104,10 @@ class Filter(RawData):
         """
         if condition is not None:
             _data = self.filter_numerical(
-                self._data.filter(condition), "_step", step_numbers
+                self._data.filter(condition), "Event", step_numbers
             )
         else:
-            _data = self.filter_numerical(self._data, "_step", step_numbers)
+            _data = self.filter_numerical(self._data, "Event", step_numbers)
         return RawData(_data, self.info)
 
     def cycle(self, *cycle_numbers: Union[int]) -> "Filter":
@@ -120,7 +120,7 @@ class Filter(RawData):
         Returns:
             Filter: A filter object for the specified cycles.
         """
-        lf_filtered = self.filter_numerical(self._data, "_cycle", cycle_numbers)
+        lf_filtered = self.filter_numerical(self._data, "Cycle", cycle_numbers)
         return Filter(lf_filtered, self.info)
 
     def charge(self, *charge_numbers: Union[int, range]) -> RawData:

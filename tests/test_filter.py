@@ -133,7 +133,7 @@ def test_cycle(BreakinCycles_fixture, benchmark):
         return BreakinCycles_fixture.cycle(2).data
 
     data = benchmark(cycle)
-    assert (data["Cycle"] == 3).all()
+    assert (data["Cycle"] == 2).all()
     assert (data["Step"].unique() == [4, 5, 6, 7]).all()
 
 
@@ -144,5 +144,5 @@ def test_all_steps(BreakinCycles_fixture, benchmark):
         return BreakinCycles_fixture.cycle(0).step().data
 
     data = benchmark(all_steps)
-    assert (data["Cycle"] == 1).all()
+    assert (data["Cycle"] == 0).all()
     assert (data["Step"].unique() == [4, 5, 6, 7]).all()
