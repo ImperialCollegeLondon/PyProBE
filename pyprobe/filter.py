@@ -82,9 +82,18 @@ class Filter(RawData):
                 index_list.extend(list(index))
             else:
                 index_list.extend([index])
-        index_list = [item + 1 for item in index_list]
-        if len(indices) > 0:
-            return _data.filter(pl.col(column).rank("dense").is_in(index_list))
+
+        if len(index_list) > 0:
+            if all(item >= 0 for item in index_list):
+                index_list = [item + 1 for item in index_list]
+                return _data.filter(pl.col(column).rank("dense").is_in(index_list))
+            elif all(item < 0 for item in index_list):
+                index_list = [item * -1 for item in index_list]
+                return _data.filter(
+                    pl.col(column).rank("dense", descending=True).is_in(index_list)
+                )
+            else:
+                raise ValueError("Indices must be all positive or all negative.")
         else:
             return _data
 

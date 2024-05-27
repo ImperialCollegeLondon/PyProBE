@@ -112,7 +112,7 @@ def test_negative_cycle_index(BreakinCycles_fixture, benchmark):
         return BreakinCycles_fixture.cycle(-1).data
 
     data = benchmark(negative_cycle_index)
-    assert (data["Cycle"] == 5).all()
+    assert (data["Cycle"] == 4).all()
     assert (data["Step"].unique() == [4, 5, 6, 7]).all()
 
 
