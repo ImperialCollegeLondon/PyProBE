@@ -98,6 +98,8 @@ class Cell:
         output_data_path = self.get_data_paths(
             folder_path, output_filename, filename_args
         )
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path.")
         cycler_dict = {"neware": neware.neware, "biologic": biologic.biologic}
         t1 = time.time()
         importer = cycler_dict[cycler]
@@ -125,6 +127,8 @@ class Cell:
                 These must be keys of the cell info.
         """
         output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path.")
         self.procedure[procedure_name] = Procedure(output_data_path, self.info)
         self.processed_data[procedure_name] = {}
 
