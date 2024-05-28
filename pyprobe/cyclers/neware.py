@@ -3,7 +3,7 @@
 import glob
 import os
 import re
-from typing import List
+from typing import List, Tuple
 
 import polars as pl
 
@@ -31,15 +31,17 @@ def read_file(filepath: str) -> pl.DataFrame:
             raise ValueError(f"Unsupported file extension: {file_ext}")
 
 
-def sort_key(filepath: str) -> int:
+def sort_key(filepath_tuple: Tuple[str, str]) -> int:
     """Sort key for the files.
 
     Args:
-        filepath (str): The path to the file.
+        filepath_tupe (Tuple): A tuple containing the file suffix
+            and the full filepath.
 
     Returns:
         int: The integer in the filename.
     """
+    filepath = filepath_tuple[0]
     match = re.search(r"(\d+)(?=\.)", filepath)
     return int(match.group()) if match else 0
 
@@ -53,7 +55,13 @@ def sort_files(file_list: List[str]) -> List[str]:
     Returns:
         List[str]: The sorted list of files.
     """
-    return sorted(file_list, key=sort_key)
+    common_substring = os.path.commonprefix(file_list)
+    stripped_and_converted = [
+        (file.replace(common_substring, ""), file) for file in file_list
+    ]
+    stripped_and_converted.sort(key=sort_key)
+
+    return [file for _, file in stripped_and_converted]
 
 
 def read_all_files(filepath: str) -> pl.DataFrame:
@@ -65,7 +73,7 @@ def read_all_files(filepath: str) -> pl.DataFrame:
     files = glob.glob(filepath)
     files = sort_files(files)
     dataframes = [read_file(file) for file in files]
-    return pl.concat(dataframes, how="vertical")
+    return pl.concat(dataframes, how="vertical", rechunk=True)
 
 
 def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
@@ -78,6 +86,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: The dataframe in PyProBE format.
     """
     columns = dataframe.columns
+
     if dataframe.dtypes[dataframe.columns.index("Date")] != pl.Datetime:
         date = pl.col("Date").str.to_datetime().alias("Date")
         dataframe = dataframe.with_columns(date)
@@ -90,8 +99,23 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     )
 
     # Cycle and step
-    cycle = pl.col("Cycle Index").alias("Cycle")
     step = pl.col("Step Index").alias("Step")
+
+    cycle = (
+        (pl.col("Step Index") - pl.col("Step Index").shift() < 0)
+        .fill_null(strategy="zero")
+        .cum_sum()
+        .alias("Cycle")
+        .cast(pl.Int64)
+    )
+
+    event = (
+        (pl.col("Step Index") - pl.col("Step Index").shift() != 0)
+        .fill_null(strategy="zero")
+        .cum_sum()
+        .alias("Event")
+        .cast(pl.Int64)
+    )
 
     # Measured data
     column_name_pattern = r"(.+)\((.+)\)"
@@ -102,7 +126,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
         columns, "Voltage", column_name_pattern, "Voltage"
     ).to_default()
 
-    dataframe = dataframe.with_columns(time, cycle, step, current, voltage)
+    dataframe = dataframe.with_columns(time, step, cycle, event, current, voltage)
 
     make_charge_capacity = UnitConverter.search_columns(
         columns, "Chg. Cap.", column_name_pattern, "Capacity"
@@ -125,7 +149,6 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     ).alias("Capacity [Ah]")
 
     dataframe = dataframe.with_columns(make_capacity)
-
     return dataframe
 
 

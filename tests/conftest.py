@@ -36,7 +36,7 @@ def steps_fixture():
 @pytest.fixture(scope="module")
 def cycles_fixture():
     """Pytest fixture for example cycles."""
-    return [[1], [1, 2, 3, 4, 5], [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
+    return [[0], [0, 1, 2, 3, 4], [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]]
 
 
 @pytest.fixture(scope="module")

@@ -23,17 +23,17 @@ def test_read_file():
 def test_sort_files():
     """Test the sort_files method."""
     file_list = [
-        "test_2_experiment_3_file_1.xlsx",
-        "test_2_experiment_3_file_3.xlsx",
-        "test_2_experiment_3_file.xlsx",
-        "test_2_experiment_3_file_2.xlsx",
+        "test_2_experiment_3_file_5_1.xlsx",
+        "test_2_experiment_3_file_5_3.xlsx",
+        "test_2_experiment_3_file_5.xlsx",
+        "test_2_experiment_3_file_5_2.xlsx",
     ]
     sorted_files = sort_files(file_list)
     assert sorted_files == [
-        "test_2_experiment_3_file.xlsx",
-        "test_2_experiment_3_file_1.xlsx",
-        "test_2_experiment_3_file_2.xlsx",
-        "test_2_experiment_3_file_3.xlsx",
+        "test_2_experiment_3_file_5.xlsx",
+        "test_2_experiment_3_file_5_1.xlsx",
+        "test_2_experiment_3_file_5_2.xlsx",
+        "test_2_experiment_3_file_5_3.xlsx",
     ]
 
 
@@ -87,8 +87,7 @@ def test_process_dataframe():
                 datetime(2022, 2, 2, 2, 2, 2),
                 datetime(2022, 2, 2, 2, 2, 3),
             ],
-            "Cycle Index": [1, 1, 1, 1],
-            "Step Index": [1, 2, 3, 4],
+            "Step Index": [1, 2, 1, 2],
             "Current(mA)": [1, 2, 3, 4],
             "Voltage(V)": [4, 5, 6, 7],
             "Chg. Cap.(Ah)": [
@@ -102,13 +101,22 @@ def test_process_dataframe():
     )
     processed_dataframe = process_dataframe(dataframe)
     processed_dataframe = processed_dataframe.select(
-        ["Time [s]", "Cycle", "Step", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
+        [
+            "Time [s]",
+            "Cycle",
+            "Step",
+            "Event",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+        ]
     )
     expected_dataframe = pl.DataFrame(
         {
             "Time [s]": [0.0, 1.0, 2.0, 3.0],
-            "Cycle": [1, 1, 1, 1],
-            "Step": [1, 2, 3, 4],
+            "Cycle": [0, 0, 1, 1],
+            "Step": [1, 2, 1, 2],
+            "Event": [0, 1, 2, 3],
             "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3],
             "Voltage [V]": [4, 5, 6, 7],
             "Capacity [Ah]": [20, 40, 30, 20],

@@ -20,47 +20,6 @@ class Filter(RawData):
         """
         super().__init__(_data, info)
 
-    @staticmethod
-    def _get_events(_data: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
-        """Get the events from cycle and step columns.
-
-        Args:
-            _data: A LazyFrame object.
-
-        Returns:
-            _data: A LazyFrame object with added _cycle and _step columns.
-        """
-        _data = _data.with_columns(
-            (
-                (pl.col("Cycle") - pl.col("Cycle").shift() != 0)
-                .fill_null(strategy="zero")
-                .cum_sum()
-                .alias("_cycle")
-                .cast(pl.Int32)
-            )
-        )
-        _data = _data.with_columns(
-            (
-                (
-                    (pl.col("Cycle") - pl.col("Cycle").shift() != 0)
-                    | (pl.col("Step") - pl.col("Step").shift() != 0)
-                )
-                .fill_null(strategy="zero")
-                .cum_sum()
-                .alias("_step")
-                .cast(pl.Int32)
-            )
-        )
-        _data = _data.with_columns(
-            [
-                (pl.col("_cycle") - pl.col("_cycle").max() - 1).alias(
-                    "_cycle_reversed"
-                ),
-                (pl.col("_step") - pl.col("_step").max() - 1).alias("_step_reversed"),
-            ]
-        )
-        return _data
-
     @classmethod
     def filter_numerical(
         cls,
@@ -82,12 +41,18 @@ class Filter(RawData):
                 index_list.extend(list(index))
             else:
                 index_list.extend([index])
-        _data = cls._get_events(_data)
-        if len(indices) > 0:
-            return _data.filter(
-                pl.col(column).is_in(index_list)
-                | pl.col(column + "_reversed").is_in(index_list)
-            )
+
+        if len(index_list) > 0:
+            if all(item >= 0 for item in index_list):
+                index_list = [item + 1 for item in index_list]
+                return _data.filter(pl.col(column).rank("dense").is_in(index_list))
+            elif all(item < 0 for item in index_list):
+                index_list = [item * -1 for item in index_list]
+                return _data.filter(
+                    pl.col(column).rank("dense", descending=True).is_in(index_list)
+                )
+            else:
+                raise ValueError("Indices must be all positive or all negative.")
         else:
             return _data
 
@@ -107,13 +72,13 @@ class Filter(RawData):
         """
         if condition is not None:
             _data = self.filter_numerical(
-                self._data.filter(condition), "_step", step_numbers
+                self._data.filter(condition), "Event", step_numbers
             )
         else:
-            _data = self.filter_numerical(self._data, "_step", step_numbers)
+            _data = self.filter_numerical(self._data, "Event", step_numbers)
         return RawData(_data, self.info)
 
-    def cycle(self, *cycle_numbers: Union[int, range]) -> "Filter":
+    def cycle(self, *cycle_numbers: Union[int]) -> "Filter":
         """Return a cycle object from the experiment.
 
         Args:
@@ -123,7 +88,7 @@ class Filter(RawData):
         Returns:
             Filter: A filter object for the specified cycles.
         """
-        lf_filtered = self.filter_numerical(self._data, "_cycle", cycle_numbers)
+        lf_filtered = self.filter_numerical(self._data, "Cycle", cycle_numbers)
         return Filter(lf_filtered, self.info)
 
     def charge(self, *charge_numbers: Union[int, range]) -> RawData:
