@@ -23,17 +23,17 @@ def test_read_file():
 def test_sort_files():
     """Test the sort_files method."""
     file_list = [
-        "test_2_experiment_3_file_1.xlsx",
-        "test_2_experiment_3_file_3.xlsx",
-        "test_2_experiment_3_file.xlsx",
-        "test_2_experiment_3_file_2.xlsx",
+        "test_2_experiment_3_file_5_1.xlsx",
+        "test_2_experiment_3_file_5_3.xlsx",
+        "test_2_experiment_3_file_5.xlsx",
+        "test_2_experiment_3_file_5_2.xlsx",
     ]
     sorted_files = sort_files(file_list)
     assert sorted_files == [
-        "test_2_experiment_3_file.xlsx",
-        "test_2_experiment_3_file_1.xlsx",
-        "test_2_experiment_3_file_2.xlsx",
-        "test_2_experiment_3_file_3.xlsx",
+        "test_2_experiment_3_file_5.xlsx",
+        "test_2_experiment_3_file_5_1.xlsx",
+        "test_2_experiment_3_file_5_2.xlsx",
+        "test_2_experiment_3_file_5_3.xlsx",
     ]
 
 
