@@ -4,7 +4,7 @@ import pickle
 import platform
 import subprocess
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
@@ -76,22 +76,27 @@ class Cell:
         self,
         cycler: str,
         folder_path: str,
-        filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        input_filename: str | Callable[[str], str],
+        output_filename: str | Callable[[str], str],
+        filename_args: Optional[List[str]] = None,
     ) -> None:
         """Convert cycler file into PyProBE format.
 
         Args:
-            cycler (DataImporter): The cycler used to produce the data.
+            cycler (str): The cycler used to produce the data.
             folder_path (str): The path to the folder containing the data file.
-            filename (str | function): A filename string or a function to
-                generate the file name.
-            filename_inputs (list): The list of inputs to filename_function.
+            input_filename (str | function): A filename string or a function to
+                generate the file name for cycler data.
+            output_filename (str | function): A filename string or a function to
+                generate the file name for PyProBE data.
+            filename_args (list): The list of inputs to filename_function.
                 These must be keys of the cell info.
-            root_directory (str): The root directory containing the subfolder.
         """
-        input_data_path, output_data_path = self.get_data_paths(
-            folder_path, filename, filename_inputs
+        input_data_path = self.get_data_paths(
+            folder_path, input_filename, filename_args
+        )
+        output_data_path = self.get_data_paths(
+            folder_path, output_filename, filename_args
         )
         cycler_dict = {"neware": neware.neware, "biologic": biologic.biologic}
         t1 = time.time()
@@ -115,13 +120,11 @@ class Cell:
                 when calling cell.procedure[procedure_name].
             folder_path (str): The path to the folder containing the data file.
             filename (str | function): A filename string or a function to generate
-                the file name.
+                the file name for PyProBE data.
             filename_inputs (Optional[list]): The list of inputs to filename_function.
                 These must be keys of the cell info.
         """
-        _, output_data_path = self.get_data_paths(
-            folder_path, filename, filename_inputs
-        )
+        output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
         self.procedure[procedure_name] = Procedure(output_data_path, self.info)
         self.processed_data[procedure_name] = {}
 
@@ -167,7 +170,7 @@ class Cell:
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
-    ) -> Tuple[str, str]:
+    ) -> str:
         """Function to generate the input and output paths for the data file.
 
         Args:
@@ -178,9 +181,7 @@ class Cell:
                 These must be keys of the cell info.
 
         Returns:
-            Tuple[str, str]:
-                - str: The input path for the data file.
-                - str: The output path for the parquet file.
+            str: The full path for the data file.
         """
         if isinstance(filename, str):
             filename_str = filename
@@ -191,9 +192,8 @@ class Cell:
                 )
             filename_str = self.get_filename(self.info, filename, filename_inputs)
 
-        input_data_path = os.path.join(folder_path, filename_str)
-        output_data_path = os.path.splitext(input_data_path)[0] + ".parquet"
-        return input_data_path, output_data_path
+        data_path = os.path.join(folder_path, filename_str)
+        return data_path
 
     @staticmethod
     def set_color_scheme(

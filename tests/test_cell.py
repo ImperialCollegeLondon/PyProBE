@@ -55,7 +55,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
     output_name = "sample_data_neware.parquet"
-    cell_instance.process_cycler_file("neware", folder_path, file_name)
+    cell_instance.process_cycler_file("neware", folder_path, file_name, output_name)
     expected_dataframe = lazyframe_fixture.collect()
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
     assert_frame_equal(expected_dataframe, saved_dataframe)
