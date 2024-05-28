@@ -5,7 +5,6 @@ from typing import Dict
 import polars as pl
 
 from pyprobe.experiment import Experiment
-from pyprobe.filter import Filter
 from pyprobe.result import Result
 
 
@@ -48,31 +47,30 @@ class Cycling(Experiment):
         Returns:
             Result: A result object for the capacity SOH of the cell.
         """
-        self._data = Filter._get_events(self._data)
-        lf_capacity_throughput = self._data.groupby("_cycle", maintain_order=True).agg(
+        lf_capacity_throughput = self._data.groupby("Cycle", maintain_order=True).agg(
             pl.col("Capacity Throughput [Ah]").first()
         )
-        lf_time = self._data.groupby("_cycle", maintain_order=True).agg(
+        lf_time = self._data.groupby("Cycle", maintain_order=True).agg(
             pl.col("Time [s]").first()
         )
 
         lf_charge = (
             self.charge()
-            ._data.groupby("_cycle", maintain_order=True)
+            ._data.groupby("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
         )
         lf_discharge = (
             self.discharge()
-            ._data.groupby("_cycle", maintain_order=True)
+            ._data.groupby("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
         )
 
         lf = (
-            lf_capacity_throughput.join(lf_time, on="_cycle", how="outer_coalesce")
-            .join(lf_charge, on="_cycle", how="outer_coalesce")
-            .join(lf_discharge, on="_cycle", how="outer_coalesce")
+            lf_capacity_throughput.join(lf_time, on="Cycle", how="outer_coalesce")
+            .join(lf_charge, on="Cycle", how="outer_coalesce")
+            .join(lf_discharge, on="Cycle", how="outer_coalesce")
         )
 
         lf = lf.with_columns(

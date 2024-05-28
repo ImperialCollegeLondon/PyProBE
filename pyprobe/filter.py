@@ -20,47 +20,6 @@ class Filter(RawData):
         """
         super().__init__(_data, info)
 
-    @staticmethod
-    def _get_events(_data: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
-        """Get the events from cycle and step columns.
-
-        Args:
-            _data: A LazyFrame object.
-
-        Returns:
-            _data: A LazyFrame object with added _cycle and _step columns.
-        """
-        _data = _data.with_columns(
-            (
-                (pl.col("Cycle") - pl.col("Cycle").shift() != 0)
-                .fill_null(strategy="zero")
-                .cum_sum()
-                .alias("_cycle")
-                .cast(pl.Int32)
-            )
-        )
-        _data = _data.with_columns(
-            (
-                (
-                    (pl.col("Cycle") - pl.col("Cycle").shift() != 0)
-                    | (pl.col("Step") - pl.col("Step").shift() != 0)
-                )
-                .fill_null(strategy="zero")
-                .cum_sum()
-                .alias("_step")
-                .cast(pl.Int32)
-            )
-        )
-        _data = _data.with_columns(
-            [
-                (pl.col("_cycle") - pl.col("_cycle").max() - 1).alias(
-                    "_cycle_reversed"
-                ),
-                (pl.col("_step") - pl.col("_step").max() - 1).alias("_step_reversed"),
-            ]
-        )
-        return _data
-
     @classmethod
     def filter_numerical(
         cls,
