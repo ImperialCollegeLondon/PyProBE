@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1716724569238,
+  "lastUpdate": 1716905503150,
   "repoUrl": "https://github.com/ImperialCollegeLondon/PyProBE",
   "entries": {
     "Python Benchmark with pytest-benchmark": [
@@ -272,6 +272,142 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.00002616504370522655",
             "extra": "mean: 642.8901863725737 usec\nrounds: 499"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "137503955+tomjholland@users.noreply.github.com",
+            "name": "Tom Holland",
+            "username": "tomjholland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be2897b3cef1147e73e30842d6f21fd2521fa962",
+          "message": "Merge pull request #33 from ImperialCollegeLondon/32-remove-cycle-dependence\n\nRemove dependence on cycle column in cycler data, add event column to PyProBE format, remove get_events method",
+          "timestamp": "2024-05-28T15:08:30+01:00",
+          "tree_id": "96c21e8559d3b126e686c674e71cecc9fbd00404",
+          "url": "https://github.com/ImperialCollegeLondon/PyProBE/commit/be2897b3cef1147e73e30842d6f21fd2521fa962"
+        },
+        "date": 1716905501959,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/cyclers/test_biologic.py::test_read_and_process",
+            "value": 192.6287667007818,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009540242952276275",
+            "extra": "mean: 5.191332619355557 msec\nrounds: 155"
+          },
+          {
+            "name": "tests/cyclers/test_neware.py::test_read_and_process",
+            "value": 0.1905140072453521,
+            "unit": "iter/sec",
+            "range": "stddev: 0.01484717773139039",
+            "extra": "mean: 5.248957882200005 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_cell.py::test_add_procedure",
+            "value": 510.22294662701125,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009107487093920842",
+            "extra": "mean: 1.9599275309172461 msec\nrounds: 469"
+          },
+          {
+            "name": "tests/test_filter.py::test_step",
+            "value": 12.641682936972249,
+            "unit": "iter/sec",
+            "range": "stddev: 0.002862244083032859",
+            "extra": "mean: 79.10339192856749 msec\nrounds: 14"
+          },
+          {
+            "name": "tests/test_filter.py::test_multi_step",
+            "value": 12.593109150449585,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0022066995115828303",
+            "extra": "mean: 79.40850730768891 msec\nrounds: 13"
+          },
+          {
+            "name": "tests/test_filter.py::test_charge",
+            "value": 12.617259851075863,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0021124190398801113",
+            "extra": "mean: 79.25651146153821 msec\nrounds: 13"
+          },
+          {
+            "name": "tests/test_filter.py::test_discharge",
+            "value": 12.406033126435535,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0018021672489642352",
+            "extra": "mean: 80.60594307693236 msec\nrounds: 13"
+          },
+          {
+            "name": "tests/test_filter.py::test_chargeordischarge",
+            "value": 12.229438488888785,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001562862527110604",
+            "extra": "mean: 81.7699030833315 msec\nrounds: 12"
+          },
+          {
+            "name": "tests/test_filter.py::test_rest",
+            "value": 13.146979762947502,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0021635261944051008",
+            "extra": "mean: 76.06309723076684 msec\nrounds: 13"
+          },
+          {
+            "name": "tests/test_filter.py::test_negative_cycle_index",
+            "value": 13.301266639720076,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0016561346798373792",
+            "extra": "mean: 75.18080999998996 msec\nrounds: 14"
+          },
+          {
+            "name": "tests/test_filter.py::test_negative_step_index",
+            "value": 13.320536547594829,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0018988368979221055",
+            "extra": "mean: 75.07205107143834 msec\nrounds: 14"
+          },
+          {
+            "name": "tests/test_filter.py::test_cycle",
+            "value": 13.569122935830075,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0017924573853036042",
+            "extra": "mean: 73.6967307857047 msec\nrounds: 14"
+          },
+          {
+            "name": "tests/test_filter.py::test_all_steps",
+            "value": 13.402701786320069,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001644117977463408",
+            "extra": "mean: 74.61182200000037 msec\nrounds: 14"
+          },
+          {
+            "name": "tests/test_procedure.py::test_experiment",
+            "value": 20233.01430367735,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005416442151789242",
+            "extra": "mean: 49.42417303675063 usec\nrounds: 4814"
+          },
+          {
+            "name": "tests/test_procedure.py::test_process_readme",
+            "value": 534.3485779319878,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00006395206577164647",
+            "extra": "mean: 1.871437562106286 msec\nrounds: 475"
+          },
+          {
+            "name": "tests/test_rawdata.py::test_set_SOC",
+            "value": 1576.7985925445498,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013202346456985364",
+            "extra": "mean: 634.1964057605198 usec\nrounds: 764"
           }
         ]
       }
