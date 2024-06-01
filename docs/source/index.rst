@@ -10,7 +10,7 @@ Welcome to PyProBE's documentation!
    :maxdepth: 3
    :caption: Contents:
 
-   getting_started
+   user_guide
    modules
 
 
