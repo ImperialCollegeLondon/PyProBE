@@ -29,7 +29,6 @@ class RawData(Result):
               filtered section in Ampere-hours. Its value increases when charge
               current is passed and decreases when discharge current is passed.
 
-        data (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
@@ -38,12 +37,7 @@ class RawData(Result):
         _data: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
-        """Initialize the RawData object.
-
-        Args:
-            _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
-            info (Dict[str, str | int | float]): A dict containing test info.
-        """
+        """Initialize the RawData object."""
         super().__init__(_data, info)
         self.data_property_called = False
 
