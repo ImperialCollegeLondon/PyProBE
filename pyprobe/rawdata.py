@@ -11,7 +11,22 @@ class RawData(Result):
     """A RawData object for returning data and plotting.
 
     Attributes:
-        _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
+        _data (pl.LazyFrame | pl.DataFrame): The filtered _data with the following
+            columns:
+            - 'Date' (pl.Datetime): the timestamp of the measurement
+            - 'Time [s]' (pl.Float64): the measurement time from the start of the
+                filtered section in seconds
+            - 'Step' (pl.Int64): the unique step number corresponding to a single
+                instruction in the cycling program
+            - 'Cycle' (pl.Int64): the cycle number, automatically identified when Step
+                decreases
+            - 'Event' (pl.Int64): the event number, automatically identified when Step
+                changes
+            - 'Current [A]' (pl.Float64): the current in Amperes
+            - 'Voltage [V]' (pl.Float64): the voltage in Volts
+            - 'Capacity [Ah]' (pl.Float64): the capacity relative to the start of the
+                filtered section in Ampere-hours. Its value increases when charge
+                current is passed and decreases when discharge current is passed.
         dataframe (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
