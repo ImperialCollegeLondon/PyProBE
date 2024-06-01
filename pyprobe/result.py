@@ -14,7 +14,7 @@ class Result:
     Attributes:
         _data (pl.LazyFrame | pl.DataFrame): The data as a polars DataFrame or
             LazyFrame.
-        dataframe (Optional[pl.DataFrame]): The data as a polars DataFrame.
+        data (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
