@@ -7,6 +7,7 @@
   <title>Installation &mdash; PyProBE  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
 
   
   <!--[if lt IE 9]>
@@ -18,6 +19,7 @@
         <script src="_static/documentation_options.js?v=5929fcd5"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/tabs.js?v=3030b3cb"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -87,6 +89,74 @@
              
   <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>To install PyProBE you must be running Python 3.11 or later. It is recommended to use a
+virtual environment to install PyProBE, for example venv or conda.</p>
+<p>You should have two separate directories:
+* one for the PyProBE repository
+* one for your processing script</p>
+<p>The steps to install PyProBE are as follows:</p>
+<ol class="arabic">
+<li><p>Enter a directory in which you wish to install PyProBE:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/your/directory
+</pre></div>
+</div>
+</li>
+<li><p>Clone the repository to your local machine. This creates a directory called PyProBE.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ImperialCollegeLondon/PyProBE.git
+<span class="nb">cd</span><span class="w"> </span>PyProBE
+</pre></div>
+</div>
+<p>It is recommended to used the tagged releases for a stable version of the code.
+You can list the available tags with the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>tag
+</pre></div>
+</div>
+<p>You can then checkout the desired tag with the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>&lt;tag<span class="w"> </span>name&gt;
+</pre></div>
+</div>
+<p>For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>v0.1.0
+</pre></div>
+</div>
+<p>To update your installation you can run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>fetch<span class="w"> </span>--tags
+git<span class="w"> </span>tag
+git<span class="w"> </span>checkout<span class="w"> </span>&lt;tag<span class="w"> </span>name&gt;
+</pre></div>
+</div>
+</li>
+<li><p>Create and activate a virtual environment.</p></li>
+</ol>
+<blockquote>
+<div><div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">venv</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">conda</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><p>In your working directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-0-1" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-1" name="0-1" role="tabpanel" tabindex="0"><p>In any directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>pyprobe<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12
+conda<span class="w"> </span>activate<span class="w"> </span>pyprobe
+</pre></div>
+</div>
+</div></div>
+</div></blockquote>
+<ol class="arabic" start="3">
+<li><p>Install PyProBE as a package into your virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/your/directory/PyProBE
+pip<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+<li><p>In your working directory you can create a new python script or jupyter notebook to
+process your data. You can import PyProBE into your script as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PyProBE.cell</span> <span class="kn">import</span> <span class="n">Cell</span>
+<span class="kn">from</span> <span class="nn">PyProBE.plot</span> <span class="kn">import</span> <span class="n">Plot</span>
+</pre></div>
+</div>
+</li>
+</ol>
 </section>
 
 
