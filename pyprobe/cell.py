@@ -51,18 +51,16 @@ class Cell:
     @classmethod
     def make_cell_list(
         cls,
-        root_directory: str,
-        record_name: str,
+        record_filepath: str,
+        worksheet_name: str,
     ) -> List["Cell"]:
         """Function to make a list of cell objects from a record of tests.
 
         Args:
-            root_directory (str): The root directory containing the
-                Experiment_Record.xlsx file.
-            record_name (str): The name of the record (worksheet name)
-                in the Experiment_Record.xlsx file.
+            record_filepath (str): The path to the experiment record .xlsx file.
+            worksheet_name (str): The worksheet name to read from the record.
         """
-        record = cls.read_record(root_directory, record_name)
+        record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
 
         n_cells = len(record)
         cell_list = []
@@ -131,22 +129,6 @@ class Cell:
             raise ValueError("* characters are not allowed for a complete data path.")
         self.procedure[procedure_name] = Procedure(output_data_path, self.info)
         self.processed_data[procedure_name] = {}
-
-    @staticmethod
-    def read_record(root_directory: str, record_name: str) -> pl.DataFrame:
-        """Function to read the record of tests from the Experiment_Record.xlsx file.
-
-        Args:
-            root_directory (str): The root directory containing the
-                Experiment_Record.xlsx file.
-            record_name (str): The name of the record (worksheet name)
-                in the Experiment_Record.xlsx file.
-
-        Returns:
-            pl.DataFrame: The record of tests run with this procedure.
-        """
-        record_xlsx = os.path.join(root_directory, "Experiment_Record.xlsx")
-        return pl.read_excel(record_xlsx, sheet_name=record_name)
 
     @staticmethod
     def get_filename(
