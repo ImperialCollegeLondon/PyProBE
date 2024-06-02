@@ -1,5 +1,5 @@
-Using Data
-==========
+Accessing Data
+==============
 
 Filtering
 ---------
@@ -57,7 +57,7 @@ Any filter applied to a cell returns a :class:`pyprobe.rawdata.RawData` object. 
 holds:
 
 * :attr:`~pyprobe.rawdata.RawData.data` attribute
-   a `polars Dataframe <https://docs.pola.rs/py-polars/html/reference/dataframe/index.html>_`
+   a `polars Dataframe <https://docs.pola.rs/py-polars/html/reference/dataframe/index.html>`_
    containing the filtered data.
 * :attr:`~pyprobe.rawdata.RawData.info` attribute
    the cell's :attr:`~pyprobe.cell.Cell.info` dictionary.
@@ -80,4 +80,4 @@ stored in the :attr:`~pyprobe.rawdata.RawData.data` Dataframe:
 
 .. code-block:: python
 
-   current = cell.procedure['Procedure Name'].experiment('Experiment Name')("Current [mA]")
+   current_mA = cell.procedure['Procedure Name'].experiment('Experiment Name')("Current [mA]")
