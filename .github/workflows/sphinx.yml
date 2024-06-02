@@ -1,7 +1,7 @@
 name: "Sphinx: Render docs"
 
 on:
-  pull_request:
+  push:
     branches:
       - main
     paths:
@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,7 +24,15 @@ jobs:
       run: |
         pip install -U pip
         pip install -r requirements-dev.txt
+    
+    - name: Run sphinx-apidoc
+      run: |
+        sphinx-apidoc -f -o docs/source/ pyprobe
 
+    - name: Clean old HTML files
+      run: |
+        rm -rf docs/build/html/*
+        
     - name: Build HTML
       run: |
         sphinx-build -b html docs/source docs/build/html
