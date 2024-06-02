@@ -29,6 +29,7 @@ dev = [
     "pytest-benchmark",
     "sphinx",
     "sphinx-rtd-theme",
+    "sphinx-tabs",
     "types-PyYAML",
 ]
 
