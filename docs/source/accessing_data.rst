@@ -12,7 +12,7 @@ user, either :ref:`when the data is imported <adding_data_to_cell>` or in the
 
 It is possible to filter data by a number of methods:
 
-* First **procedure**:
+* First by **procedure**:
    
    .. code-block:: python
 
