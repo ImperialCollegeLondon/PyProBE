@@ -78,6 +78,8 @@ For BioLogic Modulo Bat data:
                             input_filename = 'cycler_file_*_MB.mpt',
                             output_filename = 'processed_cycler_file.parquet')
 
+.. _adding_data_to_cell:
+
 Adding data to a cell object
 ----------------------------
 For data to be imported into PyProBE, there must be a corresponding :code:`README.yaml`
