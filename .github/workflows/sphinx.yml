@@ -38,6 +38,7 @@ jobs:
         sphinx-build -b html docs/source docs/build/html
 
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
