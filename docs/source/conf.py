@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 project = "PyProBE"
 copyright = (
-    "2024, Thomas Holland, Electrochemical Science and Engineering Group,"
+    "2024, Thomas Holland, Electrochemical Science and Engineering Group, "
     "Imperial College London"
 )
 
