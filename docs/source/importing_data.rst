@@ -1,5 +1,5 @@
-Getting Started
-===============
+Importing Data
+==============
 
 Making a cell object
 --------------------
@@ -80,6 +80,11 @@ For BioLogic Modulo Bat data:
 
 Adding data to a cell object
 ----------------------------
+For data to be imported into PyProBE, there must be a corresponding :code:`README.yaml`
+file in the same directory as the data file. This file contains details of the 
+experimental procedure that generated the data. See the :ref:`writing_a_readme_file`
+section for guidance.
+
 A data file in the standard PyProBE format can be added to a cell object using the
 :func:`pyprobe.cell.Cell.add_procedure` method:
 
@@ -115,5 +120,52 @@ first create a list of :attr:`pyprobe.cell.Cell` objects.
 
 The fastest way to do this is to store an Experiment Record alongside your data. This is
 an Excel file that contains important experimental information about your cells and the
-procedures they have undergone. See the :ref:`writing_experiment_record` section for 
+procedures they have undergone. See the :ref:`writing_an_experiment_record` section for 
 guidance.
+
+Once you have an Experiment Record, you can create a list of cells using the 
+:func:`pyprobe.cell.Cell.make_cell_list` function:
+
+.. code-block:: python
+
+   cell_list = Cell.make_cell_list(record_filepath = 'path/to/experiment_record.xlsx',
+                                   worsheet_name = 'Sample experiment')
+
+This function creates a list of cells, where the :attr:`pyprobe.cell.Cell.info` 
+dictionary is populated with the information from the Experiment Record.
+
+You can then add procedures to each cell in the list. 
+:func:`pyprobe.cell.Cell.add_procedure` includes the functionality to do this 
+parametrically. The steps are as follows:
+
+1. Define a function that generates the filename for each cell.
+2. Assign the filename generator function to the :code:`filename` argument in 
+   :func:`pyprobe.cell.Cell.add_procedure`.
+3. Provide the inputs to the filename generator function in the 
+   :code:`filename_inputs` argument. The order of the inputs must match the order of the
+   arguments in the filename generator function. These inputs must be keys of the 
+   :attr:`pyprobe.cell.Cell.info` dictionary. This means that they are likely to be 
+   column names in the Experiment Record Excel file.
+
+.. code-block:: python
+
+   # Define functions that generates the filename for each cell
+   def input_name_generator(cycler, channel):
+       return f'cycler_file_{cycler}_{channel}.csv'
+
+   def output_name_generator(cycler, channel):
+       return f'processed_cycler_file_{cycler}_{channel}.parquet'
+
+   # Convert the data to PyProBE format and add the procedure to each cell in the list
+   for cell in cell_list:
+       cell.process_cycler_file(cycler = 'neware',
+                                folder_path = 'path/to/root_folder/experiment_folder',
+                                input_filename = input_name_generator,
+                                output_filename = output_name_generator,
+                                filename_inputs = ["Cycler", "Channel"])
+                                
+       cell.add_procedure(procedure_name = 'Cycling',
+                          folder_path = 'path/to/root_folder/experiment_folder',
+                          filename = output_name_generator,
+                          filename_inputs = ["Cycler", "Channel"])
+

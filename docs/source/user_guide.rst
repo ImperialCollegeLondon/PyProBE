@@ -5,7 +5,7 @@ User Guide
    :maxdepth: 2
 
    installation
-   getting_started
+   importing_data
    input_data_guidance
    writing_a_readme_file
    writing_an_experiment_record
