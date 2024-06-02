@@ -9,7 +9,7 @@ exclude = [
 
 [project]
 name = "PyProBE"
-version = "0.1"
+version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = ["matplotlib", "numpy", "polars", "pandas", "fastexcel", "xlsx2csv", "plotly", "scikit-learn", "distinctipy", "streamlit", "PyYAML", "nbformat"]
 
@@ -29,6 +29,7 @@ dev = [
     "pytest-benchmark",
     "sphinx",
     "sphinx-rtd-theme",
+    "sphinx-tabs",
     "types-PyYAML",
 ]
 
