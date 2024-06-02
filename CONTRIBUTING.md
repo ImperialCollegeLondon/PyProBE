@@ -52,4 +52,4 @@ API documentation is built in html format, and stored locally in docs/build/html
 The documentation is also continuously deployed via GitHub Actions, and can be viewed [here](https://congenial-adventure-mz797n5.pages.github.io).
 
 ## Viewing benchmark performance
-The results run on every push to the main branch can be viewed [here](https://congenial-adventure-mz797n5.pages.github.io/dev/bench.index.html)
+The results run on every push to the main branch can be viewed [here](https://congenial-adventure-mz797n5.pages.github.io/dev/bench/index.html)
