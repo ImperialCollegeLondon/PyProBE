@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessing Data &mdash; PyProBE  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Plotting" href="plotting.html" />
+    <link rel="prev" title="Importing Data" href="importing_data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyProBE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="importing_data.html">Importing Data</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Accessing Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#filtering">Filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rawdata-objects">RawData objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_data_guidance.html">Input Data Guidance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_a_readme_file.html">Writing a README file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_an_experiment_record.html">Writing an Experiment record</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pyprobe</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyProBE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_guide.html">User Guide</a></li>
+      <li class="breadcrumb-item active">Accessing Data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/accessing_data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="accessing-data">
+<h1>Accessing Data<a class="headerlink" href="#accessing-data" title="Link to this heading"></a></h1>
+<section id="filtering">
+<h2>Filtering<a class="headerlink" href="#filtering" title="Link to this heading"></a></h2>
+<p>PyProBE is designed to have a simple interface for filtering data. The filtering methods
+use chained notation and natural language to be approachable for users who are less
+familiar with Python. Procedure and experiment names are specified as strings by the
+user, either <a class="reference internal" href="importing_data.html#adding-data-to-cell"><span class="std std-ref">when the data is imported</span></a> or in the
+<code class="code docutils literal notranslate"><span class="pre">README.yaml</span></code> <a class="reference internal" href="writing_a_readme_file.html#writing-a-readme-file"><span class="std std-ref">file</span></a>.</p>
+<p>It is possible to filter data by a number of methods:</p>
+<ul>
+<li><p>First by <strong>procedure</strong>:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Then by <strong>experiment</strong>:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Then by the <strong>numerical filter methods</strong> in the <a class="reference internal" href="pyprobe.html#pyprobe.filter.Filter" title="pyprobe.filter.Filter"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyprobe.filter.Filter</span></code></a> class:</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Filter by cycle</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Filter by step</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Filter by cycle then step</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Filter by step type</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rest</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">chargeordischarge</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Filter by cycle then step type</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Indices are zero-based, so the first cycle is 0, the first step is 0, etc. The
+index count is reset after applying every filter, i.e. the first discharge of any
+cycle is accessed with <code class="code docutils literal notranslate"><span class="pre">discharge(0)</span></code>.</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="rawdata-objects">
+<h2>RawData objects<a class="headerlink" href="#rawdata-objects" title="Link to this heading"></a></h2>
+<p>Any filter applied to a cell returns a <a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyprobe.rawdata.RawData</span></code></a> object. This
+holds:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData.data" title="pyprobe.rawdata.RawData.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a> attribute</dt><dd><p>a <a class="reference external" href="https://docs.pola.rs/py-polars/html/reference/dataframe/index.html">polars Dataframe</a>
+containing the filtered data.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData.info" title="pyprobe.rawdata.RawData.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">info</span></code></a> attribute</dt><dd><p>the cell’s <a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">info</span></code></a> dictionary.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>To access the data, you can access the full polars Dataframe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataframe</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
+</pre></div>
+</div>
+<p>Or you can access individual columns as 1D numpy arrays by calling the
+<a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a> object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">voltage</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1</span><span class="p">)(</span><span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Accessing columns directly with this method is useful for converting data to units not
+stored in the <a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData.data" title="pyprobe.rawdata.RawData.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a> Dataframe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">current_mA</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)(</span><span class="s2">&quot;Current [mA]&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="importing_data.html" class="btn btn-neutral float-left" title="Importing Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="plotting.html" class="btn btn-neutral float-right" title="Plotting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
