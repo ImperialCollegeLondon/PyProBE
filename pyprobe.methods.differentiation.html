@@ -21,6 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyprobe.methods.ocv_fitting package" href="pyprobe.methods.ocv_fitting.html" />
     <link rel="prev" title="pyprobe.methods package" href="pyprobe.methods.html" /> 
 </head>
 
@@ -45,16 +46,17 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API Reference</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pyprobe</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="pyprobe.html">pyprobe package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="pyprobe.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.cyclers.html">pyprobe.cyclers package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.experiments.html">pyprobe.experiments package</a></li>
 <li class="toctree-l4 current"><a class="reference internal" href="pyprobe.methods.html">pyprobe.methods package</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.batterycycler">pyprobe.batterycycler module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.cell">pyprobe.cell module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.experiment">pyprobe.experiment module</a></li>
@@ -64,7 +66,7 @@
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.procedure">pyprobe.procedure module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.rawdata">pyprobe.rawdata module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.result">pyprobe.result module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.units">pyprobe.units module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.unitconverter">pyprobe.unitconverter module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe">Module contents</a></li>
 </ul>
 </li>
@@ -86,7 +88,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pyprobe</a></li>
           <li class="breadcrumb-item"><a href="pyprobe.html">pyprobe package</a></li>
           <li class="breadcrumb-item"><a href="pyprobe.methods.html">pyprobe.methods package</a></li>
       <li class="breadcrumb-item active">pyprobe.methods.differentiation package</li>
@@ -109,12 +111,12 @@
 <p>Module for the Feng et al. (2020) method for ICA.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.methods.differentiation.feng_2020.Feng2020">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.methods.differentiation.feng_2020.</span></span><span class="sig-name descname"><span class="pre">Feng2020</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rawdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pyprobe.html#pyprobe.result.Result" title="pyprobe.result.Result"><span class="pre">Result</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.methods.differentiation.feng_2020.Feng2020" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.methods.differentiation.feng_2020.</span></span><span class="sig-name descname"><span class="pre">Feng2020</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rawdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pyprobe.html#pyprobe.result.Result" title="pyprobe.result.Result"><span class="pre">Result</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltaV</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.methods.differentiation.feng_2020.Feng2020" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.method.Method" title="pyprobe.method.Method"><code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code></a></p>
 <p>A method for calculating the incremental capacity analysis.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.methods.differentiation.feng_2020.Feng2020.dQdV">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dQdV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voltage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltaV</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.methods.differentiation.feng_2020.Feng2020.dQdV" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="pyprobe.methods.differentiation.feng_2020.Feng2020.calculate_dQdV">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_dQdV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voltage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltaV</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.methods.differentiation.feng_2020.Feng2020.calculate_dQdV" title="Link to this definition"></a></dt>
 <dd><p>Calculate the normalised incremental capacity of the step.</p>
 <p>Method from: 10.1016/j.etran.2020.100051</p>
 <dl class="field-list simple">
@@ -172,12 +174,13 @@ the parameters for the method</p></li>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="pyprobe.methods.html" class="btn btn-neutral float-left" title="pyprobe.methods package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pyprobe.methods.ocv_fitting.html" class="btn btn-neutral float-right" title="pyprobe.methods.ocv_fitting package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group,Imperial College London.</p>
+    <p>&#169; Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

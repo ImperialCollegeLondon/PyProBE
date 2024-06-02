@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Importing Data &mdash; PyProBE  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Input Data Guidance" href="input_data_guidance.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyProBE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Importing Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#making-a-cell-object">Making a cell object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#converting-data-to-pyprobe-format">Converting data to PyProBE Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#working-with-multiple-input-files">Working with multiple input files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-data-to-a-cell-object">Adding data to a cell object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-preprocessing">Batch preprocessing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="input_data_guidance.html">Input Data Guidance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_a_readme_file.html">Writing a README file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_an_experiment_record.html">Writing an Experiment record</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pyprobe</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyProBE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_guide.html">User Guide</a></li>
+      <li class="breadcrumb-item active">Importing Data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/importing_data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="importing-data">
+<h1>Importing Data<a class="headerlink" href="#importing-data" title="Link to this heading"></a></h1>
+<section id="making-a-cell-object">
+<h2>Making a cell object<a class="headerlink" href="#making-a-cell-object" title="Link to this heading"></a></h2>
+<p>PyProBE stores all experimental data and information in a  <a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell" title="pyprobe.cell.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyprobe.cell.Cell</span></code></a>
+object. It has two main attributes: a dictionary of cell details and experimental info
+(<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.info</span></code></a>) and a dictionary of experimental procedures performed
+on the cell (<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.procedure" title="pyprobe.cell.Cell.procedure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.procedure</span></code></a>).</p>
+<p>A cell object can be created by providing an info dictionary:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.cell</span> <span class="kn">import</span> <span class="n">Cell</span> <span class="c1"># module for storing cell data</span>
+
+<span class="c1"># Describe the cell. Required fields are &#39;Name&#39;.</span>
+<span class="n">info_dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sample cell&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Chemistry&#39;</span><span class="p">:</span> <span class="s1">&#39;NMC622&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Nominal Capacity [Ah]&#39;</span><span class="p">:</span> <span class="mf">0.04</span><span class="p">,</span>
+                   <span class="s1">&#39;Cycler number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                   <span class="s1">&#39;Channel number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,}</span>
+
+<span class="c1"># Create a cell object</span>
+<span class="n">cell</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="n">info_dictionary</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The info dictionary can contain any number of key-value pairs. The only required key is
+‘Name’, which is used to identify the cell in plots.</p>
+</section>
+<section id="converting-data-to-pyprobe-format">
+<h2>Converting data to PyProBE Format<a class="headerlink" href="#converting-data-to-pyprobe-format" title="Link to this heading"></a></h2>
+<p>PyProBE defines a Procedure as a dataset collected from a single run of an experimental
+procedure created on a battery cycler. Throughout its life, a cell will likely undergo
+multiple procedures, such as beginning-of-life testing, degradation cycles, reference
+performance tests (RPTs) etc.</p>
+<p>Before adding data to a cell object, it must be converted into the PyProBE standard
+format. This is done with the <a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.process_cycler_file" title="pyprobe.cell.Cell.process_cycler_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.process_cycler_file()</span></code></a> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From the previously created cell instance</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">process_cycler_file</span><span class="p">(</span><span class="n">cycler</span> <span class="o">=</span> <span class="s1">&#39;neware&#39;</span><span class="p">,</span>
+                         <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                         <span class="n">input_filename</span> <span class="o">=</span> <span class="s1">&#39;cycler_file.csv&#39;</span><span class="p">,</span>
+                         <span class="n">output_filename</span> <span class="o">=</span> <span class="s1">&#39;processed_cycler_file.parquet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Your parquet file will be saved in the same directory (<code class="code docutils literal notranslate"><span class="pre">folder_path</span></code>) as the input
+file. Once converted into this format, PyProBE is agnostic to cycler manufacturer
+and model. For more details on the PyProBE standard format, and an up-to-date list of
+supported cyclers, see the <a class="reference internal" href="input_data_guidance.html#input-data-guidance"><span class="std std-ref">Input Data Guidance</span></a> section.</p>
+</section>
+<section id="working-with-multiple-input-files">
+<h2>Working with multiple input files<a class="headerlink" href="#working-with-multiple-input-files" title="Link to this heading"></a></h2>
+<p>Some cyclers may output data in multiple files. For example, BioLogic Modulo Bat
+procedures. Assuming the data is all in the same folder, PyProBE is able to collect all
+of the files and process them into a single parquet file. This is done by providing a
+<code class="code docutils literal notranslate"><span class="pre">*</span></code> wildcard in the <code class="code docutils literal notranslate"><span class="pre">input_filename</span></code> argument:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From the previously created cell instance</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">process_cycler_file</span><span class="p">(</span><span class="n">cycler</span> <span class="o">=</span> <span class="s1">&#39;neware&#39;</span><span class="p">,</span>
+                         <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                         <span class="n">input_filename</span> <span class="o">=</span> <span class="s1">&#39;cycler_file*.csv&#39;</span><span class="p">,</span>
+                         <span class="n">output_filename</span> <span class="o">=</span> <span class="s1">&#39;processed_cycler_file.parquet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will process all files in the folder that match the pattern
+<code class="code docutils literal notranslate"><span class="pre">cycler_file*.csv</span></code>, e.g. <code class="code docutils literal notranslate"><span class="pre">cycler_file_1.csv</span></code>, <code class="code docutils literal notranslate"><span class="pre">cycler_file_2.csv</span></code>,
+etc.</p>
+<p>For BioLogic Modulo Bat data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cell</span><span class="o">.</span><span class="n">process_cycler_file</span><span class="p">(</span><span class="n">cycler</span> <span class="o">=</span> <span class="s1">&#39;biologic&#39;</span><span class="p">,</span>
+                         <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                         <span class="n">input_filename</span> <span class="o">=</span> <span class="s1">&#39;cycler_file_*_MB.mpt&#39;</span><span class="p">,</span>
+                         <span class="n">output_filename</span> <span class="o">=</span> <span class="s1">&#39;processed_cycler_file.parquet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="adding-data-to-a-cell-object">
+<h2>Adding data to a cell object<a class="headerlink" href="#adding-data-to-a-cell-object" title="Link to this heading"></a></h2>
+<p>For data to be imported into PyProBE, there must be a corresponding <code class="code docutils literal notranslate"><span class="pre">README.yaml</span></code>
+file in the same directory as the data file. This file contains details of the
+experimental procedure that generated the data. See the <a class="reference internal" href="writing_a_readme_file.html#writing-a-readme-file"><span class="std std-ref">Writing a README file</span></a>
+section for guidance.</p>
+<p>A data file in the standard PyProBE format can be added to a cell object using the
+<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.add_procedure" title="pyprobe.cell.Cell.add_procedure"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.add_procedure()</span></code></a> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add the processed data to the cell object</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">add_procedure</span><span class="p">(</span><span class="n">procedure_name</span> <span class="o">=</span> <span class="s1">&#39;Example procedure&#39;</span><span class="p">,</span>
+                   <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                   <span class="n">procedure_filename</span> <span class="o">=</span> <span class="s1">&#39;processed_cycler_file.parquet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Any number of procedures can be added to a cell, for example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add the first procedure</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">add_procedure</span><span class="p">(</span><span class="n">procedure_name</span> <span class="o">=</span> <span class="s1">&#39;Cycling&#39;</span><span class="p">,</span>
+                   <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                   <span class="n">procedure_filename</span> <span class="o">=</span> <span class="s1">&#39;processed_cycler_file_cycling.parquet&#39;</span><span class="p">)</span>
+
+<span class="c1"># Add the second procedure</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">add_procedure</span><span class="p">(</span><span class="n">procedure_name</span> <span class="o">=</span> <span class="s1">&#39;RPT&#39;</span><span class="p">,</span>
+                   <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                   <span class="n">procedure_filename</span> <span class="o">=</span> <span class="s1">&#39;processed_cycler_file_RPT.parquet&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">)</span>
+<span class="c1"># Returns: dict({&#39;Cycling&#39;: &lt;pyprobe.procedure.Procedure object…, &#39;RPT&#39;: &lt;pyprobe.procedure.Procedure object…})</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-preprocessing">
+<h2>Batch preprocessing<a class="headerlink" href="#batch-preprocessing" title="Link to this heading"></a></h2>
+<p>If you have multiple cells undergoing the same experimental procedures, you can use the
+built-in batch processing functionality in PyProBE to speed up your workflow. You must
+first create a list of <a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell" title="pyprobe.cell.Cell"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell</span></code></a> objects.</p>
+<p>The fastest way to do this is to store an Experiment Record alongside your data. This is
+an Excel file that contains important experimental information about your cells and the
+procedures they have undergone. See the <a class="reference internal" href="writing_an_experiment_record.html#writing-an-experiment-record"><span class="std std-ref">Writing an Experiment record</span></a> section for
+guidance.</p>
+<p>Once you have an Experiment Record, you can create a list of cells using the
+<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.make_cell_list" title="pyprobe.cell.Cell.make_cell_list"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.make_cell_list()</span></code></a> function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cell_list</span> <span class="o">=</span> <span class="n">Cell</span><span class="o">.</span><span class="n">make_cell_list</span><span class="p">(</span><span class="n">record_filepath</span> <span class="o">=</span> <span class="s1">&#39;path/to/experiment_record.xlsx&#39;</span><span class="p">,</span>
+                                <span class="n">worsheet_name</span> <span class="o">=</span> <span class="s1">&#39;Sample experiment&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This function creates a list of cells, where the <a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.info</span></code></a>
+dictionary is populated with the information from the Experiment Record.</p>
+<p>You can then add procedures to each cell in the list.
+<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.add_procedure" title="pyprobe.cell.Cell.add_procedure"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.add_procedure()</span></code></a> includes the functionality to do this
+parametrically. The steps are as follows:</p>
+<ol class="arabic simple">
+<li><p>Define a function that generates the filename for each cell.</p></li>
+<li><p>Assign the filename generator function to the <code class="code docutils literal notranslate"><span class="pre">filename</span></code> argument in
+<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.add_procedure" title="pyprobe.cell.Cell.add_procedure"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.add_procedure()</span></code></a>.</p></li>
+<li><p>Provide the inputs to the filename generator function in the
+<code class="code docutils literal notranslate"><span class="pre">filename_inputs</span></code> argument. The order of the inputs must match the order of the
+arguments in the filename generator function. These inputs must be keys of the
+<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.info</span></code></a> dictionary. This means that they are likely to be
+column names in the Experiment Record Excel file.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define functions that generates the filename for each cell</span>
+<span class="k">def</span> <span class="nf">input_name_generator</span><span class="p">(</span><span class="n">cycler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;cycler_file_</span><span class="si">{</span><span class="n">cycler</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">.csv&#39;</span>
+
+<span class="k">def</span> <span class="nf">output_name_generator</span><span class="p">(</span><span class="n">cycler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;processed_cycler_file_</span><span class="si">{</span><span class="n">cycler</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">.parquet&#39;</span>
+
+<span class="c1"># Convert the data to PyProBE format and add the procedure to each cell in the list</span>
+<span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">cell_list</span><span class="p">:</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">process_cycler_file</span><span class="p">(</span><span class="n">cycler</span> <span class="o">=</span> <span class="s1">&#39;neware&#39;</span><span class="p">,</span>
+                             <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                             <span class="n">input_filename</span> <span class="o">=</span> <span class="n">input_name_generator</span><span class="p">,</span>
+                             <span class="n">output_filename</span> <span class="o">=</span> <span class="n">output_name_generator</span><span class="p">,</span>
+                             <span class="n">filename_inputs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Cycler&quot;</span><span class="p">,</span> <span class="s2">&quot;Channel&quot;</span><span class="p">])</span>
+
+    <span class="n">cell</span><span class="o">.</span><span class="n">add_procedure</span><span class="p">(</span><span class="n">procedure_name</span> <span class="o">=</span> <span class="s1">&#39;Cycling&#39;</span><span class="p">,</span>
+                       <span class="n">folder_path</span> <span class="o">=</span> <span class="s1">&#39;path/to/root_folder/experiment_folder&#39;</span><span class="p">,</span>
+                       <span class="n">filename</span> <span class="o">=</span> <span class="n">output_name_generator</span><span class="p">,</span>
+                       <span class="n">filename_inputs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Cycler&quot;</span><span class="p">,</span> <span class="s2">&quot;Channel&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="input_data_guidance.html" class="btn btn-neutral float-right" title="Input Data Guidance" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

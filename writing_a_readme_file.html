@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing a README file &mdash; PyProBE  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Writing an Experiment record" href="writing_an_experiment_record.html" />
+    <link rel="prev" title="Input Data Guidance" href="input_data_guidance.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyProBE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="importing_data.html">Importing Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_data_guidance.html">Input Data Guidance</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Writing a README file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_an_experiment_record.html">Writing an Experiment record</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pyprobe</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyProBE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="user_guide.html">User Guide</a></li>
+      <li class="breadcrumb-item active">Writing a README file</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/writing_a_readme_file.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="writing-a-readme-file">
+<span id="id1"></span><h1>Writing a README file<a class="headerlink" href="#writing-a-readme-file" title="Link to this heading"></a></h1>
+<p>README files are important to store alongside your experimental data. The PyProBE
+README format is a <code class="code docutils literal notranslate"><span class="pre">.yaml</span></code> file that contains details about the instructions
+provided to the battery cycler used to generate the data. It is then used filter the
+procedure into experiments that can be analysed separately.</p>
+<p>The <code class="code docutils literal notranslate"><span class="pre">README.yaml</span></code> contains the following information:</p>
+<ul>
+<li><dl>
+<dt>The name of the experiment</dt><dd><p>This enables filtering by <code class="code docutils literal notranslate"><span class="pre">'Experiment</span> <span class="pre">Name'</span></code> with the</p>
+<p><code class="code docutils literal notranslate"><span class="pre">cell.procedure['Procedure</span> <span class="pre">Name'].experiment['Experiment</span> <span class="pre">Name']</span></code></p>
+<p>syntax.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Type of experiment</dt><dd><p>This enables the creation of different objects for different types of experiments.
+See <a class="reference internal" href="pyprobe.experiments.html#module-pyprobe.experiments" title="pyprobe.experiments"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.experiments</span></code></a> for the currently available experiment types and their
+custom attributes.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Step numbers</dt><dd><p>This is an optional field, but is required when the step numbers of the data are not
+sequential. In the example below, for instance, step 8 is missing.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Steps</dt><dd><p>This is a list of strings that describe the each step of the experiment. The strings
+should follow <a class="reference external" href="https://docs.pybamm.org/en/stable/source/api/experiment/experiment_steps.html#pybamm.step.string">PyBaMM’s Experiment string</a>
+syntax.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Repeat</dt><dd><p>This is the number of times the experiment is repeated. This is useful for cycling
+experiments, where the same steps are repeated multiple times.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>The following is an example of a <code class="code docutils literal notranslate"><span class="pre">README.yaml</span></code> file:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is the name of the experiment</span>
+<span class="nt">Initial Charge</span><span class="p">:</span>
+<span class="w">   </span><span class="c1"># The type of the experiment</span>
+<span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SOC Reset</span>
+<span class="w">   </span><span class="c1"># The step numbers in the experiment</span>
+<span class="w">   </span><span class="nt">Step Numbers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">]</span>
+<span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Description of each step, using PyBaMM Experiment syntax</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 4 hours</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
+<span class="w">   </span><span class="c1"># The number of times the experiment is repeated</span>
+<span class="w">   </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="nt">Break-in Cycles</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Cycling</span>
+<span class="w">   </span><span class="nt">Step Numbers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">6</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">]</span>
+<span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at constant current of 4mA until voltage reaches 3V</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
+<span class="w">   </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="nt">Discharge Pulses</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pulsing</span>
+<span class="w">   </span><span class="nt">Step Numbers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">9</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">11</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">]</span>
+<span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 10 seconds</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at constant current of 20mA until 4mAh has passed or voltage reaches 3V</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 30 minutes</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 1.5 hours</span>
+<span class="w">   </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="input_data_guidance.html" class="btn btn-neutral float-left" title="Input Data Guidance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="writing_an_experiment_record.html" class="btn btn-neutral float-right" title="Writing an Experiment record" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

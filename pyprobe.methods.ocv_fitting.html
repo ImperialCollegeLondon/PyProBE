@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pyprobe.methods.ocv_fitting package &mdash; PyProBE  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="pyprobe.methods.differentiation package" href="pyprobe.methods.differentiation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyProBE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pyprobe</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pyprobe.html">pyprobe package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pyprobe.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.cyclers.html">pyprobe.cyclers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.experiments.html">pyprobe.experiments package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="pyprobe.methods.html">pyprobe.methods package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.cell">pyprobe.cell module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.experiment">pyprobe.experiment module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.filter">pyprobe.filter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.method">pyprobe.method module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.plot">pyprobe.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.procedure">pyprobe.procedure module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.rawdata">pyprobe.rawdata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.result">pyprobe.result module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.unitconverter">pyprobe.unitconverter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyProBE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pyprobe</a></li>
+          <li class="breadcrumb-item"><a href="pyprobe.html">pyprobe package</a></li>
+          <li class="breadcrumb-item"><a href="pyprobe.methods.html">pyprobe.methods package</a></li>
+      <li class="breadcrumb-item active">pyprobe.methods.ocv_fitting package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pyprobe.methods.ocv_fitting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pyprobe-methods-ocv-fitting-package">
+<h1>pyprobe.methods.ocv_fitting package<a class="headerlink" href="#pyprobe-methods-ocv-fitting-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pyprobe.methods.ocv_fitting.DMA">
+<span id="pyprobe-methods-ocv-fitting-dma-module"></span><h2>pyprobe.methods.ocv_fitting.DMA module<a class="headerlink" href="#module-pyprobe.methods.ocv_fitting.DMA" title="Link to this heading"></a></h2>
+<p>A module for the DMA method.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyprobe.methods.ocv_fitting.DMA.DMA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.methods.ocv_fitting.DMA.</span></span><span class="sig-name descname"><span class="pre">DMA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="pyprobe.html#pyprobe.result.Result" title="pyprobe.result.Result"><span class="pre">Result</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.methods.ocv_fitting.DMA.DMA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.method.Method" title="pyprobe.method.Method"><code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code></a></p>
+<p>A method to calculate DMA parameters from fitted OCV curves.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.methods.ocv_fitting.DMA.DMA.calculate_dma_parameters">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_dma_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_capacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pe_capacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ne_capacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">li_inventory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.methods.ocv_fitting.DMA.DMA.calculate_dma_parameters" title="Link to this definition"></a></dt>
+<dd><p>Calculate the DMA parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pe_stoich_limits</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode stoichiometry limits.</p></li>
+<li><p><strong>ne_stoich_limits</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode stoichiometry limits.</p></li>
+<li><p><strong>pe_capacity</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode capacity.</p></li>
+<li><p><strong>ne_capacity</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode capacity.</p></li>
+<li><p><strong>li_inventory</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The lithium inventory.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The SOH, LAM_pe, LAM_ne, and LLI.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[float, float, float, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pyprobe.methods.ocv_fitting.Simple_OCV_fit">
+<span id="pyprobe-methods-ocv-fitting-simple-ocv-fit-module"></span><h2>pyprobe.methods.ocv_fitting.Simple_OCV_fit module<a class="headerlink" href="#module-pyprobe.methods.ocv_fitting.Simple_OCV_fit" title="Link to this heading"></a></h2>
+<p>Module for simple OCV fitting.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.methods.ocv_fitting.Simple_OCV_fit.</span></span><span class="sig-name descname"><span class="pre">Simple_OCV_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rawdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><span class="pre">RawData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_ne</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_guess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.method.Method" title="pyprobe.method.Method"><code class="xref py py-class docutils literal notranslate"><span class="pre">Method</span></code></a></p>
+<p>A method for fitting OCV curves.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit.calc_electrode_capacities">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_electrode_capacities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_pe_lo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe_hi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne_lo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne_hi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_capacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit.calc_electrode_capacities" title="Link to this definition"></a></dt>
+<dd><p>Calculate the electrode capacities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_pe_lo</strong> (<em>float</em>) – The cathode stoichiometry at lowest cell SOC.</p></li>
+<li><p><strong>x_pe_hi</strong> (<em>float</em>) – The cathode stoichiometry at highest cell SOC.</p></li>
+<li><p><strong>x_ne_lo</strong> (<em>float</em>) – The anode stoichiometry at lowest cell SOC.</p></li>
+<li><p><strong>x_ne_hi</strong> (<em>float</em>) – The anode stoichiometry at highest cell SOC.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>NDArray: The cathode capacity.</p></li>
+<li><p>NDArray: The anode capacity.</p></li>
+<li><p>NDArray: The lithium inventory.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[float, float, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit.calc_full_cell_OCV">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_full_cell_OCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">SOC</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe_lo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe_hi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne_lo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne_hi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_ne</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit.calc_full_cell_OCV" title="Link to this definition"></a></dt>
+<dd><p>Calculate the full cell OCV.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>SOC</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The full cell SOC.</p></li>
+<li><p><strong>x_pe_lo</strong> (<em>float</em>) – The cathode stoichiometry at lowest cell SOC.</p></li>
+<li><p><strong>x_pe_hi</strong> (<em>float</em>) – The cathode stoichiometry at highest cell SOC.</p></li>
+<li><p><strong>x_ne_lo</strong> (<em>float</em>) – The cathode stoichiometry at lowest cell SOC.</p></li>
+<li><p><strong>x_ne_hi</strong> (<em>float</em>) – The anode stoichiometry at highest cell SOC.</p></li>
+<li><p><strong>x_pe</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode stoichiometry data.</p></li>
+<li><p><strong>ocp_pe</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode OCP data.</p></li>
+<li><p><strong>x_ne</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode stoichiometry data.</p></li>
+<li><p><strong>ocp_ne</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode OCP data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The full cell OCV.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NDArray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit.fit_ocv">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_ocv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voltage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_ne</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_ne</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">float64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_guess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.methods.ocv_fitting.Simple_OCV_fit.Simple_OCV_fit.fit_ocv" title="Link to this definition"></a></dt>
+<dd><p>Fit the OCV curve.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>capacity</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The capacity data.</p></li>
+<li><p><strong>voltage</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The voltage data.</p></li>
+<li><p><strong>x_pe</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode stoichiometry data.</p></li>
+<li><p><strong>ocp_pe</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode OCP data.</p></li>
+<li><p><strong>x_ne</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode stoichiometry data.</p></li>
+<li><p><strong>ocp_ne</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode OCP data.</p></li>
+<li><p><strong>x_guess</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – The initial guess for the fit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>float: The cathode stoihiometry at lowest cell SOC.</p></li>
+<li><p>float: The cathode stoihiometry at highest cell SOC.</p></li>
+<li><p>float: The anode stoihiometry at lowest cell SOC.</p></li>
+<li><p>float: The anode stoihiometry at highest cell SOC.</p></li>
+<li><p>float: The cell capacity.</p></li>
+<li><p>float: The cathode capacity.</p></li>
+<li><p>float: The anode capacity.</p></li>
+<li><p>float: The lithium inventory.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[float, float, float, float, float, float, float, float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pyprobe.methods.ocv_fitting">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pyprobe.methods.ocv_fitting" title="Link to this heading"></a></h2>
+<p>A module for OCV fitting methods.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pyprobe.methods.differentiation.html" class="btn btn-neutral float-left" title="pyprobe.methods.differentiation package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
