@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    pyprobe.methods.differentiation
+   pyprobe.methods.ocv_fitting
 
 Module contents
 ---------------

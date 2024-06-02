@@ -12,8 +12,9 @@ class Result:
     """A result object for returning data and plotting.
 
     Attributes:
-        _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
-        dataframe (Optional[pl.DataFrame]): The data as a polars DataFrame.
+        _data (pl.LazyFrame | pl.DataFrame): The data as a polars DataFrame or
+            LazyFrame.
+        data (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 

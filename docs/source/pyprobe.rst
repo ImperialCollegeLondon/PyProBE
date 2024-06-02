@@ -7,19 +7,12 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   pyprobe.cyclers
    pyprobe.experiments
    pyprobe.methods
 
 Submodules
 ----------
-
-pyprobe.batterycycler module
-----------------------------
-
-.. automodule:: pyprobe.batterycycler
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 pyprobe.cell module
 -------------------
@@ -93,10 +86,10 @@ pyprobe.result module
    :undoc-members:
    :show-inheritance:
 
-pyprobe.units module
---------------------
+pyprobe.unitconverter module
+----------------------------
 
-.. automodule:: pyprobe.units
+.. automodule:: pyprobe.unitconverter
    :members:
    :undoc-members:
    :show-inheritance:
