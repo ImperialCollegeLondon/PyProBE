@@ -14,7 +14,7 @@ Please follow the [user installation guide](https://congenial-adventure-mz797n5.
 PyProBE should be imported as a package into an external post-processing script or jupyter notebook.
 
 ```python
-from pyprobe.cell import Cell
+import pyprobe
 ```
 
 PyProBE ```Cell``` objects enable easy access to data throughout the life of a cell undergoing lab experiments on a battery cycler. Data from multiple procedures can be accessed with natural language function calls:
