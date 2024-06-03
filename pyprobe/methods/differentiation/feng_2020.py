@@ -4,7 +4,7 @@ from typing import List, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from pyprobe.method import Method
+from pyprobe.methods.method import Method
 from pyprobe.result import Result
 
 

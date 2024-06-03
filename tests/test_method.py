@@ -4,7 +4,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from pyprobe.method import Method
+from pyprobe.methods.method import Method
 from pyprobe.result import Result
 
 

@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import curve_fit
 
-from pyprobe.method import Method
+from pyprobe.methods.method import Method
 from pyprobe.rawdata import RawData
 
 
