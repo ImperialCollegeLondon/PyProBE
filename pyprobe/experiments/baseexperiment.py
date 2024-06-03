@@ -1,4 +1,4 @@
-"""A module for the Experiment class."""
+"""A module for the BaseExperiment class."""
 
 from typing import Dict
 
@@ -7,7 +7,7 @@ import polars as pl
 from pyprobe.filter import Filter
 
 
-class Experiment(Filter):
+class BaseExperiment(Filter):
     """An experiment in a battery procedure."""
 
     def __init__(

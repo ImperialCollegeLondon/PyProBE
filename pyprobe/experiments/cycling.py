@@ -4,11 +4,11 @@ from typing import Dict
 
 import polars as pl
 
-from pyprobe.experiments.experiment import Experiment
+from pyprobe.experiments.baseexperiment import BaseExperiment
 from pyprobe.result import Result
 
 
-class Cycling(Experiment):
+class Cycling(BaseExperiment):
     """A cycling experiment in a battery procedure."""
 
     def __init__(

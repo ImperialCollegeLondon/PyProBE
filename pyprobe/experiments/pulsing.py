@@ -6,11 +6,11 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
-from pyprobe.experiments.experiment import Experiment
+from pyprobe.experiments.baseexperiment import BaseExperiment
 from pyprobe.result import Result
 
 
-class Pulsing(Experiment):
+class Pulsing(BaseExperiment):
     """A pulsing experiment in a battery procedure."""
 
     def __init__(
