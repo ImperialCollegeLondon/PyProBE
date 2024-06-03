@@ -4,7 +4,7 @@ from typing import Dict
 
 import polars as pl
 
-from pyprobe.experiment import Experiment
+from pyprobe.experiments.experiment import Experiment
 from pyprobe.result import Result
 
 

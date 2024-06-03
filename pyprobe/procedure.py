@@ -5,8 +5,8 @@ from typing import Any, Dict, List
 import polars as pl
 import yaml
 
-from pyprobe.experiment import Experiment
 from pyprobe.experiments.cycling import Cycling
+from pyprobe.experiments.experiment import Experiment
 from pyprobe.experiments.pOCV import pOCV
 from pyprobe.experiments.pulsing import Pulsing
 from pyprobe.filter import Filter

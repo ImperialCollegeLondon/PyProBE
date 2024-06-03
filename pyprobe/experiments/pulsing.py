@@ -6,7 +6,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
-from pyprobe.experiment import Experiment
+from pyprobe.experiments.experiment import Experiment
 from pyprobe.result import Result
 
 
