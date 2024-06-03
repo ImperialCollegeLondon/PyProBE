@@ -55,3 +55,24 @@ battery cyclers. It has four core objectives:
 
     It is easy to write your own method. See the :ref:`guidance <creating_a_new_method>`
     and `contributing guidelines <https://github.com/ImperialCollegeLondon/PyProBE/blob/main/CONTRIBUTING.md>`_.
+
+PyProBE Structure
+-----------------
+Below is a flowchart of the data objects that make up PyProBE:
+
+.. image:: images/PyProBE_flowchart.png
+
+All data is stored in a :class:`~pyprobe.cell.Cell` object, which contains an
+:attr:`~pyprobe.cell.Cell.info` attribute for storing metadata and a 
+:attr:`~pyprobe.cell.Cell.procedure` dictionary for storing data for the experimental
+procedures run on the cell. These can be further filtered as described in the 
+:ref:`filtering` section of the user guide.
+
+Once the data is filtered, it can be processed further with a 
+:mod:`method <pyprobe.methods>` or displayed using the built-in :mod:`~pyprobe.plot` 
+module. All filters and methods produce objects that are compatible with the plotting
+module, making it easy to visualise the data at any stage of the analysis. Additionally, 
+all methods produce a :class:`~pyprobe.result.Result` which can be an input to further
+methods. This is summarised in the flowchart below:
+
+.. image:: images/Result_flowchart.png

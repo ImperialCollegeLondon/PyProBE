@@ -1,6 +1,8 @@
 Accessing Data
 ==============
 
+.. _filtering:
+
 Filtering
 ---------
 
