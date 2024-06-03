@@ -76,3 +76,17 @@ all methods produce a :class:`~pyprobe.result.Result` which can be an input to f
 methods. This is summarised in the flowchart below:
 
 .. image:: images/Result_flowchart.png
+
+This documentation
+------------------
+These docs are generated from the continuous development branch (main) of the PyProBE
+repository. If you are using a particular release of PyProBE, you can generate the docs
+specific to your release locally by running the following commands:
+
+.. code-block:: bash
+
+    cd PyProBE/docs
+    make html
+
+Then navigate to :code:`PyProBE/docs/build/html/` and open :code:`index.html` in your
+web browser.
