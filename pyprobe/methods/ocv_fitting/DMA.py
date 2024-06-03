@@ -5,11 +5,11 @@ from typing import List, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from pyprobe.methods.method import Method
+from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.result import Result
 
 
-class DMA(Method):
+class DMA(BaseMethod):
     """A method to calculate DMA parameters from fitted OCV curves."""
 
     def __init__(self, input_data: List[Result]) -> None:

@@ -4,11 +4,11 @@ from typing import List, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from pyprobe.methods.method import Method
+from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.result import Result
 
 
-class Feng2020(Method):
+class Feng2020(BaseMethod):
     """A method for calculating the incremental capacity analysis."""
 
     def __init__(self, rawdata: Result, deltaV: float):

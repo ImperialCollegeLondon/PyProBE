@@ -1,4 +1,4 @@
-"""Module for the base Method class."""
+"""Module for the BaseMethod class."""
 from typing import Any, Dict, List
 
 import numpy as np
@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from pyprobe.result import Result
 
 
-class Method:
+class BaseMethod:
     """A base class for a method.
 
     Attributes:
@@ -22,7 +22,7 @@ class Method:
         self,
         input_data: Result | List[Result],
     ) -> None:
-        """Initialize the Method object.
+        """Initialize the BaseMethod object.
 
         Args:
             input_data (Result): The result object.
