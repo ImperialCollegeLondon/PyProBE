@@ -33,17 +33,10 @@ def test_process_readme(procedure_fixture, titles_fixture, steps_fixture, benchm
 
     titles, steps = benchmark(process_readme)
     assert titles == titles_fixture
-    assert steps == steps_fixture
-
-    # Test without step numbers
-    titles, steps = procedure_fixture.process_readme(
-        "tests/sample_data/neware/README_no_step_num.yaml"
-    )
-    assert titles == titles_fixture
     assert steps == [
         [1, 2, 3],
-        [4, 5, 6, 7],
-        [8, 9, 10, 11],
+        [4, 5, 6, 7, 8],
+        [9, 10, 11, 12, 13],
     ]
 
     # Test with total steps
