@@ -2,7 +2,6 @@
 
 
 import glob
-import os
 import re
 from datetime import datetime
 from typing import List
@@ -19,9 +18,6 @@ def read_file(filepath: str) -> pl.DataFrame:
     Args:
         filepath: The path to the file.
     """
-    filename = os.path.basename(filepath)
-    file_ext = os.path.splitext(filename)[1]
-
     with open(filepath, "r", encoding="iso-8859-1") as file:
         file.readline()  # Skip the first line
         second_line = file.readline().strip()  # Read the second line
@@ -37,17 +33,17 @@ def read_file(filepath: str) -> pl.DataFrame:
     _, value = start_time_line.split(" : ")
     start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
 
-    match file_ext:
-        case ".mpt":
-            dataframe = pl.read_csv(
-                filepath, skip_rows=n_header_lines - 1, separator="\t"
-            )
-        case ".txt":
-            dataframe = pl.read_csv(
-                filepath, skip_rows=n_header_lines - 1, separator="\t"
-            )
-        case _:
-            raise ValueError(f"Unsupported file extension: {file_ext}")
+    columns_to_read = ["time", "Ns", "I", "Ecell", "Q charge", "Q discharge"]
+
+    all_columns = pl.scan_csv(
+        filepath, skip_rows=n_header_lines - 1, separator="\t"
+    ).columns
+    selected_columns = [
+        col for col in all_columns if any(sub in col for sub in columns_to_read)
+    ]
+    dataframe = pl.read_csv(
+        filepath, skip_rows=n_header_lines - 1, separator="\t", columns=selected_columns
+    )
 
     start = pl.DataFrame({"start": [start_time]})
     dataframe = dataframe.with_columns(
