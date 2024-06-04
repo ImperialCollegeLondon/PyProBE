@@ -93,7 +93,7 @@ def read_all_files(filepath: str) -> pl.DataFrame:
 
     for i in range(1, len(dataframes)):
         dataframes[i] = dataframes[i].with_columns(
-            pl.col("Ns") + dataframes[i - 1]["Ns"].max()
+            pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
         )
 
     return pl.concat(dataframes, how="vertical")
@@ -112,8 +112,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
     time = pl.col("time/s").alias("Time [s]")
 
     # Cycle and step
-    cycle = pl.col("cycle number").alias("Cycle")
-    step = pl.col("Ns").alias("Step")
+    step = (pl.col("Ns") + 1).alias("Step")
 
     # Measured data
     column_name_pattern = r"(.+)/(.+)"
@@ -131,7 +130,7 @@ def process_dataframe(dataframe: pl.DataFrame) -> pl.DataFrame:
         columns, "Q discharge", column_name_pattern, "Capacity"
     ).to_default(keep_name=True)
 
-    dataframe = dataframe.with_columns(time, cycle, step, current, voltage)
+    dataframe = dataframe.with_columns(time, step, current, voltage)
 
     dataframe = dataframe.with_columns(make_charge_capacity, make_discharge_capacity)
 
