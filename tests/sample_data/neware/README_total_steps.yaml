@@ -1,0 +1,12 @@
+Initial Charge:
+  Type: SOC Reset
+  Total Steps: 3
+  Repeat: 1
+Break-in Cycles:
+  Type: Cycling
+  Total Steps: 4
+  Repeat: 5
+Discharge Pulses:
+  Type: Pulsing
+  Total Steps: 4
+  Repeat: 10

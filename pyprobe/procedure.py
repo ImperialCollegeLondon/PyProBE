@@ -106,6 +106,9 @@ class Procedure(Filter):
         for experiment in readme_dict:
             if "Step Numbers" in readme_dict[experiment]:
                 step_list = readme_dict[experiment]["Step Numbers"]
+            elif "Total Steps" in readme_dict[experiment]:
+                step_list = list(range(readme_dict[experiment]["Total Steps"]))
+                step_list = [x + max_step + 1 for x in step_list]
             else:
                 step_list = list(range(len(readme_dict[experiment]["Steps"])))
                 step_list = [x + max_step + 1 for x in step_list]
