@@ -86,17 +86,21 @@ def test_process_dataframe():
                 datetime(2022, 2, 2, 2, 2, 1),
                 datetime(2022, 2, 2, 2, 2, 2),
                 datetime(2022, 2, 2, 2, 2, 3),
+                datetime(2022, 2, 2, 2, 2, 4),
+                datetime(2022, 2, 2, 2, 2, 5),
             ],
-            "Step Index": [1, 2, 1, 2],
-            "Current(mA)": [1, 2, 3, 4],
-            "Voltage(V)": [4, 5, 6, 7],
+            "Step Index": [1, 2, 1, 2, 4, 5],
+            "Current(mA)": [1, 2, 3, 4, 0, 0],
+            "Voltage(V)": [4, 5, 6, 7, 8, 9],
             "Chg. Cap.(Ah)": [
                 0,
                 20,
                 0,
                 0,
+                0,
+                0,
             ],
-            "DChg. Cap.(Ah)": [0, 0, 10, 20],
+            "DChg. Cap.(Ah)": [0, 0, 10, 20, 20, 20],
         }
     )
     processed_dataframe = process_dataframe(dataframe)
@@ -113,13 +117,15 @@ def test_process_dataframe():
     )
     expected_dataframe = pl.DataFrame(
         {
-            "Time [s]": [0.0, 1.0, 2.0, 3.0],
-            "Cycle": [0, 0, 1, 1],
-            "Step": [1, 2, 1, 2],
-            "Event": [0, 1, 2, 3],
-            "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3],
-            "Voltage [V]": [4, 5, 6, 7],
-            "Capacity [Ah]": [20, 40, 30, 20],
+            "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            "Cycle": [0, 0, 1, 1, 1, 1],
+            "Step": [1, 2, 1, 2, 4, 5],
+            "Event": [0, 1, 2, 3, 4, 5],
+            "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0],
+            "Voltage [V]": [4, 5, 6, 7, 8, 9],
+            "Capacity [Ah]": [20, 40, 30, 20, 20, 20],
         }
     )
+    print(processed_dataframe)
+    print(expected_dataframe)
     pl_testing.assert_frame_equal(processed_dataframe, expected_dataframe)
