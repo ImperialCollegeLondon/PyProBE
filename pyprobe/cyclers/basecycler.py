@@ -52,4 +52,22 @@ class BaseCycler:
         Returns:
             DataFrame: The processed DataFrame.
         """
-        return self.processor(dataframe).select(self.required_columns)
+        processed_dataframe = self.processor(dataframe)
+        cycle = (
+            (pl.col("Step") - pl.col("Step").shift() < 0)
+            .fill_null(strategy="zero")
+            .cum_sum()
+            .alias("Cycle")
+            .cast(pl.Int64)
+        )
+
+        event = (
+            (pl.col("Step") - pl.col("Step").shift() != 0)
+            .fill_null(strategy="zero")
+            .cum_sum()
+            .alias("Event")
+            .cast(pl.Int64)
+        )
+
+        processed_dataframe = processed_dataframe.with_columns(cycle, event)
+        return processed_dataframe.select(self.required_columns)

@@ -60,7 +60,6 @@ def test_read_and_process(benchmark):
     expected_columns = [
         "Date",
         "Time [s]",
-        "Cycle",
         "Step",
         "Current [A]",
         "Voltage [V]",
@@ -107,9 +106,7 @@ def test_process_dataframe():
     processed_dataframe = processed_dataframe.select(
         [
             "Time [s]",
-            "Cycle",
             "Step",
-            "Event",
             "Current [A]",
             "Voltage [V]",
             "Capacity [Ah]",
@@ -118,9 +115,7 @@ def test_process_dataframe():
     expected_dataframe = pl.DataFrame(
         {
             "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
-            "Cycle": [0, 0, 1, 1, 1, 1],
             "Step": [1, 2, 1, 2, 4, 5],
-            "Event": [0, 1, 2, 3, 4, 5],
             "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0],
             "Voltage [V]": [4, 5, 6, 7, 8, 9],
             "Capacity [Ah]": [20, 40, 30, 20, 20, 20],
