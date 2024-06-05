@@ -25,7 +25,7 @@ def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark)
     )
 
 
-def test_process_readme(procedure_fixture, titles_fixture, steps_fixture, benchmark):
+def test_process_readme(procedure_fixture, titles_fixture, benchmark):
     """Test processing a readme file in yaml format."""
 
     def process_readme():

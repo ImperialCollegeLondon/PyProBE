@@ -65,6 +65,13 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     benchmark(add_procedure)
     assert_frame_equal(cell_instance.procedure[title].data, procedure_fixture.data)
 
+    cell_instance.add_procedure(
+        "Test_custom", input_path, file_name, custom_readme_name="README_total_steps"
+    )
+    assert_frame_equal(
+        cell_instance.procedure["Test_custom"].data, procedure_fixture.data
+    )
+
 
 def test_set_color_scheme(cell_instance):
     """Test the set_color_scheme method."""

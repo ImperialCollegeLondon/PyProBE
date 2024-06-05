@@ -111,6 +111,7 @@ class Cell:
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
+        custom_readme_name: Optional[str] = None,
     ) -> None:
         """Function to add data to the cell object.
 
@@ -122,11 +123,14 @@ class Cell:
                 the file name for PyProBE data.
             filename_inputs (Optional[list]): The list of inputs to filename_function.
                 These must be keys of the cell info.
+            custom_readme_name (str, optional): The name of the custom README file.
         """
         output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
-        self.procedure[procedure_name] = Procedure(output_data_path, self.info)
+        self.procedure[procedure_name] = Procedure(
+            output_data_path, self.info, custom_readme_name=custom_readme_name
+        )
         self.processed_data[procedure_name] = {}
 
     @staticmethod
