@@ -1,6 +1,6 @@
 """A module for the Procedure class."""
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import polars as pl
 import yaml
@@ -19,16 +19,22 @@ class Procedure(Filter):
         self,
         data_path: str,
         info: Dict[str, str | int | float],
+        custom_readme_name: Optional[str] = None,
     ) -> None:
         """Create a procedure class.
 
         Args:
             data_path (str): The path to the data parquet file.
             info (Dict[str, str | int | float]): A dict containing test info.
+            custom_readme_name (str, optional): The name of the custom README file.
+                Defaults to None.
         """
         _data = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
-        readme_path = os.path.join(data_folder, "README.yaml")
+        if custom_readme_name:
+            readme_path = os.path.join(data_folder, f"{custom_readme_name}.yaml")
+        else:
+            readme_path = os.path.join(data_folder, "README.yaml")
         (
             self.titles,
             self.steps_idx,
@@ -77,6 +83,20 @@ class Procedure(Filter):
             List[str]: The names of the experiments in the procedure.
         """
         return list(self.titles.keys())
+
+    def verify_yaml(self, readme_name: str) -> str:
+        """Verify that the readme has YAML extension.
+
+        Args:
+            readme_name (str): The name of the README file.
+        """
+        # Get the file extension of output_filename
+        _, ext = os.path.splitext(readme_name)
+
+        # If the file extension is not .parquet, replace it with .parquet
+        if ext != ".yaml":
+            readme_name = os.path.splitext(readme_name)[0] + ".yaml"
+        return readme_name
 
     @staticmethod
     def process_readme(

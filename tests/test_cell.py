@@ -42,6 +42,18 @@ def test_get_filename(info_fixture):
     assert file == "Cell_named_Test_Cell.xlsx"
 
 
+def test_verify_filename():
+    """Test the verify_parquet method."""
+    file = "path/to/sample_data_neware"
+    assert Cell.verify_parquet(file) == "path/to/sample_data_neware.parquet"
+
+    file = "path/to/sample_data_neware.parquet"
+    assert Cell.verify_parquet(file) == "path/to/sample_data_neware.parquet"
+
+    file = "path/to/sample_data_neware.csv"
+    assert Cell.verify_parquet(file) == "path/to/sample_data_neware.parquet"
+
+
 def test_process_cycler_file(cell_instance, lazyframe_fixture):
     """Test the process_cycler_file method."""
     folder_path = "tests/sample_data/neware/"
@@ -64,6 +76,13 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
 
     benchmark(add_procedure)
     assert_frame_equal(cell_instance.procedure[title].data, procedure_fixture.data)
+
+    cell_instance.add_procedure(
+        "Test_custom", input_path, file_name, custom_readme_name="README_total_steps"
+    )
+    assert_frame_equal(
+        cell_instance.procedure["Test_custom"].data, procedure_fixture.data
+    )
 
 
 def test_set_color_scheme(cell_instance):

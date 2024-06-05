@@ -70,6 +70,24 @@ class Cell:
             cell_list[i].info["color"] = colors[i]
         return cell_list
 
+    @staticmethod
+    def verify_parquet(filename: str) -> str:
+        """Function to verify the filename is in the correct format.
+
+        Args:
+            filename (str): The filename to verify.
+
+        Returns:
+            str: The filename.
+        """
+        # Get the file extension of output_filename
+        _, ext = os.path.splitext(filename)
+
+        # If the file extension is not .parquet, replace it with .parquet
+        if ext != ".parquet":
+            filename = os.path.splitext(filename)[0] + ".parquet"
+        return filename
+
     def process_cycler_file(
         self,
         cycler: str,
@@ -96,6 +114,7 @@ class Cell:
         output_data_path = self.get_data_paths(
             folder_path, output_filename, filename_args
         )
+        output_data_path = self.verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
         cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
@@ -111,6 +130,7 @@ class Cell:
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
+        custom_readme_name: Optional[str] = None,
     ) -> None:
         """Function to add data to the cell object.
 
@@ -122,11 +142,15 @@ class Cell:
                 the file name for PyProBE data.
             filename_inputs (Optional[list]): The list of inputs to filename_function.
                 These must be keys of the cell info.
+            custom_readme_name (str, optional): The name of the custom README file.
         """
         output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
+        output_data_path = self.verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
-        self.procedure[procedure_name] = Procedure(output_data_path, self.info)
+        self.procedure[procedure_name] = Procedure(
+            output_data_path, self.info, custom_readme_name=custom_readme_name
+        )
         self.processed_data[procedure_name] = {}
 
     @staticmethod
