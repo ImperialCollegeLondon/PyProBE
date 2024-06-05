@@ -98,11 +98,10 @@ class Cell:
         )
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
-        cycler_dict = {"neware": neware.neware, "biologic": biologic.biologic}
+        cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
         t1 = time.time()
-        importer = cycler_dict[cycler]
-        dataframe = importer.read_file(input_data_path)
-        dataframe = importer.process_dataframe(dataframe)
+        importer = cycler_dict[cycler](input_data_path)
+        dataframe = importer.imported_dataframe
         dataframe.write_parquet(output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
