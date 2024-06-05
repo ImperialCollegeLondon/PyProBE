@@ -53,7 +53,10 @@
 <li class="toctree-l2"><a class="reference internal" href="accessing_data.html">Accessing Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">Plotting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="input_data_guidance.html">Input Data Guidance</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Writing a README file</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Writing a README file</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#shortcuts">Shortcuts</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="writing_an_experiment_record.html">Writing an Experiment record</a></li>
 </ul>
 </li>
@@ -103,14 +106,19 @@ procedure into experiments that can be analysed separately.</p>
 </li>
 <li><dl class="simple">
 <dt>Type of experiment</dt><dd><p>This enables the creation of different objects for different types of experiments.
-See <a class="reference internal" href="pyprobe.experiments.html#module-pyprobe.experiments" title="pyprobe.experiments"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.experiments</span></code></a> for the currently available experiment types and their
-custom attributes.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>Step numbers</dt><dd><p>This is an optional field, but is required when the step numbers of the data are not
-sequential. In the example below, for instance, step 8 is missing.</p>
+Different experiments enable shortcuts to different analysis. For example, the
+<a class="reference internal" href="pyprobe.experiments.html#pyprobe.experiments.pulsing.Pulsing" title="pyprobe.experiments.pulsing.Pulsing"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pulsing</span></code></a> experiment, has a
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">summary</span></code> method that summarises the
+resistance of the cell at each pulse.
+The currently supported experiment types are:</p>
+<ul class="simple">
+<li><p>General</p></li>
+<li><p>Constant Current</p></li>
+<li><p>SOC Reset</p></li>
+<li><p>Cycling</p></li>
+<li><p>Pulsing</p></li>
+<li><p>pOCV</p></li>
+</ul>
 </dd>
 </dl>
 </li>
@@ -123,7 +131,10 @@ syntax.</p>
 </li>
 <li><dl class="simple">
 <dt>Repeat</dt><dd><p>This is the number of times the experiment is repeated. This is useful for cycling
-experiments, where the same steps are repeated multiple times.</p>
+experiments, where the same steps are repeated multiple times.
+Repeat information should be included in the Steps list if the cycler considers
+the repeat instruction as a seperate step. For example, in the Neware procedure shown
+below, the cycle instruction is step 8.</p>
 </dd>
 </dl>
 </li>
@@ -134,34 +145,49 @@ experiments, where the same steps are repeated multiple times.</p>
 <span class="w">   </span><span class="c1"># The type of the experiment</span>
 <span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SOC Reset</span>
 <span class="w">   </span><span class="c1"># The step numbers in the experiment</span>
-<span class="w">   </span><span class="nt">Step Numbers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">]</span>
 <span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
 <span class="w">      </span><span class="c1"># Description of each step, using PyBaMM Experiment syntax</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 4 hours</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
-<span class="w">   </span><span class="c1"># The number of times the experiment is repeated</span>
-<span class="w">   </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="nt">Break-in Cycles</span><span class="p">:</span>
 <span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Cycling</span>
-<span class="w">   </span><span class="nt">Step Numbers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">6</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">]</span>
 <span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at constant current of 4mA until voltage reaches 3V</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
-<span class="w">   </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"> </span><span class="c1"># the number of times the experiment is repeated</span>
 <span class="nt">Discharge Pulses</span><span class="p">:</span>
 <span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pulsing</span>
-<span class="w">   </span><span class="nt">Step Numbers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">9</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">11</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">]</span>
 <span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 10 seconds</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at constant current of 20mA until 4mAh has passed or voltage reaches 3V</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 30 minutes</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 1.5 hours</span>
-<span class="w">   </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
 </pre></div>
 </div>
+<p>Which corresponds to the following Neware procedure file:</p>
+<img alt="_images/Neware_procedure.png" src="_images/Neware_procedure.png" />
+<section id="shortcuts">
+<h2>Shortcuts<a class="headerlink" href="#shortcuts" title="Link to this heading"></a></h2>
+<p>It is in the future plans of PyProBE to include automatic generation of the README file
+from cycler procedure files. However, for now it must be done manually. For most
+experiments this should not be too time consuming, and provides value by documenting
+your data in a human readable format.</p>
+<p>For testing purposes or if an experiment is particularly cumbersome to write out. You
+can instead the <code class="code docutils literal notranslate"><span class="pre">Steps</span></code> list with <code class="code docutils literal notranslate"><span class="pre">Total</span> <span class="pre">Steps</span></code>, allowing you to provide
+just a single number for the total number of steps in the experiment:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is the name of the experiment</span>
+<span class="nt">Initial Charge</span><span class="p">:</span>
+<span class="w">   </span><span class="c1"># The type of the experiment</span>
+<span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SOC Reset</span>
+<span class="w">   </span><span class="c1"># The total number of steps in the experiment</span>
+<span class="w">   </span><span class="nt">Total Steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</pre></div>
+</div>
+</section>
 </section>
 
 
