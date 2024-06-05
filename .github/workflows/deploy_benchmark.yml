@@ -30,4 +30,4 @@ jobs:
                 # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 # Push and deploy GitHub pages branch automatically
-                auto-push: true                
+                auto-push: true
