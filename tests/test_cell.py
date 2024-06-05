@@ -42,6 +42,18 @@ def test_get_filename(info_fixture):
     assert file == "Cell_named_Test_Cell.xlsx"
 
 
+def test_verify_filename():
+    """Test the verify_filename method."""
+    file = "path/to/sample_data_neware"
+    assert Cell.verify_filename(file) == "path/to/sample_data_neware.parquet"
+
+    file = "path/to/sample_data_neware.parquet"
+    assert Cell.verify_filename(file) == "path/to/sample_data_neware.parquet"
+
+    file = "path/to/sample_data_neware.csv"
+    assert Cell.verify_filename(file) == "path/to/sample_data_neware.parquet"
+
+
 def test_process_cycler_file(cell_instance, lazyframe_fixture):
     """Test the process_cycler_file method."""
     folder_path = "tests/sample_data/neware/"
