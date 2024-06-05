@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import polars as pl
 import yaml
 
-from pyprobe.experiment import Experiment
+from pyprobe.experiments.baseexperiment import BaseExperiment
 from pyprobe.experiments.cycling import Cycling
 from pyprobe.experiments.pOCV import pOCV
 from pyprobe.experiments.pulsing import Pulsing
@@ -35,7 +35,7 @@ class Procedure(Filter):
         ) = self.process_readme(readme_path)
         super().__init__(_data, info)
 
-    def experiment(self, *experiment_names: str) -> Experiment:
+    def experiment(self, *experiment_names: str) -> BaseExperiment:
         """Return an experiment object from the procedure.
 
         Args:
@@ -43,14 +43,14 @@ class Procedure(Filter):
                 experiment names.
 
         Returns:
-            Experiment: An experiment object from the procedure.
+            BaseExperiment: An experiment object from the procedure.
         """
         experiment_types = {
-            "Constant Current": Experiment,
+            "Constant Current": BaseExperiment,
             "Pulsing": Pulsing,
             "Cycling": Cycling,
             "pOCV": pOCV,
-            "SOC Reset": Experiment,
+            "SOC Reset": BaseExperiment,
         }
         steps_idx = []
         for experiment_name in experiment_names:
@@ -66,7 +66,7 @@ class Procedure(Filter):
         if len(experiment_names) == 1:
             experiment_obj = experiment_types[self.titles[experiment_names[0]]]
         else:
-            experiment_obj = Experiment
+            experiment_obj = BaseExperiment
         return experiment_obj(lf_filtered, self.info)
 
     @property

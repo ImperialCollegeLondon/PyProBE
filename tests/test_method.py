@@ -1,10 +1,10 @@
-"""Tests for the Method class."""
+"""Tests for the BaseMethod class."""
 
 import numpy as np
 import polars as pl
 import pytest
 
-from pyprobe.method import Method
+from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.result import Result
 
 
@@ -16,13 +16,13 @@ def input_data_fixture():
 
 @pytest.fixture
 def method_fixture(input_data_fixture):
-    """Return a Method instance."""
-    return Method(input_data_fixture)
+    """Return a BaseMethod instance."""
+    return BaseMethod(input_data_fixture)
 
 
 def test_init(method_fixture):
     """Test the __init__ method."""
-    assert isinstance(method_fixture, Method)
+    assert isinstance(method_fixture, BaseMethod)
     assert method_fixture.variable_list == []
 
 
@@ -31,7 +31,7 @@ def test_variable(method_fixture, input_data_fixture):
     assert np.array_equal(method_fixture.variable("x"), np.array([1, 2, 3]))
     assert method_fixture.variable_list == ["x"]
 
-    method = Method([input_data_fixture, input_data_fixture])
+    method = BaseMethod([input_data_fixture, input_data_fixture])
     assert np.array_equal(method.variable("x"), np.array([[1, 2, 3], [1, 2, 3]]))
 
 

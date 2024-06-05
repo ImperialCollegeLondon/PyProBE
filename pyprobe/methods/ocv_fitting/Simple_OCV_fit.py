@@ -6,11 +6,11 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import curve_fit
 
-from pyprobe.method import Method
+from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.rawdata import RawData
 
 
-class Simple_OCV_fit(Method):
+class Simple_OCV_fit(BaseMethod):
     """A method for fitting OCV curves."""
 
     def __init__(

@@ -3,10 +3,10 @@ from typing import Dict
 
 import polars as pl
 
-from pyprobe.experiment import Experiment
+from pyprobe.experiments.baseexperiment import BaseExperiment
 
 
-class pOCV(Experiment):
+class pOCV(BaseExperiment):
     """A pOCV experiment in a battery procedure."""
 
     def __init__(

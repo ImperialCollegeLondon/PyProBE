@@ -85,5 +85,4 @@ The steps to install PyProBE are as follows:
 
    .. code-block:: python
 
-      from PyProBE.cell import Cell
-      from PyProBE.plot import Plot
+      import pyprobe

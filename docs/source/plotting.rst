@@ -1,3 +1,5 @@
+.. _plotting:
+
 Plotting
 ========
 
@@ -9,9 +11,7 @@ You first create a plot instance:
 
 .. code-block:: python
 
-    from pyprobe.plot import Plot
-
-    plot = Plot()
+    plot = pyprobe.Plot()
 
 Then you can add data to and display the plot:
 
