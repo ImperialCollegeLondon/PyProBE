@@ -63,16 +63,8 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.experiment">pyprobe.experiment module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#pyprobe.experiment.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.filter">pyprobe.filter module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#pyprobe.filter.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.method">pyprobe.method module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#pyprobe.method.Method"><code class="docutils literal notranslate"><span class="pre">Method</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pyprobe.plot">pyprobe.plot module</a><ul>
@@ -173,6 +165,10 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.experiments.html">pyprobe.experiments package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.experiments.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.experiments.html#module-pyprobe.experiments.baseexperiment">pyprobe.experiments.baseexperiment module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.experiments.html#pyprobe.experiments.baseexperiment.BaseExperiment"><code class="docutils literal notranslate"><span class="pre">BaseExperiment</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.experiments.html#module-pyprobe.experiments.cycling">pyprobe.experiments.cycling module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.experiments.html#pyprobe.experiments.cycling.Cycling"><code class="docutils literal notranslate"><span class="pre">Cycling</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.experiments.html#pyprobe.experiments.cycling.Cycling.summary"><code class="docutils literal notranslate"><span class="pre">Cycling.summary()</span></code></a></li>
@@ -215,6 +211,19 @@
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.ocv_fitting.html#module-pyprobe.methods.ocv_fitting.DMA">pyprobe.methods.ocv_fitting.DMA module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.ocv_fitting.html#module-pyprobe.methods.ocv_fitting.Simple_OCV_fit">pyprobe.methods.ocv_fitting.Simple_OCV_fit module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.ocv_fitting.html#module-pyprobe.methods.ocv_fitting">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.methods.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.methods.html#module-pyprobe.methods.basemethod">pyprobe.methods.basemethod module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod"><code class="docutils literal notranslate"><span class="pre">BaseMethod</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.input_data"><code class="docutils literal notranslate"><span class="pre">BaseMethod.input_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.variable_list"><code class="docutils literal notranslate"><span class="pre">BaseMethod.variable_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.output_list"><code class="docutils literal notranslate"><span class="pre">BaseMethod.output_list</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.output_dict"><code class="docutils literal notranslate"><span class="pre">BaseMethod.output_dict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.assign_outputs"><code class="docutils literal notranslate"><span class="pre">BaseMethod.assign_outputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.variable"><code class="docutils literal notranslate"><span class="pre">BaseMethod.variable()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -408,17 +417,6 @@ These must be keys of the cell info.</p></li>
 <span id="pyprobe-dashboard-module"></span><h2>pyprobe.dashboard module<a class="headerlink" href="#module-pyprobe.dashboard" title="Link to this heading"></a></h2>
 <p>Script to create a Streamlit dashboard for PyProBE.</p>
 </section>
-<section id="module-pyprobe.experiment">
-<span id="pyprobe-experiment-module"></span><h2>pyprobe.experiment module<a class="headerlink" href="#module-pyprobe.experiment" title="Link to this heading"></a></h2>
-<p>A module for the Experiment class.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pyprobe.experiment.Experiment">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.experiment.</span></span><span class="sig-name descname"><span class="pre">Experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.experiment.Experiment" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pyprobe.filter.Filter" title="pyprobe.filter.Filter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Filter</span></code></a></p>
-<p>An experiment in a battery procedure.</p>
-</dd></dl>
-
-</section>
 <section id="module-pyprobe.filter">
 <span id="pyprobe-filter-module"></span><h2>pyprobe.filter module<a class="headerlink" href="#module-pyprobe.filter" title="Link to this heading"></a></h2>
 <p>A module for filtering data.</p>
@@ -547,98 +545,6 @@ step numbers or a range object.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData">RawData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-pyprobe.method">
-<span id="pyprobe-method-module"></span><h2>pyprobe.method module<a class="headerlink" href="#module-pyprobe.method" title="Link to this heading"></a></h2>
-<p>Module for the base Method class.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pyprobe.method.Method">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.method.</span></span><span class="sig-name descname"><span class="pre">Method</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><span class="pre">Result</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><span class="pre">Result</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.method.Method" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A base class for a method.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.method.Method.input_data">
-<span class="sig-name descname"><span class="pre">input_data</span></span><a class="headerlink" href="#pyprobe.method.Method.input_data" title="Link to this definition"></a></dt>
-<dd><p>The input data to the method, a result object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.method.Method.variable_list">
-<span class="sig-name descname"><span class="pre">variable_list</span></span><a class="headerlink" href="#pyprobe.method.Method.variable_list" title="Link to this definition"></a></dt>
-<dd><p>The list of variables used in the method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.method.Method.output_list">
-<span class="sig-name descname"><span class="pre">output_list</span></span><a class="headerlink" href="#pyprobe.method.Method.output_list" title="Link to this definition"></a></dt>
-<dd><p>The list of outputs from the method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.method.Method.output_dict">
-<span class="sig-name descname"><span class="pre">output_dict</span></span><a class="headerlink" href="#pyprobe.method.Method.output_dict" title="Link to this definition"></a></dt>
-<dd><p>The dictionary of outputs from the method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict[str, NDArray]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.method.Method.assign_outputs">
-<span class="sig-name descname"><span class="pre">assign_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><span class="pre">Result</span></a></span></span><a class="headerlink" href="#pyprobe.method.Method.assign_outputs" title="Link to this definition"></a></dt>
-<dd><p>Assign the outputs of the method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Dict</strong><strong>[</strong><strong>str</strong> – A dictionary of the outputs.</p></li>
-<li><p><strong>NDArray</strong><strong>]</strong> – A dictionary of the outputs.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A result object containing the method outputs.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.method.Method.variable">
-<span class="sig-name descname"><span class="pre">variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pyprobe.method.Method.variable" title="Link to this definition"></a></dt>
-<dd><p>Return a variable from the input data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – The name of the variable.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The variable as a numpy array.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -941,7 +847,7 @@ step numbers or a range object.</p>
 <p>A class for a procedure in a battery experiment.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.procedure.Procedure.experiment">
-<span class="sig-name descname"><span class="pre">experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">experiment_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pyprobe.experiment.Experiment" title="pyprobe.experiment.Experiment"><span class="pre">Experiment</span></a></span></span><a class="headerlink" href="#pyprobe.procedure.Procedure.experiment" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">experiment_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pyprobe.experiments.html#pyprobe.experiments.baseexperiment.BaseExperiment" title="pyprobe.experiments.baseexperiment.BaseExperiment"><span class="pre">BaseExperiment</span></a></span></span><a class="headerlink" href="#pyprobe.procedure.Procedure.experiment" title="Link to this definition"></a></dt>
 <dd><p>Return an experiment object from the procedure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -952,7 +858,7 @@ experiment names.</p>
 <dd class="field-even"><p>An experiment object from the procedure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.experiment.Experiment" title="pyprobe.experiment.Experiment">Experiment</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="pyprobe.experiments.html#pyprobe.experiments.baseexperiment.BaseExperiment" title="pyprobe.experiments.baseexperiment.BaseExperiment">BaseExperiment</a></p>
 </dd>
 </dl>
 </dd></dl>

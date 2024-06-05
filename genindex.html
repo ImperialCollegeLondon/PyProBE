@@ -133,7 +133,7 @@
 </li>
       <li><a href="pyprobe.html#pyprobe.plot.Plot.add_secondary_y_line">add_secondary_y_line() (pyprobe.plot.Plot method)</a>
 </li>
-      <li><a href="pyprobe.html#pyprobe.method.Method.assign_outputs">assign_outputs() (pyprobe.method.Method method)</a>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.assign_outputs">assign_outputs() (pyprobe.methods.basemethod.BaseMethod method)</a>
 </li>
       <li><a href="pyprobe.html#id0">axis_font_size (pyprobe.plot.Plot attribute)</a>, <a href="pyprobe.html#pyprobe.plot.Plot.axis_font_size">[1]</a>
 </li>
@@ -145,8 +145,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="pyprobe.cyclers.html#pyprobe.cyclers.basecycler.BaseCycler">BaseCycler (class in pyprobe.cyclers.basecycler)</a>
 </li>
+      <li><a href="pyprobe.experiments.html#pyprobe.experiments.baseexperiment.BaseExperiment">BaseExperiment (class in pyprobe.experiments.baseexperiment)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod">BaseMethod (class in pyprobe.methods.basemethod)</a>
+</li>
       <li><a href="pyprobe.cyclers.html#pyprobe.cyclers.biologic.Biologic">Biologic (class in pyprobe.cyclers.biologic)</a>
 </li>
   </ul></td>
@@ -213,12 +217,10 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pyprobe.html#pyprobe.experiment.Experiment">Experiment (class in pyprobe.experiment)</a>
+      <li><a href="pyprobe.html#pyprobe.procedure.Procedure.experiment">experiment() (pyprobe.procedure.Procedure method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pyprobe.html#pyprobe.procedure.Procedure.experiment">experiment() (pyprobe.procedure.Procedure method)</a>
-</li>
       <li><a href="pyprobe.html#pyprobe.procedure.Procedure.experiment_names">experiment_names (pyprobe.procedure.Procedure property)</a>
 </li>
   </ul></td>
@@ -285,7 +287,7 @@
         <li><a href="pyprobe.html#pyprobe.result.Result.info">(pyprobe.result.Result attribute)</a>
 </li>
       </ul></li>
-      <li><a href="pyprobe.html#pyprobe.method.Method.input_data">input_data (pyprobe.method.Method attribute)</a>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.input_data">input_data (pyprobe.methods.basemethod.BaseMethod attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -309,8 +311,6 @@
 </li>
       <li><a href="pyprobe.html#pyprobe.plot.Plot.make_colorscale">make_colorscale() (pyprobe.plot.Plot static method)</a>
 </li>
-      <li><a href="pyprobe.html#pyprobe.method.Method">Method (class in pyprobe.method)</a>
-</li>
       <li>
     module
 
@@ -329,9 +329,9 @@
 </li>
         <li><a href="pyprobe.html#module-pyprobe.dashboard">pyprobe.dashboard</a>
 </li>
-        <li><a href="pyprobe.html#module-pyprobe.experiment">pyprobe.experiment</a>
-</li>
         <li><a href="pyprobe.experiments.html#module-pyprobe.experiments">pyprobe.experiments</a>
+</li>
+        <li><a href="pyprobe.experiments.html#module-pyprobe.experiments.baseexperiment">pyprobe.experiments.baseexperiment</a>
 </li>
         <li><a href="pyprobe.experiments.html#module-pyprobe.experiments.cycling">pyprobe.experiments.cycling</a>
 </li>
@@ -341,9 +341,9 @@
 </li>
         <li><a href="pyprobe.html#module-pyprobe.filter">pyprobe.filter</a>
 </li>
-        <li><a href="pyprobe.html#module-pyprobe.method">pyprobe.method</a>
-</li>
         <li><a href="pyprobe.methods.html#module-pyprobe.methods">pyprobe.methods</a>
+</li>
+        <li><a href="pyprobe.methods.html#module-pyprobe.methods.basemethod">pyprobe.methods.basemethod</a>
 </li>
         <li><a href="pyprobe.methods.differentiation.html#module-pyprobe.methods.differentiation">pyprobe.methods.differentiation</a>
 </li>
@@ -380,11 +380,11 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pyprobe.html#pyprobe.method.Method.output_dict">output_dict (pyprobe.method.Method attribute)</a>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.output_dict">output_dict (pyprobe.methods.basemethod.BaseMethod attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pyprobe.html#pyprobe.method.Method.output_list">output_list (pyprobe.method.Method attribute)</a>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.output_list">output_list (pyprobe.methods.basemethod.BaseMethod attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -476,17 +476,17 @@
 </li>
       </ul></li>
       <li>
-    pyprobe.experiment
-
-      <ul>
-        <li><a href="pyprobe.html#module-pyprobe.experiment">module</a>
-</li>
-      </ul></li>
-      <li>
     pyprobe.experiments
 
       <ul>
         <li><a href="pyprobe.experiments.html#module-pyprobe.experiments">module</a>
+</li>
+      </ul></li>
+      <li>
+    pyprobe.experiments.baseexperiment
+
+      <ul>
+        <li><a href="pyprobe.experiments.html#module-pyprobe.experiments.baseexperiment">module</a>
 </li>
       </ul></li>
   </ul></td>
@@ -520,17 +520,17 @@
 </li>
       </ul></li>
       <li>
-    pyprobe.method
-
-      <ul>
-        <li><a href="pyprobe.html#module-pyprobe.method">module</a>
-</li>
-      </ul></li>
-      <li>
     pyprobe.methods
 
       <ul>
         <li><a href="pyprobe.methods.html#module-pyprobe.methods">module</a>
+</li>
+      </ul></li>
+      <li>
+    pyprobe.methods.basemethod
+
+      <ul>
+        <li><a href="pyprobe.methods.html#module-pyprobe.methods.basemethod">module</a>
 </li>
       </ul></li>
       <li>
@@ -711,9 +711,9 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="pyprobe.html#pyprobe.method.Method.variable">variable() (pyprobe.method.Method method)</a>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.variable">variable() (pyprobe.methods.basemethod.BaseMethod method)</a>
 </li>
-      <li><a href="pyprobe.html#pyprobe.method.Method.variable_list">variable_list (pyprobe.method.Method attribute)</a>
+      <li><a href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.variable_list">variable_list (pyprobe.methods.basemethod.BaseMethod attribute)</a>
 </li>
   </ul></td>
 </tr></table>

@@ -12,7 +12,7 @@ A cell object can be created by providing an info dictionary:
 
 .. code-block:: python
 
-   from pyprobe.cell import Cell # module for storing cell data
+   import pyprobe
 
    # Describe the cell. Required fields are 'Name'.
    info_dictionary = {'Name': 'Sample cell',
@@ -22,7 +22,7 @@ A cell object can be created by providing an info dictionary:
                       'Channel number': 1,}
 
    # Create a cell object
-   cell = Cell(info_dictionary)
+   cell = pyprobe.Cell(info_dictionary)
 
 The info dictionary can contain any number of key-value pairs. The only required key is
 'Name', which is used to identify the cell in plots.

@@ -60,9 +60,7 @@
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#submodules">Submodules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.cell">pyprobe.cell module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.dashboard">pyprobe.dashboard module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.experiment">pyprobe.experiment module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.filter">pyprobe.filter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.method">pyprobe.method module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.plot">pyprobe.plot module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.procedure">pyprobe.procedure module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.html#module-pyprobe.rawdata">pyprobe.rawdata module</a></li>
@@ -106,13 +104,24 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
+<section id="module-pyprobe.experiments.baseexperiment">
+<span id="pyprobe-experiments-baseexperiment-module"></span><h2>pyprobe.experiments.baseexperiment module<a class="headerlink" href="#module-pyprobe.experiments.baseexperiment" title="Link to this heading"></a></h2>
+<p>A module for the BaseExperiment class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyprobe.experiments.baseexperiment.BaseExperiment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.experiments.baseexperiment.</span></span><span class="sig-name descname"><span class="pre">BaseExperiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.experiments.baseexperiment.BaseExperiment" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.filter.Filter" title="pyprobe.filter.Filter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Filter</span></code></a></p>
+<p>An experiment in a battery procedure.</p>
+</dd></dl>
+
+</section>
 <section id="module-pyprobe.experiments.cycling">
 <span id="pyprobe-experiments-cycling-module"></span><h2>pyprobe.experiments.cycling module<a class="headerlink" href="#module-pyprobe.experiments.cycling" title="Link to this heading"></a></h2>
 <p>A module for the Cycing class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.experiments.cycling.Cycling">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.experiments.cycling.</span></span><span class="sig-name descname"><span class="pre">Cycling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.experiments.cycling.Cycling" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.experiment.Experiment" title="pyprobe.experiment.Experiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">Experiment</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pyprobe.experiments.baseexperiment.BaseExperiment" title="pyprobe.experiments.baseexperiment.BaseExperiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseExperiment</span></code></a></p>
 <p>A cycling experiment in a battery procedure.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.experiments.cycling.Cycling.summary">
@@ -141,7 +150,7 @@ charge in the cycle loop. Default is True.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.experiments.pOCV.pOCV">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.experiments.pOCV.</span></span><span class="sig-name descname"><span class="pre">pOCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.experiments.pOCV.pOCV" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.experiment.Experiment" title="pyprobe.experiment.Experiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">Experiment</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pyprobe.experiments.baseexperiment.BaseExperiment" title="pyprobe.experiments.baseexperiment.BaseExperiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseExperiment</span></code></a></p>
 <p>A pOCV experiment in a battery procedure.</p>
 </dd></dl>
 
@@ -152,7 +161,7 @@ charge in the cycle loop. Default is True.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.experiments.pulsing.Pulsing">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.experiments.pulsing.</span></span><span class="sig-name descname"><span class="pre">Pulsing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.experiments.pulsing.Pulsing" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="pyprobe.html#pyprobe.experiment.Experiment" title="pyprobe.experiment.Experiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">Experiment</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pyprobe.experiments.baseexperiment.BaseExperiment" title="pyprobe.experiments.baseexperiment.BaseExperiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseExperiment</span></code></a></p>
 <p>A pulsing experiment in a battery procedure.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.experiments.pulsing.Pulsing.I1">

@@ -10,6 +10,17 @@ Subpackages
    pyprobe.methods.differentiation
    pyprobe.methods.ocv_fitting
 
+Submodules
+----------
+
+pyprobe.methods.basemethod module
+---------------------------------
+
+.. automodule:: pyprobe.methods.basemethod
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

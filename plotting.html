@@ -48,6 +48,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="importing_data.html">Importing Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="accessing_data.html">Accessing Data</a></li>
@@ -87,14 +88,12 @@
            <div itemprop="articleBody">
              
   <section id="plotting">
-<h1>Plotting<a class="headerlink" href="#plotting" title="Link to this heading"></a></h1>
+<span id="id1"></span><h1>Plotting<a class="headerlink" href="#plotting" title="Link to this heading"></a></h1>
 <p>PyProBE has a plotting module that can display any <a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a>
 or <a class="reference internal" href="pyprobe.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object. The plotting module is based on
 <a class="reference external" href="https://plot.ly/python/">plotly</a>.</p>
 <p>You first create a plot instance:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.plot</span> <span class="kn">import</span> <span class="n">Plot</span>
-
-<span class="n">plot</span> <span class="o">=</span> <span class="n">Plot</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Then you can add data to and display the plot:</p>

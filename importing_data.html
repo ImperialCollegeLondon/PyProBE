@@ -48,6 +48,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Importing Data</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#making-a-cell-object">Making a cell object</a></li>
@@ -102,7 +103,7 @@ object. It has two main attributes: a dictionary of cell details and experimenta
 (<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.info</span></code></a>) and a dictionary of experimental procedures performed
 on the cell (<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.procedure" title="pyprobe.cell.Cell.procedure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pyprobe.cell.Cell.procedure</span></code></a>).</p>
 <p>A cell object can be created by providing an info dictionary:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.cell</span> <span class="kn">import</span> <span class="n">Cell</span> <span class="c1"># module for storing cell data</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyprobe</span>
 
 <span class="c1"># Describe the cell. Required fields are &#39;Name&#39;.</span>
 <span class="n">info_dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sample cell&#39;</span><span class="p">,</span>
@@ -112,7 +113,7 @@ on the cell (<a class="reference internal" href="pyprobe.html#pyprobe.cell.Cell.
                    <span class="s1">&#39;Channel number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,}</span>
 
 <span class="c1"># Create a cell object</span>
-<span class="n">cell</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="n">info_dictionary</span><span class="p">)</span>
+<span class="n">cell</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">info_dictionary</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The info dictionary can contain any number of key-value pairs. The only required key is
