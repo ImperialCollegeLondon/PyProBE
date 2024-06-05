@@ -84,6 +84,20 @@ class Procedure(Filter):
         """
         return list(self.titles.keys())
 
+    def verify_yaml(self, readme_name: str) -> str:
+        """Verify that the readme has YAML extension.
+
+        Args:
+            readme_name (str): The name of the README file.
+        """
+        # Get the file extension of output_filename
+        _, ext = os.path.splitext(readme_name)
+
+        # If the file extension is not .parquet, replace it with .parquet
+        if ext != ".yaml":
+            readme_name = os.path.splitext(readme_name)[0] + ".yaml"
+        return readme_name
+
     @staticmethod
     def process_readme(
         readme_path: str,
