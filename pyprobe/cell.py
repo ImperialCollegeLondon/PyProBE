@@ -71,7 +71,7 @@ class Cell:
         return cell_list
 
     @staticmethod
-    def verify_filename(filename: str) -> str:
+    def verify_parquet(filename: str) -> str:
         """Function to verify the filename is in the correct format.
 
         Args:
@@ -114,7 +114,7 @@ class Cell:
         output_data_path = self.get_data_paths(
             folder_path, output_filename, filename_args
         )
-        output_data_path = self.verify_filename(output_data_path)
+        output_data_path = self.verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
         cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
@@ -145,7 +145,7 @@ class Cell:
             custom_readme_name (str, optional): The name of the custom README file.
         """
         output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self.verify_filename(output_data_path)
+        output_data_path = self.verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
         self.procedure[procedure_name] = Procedure(
