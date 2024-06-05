@@ -5,6 +5,7 @@ To install PyProBE you must be running Python 3.11 or later. It is recommended t
 virtual environment to install PyProBE, for example venv or conda.
 
 You should have two separate directories: 
+
 * one for the PyProBE repository 
 * one for your processing script
 

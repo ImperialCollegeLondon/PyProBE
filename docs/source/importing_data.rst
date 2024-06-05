@@ -95,7 +95,7 @@ A data file in the standard PyProBE format can be added to a cell object using t
    # Add the processed data to the cell object
    cell.add_procedure(procedure_name = 'Example procedure',
                       folder_path = 'path/to/root_folder/experiment_folder',
-                      procedure_filename = 'processed_cycler_file.parquet')
+                      filename = 'processed_cycler_file.parquet')
 
 Any number of procedures can be added to a cell, for example:
 
@@ -104,12 +104,12 @@ Any number of procedures can be added to a cell, for example:
    # Add the first procedure
    cell.add_procedure(procedure_name = 'Cycling',
                       folder_path = 'path/to/root_folder/experiment_folder',
-                      procedure_filename = 'processed_cycler_file_cycling.parquet')
+                      filename = 'processed_cycler_file_cycling.parquet')
    
    # Add the second procedure
    cell.add_procedure(procedure_name = 'RPT',
                       folder_path = 'path/to/root_folder/experiment_folder',
-                      procedure_filename = 'processed_cycler_file_RPT.parquet')
+                      filename = 'processed_cycler_file_RPT.parquet')
 
    print(cell.procedure)
    # Returns: dict({'Cycling': <pyprobe.procedure.Procedure object…, 'RPT': <pyprobe.procedure.Procedure object…})
