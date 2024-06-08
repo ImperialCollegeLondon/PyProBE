@@ -27,10 +27,14 @@ $ pytest
 
 6. Open a pull request. In the pull request description, please describe in detail the changes your feature branch introduces, and reference the associated issue.
 
-## Packages and dependencies
-You are welcome to suggest and add new dependencies, if required for your functionality. There are two limits to this:
+## PyProBE structure
+Additions to the code should be made in accordance with the structure of PyProBE, to 
+maximise compatibility and ensure it is a maintainable package. Guidance for writing
+code for PyProBE includes:
 1. DataFrame operations should only be done using polars expressions. Data should be kept by default in polars LazyFrame format and only converted to DataFrame if needed for a particular operation.
-2. Input variables to methods should be 1-Dimensional numpy arrays.
+2. Method classes should be written in the format described in the [documentation](
+    https://congenial-adventure-mz797n5.pages.github.io/creating_a_new_method.html
+).
 
 ## Viewing the API documentation
 
