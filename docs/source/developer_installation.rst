@@ -12,7 +12,8 @@ The steps to install PyProBE wih developer settings are as follows:
 
       cd /path/to/your/directory
 
-2. Clone the repository to your local machine. This creates a directory called PyProBE.
+2. Clone the repository to your local machine. This can be done either from the 
+   main PyProBE repository or your own fork. This creates a directory called PyProBE.
 
    .. code-block:: bash
 
