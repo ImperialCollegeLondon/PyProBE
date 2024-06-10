@@ -4,5 +4,5 @@ Developer Guide
 .. toctree::
    :maxdepth: 2
 
-   installation
+   developer_installation
    creating_a_new_method
