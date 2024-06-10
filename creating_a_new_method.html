@@ -23,7 +23,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="pyprobe" href="modules.html" />
-    <link rel="prev" title="Developer Guide" href="developer_guide.html" /> 
+    <link rel="prev" title="Installation" href="developer_installation.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,7 +49,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="developer_guide.html">Developer Guide</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer_installation.html">Installation</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Creating a New Method</a></li>
 </ul>
 </li>
@@ -83,13 +83,77 @@
              
   <section id="creating-a-new-method">
 <span id="id1"></span><h1>Creating a New Method<a class="headerlink" href="#creating-a-new-method" title="Link to this heading"></a></h1>
+<p>In PyProBE <a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod" title="pyprobe.methods.basemethod.BaseMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">Methods</span></code></a> are classes that
+perform further analysis of the data. They can be peformed on any
+<a class="reference internal" href="pyprobe.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a> or <a class="reference internal" href="pyprobe.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object.</p>
+<p>This document describes the standard format to be used for all PyProBE methods.
+Constructing your method in this way ensures compatibility with the rest of the
+PyProBE package, while keeping your code clean and easy to read.</p>
+<p>Start by creating your class, and an __init__ method. This is where all of the
+variable assignement is performed:
+1. Define the input variables to the method using the</p>
+<blockquote>
+<div><p><a class="reference internal" href="pyprobe.methods.html#pyprobe.methods.basemethod.BaseMethod.variable" title="pyprobe.methods.basemethod.BaseMethod.variable"><code class="xref py py-meth docutils literal notranslate"><span class="pre">variable()</span></code></a> method.</p>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Perform the calculations using the input variables and any other functions defined
+inside this method class.</p></li>
+<li><p>Assign the results to the class attributes, which allows them to be read as
+<a class="reference internal" href="pyprobe.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> objects.</p></li>
+</ol>
+<p>Then you can add any additional functions to perform your calculations. Keep these
+simple, defining all inputs as numpy arrays with minimal dimensionality. For instance,
+in the example below, current and time are both 1D numpy arrays. The code could have
+performed the same calculations using a single 2D array with a column for each variable,
+however this would have made the code less readable.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.methods.basemethod</span> <span class="kn">import</span> <span class="n">BaseMethod</span>
+
+<span class="k">class</span> <span class="nc">CoulombCounter</span><span class="p">(</span><span class="n">BaseMethod</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;&quot;A method for calculating the charge passed.&quot;&quot;&quot;</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">:</span> <span class="n">Result</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise the coulomb counter method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: The input data to the method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># define input variables to the method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;Current [A]&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">(</span><span class="s2">&quot;Time [s]&quot;</span><span class="p">)</span>
+
+        <span class="c1"># perform the calculations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+
+        <span class="c1"># assign the results, by calling the assign_outputs method on a dictionary</span>
+        <span class="c1"># of the results of your method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_outputs</span><span class="p">({</span><span class="s2">&quot;Charge [C]&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">coulomb_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the charge passed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            current: The current data.</span>
+<span class="sd">            time: The time data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The charge passed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The result of the method above can be accessed as a result object by calling:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">CoulombCounter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">result</span>
+</pre></div>
+</div>
+<p>Which can be passed to any other Method or used in the <a class="reference internal" href="pyprobe.html#pyprobe.plot.Plot" title="pyprobe.plot.Plot"><code class="xref py py-class docutils literal notranslate"><span class="pre">Plot</span></code></a>
+class.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="developer_guide.html" class="btn btn-neutral float-left" title="Developer Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="developer_installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="modules.html" class="btn btn-neutral float-right" title="pyprobe" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
