@@ -56,9 +56,11 @@ class Biologic(BaseCycler):
         all_columns = pl.scan_csv(
             filepath, skip_rows=n_header_lines - 1, separator="\t"
         ).columns
-        selected_columns = [
-            col for col in all_columns if any(sub in col for sub in columns_to_read)
-        ]
+        selected_columns = []
+        for substring in columns_to_read:
+            found_columns = [col for col in all_columns if substring in col]
+            selected_columns.extend(found_columns)
+
         dataframe = pl.read_csv(
             filepath,
             skip_rows=n_header_lines - 1,
@@ -70,7 +72,10 @@ class Biologic(BaseCycler):
         dataframe = dataframe.with_columns(
             (pl.col("time/s") * 1000000 + start).cast(pl.Datetime).alias("Date")
         )
+
+        
         return dataframe
+    
 
     @classmethod
     def sort_files(cls, file_list: List[str]) -> List[str]:
