@@ -28,6 +28,40 @@ def test_read_file(biologic_cycler):
         "Q charge/mA.h",
         "Date",
     ]
+    assert 0 == 1
+
+
+def test_fill_missing_columns(biologic_cycler):
+    """Test the fill_missing_columns method."""
+    dataframe = pl.DataFrame(
+        {
+            "time/s": [0.0, 1.0, 2.0, 3.0],
+            "Ns": [0, 1, 2, 3],
+            "Ecell/V": [4, 5, 6, 7],
+        }
+    )
+    all_columns = [
+        "time/s",
+        "Ns",
+        "Ecell/V",
+        "I/mA",
+        "Q charge/mA.h",
+        "Q discharge/mA.h",
+    ]
+    filled_dataframe = biologic_cycler.fill_missing_columns(dataframe, all_columns)
+    expected_dataframe = pl.DataFrame(
+        {
+            "time/s": [0.0, 1.0, 2.0, 3.0],
+            "Ns": [0, 1, 2, 3],
+            "Ecell/V": [4, 5, 6, 7],
+            "I/mA": [0.0, 0.0, 0.0, 0.0],
+            "Q charge/mA.h": [0.0, 0.0, 0.0, 0.0],
+            "Q discharge/mA.h": [0.0, 0.0, 0.0, 0.0],
+        }
+    )
+    pl_testing.assert_frame_equal(
+        filled_dataframe, expected_dataframe, check_column_order=False
+    )
 
 
 def test_sort_files(biologic_cycler):

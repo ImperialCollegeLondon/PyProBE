@@ -51,7 +51,7 @@ class Biologic(BaseCycler):
         _, value = start_time_line.split(" : ")
         start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
 
-        columns_to_read = ["time", "Ns", "I", "Ecell", "Q charge", "Q discharge"]
+        columns_to_read = ["time/", "Ns", "I/", "Ecell/", "Q charge/", "Q discharge/"]
 
         all_columns = pl.scan_csv(
             filepath, skip_rows=n_header_lines - 1, separator="\t"
@@ -73,9 +73,7 @@ class Biologic(BaseCycler):
             (pl.col("time/s") * 1000000 + start).cast(pl.Datetime).alias("Date")
         )
 
-        
         return dataframe
-    
 
     @classmethod
     def sort_files(cls, file_list: List[str]) -> List[str]:
@@ -112,12 +110,31 @@ class Biologic(BaseCycler):
         files = glob.glob(self.input_data_path)
         files = self.sort_files(files)
         dataframes = [self.read_file(file) for file in files]
-
-        for i in range(1, len(dataframes)):
-            dataframes[i] = dataframes[i].with_columns(
-                pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
-            )
+        all_columns = [col for df in dataframes for col in df.columns]
+        for i in range(len(dataframes)):
+            dataframes[i] = self.fill_missing_columns(dataframes[i], all_columns)
+            if i > 0:
+                dataframes[i] = dataframes[i].with_columns(
+                    pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
+                )
         return pl.concat(dataframes, how="vertical")
+
+    def fill_missing_columns(
+        self, dataframe: pl.DataFrame, column_list: List[str]
+    ) -> pl.DataFrame:
+        """Fill missing columns in a DataFrame with zeros.
+
+        Args:
+            dataframe: The DataFrame to fill.
+            column_list: The list of required columns.
+
+        Returns:
+            pl.DataFrame: The DataFrame with filled columns.
+        """
+        missing_columns = set(column_list) - set(dataframe.columns)
+        for col in missing_columns:
+            dataframe = dataframe.with_columns(pl.zeros(dataframe.height).alias(col))
+        return dataframe
 
     @property
     def processed_dataframe(self) -> pl.DataFrame:
