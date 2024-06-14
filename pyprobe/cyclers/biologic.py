@@ -3,6 +3,7 @@
 
 import glob
 import re
+import warnings
 from datetime import datetime
 from typing import List
 
@@ -72,7 +73,6 @@ class Biologic(BaseCycler):
         dataframe = dataframe.with_columns(
             (pl.col("time/s") * 1000000 + start).cast(pl.Datetime).alias("Date")
         )
-
         return dataframe
 
     @classmethod
@@ -110,31 +110,23 @@ class Biologic(BaseCycler):
         files = glob.glob(self.input_data_path)
         files = self.sort_files(files)
         dataframes = [self.read_file(file) for file in files]
-        all_columns = [col for df in dataframes for col in df.columns]
+        all_columns = set([col for df in dataframes for col in df.columns])
+        indices_to_remove = []
         for i in range(len(dataframes)):
-            dataframes[i] = self.fill_missing_columns(dataframes[i], all_columns)
+            if len(dataframes[i].columns) < len(all_columns):
+                indices_to_remove.append(i)
+                warnings.warn(
+                    f"File {files[i]} has missing columns, it has not been read."
+                )
+                continue
             if i > 0:
                 dataframes[i] = dataframes[i].with_columns(
                     pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
                 )
+        dataframes = [
+            df for i, df in enumerate(dataframes) if i not in indices_to_remove
+        ]
         return pl.concat(dataframes, how="vertical")
-
-    def fill_missing_columns(
-        self, dataframe: pl.DataFrame, column_list: List[str]
-    ) -> pl.DataFrame:
-        """Fill missing columns in a DataFrame with zeros.
-
-        Args:
-            dataframe: The DataFrame to fill.
-            column_list: The list of required columns.
-
-        Returns:
-            pl.DataFrame: The DataFrame with filled columns.
-        """
-        missing_columns = set(column_list) - set(dataframe.columns)
-        for col in missing_columns:
-            dataframe = dataframe.with_columns(pl.zeros(dataframe.height).alias(col))
-        return dataframe
 
     @property
     def processed_dataframe(self) -> pl.DataFrame:
