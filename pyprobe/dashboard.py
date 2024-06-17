@@ -5,6 +5,7 @@ from typing import List
 import pandas as pd
 import plotly
 import streamlit as st
+from ordered_set import OrderedSet
 
 from pyprobe.plot import Plot
 
@@ -51,17 +52,26 @@ if __name__ == "__main__":
     selected_indices = dataframe_with_selections(info)
     # Get the names of the selected rows
     selected_names = [cell_list[i].info["Name"] for i in selected_indices]
+    # Get the procedure names from the selected cells
+    procedure_names_sets = [OrderedSet(cell_list[i].procedure.keys()) for i in selected_indices]
 
-    # Select a procedure
-    procedure_names = cell_list[0].procedure.keys()
+    # Find the common procedure names
+    if len(procedure_names_sets) == 0:
+        procedure_names = []
+    else:
+        procedure_names = procedure_names_sets[0]
+        for s in procedure_names_sets[1:]:
+            procedure_names = [x for x in procedure_names if x in s]
+
     selected_raw_data = st.sidebar.selectbox("Select a procedure", procedure_names)
 
     # Select an experiment
-    experiment_names = cell_list[0].procedure[selected_raw_data].titles.keys()
-    selected_experiment = st.sidebar.multiselect(
-        "Select an experiment", experiment_names
-    )
-    selected_experiment = tuple(selected_experiment)
+    if selected_raw_data is not None:
+        experiment_names = cell_list[0].procedure[selected_raw_data].titles.keys()
+        selected_experiment = st.sidebar.multiselect(
+            "Select an experiment", experiment_names
+        )
+        selected_experiment = tuple(selected_experiment)
 
     # Get the cycle and step numbers from the user
     cycle_step_input = st.sidebar.text_input(
@@ -128,7 +138,7 @@ if __name__ == "__main__":
         selected_data.append(filtered_data)
 
     # Show the plot
-    if len(selected_data) > 0:
+    if len(selected_data) > 0 and len(procedure_names) > 0:
         graph_placeholder.plotly_chart(
             fig.fig, theme="streamlit" if plot_theme == "default" else None
         )
