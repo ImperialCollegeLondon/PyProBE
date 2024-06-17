@@ -131,6 +131,8 @@ numpy==1.26.4
     #   scikit-learn
     #   scipy
     #   streamlit
+ordered-set==4.1.0
+    # via PyProBE (pyproject.toml)
 packaging==24.0
     # via
     #   altair
