@@ -57,6 +57,7 @@ class Procedure(Filter):
             "Cycling": Cycling,
             "pOCV": pOCV,
             "SOC Reset": BaseExperiment,
+            "General": BaseExperiment,
         }
         steps_idx = []
         for experiment_name in experiment_names:
