@@ -3,6 +3,7 @@
 
 import glob
 import re
+import warnings
 from datetime import datetime
 from typing import List
 
@@ -51,14 +52,16 @@ class Biologic(BaseCycler):
         _, value = start_time_line.split(" : ")
         start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
 
-        columns_to_read = ["time", "Ns", "I", "Ecell", "Q charge", "Q discharge"]
+        columns_to_read = ["time/", "Ns", "I/", "Ecell/", "Q charge/", "Q discharge/"]
 
         all_columns = pl.scan_csv(
             filepath, skip_rows=n_header_lines - 1, separator="\t"
         ).columns
-        selected_columns = [
-            col for col in all_columns if any(sub in col for sub in columns_to_read)
-        ]
+        selected_columns = []
+        for substring in columns_to_read:
+            found_columns = [col for col in all_columns if substring in col]
+            selected_columns.extend(found_columns)
+
         dataframe = pl.read_csv(
             filepath,
             skip_rows=n_header_lines - 1,
@@ -107,11 +110,22 @@ class Biologic(BaseCycler):
         files = glob.glob(self.input_data_path)
         files = self.sort_files(files)
         dataframes = [self.read_file(file) for file in files]
-
-        for i in range(1, len(dataframes)):
-            dataframes[i] = dataframes[i].with_columns(
-                pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
-            )
+        all_columns = set([col for df in dataframes for col in df.columns])
+        indices_to_remove = []
+        for i in range(len(dataframes)):
+            if len(dataframes[i].columns) < len(all_columns):
+                indices_to_remove.append(i)
+                warnings.warn(
+                    f"File {files[i]} has missing columns, it has not been read."
+                )
+                continue
+            if i > 0:
+                dataframes[i] = dataframes[i].with_columns(
+                    pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
+                )
+        dataframes = [
+            df for i, df in enumerate(dataframes) if i not in indices_to_remove
+        ]
         return pl.concat(dataframes, how="vertical")
 
     @property
