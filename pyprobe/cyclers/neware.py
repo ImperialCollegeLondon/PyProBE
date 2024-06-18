@@ -1,9 +1,7 @@
 """A module to load and process Neware battery cycler data."""
 
-import glob
+
 import os
-import re
-from typing import List, Tuple
 
 import polars as pl
 
@@ -20,13 +18,8 @@ class Neware(BaseCycler):
         Args:
             input_data_path: The path to the input data.
         """
-        self.input_data_path = input_data_path
-
-    @property
-    def imported_dataframe(self) -> pl.DataFrame:
-        """The imported DataFrame."""
-        imported_dataframe = self.get_cycle_and_event(self.processed_dataframe)
-        return imported_dataframe.select(self.required_columns)
+        file_ext = os.path.splitext(input_data_path)[1]
+        super().__init__(input_data_path, common_suffix=file_ext)
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame:
@@ -47,51 +40,6 @@ class Neware(BaseCycler):
                 return pl.read_csv(filepath)
             case _:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
-
-    @staticmethod
-    def sort_key(filepath_tuple: Tuple[str, str]) -> int:
-        """Sort key for the files.
-
-        Args:
-            filepath_tupe (Tuple): A tuple containing the file suffix
-                and the full filepath.
-
-        Returns:
-            int: The integer in the filename.
-        """
-        filepath = filepath_tuple[0]
-        match = re.search(r"(\d+)(?=\.)", filepath)
-        return int(match.group()) if match else 0
-
-    @classmethod
-    def sort_files(cls, file_list: List[str]) -> List[str]:
-        """Sort a list of files by the integer in the filename.
-
-        Args:
-            file_list (List[str]): The list of files.
-
-        Returns:
-            List[str]: The sorted list of files.
-        """
-        common_substring = os.path.commonprefix(file_list)
-        stripped_and_converted = [
-            (file.replace(common_substring, ""), file) for file in file_list
-        ]
-        stripped_and_converted.sort(key=cls.sort_key)
-
-        return [file for _, file in stripped_and_converted]
-
-    @property
-    def raw_dataframe(self) -> pl.DataFrame:
-        """Read a battery cycler file into a DataFrame.
-
-        Args:
-            filepath (str): The path to the file.
-        """
-        files = glob.glob(self.input_data_path)
-        files = self.sort_files(files)
-        dataframes = [self.read_file(file) for file in files]
-        return pl.concat(dataframes, how="vertical", rechunk=True)
 
     @property
     def processed_dataframe(self) -> pl.DataFrame:

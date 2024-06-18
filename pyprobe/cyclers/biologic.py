@@ -1,11 +1,7 @@
 """A module to load and process Biologic battery cycler data."""
 
 
-import glob
-import re
-import warnings
 from datetime import datetime
-from typing import List
 
 import polars as pl
 
@@ -22,13 +18,7 @@ class Biologic(BaseCycler):
         Args:
             input_data_path: The path to the input data.
         """
-        self.input_data_path = input_data_path
-
-    @property
-    def imported_dataframe(self) -> pl.DataFrame:
-        """The imported DataFrame."""
-        imported_dataframe = self.get_cycle_and_event(self.processed_dataframe)
-        return imported_dataframe.select(self.required_columns)
+        super().__init__(input_data_path, common_suffix="_MB")
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame:
@@ -75,31 +65,6 @@ class Biologic(BaseCycler):
         )
         return dataframe
 
-    @classmethod
-    def sort_files(cls, file_list: List[str]) -> List[str]:
-        """Sort a list of files by the integer in the filename.
-
-        Args:
-            file_list: The list of files.
-
-        Returns:
-            list: The sorted list of files.
-        """
-        return sorted(file_list, key=cls.sort_key)
-
-    @staticmethod
-    def sort_key(filepath: str) -> int:
-        """Sort key for the files.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            int: The integer in the filename.
-        """
-        match = re.search(r"\d+_MB", filepath)
-        return int(match.group()[:-3]) if match else 0
-
     @property
     def raw_dataframe(self) -> pl.DataFrame:
         """Read a battery cycler file into a DataFrame.
@@ -107,26 +72,11 @@ class Biologic(BaseCycler):
         Args:
             filepath: The path to the file.
         """
-        files = glob.glob(self.input_data_path)
-        files = self.sort_files(files)
-        dataframes = [self.read_file(file) for file in files]
-        all_columns = set([col for df in dataframes for col in df.columns])
-        indices_to_remove = []
-        for i in range(len(dataframes)):
-            if len(dataframes[i].columns) < len(all_columns):
-                indices_to_remove.append(i)
-                warnings.warn(
-                    f"File {files[i]} has missing columns, it has not been read."
-                )
-                continue
-            if i > 0:
-                dataframes[i] = dataframes[i].with_columns(
-                    pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
-                )
-        dataframes = [
-            df for i, df in enumerate(dataframes) if i not in indices_to_remove
-        ]
-        return pl.concat(dataframes, how="vertical")
+        for i in range(len(self.dataframe_list)):
+            self.dataframe_list[i] = self.dataframe_list[i].with_columns(
+                pl.col("Ns") + self.dataframe_list[i - 1]["Ns"].max() + 1
+            )
+        return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
 
     @property
     def processed_dataframe(self) -> pl.DataFrame:
