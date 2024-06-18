@@ -57,6 +57,7 @@ class Procedure(Filter):
             "Cycling": Cycling,
             "pOCV": pOCV,
             "SOC Reset": BaseExperiment,
+            "General": BaseExperiment,
         }
         steps_idx = []
         for experiment_name in experiment_names:
@@ -69,9 +70,17 @@ class Procedure(Filter):
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self._data.filter(conditions)
-        if len(experiment_names) == 1:
-            experiment_obj = experiment_types[self.titles[experiment_names[0]]]
-        else:
+        if len(experiment_names) == 1:  # when one experiment is selected
+            experiment_name = experiment_names[0]
+            try:
+                experiment_obj = experiment_types[self.titles[experiment_name]]
+            except KeyError:
+                experiment_obj = BaseExperiment
+                print(
+                    f"Experiment type for {experiment_name} not found,"
+                    " BaseExperiment used instead."
+                )
+        else:  # when multiple experiments are selected
             experiment_obj = BaseExperiment
         return experiment_obj(lf_filtered, self.info)
 
