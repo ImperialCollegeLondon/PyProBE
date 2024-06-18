@@ -235,7 +235,7 @@ rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-scikit-learn==1.4.2
+scikit-learn==1.5.0
     # via PyProBE (pyproject.toml)
 scipy==1.13.0
     # via scikit-learn
@@ -297,7 +297,7 @@ typing-extensions==4.11.0
     #   streamlit
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 virtualenv==20.25.1
     # via pre-commit
