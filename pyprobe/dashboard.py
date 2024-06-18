@@ -69,7 +69,9 @@ if __name__ == "__main__":
 
     # Select an experiment
     if selected_raw_data is not None:
-        experiment_names = cell_list[0].procedure[selected_raw_data].titles.keys()
+        experiment_names = (
+            cell_list[selected_indices[0]].procedure[selected_raw_data].titles.keys()
+        )
         selected_experiment = st.sidebar.multiselect(
             "Select an experiment", experiment_names
         )
