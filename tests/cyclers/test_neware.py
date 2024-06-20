@@ -122,6 +122,4 @@ def test_process_dataframe(monkeypatch):
             "Capacity [Ah]": [20, 40, 30, 20, 20, 20],
         }
     )
-    print(processed_dataframe)
-    print(expected_dataframe)
     pl_testing.assert_frame_equal(processed_dataframe, expected_dataframe)
