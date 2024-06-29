@@ -41,7 +41,7 @@ def test_sort_files(neware_cycler):
 
 def test_read_multiple_files(neware_cycler):
     """Test the read_file method with multiple files."""
-    unprocessed_dataframe = neware_cycler.raw_dataframe
+    unprocessed_dataframe = neware_cycler.imported_dataframe
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
 
@@ -49,10 +49,10 @@ def test_read_and_process(benchmark, neware_cycler):
     """Test the full process of reading and processing a file."""
 
     def read_and_process():
-        return neware_cycler.imported_dataframe
+        return neware_cycler.pyprobe_dataframe
 
-    imported_dataframe = benchmark(read_and_process)
-    rows = imported_dataframe.shape[0]
+    pyprobe_dataframe = benchmark(read_and_process)
+    rows = pyprobe_dataframe.shape[0]
     expected_columns = [
         "Date",
         "Time [s]",
@@ -61,13 +61,13 @@ def test_read_and_process(benchmark, neware_cycler):
         "Voltage [V]",
         "Capacity [Ah]",
     ]
-    assert isinstance(imported_dataframe, pl.DataFrame)
-    all(col in imported_dataframe.columns for col in expected_columns)
+    assert isinstance(pyprobe_dataframe, pl.DataFrame)
+    all(col in pyprobe_dataframe.columns for col in expected_columns)
 
     neware_cycler = Neware("tests/sample_data/neware/sample_data_neware*.xlsx")
-    imported_dataframe = neware_cycler.imported_dataframe
-    assert imported_dataframe.shape[0] == rows * 2
-    all(col in imported_dataframe.columns for col in expected_columns)
+    pyprobe_dataframe = neware_cycler.pyprobe_dataframe
+    assert pyprobe_dataframe.shape[0] == rows * 2
+    all(col in pyprobe_dataframe.columns for col in expected_columns)
 
 
 def test_process_dataframe(monkeypatch):
@@ -100,11 +100,11 @@ def test_process_dataframe(monkeypatch):
         )
 
     monkeypatch.setattr(
-        "pyprobe.cyclers.neware.Neware.raw_dataframe", property(mock_dataframe)
+        "pyprobe.cyclers.neware.Neware.imported_dataframe", property(mock_dataframe)
     )
     neware_cycler = Neware("tests/sample_data/neware/sample_data_neware.xlsx")
-    imported_dataframe = neware_cycler.imported_dataframe
-    imported_dataframe = imported_dataframe.select(
+    pyprobe_dataframe = neware_cycler.pyprobe_dataframe
+    pyprobe_dataframe = pyprobe_dataframe.select(
         [
             "Time [s]",
             "Step",
@@ -122,4 +122,4 @@ def test_process_dataframe(monkeypatch):
             "Capacity [Ah]": [20, 40, 30, 20, 20, 20],
         }
     )
-    pl_testing.assert_frame_equal(imported_dataframe, expected_dataframe)
+    pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)

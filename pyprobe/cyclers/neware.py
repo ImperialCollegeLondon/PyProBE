@@ -67,4 +67,4 @@ class Neware(BaseCycler):
             .fill_null(strategy="zero")
             .alias("Time [s]")
         )
-        return self._dataframe.select(time)
+        return self.imported_dataframe.select(time)

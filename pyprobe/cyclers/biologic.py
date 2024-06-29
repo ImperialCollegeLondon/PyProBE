@@ -78,7 +78,7 @@ class Biologic(BaseCycler):
         return dataframe
 
     @property
-    def raw_dataframe(self) -> pl.DataFrame:
+    def imported_dataframe(self) -> pl.DataFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
@@ -94,4 +94,4 @@ class Biologic(BaseCycler):
     def step(self) -> pl.DataFrame:
         """Identify and format the step column."""
         step = (pl.col(self.column_dict["Step"]) + 1).alias("Step")
-        return self._dataframe.select(step)
+        return self.imported_dataframe.select(step)

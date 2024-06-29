@@ -16,7 +16,7 @@ def biologic_cycler():
 
 def test_read_file(biologic_cycler):
     """Test the read_file method."""
-    unprocessed_dataframe = biologic_cycler.raw_dataframe
+    unprocessed_dataframe = biologic_cycler.imported_dataframe
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
     assert unprocessed_dataframe.columns == [
         "Ns changes",
@@ -52,9 +52,9 @@ def test_read_and_process(benchmark, biologic_cycler):
     """Test the full process of reading and processing a file."""
 
     def read_and_process():
-        return biologic_cycler.imported_dataframe
+        return biologic_cycler.pyprobe_dataframe
 
-    imported_dataframe = benchmark(read_and_process)
+    pyprobe_dataframe = benchmark(read_and_process)
     expected_columns = [
         "Date",
         "Time [s]",
@@ -63,16 +63,16 @@ def test_read_and_process(benchmark, biologic_cycler):
         "Voltage [V]",
         "Capacity [Ah]",
     ]
-    assert isinstance(imported_dataframe, pl.DataFrame)
-    assert all(col in imported_dataframe.columns for col in expected_columns)
-    imported_dataframe = imported_dataframe.with_columns(
+    assert isinstance(pyprobe_dataframe, pl.DataFrame)
+    assert all(col in pyprobe_dataframe.columns for col in expected_columns)
+    pyprobe_dataframe = pyprobe_dataframe.with_columns(
         [
             pl.col("Time [s]").diff().fill_null(strategy="zero").alias("dt"),
             pl.col("Date").diff().fill_null(strategy="zero").alias("dd"),
         ]
     )
-    assert not any(imported_dataframe.select(pl.col("dt") < 0).to_numpy())
-    assert not any(imported_dataframe.select(pl.col("dd") < 0).to_numpy())
+    assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).to_numpy())
+    assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).to_numpy())
 
 
 def test_process_dataframe(monkeypatch):
@@ -97,12 +97,12 @@ def test_process_dataframe(monkeypatch):
         )
 
     monkeypatch.setattr(
-        "pyprobe.cyclers.biologic.Biologic.raw_dataframe", property(mock_dataframe)
+        "pyprobe.cyclers.biologic.Biologic.imported_dataframe", property(mock_dataframe)
     )
     biologic_cycler = Biologic(
         "tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
     )
-    imported_dataframe = biologic_cycler.imported_dataframe.select(
+    pyprobe_dataframe = biologic_cycler.pyprobe_dataframe.select(
         ["Time [s]", "Step", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
     )
     expected_dataframe = pl.DataFrame(
@@ -115,4 +115,4 @@ def test_process_dataframe(monkeypatch):
         }
     )
 
-    pl_testing.assert_frame_equal(imported_dataframe, expected_dataframe)
+    pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)

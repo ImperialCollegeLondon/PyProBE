@@ -36,8 +36,7 @@ class BaseCycler:
         self.common_suffix = common_suffix
         self.column_name_pattern = column_name_pattern
         self.column_dict = column_dict
-        self._dataframe = self.raw_dataframe
-        self._dataframe_columns = self._dataframe.columns
+        self._dataframe_columns = self.imported_dataframe.columns
 
         self.required_columns = {
             "Date": self.date,
@@ -50,7 +49,7 @@ class BaseCycler:
             "Capacity [Ah]": self.capacity,
         }
 
-        self.imported_dataframe = pl.concat(
+        self.pyprobe_dataframe = pl.concat(
             list(self.required_columns.values()),
             how="horizontal",
         )
@@ -62,11 +61,16 @@ class BaseCycler:
         Returns:
             pl.DataFrame: A single column DataFrame containing the date.
         """
-        if self._dataframe.dtypes[self._dataframe.columns.index("Date")] != pl.Datetime:
+        if (
+            self.imported_dataframe.dtypes[
+                self.imported_dataframe.columns.index("Date")
+            ]
+            != pl.Datetime
+        ):
             date = pl.col("Date").str.to_datetime().alias("Date")
         else:
             date = pl.col("Date")
-        return self._dataframe.select(date)
+        return self.imported_dataframe.select(date)
 
     @property
     def time(self) -> pl.DataFrame:
@@ -76,13 +80,13 @@ class BaseCycler:
             pl.DataFrame: A single column DataFrame containing the time in [s].
         """
         time = pl.col(self.column_dict["Time"]).alias("Time [s]")
-        return self._dataframe.select(time)
+        return self.imported_dataframe.select(time)
 
     @property
     def step(self) -> pl.DataFrame:
         """Identify and format the step column."""
         step = pl.col(self.column_dict["Step"]).alias("Step")
-        return self._dataframe.select(step)
+        return self.imported_dataframe.select(step)
 
     @property
     def current(self) -> pl.DataFrame:
@@ -97,7 +101,7 @@ class BaseCycler:
             self.column_name_pattern,
             "Current",
         ).to_default()
-        return self._dataframe.select(current)
+        return self.imported_dataframe.select(current)
 
     @property
     def voltage(self) -> pl.DataFrame:
@@ -112,7 +116,7 @@ class BaseCycler:
             self.column_name_pattern,
             "Voltage",
         ).to_default()
-        return self._dataframe.select(voltage)
+        return self.imported_dataframe.select(voltage)
 
     @property
     def charge_capacity(self) -> pl.DataFrame:
@@ -128,7 +132,7 @@ class BaseCycler:
             self.column_name_pattern,
             "Capacity",
         ).to_default(keep_name=True)
-        return self._dataframe.select(charge_capacity)
+        return self.imported_dataframe.select(charge_capacity)
 
     @property
     def discharge_capacity(self) -> pl.DataFrame:
@@ -144,7 +148,7 @@ class BaseCycler:
             self.column_name_pattern,
             "Capacity",
         ).to_default(keep_name=True)
-        return self._dataframe.select(discharge_capacity)
+        return self.imported_dataframe.select(discharge_capacity)
 
     @property
     def capacity_from_ch_dch(self) -> pl.DataFrame:
@@ -188,7 +192,7 @@ class BaseCycler:
                 self.column_name_pattern,
                 "Capacity",
             ).to_default()
-            return self._dataframe.select(capacity)
+            return self.imported_dataframe.select(capacity)
         else:
             return self.capacity_from_ch_dch
 
@@ -213,7 +217,7 @@ class BaseCycler:
             .alias("Cycle")
             .cast(pl.Int64)
         )
-        return self._dataframe.select(cycle)
+        return self.imported_dataframe.select(cycle)
 
     @property
     def event(self) -> pl.DataFrame:
@@ -235,7 +239,7 @@ class BaseCycler:
             .alias("Event")
             .cast(pl.Int64)
         )
-        return self._dataframe.select(event)
+        return self.imported_dataframe.select(event)
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame:
@@ -272,11 +276,11 @@ class BaseCycler:
         return [df for i, df in enumerate(list) if i not in indices_to_remove]
 
     @property
-    def raw_dataframe(self) -> pl.DataFrame:
-        """Read a battery cycler file into a DataFrame.
+    def imported_dataframe(self) -> pl.DataFrame:
+        """Return the dataframe containing the data from all imported files.
 
-        Args:
-            filepath (str): The path to the file.
+        Returns:
+            pl.DataFrame: The DataFrame.
         """
         return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
 
