@@ -14,17 +14,6 @@ from pyprobe.unitconverter import UnitConverter
 class BaseCycler:
     """A class to load and process battery cycler data."""
 
-    required_columns = [
-        "Date",
-        "Time [s]",
-        "Cycle",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-    ]
-
     def __init__(
         self,
         input_data_path: str,
@@ -50,17 +39,19 @@ class BaseCycler:
         self._dataframe = self.raw_dataframe
         self._dataframe_columns = self._dataframe.columns
 
+        self.required_columns = {
+            "Date": self.date,
+            "Time [s]": self.time,
+            "Cycle": self.cycle,
+            "Step": self.step,
+            "Event": self.event,
+            "Current [A]": self.current,
+            "Voltage [V]": self.voltage,
+            "Capacity [Ah]": self.capacity,
+        }
+
         self.imported_dataframe = pl.concat(
-            [
-                self.date,
-                self.time,
-                self.step,
-                self.cycle,
-                self.event,
-                self.current,
-                self.voltage,
-                self.capacity_from_ch_dch,
-            ],
+            list(self.required_columns.values()),
             how="horizontal",
         )
 
@@ -182,6 +173,24 @@ class BaseCycler:
             + pl.col(f"{self.column_dict['Charge Capacity']} [Ah]").max()
         ).alias("Capacity [Ah]")
         return charge_and_discharge_capacity.select(capacity)
+
+    @property
+    def capacity(self) -> pl.DataFrame:
+        """Identify and format the capacity column.
+
+        Returns:
+            pl.DataFrame: A single column DataFrame containing the capacity in [Ah].
+        """
+        if "Capacity" in self.column_dict:
+            capacity = UnitConverter.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Capacity"],
+                self.column_name_pattern,
+                "Capacity",
+            ).to_default()
+            return self._dataframe.select(capacity)
+        else:
+            return self.capacity_from_ch_dch
 
     @property
     def cycle(self) -> pl.DataFrame:
