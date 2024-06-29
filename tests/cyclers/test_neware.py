@@ -49,10 +49,10 @@ def test_read_and_process(benchmark, neware_cycler):
     """Test the full process of reading and processing a file."""
 
     def read_and_process():
-        return neware_cycler.processed_dataframe
+        return neware_cycler.imported_dataframe
 
-    processed_dataframe = benchmark(read_and_process)
-    rows = processed_dataframe.shape[0]
+    imported_dataframe = benchmark(read_and_process)
+    rows = imported_dataframe.shape[0]
     expected_columns = [
         "Date",
         "Time [s]",
@@ -61,13 +61,13 @@ def test_read_and_process(benchmark, neware_cycler):
         "Voltage [V]",
         "Capacity [Ah]",
     ]
-    assert isinstance(processed_dataframe, pl.DataFrame)
-    all(col in processed_dataframe.columns for col in expected_columns)
+    assert isinstance(imported_dataframe, pl.DataFrame)
+    all(col in imported_dataframe.columns for col in expected_columns)
 
     neware_cycler = Neware("tests/sample_data/neware/sample_data_neware*.xlsx")
-    processed_dataframe = neware_cycler.processed_dataframe
-    assert processed_dataframe.shape[0] == rows * 2
-    all(col in processed_dataframe.columns for col in expected_columns)
+    imported_dataframe = neware_cycler.imported_dataframe
+    assert imported_dataframe.shape[0] == rows * 2
+    all(col in imported_dataframe.columns for col in expected_columns)
 
 
 def test_process_dataframe(monkeypatch):
@@ -103,8 +103,8 @@ def test_process_dataframe(monkeypatch):
         "pyprobe.cyclers.neware.Neware.raw_dataframe", property(mock_dataframe)
     )
     neware_cycler = Neware("tests/sample_data/neware/sample_data_neware.xlsx")
-    processed_dataframe = neware_cycler.processed_dataframe
-    processed_dataframe = processed_dataframe.select(
+    imported_dataframe = neware_cycler.imported_dataframe
+    imported_dataframe = imported_dataframe.select(
         [
             "Time [s]",
             "Step",
@@ -122,4 +122,4 @@ def test_process_dataframe(monkeypatch):
             "Capacity [Ah]": [20, 40, 30, 20, 20, 20],
         }
     )
-    pl_testing.assert_frame_equal(processed_dataframe, expected_dataframe)
+    pl_testing.assert_frame_equal(imported_dataframe, expected_dataframe)

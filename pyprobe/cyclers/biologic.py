@@ -6,7 +6,6 @@ from datetime import datetime
 import polars as pl
 
 from pyprobe.cyclers.basecycler import BaseCycler
-from pyprobe.unitconverter import UnitConverter
 
 
 class Biologic(BaseCycler):
@@ -18,7 +17,20 @@ class Biologic(BaseCycler):
         Args:
             input_data_path: The path to the input data.
         """
-        super().__init__(input_data_path, common_suffix="_MB")
+        super().__init__(
+            input_data_path,
+            common_suffix="_MB",
+            column_name_pattern=r"(.+)/(.+)",
+            column_dict={
+                "Date": "Date",
+                "Time": "time/s",
+                "Step": "Ns",
+                "Current": "I",
+                "Voltage": "Ecell",
+                "Charge Capacity": "Q charge",
+                "Discharge Capacity": "Q discharge",
+            },
+        )
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame:
@@ -79,60 +91,7 @@ class Biologic(BaseCycler):
         return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
 
     @property
-    def processed_dataframe(self) -> pl.DataFrame:
-        """Process a DataFrame from battery cycler data.
-
-        Args:
-            dataframe: The DataFrame to process.
-
-        Returns:
-            pl.DataFrame: The dataframe in PyProBE format.
-        """
-        dataframe = self.raw_dataframe
-        columns = dataframe.columns
-        time = pl.col("time/s").alias("Time [s]")
-
-        # Cycle and step
-        step = (pl.col("Ns") + 1).alias("Step")
-
-        # Measured data
-        column_name_pattern = r"(.+)/(.+)"
-        current = UnitConverter.search_columns(
-            columns, "I", column_name_pattern, "Current"
-        ).to_default()
-        voltage = UnitConverter.search_columns(
-            columns, "Ecell", column_name_pattern, "Voltage"
-        ).to_default()
-
-        make_charge_capacity = UnitConverter.search_columns(
-            columns, "Q charge", column_name_pattern, "Capacity"
-        ).to_default(keep_name=True)
-        make_discharge_capacity = UnitConverter.search_columns(
-            columns, "Q discharge", column_name_pattern, "Capacity"
-        ).to_default(keep_name=True)
-
-        dataframe = dataframe.with_columns(time, step, current, voltage)
-
-        dataframe = dataframe.with_columns(
-            make_charge_capacity, make_discharge_capacity
-        )
-
-        diff_charge_capacity = (
-            pl.col("Q charge [Ah]")
-            .diff()
-            .clip(lower_bound=0)
-            .fill_null(strategy="zero")
-        )
-        diff_discharge_capacity = (
-            pl.col("Q discharge [Ah]")
-            .diff()
-            .clip(lower_bound=0)
-            .fill_null(strategy="zero")
-        )
-        make_capacity = (
-            (diff_charge_capacity - diff_discharge_capacity).cum_sum()
-            + pl.col("Q charge [Ah]").max()
-        ).alias("Capacity [Ah]")
-
-        dataframe = dataframe.with_columns(make_capacity)
-        return dataframe
+    def step(self) -> pl.DataFrame:
+        """Identify and format the step column."""
+        step = (pl.col(self.column_dict["Step"]) + 1).alias("Step")
+        return self._dataframe.select(step)

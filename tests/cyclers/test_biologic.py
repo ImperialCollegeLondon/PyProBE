@@ -1,4 +1,5 @@
 """Tests for the neware module."""
+from datetime import datetime
 
 import polars as pl
 import polars.testing as pl_testing
@@ -51,9 +52,9 @@ def test_read_and_process(benchmark, biologic_cycler):
     """Test the full process of reading and processing a file."""
 
     def read_and_process():
-        return biologic_cycler.processed_dataframe
+        return biologic_cycler.imported_dataframe
 
-    processed_dataframe = benchmark(read_and_process)
+    imported_dataframe = benchmark(read_and_process)
     expected_columns = [
         "Date",
         "Time [s]",
@@ -62,16 +63,16 @@ def test_read_and_process(benchmark, biologic_cycler):
         "Voltage [V]",
         "Capacity [Ah]",
     ]
-    assert isinstance(processed_dataframe, pl.DataFrame)
-    assert all(col in processed_dataframe.columns for col in expected_columns)
-    processed_dataframe = processed_dataframe.with_columns(
+    assert isinstance(imported_dataframe, pl.DataFrame)
+    assert all(col in imported_dataframe.columns for col in expected_columns)
+    imported_dataframe = imported_dataframe.with_columns(
         [
             pl.col("Time [s]").diff().fill_null(strategy="zero").alias("dt"),
             pl.col("Date").diff().fill_null(strategy="zero").alias("dd"),
         ]
     )
-    assert not any(processed_dataframe.select(pl.col("dt") < 0).to_numpy())
-    assert not any(processed_dataframe.select(pl.col("dd") < 0).to_numpy())
+    assert not any(imported_dataframe.select(pl.col("dt") < 0).to_numpy())
+    assert not any(imported_dataframe.select(pl.col("dd") < 0).to_numpy())
 
 
 def test_process_dataframe(monkeypatch):
@@ -80,7 +81,12 @@ def test_process_dataframe(monkeypatch):
     def mock_dataframe(self):
         return pl.DataFrame(
             {
-                "Date": [0, 1, 2, 3],
+                "Date": [
+                    datetime(2022, 2, 2, 2, 2, 0),
+                    datetime(2022, 2, 2, 2, 2, 1),
+                    datetime(2022, 2, 2, 2, 2, 2),
+                    datetime(2022, 2, 2, 2, 2, 3),
+                ],
                 "time/s": [0.0, 1.0, 2.0, 3.0],
                 "Ns": [0, 1, 2, 3],
                 "I/mA": [1, 2, 3, 4],
@@ -96,7 +102,7 @@ def test_process_dataframe(monkeypatch):
     biologic_cycler = Biologic(
         "tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
     )
-    processed_dataframe = biologic_cycler.processed_dataframe.select(
+    imported_dataframe = biologic_cycler.imported_dataframe.select(
         ["Time [s]", "Step", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
     )
     expected_dataframe = pl.DataFrame(
@@ -109,4 +115,4 @@ def test_process_dataframe(monkeypatch):
         }
     )
 
-    pl_testing.assert_frame_equal(processed_dataframe, expected_dataframe)
+    pl_testing.assert_frame_equal(imported_dataframe, expected_dataframe)
