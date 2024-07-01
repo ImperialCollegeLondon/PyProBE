@@ -5,9 +5,11 @@ import numpy as np
 from numpy.typing import NDArray
 
 from pyprobe.methods.basemethod import BaseMethod
+from pyprobe.methods.differentiation import dQdV
 from pyprobe.result import Result
 
 
+@dQdV.register_method("Feng2020")
 class Feng2020(BaseMethod):
     """A method for calculating the incremental capacity analysis."""
 
@@ -23,6 +25,7 @@ class Feng2020(BaseMethod):
         self.deltaV = deltaV
         v_points, IC = self.calculate_dQdV(self.voltage, self.deltaV)
         self.dQdV = self.assign_outputs({"Voltage [V]": v_points, "IC [Ah/V]": IC})
+        self.output_data = self.dQdV
 
     @classmethod
     def calculate_dQdV(

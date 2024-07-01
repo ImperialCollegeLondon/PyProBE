@@ -3,6 +3,7 @@ import math
 
 import numpy as np
 import polars as pl
+import polars.testing as pl_testing
 import pytest
 
 from pyprobe.rawdata import RawData
@@ -26,7 +27,7 @@ def test_data(RawData_fixture):
     assert isinstance(RawData_fixture._data, pl.LazyFrame)
     assert isinstance(RawData_fixture.data, pl.DataFrame)
     assert isinstance(RawData_fixture._data, pl.DataFrame)
-    pl.testing.assert_frame_equal(RawData_fixture.data, RawData_fixture._data)
+    pl_testing.assert_frame_equal(RawData_fixture.data, RawData_fixture._data)
 
     for column in ["Capacity [Ah]", "Time [s]"]:
         assert RawData_fixture.data[column][0] == 0
@@ -40,7 +41,7 @@ def test_capacity(BreakinCycles_fixture):
 
 def test_dQdV(BreakinCycles_fixture):
     """Test the dQdV method."""
-    dQdV = BreakinCycles_fixture.cycle(0).charge(0).dQdV("feng_2020", 0.006)
+    dQdV = BreakinCycles_fixture.cycle(0).charge(0).dQdV("Feng2020", 0.006)
     dQdV_data = dQdV.data.filter(pl.col("Voltage [V]") < 4)
     assert dQdV_data.columns == ["Voltage [V]", "IC [Ah/V]"]
     assert math.isclose(dQdV_data["IC [Ah/V]"].max(), 3.04952, rel_tol=1e-5)

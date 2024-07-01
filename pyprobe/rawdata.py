@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 import polars as pl
 
-from pyprobe.methods.differentiation.feng_2020 import Feng2020
+from pyprobe.methods.differentiation import dQdV
 from pyprobe.result import Result
 
 
@@ -78,12 +78,7 @@ class RawData(Result):
         Returns:
             Result: A Result object containing the dQdV curves.
         """
-        method_dict = dict(
-            {
-                "feng_2020": Feng2020,
-            }
-        )
-        return method_dict[method](self, *parameters).dQdV
+        return dQdV(self, method, *parameters).output_data
 
     def set_SOC(
         self,

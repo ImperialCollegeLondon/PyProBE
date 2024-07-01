@@ -29,6 +29,7 @@ class BaseMethod:
         """
         self.input_data = input_data
         self.variable_list: List[str] = []
+        self.output_data: Result
 
     def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
