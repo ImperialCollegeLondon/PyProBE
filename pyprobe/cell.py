@@ -120,7 +120,7 @@ class Cell:
         cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path)
-        dataframe = importer.imported_dataframe
+        dataframe = importer.pyprobe_dataframe
         dataframe.write_parquet(output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 

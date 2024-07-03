@@ -1,16 +1,11 @@
 """A module to load and process Biologic battery cycler data."""
 
 
-import glob
-import re
-import warnings
 from datetime import datetime
-from typing import List
 
 import polars as pl
 
 from pyprobe.cyclers.basecycler import BaseCycler
-from pyprobe.unitconverter import UnitConverter
 
 
 class Biologic(BaseCycler):
@@ -22,13 +17,20 @@ class Biologic(BaseCycler):
         Args:
             input_data_path: The path to the input data.
         """
-        self.input_data_path = input_data_path
-
-    @property
-    def imported_dataframe(self) -> pl.DataFrame:
-        """The imported DataFrame."""
-        imported_dataframe = self.get_cycle_and_event(self.processed_dataframe)
-        return imported_dataframe.select(self.required_columns)
+        super().__init__(
+            input_data_path,
+            common_suffix="_MB",
+            column_name_pattern=r"(.+)/(.+)",
+            column_dict={
+                "Date": "Date",
+                "Time": "time/s",
+                "Step": "Ns",
+                "Current": "I",
+                "Voltage": "Ecell",
+                "Charge Capacity": "Q charge",
+                "Discharge Capacity": "Q discharge",
+            },
+        )
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame:
@@ -75,114 +77,21 @@ class Biologic(BaseCycler):
         )
         return dataframe
 
-    @classmethod
-    def sort_files(cls, file_list: List[str]) -> List[str]:
-        """Sort a list of files by the integer in the filename.
-
-        Args:
-            file_list: The list of files.
-
-        Returns:
-            list: The sorted list of files.
-        """
-        return sorted(file_list, key=cls.sort_key)
-
-    @staticmethod
-    def sort_key(filepath: str) -> int:
-        """Sort key for the files.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            int: The integer in the filename.
-        """
-        match = re.search(r"\d+_MB", filepath)
-        return int(match.group()[:-3]) if match else 0
-
     @property
-    def raw_dataframe(self) -> pl.DataFrame:
+    def imported_dataframe(self) -> pl.DataFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
             filepath: The path to the file.
         """
-        files = glob.glob(self.input_data_path)
-        files = self.sort_files(files)
-        dataframes = [self.read_file(file) for file in files]
-        all_columns = set([col for df in dataframes for col in df.columns])
-        indices_to_remove = []
-        for i in range(len(dataframes)):
-            if len(dataframes[i].columns) < len(all_columns):
-                indices_to_remove.append(i)
-                warnings.warn(
-                    f"File {files[i]} has missing columns, it has not been read."
-                )
-                continue
-            if i > 0:
-                dataframes[i] = dataframes[i].with_columns(
-                    pl.col("Ns") + dataframes[i - 1]["Ns"].max() + 1
-                )
-        dataframes = [
-            df for i, df in enumerate(dataframes) if i not in indices_to_remove
-        ]
-        return pl.concat(dataframes, how="vertical")
+        for i in range(len(self.dataframe_list)):
+            self.dataframe_list[i] = self.dataframe_list[i].with_columns(
+                pl.col("Ns") + self.dataframe_list[i - 1]["Ns"].max() + 1
+            )
+        return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
 
     @property
-    def processed_dataframe(self) -> pl.DataFrame:
-        """Process a DataFrame from battery cycler data.
-
-        Args:
-            dataframe: The DataFrame to process.
-
-        Returns:
-            pl.DataFrame: The dataframe in PyProBE format.
-        """
-        dataframe = self.raw_dataframe
-        columns = dataframe.columns
-        time = pl.col("time/s").alias("Time [s]")
-
-        # Cycle and step
-        step = (pl.col("Ns") + 1).alias("Step")
-
-        # Measured data
-        column_name_pattern = r"(.+)/(.+)"
-        current = UnitConverter.search_columns(
-            columns, "I", column_name_pattern, "Current"
-        ).to_default()
-        voltage = UnitConverter.search_columns(
-            columns, "Ecell", column_name_pattern, "Voltage"
-        ).to_default()
-
-        make_charge_capacity = UnitConverter.search_columns(
-            columns, "Q charge", column_name_pattern, "Capacity"
-        ).to_default(keep_name=True)
-        make_discharge_capacity = UnitConverter.search_columns(
-            columns, "Q discharge", column_name_pattern, "Capacity"
-        ).to_default(keep_name=True)
-
-        dataframe = dataframe.with_columns(time, step, current, voltage)
-
-        dataframe = dataframe.with_columns(
-            make_charge_capacity, make_discharge_capacity
-        )
-
-        diff_charge_capacity = (
-            pl.col("Q charge [Ah]")
-            .diff()
-            .clip(lower_bound=0)
-            .fill_null(strategy="zero")
-        )
-        diff_discharge_capacity = (
-            pl.col("Q discharge [Ah]")
-            .diff()
-            .clip(lower_bound=0)
-            .fill_null(strategy="zero")
-        )
-        make_capacity = (
-            (diff_charge_capacity - diff_discharge_capacity).cum_sum()
-            + pl.col("Q charge [Ah]").max()
-        ).alias("Capacity [Ah]")
-
-        dataframe = dataframe.with_columns(make_capacity)
-        return dataframe
+    def step(self) -> pl.DataFrame:
+        """Identify and format the step column."""
+        step = (pl.col(self.column_dict["Step"]) + 1).alias("Step")
+        return self.imported_dataframe.select(step)
