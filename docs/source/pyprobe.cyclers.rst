@@ -1,6 +1,11 @@
 pyprobe.cyclers package
 =======================
 
+.. automodule:: pyprobe.cyclers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
@@ -24,14 +29,6 @@ pyprobe.cyclers.neware module
 -----------------------------
 
 .. automodule:: pyprobe.cyclers.neware
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: pyprobe.cyclers
    :members:
    :undoc-members:
    :show-inheritance:

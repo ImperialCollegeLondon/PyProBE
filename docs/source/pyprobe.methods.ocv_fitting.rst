@@ -1,6 +1,11 @@
 pyprobe.methods.ocv\_fitting package
 ====================================
 
+.. automodule:: pyprobe.methods.ocv_fitting
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
 
@@ -16,14 +21,6 @@ pyprobe.methods.ocv\_fitting.Simple\_OCV\_fit module
 ----------------------------------------------------
 
 .. automodule:: pyprobe.methods.ocv_fitting.Simple_OCV_fit
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: pyprobe.methods.ocv_fitting
    :members:
    :undoc-members:
    :show-inheritance:

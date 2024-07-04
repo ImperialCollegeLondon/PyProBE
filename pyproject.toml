@@ -42,9 +42,9 @@ dev = [
     "pytest-mock",
     "pytest-benchmark",
     "sphinx",
-    "sphinx-rtd-theme",
     "sphinx-tabs",
     "types-PyYAML",
+    "sphinxcontrib-bibtex",
 ]
 
 [tool.mypy]

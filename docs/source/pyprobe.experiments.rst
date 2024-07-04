@@ -1,8 +1,21 @@
 pyprobe.experiments package
 ===========================
 
+.. automodule:: pyprobe.experiments
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Submodules
 ----------
+
+pyprobe.experiments.baseexperiment module
+-----------------------------------------
+
+.. automodule:: pyprobe.experiments.baseexperiment
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 pyprobe.experiments.cycling module
 ----------------------------------
@@ -24,14 +37,6 @@ pyprobe.experiments.pulsing module
 ----------------------------------
 
 .. automodule:: pyprobe.experiments.pulsing
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: pyprobe.experiments
    :members:
    :undoc-members:
    :show-inheritance:
