@@ -116,6 +116,7 @@ class RawData(Result):
             method (str): The differentiation method.
             x (str): The x data column.
             y (str): The y data column.
+            *args: Additional arguments.
             **kwargs: Additional keyword arguments.
 
         Returns:
