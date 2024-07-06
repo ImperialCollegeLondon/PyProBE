@@ -122,6 +122,4 @@ class RawData(Result):
         Returns:
             Result: The result object from the gradient method.
         """
-        return differentiation.method_dict[method](
-            self, x, y, *args, **kwargs
-        ).output_data
+        return differentiation.gradient(method, self, x, y, *args, **kwargs)
