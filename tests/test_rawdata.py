@@ -6,6 +6,7 @@ import polars.testing as pl_testing
 import pytest
 
 from pyprobe.rawdata import RawData
+from pyprobe.result import Result
 
 
 @pytest.fixture
@@ -30,6 +31,19 @@ def test_data(RawData_fixture):
 
     for column in ["Capacity [Ah]", "Time [s]"]:
         assert RawData_fixture.data[column][0] == 0
+
+
+def test_gradient(BreakinCycles_fixture):
+    """Test the gradient property."""
+    discharge = BreakinCycles_fixture.cycle(0).discharge(0)
+    gradient = discharge.gradient("LEAN", "Capacity [Ah]", "Voltage [V]", 1, "dxdy")
+    assert isinstance(gradient, Result)
+    assert isinstance(gradient.data, pl.DataFrame)
+    assert gradient.data.columns == [
+        "Capacity [Ah]",
+        "Voltage [V]",
+        "d(Capacity [Ah])/d(Voltage [V])",
+    ]
 
 
 def test_capacity(BreakinCycles_fixture):

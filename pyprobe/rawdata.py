@@ -3,6 +3,7 @@ from typing import Dict, Optional
 
 import polars as pl
 
+from pyprobe.methods.differentiation import gradient
 from pyprobe.result import Result
 
 
@@ -39,6 +40,9 @@ class RawData(Result):
         """Initialize the RawData object."""
         super().__init__(_data, info)
         self.data_property_called = False
+        self.methods = {
+            "gradient": gradient,
+        }
 
     @property
     def data(self) -> pl.DataFrame:

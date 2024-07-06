@@ -3,13 +3,12 @@ from typing import List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.interpolate import interp1d
 
 from pyprobe.methods.basemethod import BaseMethod
-from pyprobe.methods.differentiation import gradient
 from pyprobe.result import Result
 
 
-@gradient.register_method("LEAN")
 class DifferentiateLEAN(BaseMethod):
     r"""A method for differentiating noisy data.
 
@@ -49,11 +48,12 @@ class DifferentiateLEAN(BaseMethod):
         smoothed_gradient = self.smooth_gradient(
             calculated_gradient, [0.0668, 0.2417, 0.3830, 0.2417, 0.0668]
         )
-        gradient_title = f"d[{y}]/d[{x}]" if gradient == "dydx" else f"d[{x}]/d[{y}"
+        gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
         self.output_data = self.assign_outputs(
             {x: x_pts, y: y_pts, gradient_title: smoothed_gradient}
         )
 
+    @staticmethod
     def get_dx(x: NDArray[np.float64]) -> float:
         """Get the x sampling interval, assuming uniformly spaced x values.
 
@@ -67,13 +67,14 @@ class DifferentiateLEAN(BaseMethod):
             ValueError: If the x values are not uniformly spaced.
         """
         dx_all = np.diff(x)
-        dx_mean = np.mean(dx_all)
-        dx_std = np.std(dx_all)
-        if dx_std > 0.01 * dx_mean:
+        dx_mean = np.median(dx_all)
+        dx_iqr = np.percentile(dx_all, 75) - np.percentile(dx_all, 25)
+        if abs(dx_iqr) > 0.1 * abs(dx_mean):
             raise ValueError("x values are not uniformly spaced.")
         else:
             return dx_mean
 
+    @staticmethod
     def get_dy_and_counts(
         y: NDArray[np.float64], dy: float
     ) -> Tuple[float, NDArray[np.float64], NDArray[np.float64]]:
@@ -94,6 +95,7 @@ class DifferentiateLEAN(BaseMethod):
         y_midpoints = y_bins[:-1] + np.diff(y_bins) / 2
         return dy, y_midpoints, N
 
+    @staticmethod
     def y_sampling_interval(y: NDArray[np.float64]) -> float:
         r"""Get the y sampling interval, :math:`\\delta R` in :footcite:t:`Feng2020`.
 
@@ -111,7 +113,7 @@ class DifferentiateLEAN(BaseMethod):
     @classmethod
     def gradient(
         cls, x: NDArray[np.float64], y: NDArray[np.float64], k: int, gradient: str
-    ) -> Tuple[NDArray, NDArray, NDArray]:
+    ) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
         r"""Calculate the gradient of the data, assuming x is uniformly spaced.
 
         Args:
@@ -132,7 +134,9 @@ class DifferentiateLEAN(BaseMethod):
             grad = 1 / N * dy / dx
         elif gradient == "dxdy":
             grad = N * dx / dy
-        return x, y_midpoints, grad
+        f = interp1d(y, x, assume_sorted=False)
+        x_pts = f(y_midpoints)
+        return x_pts, y_midpoints, grad
 
     @staticmethod
     def smooth_gradient(

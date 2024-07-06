@@ -1,5 +1,5 @@
 """Module for registering methods to be used in the pyprobe package."""
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Dict, List, Type
 
 from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.result import Result
@@ -13,11 +13,11 @@ class MethodRegistry:
             Format: {method_name: method_class}
     """
 
-    methods: Dict[str, Callable[[Result, Any], BaseMethod]] = {}
+    methods: Dict[str, Type[BaseMethod]] = {}
 
     def __call__(
         self, result: Result, method: str, *args: Any, **kwargs: Any
-    ) -> BaseMethod:
+    ) -> Result:
         """Call a method from the registry.
 
         Args:
@@ -29,12 +29,10 @@ class MethodRegistry:
         Returns:
             BaseMethod: The instantiated method object.
         """
-        return self.methods[method](result, *args, **kwargs)
+        return self.methods[method](result, *args, **kwargs).output_data
 
     @classmethod
-    def register_method(
-        cls, name: str
-    ) -> Callable[[Type[BaseMethod]], Type[BaseMethod]]:
+    def register_method(cls, name: str, method_cls: Type[BaseMethod]) -> None:
         """Register a method with the registry.
 
         Args:
@@ -43,12 +41,7 @@ class MethodRegistry:
         Returns:
             Callable: A decorator function to register the method.
         """
-
-        def decorator(method_cls: Type[BaseMethod]) -> Type[BaseMethod]:
-            cls.methods[name] = method_cls
-            return method_cls
-
-        return decorator
+        cls.methods[name] = method_cls
 
     @classmethod
     def list_methods(cls) -> List[str]:
