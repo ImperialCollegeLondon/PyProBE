@@ -1,5 +1,5 @@
 """A module for the Result class."""
-from typing import Any, Callable, Dict, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import polars as pl
@@ -17,8 +17,6 @@ class Result:
         data (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
-
-    methods: Dict[str, Callable[["Result", Any], "Result"]] = {}
 
     def __init__(
         self,
@@ -53,21 +51,6 @@ class Result:
                 raise ValueError(f"Column '{col}' not in data.")
             arrays.append(self.data[col].to_numpy())
         return arrays[0] if len(arrays) == 1 else tuple(arrays)
-
-    def __getattr__(self, name: str) -> Callable[..., Any]:
-        """Return a method from self.methods."""
-        # Check if the name is in self.methods
-        if name in self.methods:
-            # If so, return a wrapper function
-            def _method_wrapper(*args: Any, **kwargs: Any) -> Result:
-                # Call the method from self.methods with self and any other arguments
-                return self.methods[name](self, *args, **kwargs)
-
-            return _method_wrapper
-        # If the name is not in self.methods, raise an AttributeError
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'"
-        )
 
     @property
     def data(self) -> pl.DataFrame:

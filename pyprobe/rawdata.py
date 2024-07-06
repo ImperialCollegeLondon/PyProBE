@@ -1,9 +1,9 @@
 """A module for the RawData class."""
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import polars as pl
 
-from pyprobe.methods.differentiation import gradient
+from pyprobe.methods import differentiation
 from pyprobe.result import Result
 
 
@@ -40,9 +40,6 @@ class RawData(Result):
         """Initialize the RawData object."""
         super().__init__(_data, info)
         self.data_property_called = False
-        self.methods = {
-            "gradient": gradient,
-        }
 
     @property
     def data(self) -> pl.DataFrame:
@@ -109,3 +106,21 @@ class RawData(Result):
                     / reference_capacity
                 ).alias("SOC")
             )
+
+    def gradient(
+        self, method: str, x: str, y: str, *args: Any, **kwargs: Any
+    ) -> Result:
+        """Calculate the gradient of the data from a variety of methods.
+
+        Args:
+            method (str): The differentiation method.
+            x (str): The x data column.
+            y (str): The y data column.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Result: The result object from the gradient method.
+        """
+        return differentiation.method_dict[method](
+            self, x, y, *args, **kwargs
+        ).output_data
