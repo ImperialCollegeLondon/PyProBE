@@ -16,27 +16,53 @@ class DifferentiateLEAN(BaseMethod):
     :footcite:t:`Feng2020`.
 
     This method assumes :math:`x` datapoints to be evenly spaced, it can return either
-    :math:`\\frac{dy}{dx}` or :math:`\\frac{dx}{dy}` depending on the argument provided
+    :math:`\frac{dy}{dx}` or :math:`\frac{dx}{dy}` depending on the argument provided
     to the `gradient` parameter.
 
     Args:
-        rawdata (Result): The input data to the method.
-        x (str): The name of the x variable.
-        y (str): The name of the y variable.
-        k (int): The integer multiple to apply to the sampling interval for the
-            bin size (:math:`\\delta R` in paper).
-        gradient (str): The gradient to calculate, either 'dydx' or 'dxdy'.
+        rawdata (Result):
+            The input data to the method.
+        x (str):
+            The name of the x variable.
+        y (str):
+            The name of the y variable.
+        k (int, optional):
+            The integer multiple to apply to the sampling interval for the bin size
+            (:math:`\delta R` in paper). Default is 1.
+        gradient (str, optional):
+            The gradient to calculate, either 'dydx' or 'dxdy'. Default is 'dydx'.
+        smoothing_filter (List[float], optional):
+            The coefficients of the smoothing matrix.
+
+            Examples are provided by :footcite:t:`Feng2020` include:
+                - [0.25, 0.5, 0.25] for a 3-point smoothing filter.
+                - [0.0668, 0.2417, 0.3830, 0.2417, 0.0668] (default) for a 5-point
+                  smoothing filter.
+                - [0.1059, 0.121, 0.1745, 0.1972, 0.1745, 0.121, 0.1059] for a 7-point
+                  smoothing filter.
 
     Attributes:
-        x_data (NDArray): The x values.
-        y_data (NDArray): The y values.
-        k (int): The integer multiple to apply to the sampling interval for the
-            bin size (:math:`\\delta R` in paper).
-        output_data (Result): A result object containing the columns, 'x', 'y' and the
-            calculated gradient.
+        x_data (NDArray):
+            The x values.
+        y_data (NDArray):
+            The y values.
+        k (int):
+            The integer multiple to apply to the sampling interval for the bin size
+            (:math:`\delta R` in paper).
+        output_data (Result):
+            A result object containing the columns, `x`, `y` and the calculated
+            gradient.
     """
 
-    def __init__(self, rawdata: Result, x: str, y: str, k: int, gradient: str):
+    def __init__(
+        self,
+        rawdata: Result,
+        x: str,
+        y: str,
+        k: int = 1,
+        gradient: str = "dydx",
+        smoothing_filter: List[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
+    ):
         """Initialize the LEAN method."""
         super().__init__(rawdata)
         self.x_data = self.variable(x)
@@ -45,9 +71,7 @@ class DifferentiateLEAN(BaseMethod):
         x_pts, y_pts, calculated_gradient = self.gradient(
             self.x_data, self.y_data, self.k, gradient
         )
-        smoothed_gradient = self.smooth_gradient(
-            calculated_gradient, [0.0668, 0.2417, 0.3830, 0.2417, 0.0668]
-        )
+        smoothed_gradient = self.smooth_gradient(calculated_gradient, smoothing_filter)
         gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
         self.output_data = self.assign_outputs(
             {x: x_pts, y: y_pts, gradient_title: smoothed_gradient}
@@ -85,8 +109,8 @@ class DifferentiateLEAN(BaseMethod):
             dy (float): The bin size.
 
         Returns:
-            Tuple[float, NDArray, NDArray]: The y sampling interval, bin midpoints and
-                counts.
+            Tuple[float, NDArray, NDArray]:
+                The y sampling interval, bin midpoints and counts.
         """
         y_range = y.max() - y.min()
         y_bins = np.linspace(y.min(), y.max(), int(np.ceil(y_range / dy)))
@@ -97,7 +121,7 @@ class DifferentiateLEAN(BaseMethod):
 
     @staticmethod
     def y_sampling_interval(y: NDArray[np.float64]) -> float:
-        r"""Get the y sampling interval, :math:`\\delta R` in :footcite:t:`Feng2020`.
+        r"""Get the y sampling interval, :math:`\delta R` in :footcite:t:`Feng2020`.
 
         Args:
             y (NDArray): The y values.
@@ -119,13 +143,14 @@ class DifferentiateLEAN(BaseMethod):
         Args:
             x (NDArray): The x values.
             y (NDArray): The y values.
-            k (int): The integer multiple to apply to the sampling interval for the
-                bin size (:math:`\\delta R` in paper).
+            k (int):
+                The integer multiple to apply to the sampling interval for the bin size
+                (:math:`\delta R` in paper).
             gradient (str): The gradient to calculate, either 'dydx' or 'dxdy'.
 
         Returns:
-            Tuple[NDArray, NDArray, NDArray]: The x values, the y midpoints and the
-                calculated gradient.
+            Tuple[NDArray, NDArray, NDArray]:
+                The x values, the y midpoints and the calculated gradient.
         """
         dx = cls.get_dx(x)
         dy = k * cls.y_sampling_interval(y)
