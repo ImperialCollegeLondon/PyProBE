@@ -34,7 +34,7 @@ class DifferentiateLEAN(BaseMethod):
         smoothing_filter (List[float], optional):
             The coefficients of the smoothing matrix.
 
-            Examples are provided by :footcite:t:`Feng2020` include:
+            Examples provided by :footcite:t:`Feng2020` include:
                 - [0.25, 0.5, 0.25] for a 3-point smoothing filter.
                 - [0.0668, 0.2417, 0.3830, 0.2417, 0.0668] (default) for a 5-point
                   smoothing filter.
@@ -42,9 +42,9 @@ class DifferentiateLEAN(BaseMethod):
                   smoothing filter.
 
     Attributes:
-        x_data (NDArray):
+        x_data (NDArray[np.float64]):
             The x values.
-        y_data (NDArray):
+        y_data (NDArray[np.float64]):
             The y values.
         k (int):
             The integer multiple to apply to the sampling interval for the bin size
@@ -82,7 +82,7 @@ class DifferentiateLEAN(BaseMethod):
         """Get the x sampling interval, assuming uniformly spaced x values.
 
         Args:
-            x (NDArray): The x values.
+            x (NDArray[np.float64]): The x values.
 
         Returns:
             float: The x sampling interval.
@@ -105,11 +105,11 @@ class DifferentiateLEAN(BaseMethod):
         """Get the y sampling interval, bin midpoints and counts.
 
         Args:
-            y (NDArray): The y values.
+            y (NDArray[np.float64]): The y values.
             dy (float): The bin size.
 
         Returns:
-            Tuple[float, NDArray, NDArray]:
+            Tuple[float, NDArray[np.float64], NDArray[np.float64]]:
                 The y sampling interval, bin midpoints and counts.
         """
         y_range = y.max() - y.min()
@@ -124,7 +124,7 @@ class DifferentiateLEAN(BaseMethod):
         r"""Get the y sampling interval, :math:`\delta R` in :footcite:t:`Feng2020`.
 
         Args:
-            y (NDArray): The y values.
+            y (NDArray[np.float64]): The y values.
 
         Returns:
             float: The y sampling interval.
@@ -141,15 +141,15 @@ class DifferentiateLEAN(BaseMethod):
         r"""Calculate the gradient of the data, assuming x is uniformly spaced.
 
         Args:
-            x (NDArray): The x values.
-            y (NDArray): The y values.
+            x (NDArray[np.float64]): The x values.
+            y (NDArray[np.float64]): The y values.
             k (int):
                 The integer multiple to apply to the sampling interval for the bin size
                 (:math:`\delta R` in paper).
             gradient (str): The gradient to calculate, either 'dydx' or 'dxdy'.
 
         Returns:
-            Tuple[NDArray, NDArray, NDArray]:
+            Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
                 The x values, the y midpoints and the calculated gradient.
         """
         dx = cls.get_dx(x)
@@ -174,7 +174,7 @@ class DifferentiateLEAN(BaseMethod):
             alpha (list[float]): The smoothing coefficients.
 
         Returns:
-            NDArray[float]: The smoothed gradient vector.
+            NDArray[np.float64]: The smoothed gradient vector.
         """
         A = np.zeros((len(gradient), len(gradient)))
         w = np.floor(len(alpha) / 2)
