@@ -1,9 +1,8 @@
 """A module for the RawData class."""
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import polars as pl
 
-from pyprobe.methods.differentiation import dQdV
 from pyprobe.result import Result
 
 
@@ -67,18 +66,6 @@ class RawData(Result):
             float: The capacity passed during the step.
         """
         return abs(self.data["Capacity [Ah]"].max() - self.data["Capacity [Ah]"].min())
-
-    def dQdV(self, method: str, *parameters: Any) -> Result:
-        """Calculate the dQdV curves for the experiment.
-
-        Args:
-            method (str): The method to use for the calculation.
-            parameters (dict): A dictionary of parameters for the method.
-
-        Returns:
-            Result: A Result object containing the dQdV curves.
-        """
-        return dQdV(self, method, *parameters).output_data
 
     def set_SOC(
         self,
