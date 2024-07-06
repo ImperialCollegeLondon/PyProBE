@@ -155,10 +155,12 @@ class DifferentiateLEAN(BaseMethod):
         dx = cls.get_dx(x)
         dy = k * cls.y_sampling_interval(y)
         dy, y_midpoints, N = cls.get_dy_and_counts(y, dy)
+        dxdy = N * dx / dy
+
         if gradient == "dydx":
-            grad = 1 / N * dy / dx
-        elif gradient == "dxdy":
-            grad = N * dx / dy
+            grad = np.divide(1, dxdy, where=dxdy != 0)
+        else:
+            grad = dxdy
         f = interp1d(y, x, assume_sorted=False)
         x_pts = f(y_midpoints)
         return x_pts, y_midpoints, grad
