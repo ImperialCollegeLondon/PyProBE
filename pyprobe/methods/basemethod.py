@@ -43,9 +43,9 @@ class BaseMethod:
         self.variable_list.append(name)
 
         if not isinstance(self.input_data, list):
-            return self.input_data.data[name].to_numpy()
+            return self.input_data(name)
         else:
-            return np.vstack([input.data[name].to_numpy() for input in self.input_data])
+            return np.vstack([input(name) for input in self.input_data])
 
     def assign_outputs(self, output_dict: Dict[str, NDArray[Any]]) -> Result:
         """Assign the outputs of the method.
