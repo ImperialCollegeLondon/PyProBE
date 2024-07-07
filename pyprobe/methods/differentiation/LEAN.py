@@ -40,6 +40,10 @@ class DifferentiateLEAN(BaseMethod):
                   smoothing filter.
                 - [0.1059, 0.121, 0.1745, 0.1972, 0.1745, 0.121, 0.1059] for a 7-point
                   smoothing filter.
+        section (str, optional):
+            The section of the data with constant sample rate in x to be considered.
+            Default is 'longest', which just returns the longest unifomly sampled
+            section. Alternative is 'all', which returns all sections.
 
     Attributes:
         x_data (NDArray[np.float64]):
@@ -62,6 +66,7 @@ class DifferentiateLEAN(BaseMethod):
         k: int = 1,
         gradient: str = "dydx",
         smoothing_filter: List[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
+        section: str = "longest",
     ):
         """Initialize the LEAN method."""
         super().__init__(rawdata)
@@ -72,6 +77,8 @@ class DifferentiateLEAN(BaseMethod):
 
         # split input data into uniformly sampled sections
         self.x_sections = self.get_x_sections(self.x_data)
+        if section == "longest":
+            self.x_sections = [max(self.x_sections, key=lambda x: x.stop - x.start)]
         x_all = np.array([])
         y_all = np.array([])
         calc_gradient_all = np.array([])
