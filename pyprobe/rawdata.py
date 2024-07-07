@@ -73,7 +73,21 @@ class RawData(Result):
         reference_capacity: Optional[float] = None,
         reference_charge: Optional["RawData"] = None,
     ) -> None:
-        """Add an SOC column to the data."""
+        """Add an SOC column to the data.
+
+        Apply this method on a filtered data object to add an `SOC` column to the data.
+        This column remains with the data if the object is filtered further.
+
+
+        The SOC column is calculated either relative to a provided reference capacity
+        value, a reference charge (provided as a RawData object), or the maximum
+        capacity delta across the data in the RawData object upon which this method
+        is called.
+
+        Args:
+            reference_capacity (Optional[float]): The reference capacity value.
+            reference_charge (Optional[RawData]): The reference charge data.
+        """
         if reference_capacity is None:
             reference_capacity = (
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
@@ -106,6 +120,33 @@ class RawData(Result):
                     / reference_capacity
                 ).alias("SOC")
             )
+
+    def set_reference_capacity(
+        self, reference_capacity: Optional[float] = None
+    ) -> None:
+        """Fix the capacity to a reference value.
+
+        Apply this method on a filtered data object to fix the capacity to a reference.
+        This calculates a permanent column named `Capacity - Referenced [Ah]` in the
+        data, which remains if this object is filtered further.
+
+        The reference value is either the maximum capacity delta across the data in the
+        RawData object upon which this method is called or a user-specified value.
+
+        Args:
+            reference_capacity (Optional[float]): The reference capacity value.
+        """
+        if reference_capacity is None:
+            reference_capacity = (
+                pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
+            )
+        self._data = self._data.with_columns(
+            (
+                pl.col("Capacity [Ah]")
+                - pl.col("Capacity [Ah]").max()
+                + reference_capacity
+            ).alias("Capacity - Referenced [Ah]")
+        )
 
     def gradient(
         self, method: str, x: str, y: str, *args: Any, **kwargs: Any

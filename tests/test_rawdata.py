@@ -70,3 +70,20 @@ def test_set_SOC(BreakinCycles_fixture, benchmark):
     ).all()
     assert max(without_charge_specified.data["SOC"]) == 1
     assert max(with_charge_specified.data["SOC"]) == 1
+
+
+def test_set_reference_capacity(BreakinCycles_fixture):
+    """Test the set_reference_capacity method."""
+    BreakinCycles_fixture.set_reference_capacity()
+    assert BreakinCycles_fixture("Capacity - Referenced [Ah]").min() == 0
+    assert np.isclose(
+        BreakinCycles_fixture("Capacity - Referenced [Ah]").max(),
+        BreakinCycles_fixture.capacity,
+    )
+
+    BreakinCycles_fixture.set_reference_capacity(0.04)
+    assert np.isclose(
+        BreakinCycles_fixture("Capacity - Referenced [Ah]").min(),
+        0.04 - BreakinCycles_fixture.capacity,
+    )
+    assert BreakinCycles_fixture("Capacity - Referenced [Ah]").max() == 0.04
