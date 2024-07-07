@@ -65,17 +65,62 @@ class DifferentiateLEAN(BaseMethod):
     ):
         """Initialize the LEAN method."""
         super().__init__(rawdata)
+        # identify variables
         self.x_data = self.variable(x)
         self.y_data = self.variable(y)
         self.k = k
-        x_pts, y_pts, calculated_gradient = self.gradient(
-            self.x_data, self.y_data, self.k, gradient
-        )
-        smoothed_gradient = self.smooth_gradient(calculated_gradient, smoothing_filter)
+
+        # split input data into uniformly sampled sections
+        self.x_sections = self.get_x_sections(self.x_data)
+        x_all = np.array([])
+        y_all = np.array([])
+        calc_gradient_all = np.array([])
+
+        # over each uniformly sampled section, calculate the gradient
+        for i in range(len(self.x_sections)):
+            x_data = self.x_data[self.x_sections[i]]
+            y_data = self.y_data[self.x_sections[i]]
+            x_pts, y_pts, calculated_gradient = self.gradient(
+                x_data, y_data, self.k, gradient
+            )
+            x_all = np.append(x_all, x_pts)
+            y_all = np.append(y_all, y_pts)
+            calc_gradient_all = np.append(calc_gradient_all, calculated_gradient)
+
+        # smooth the calculated gradient
+        smoothed_gradient = self.smooth_gradient(calc_gradient_all, smoothing_filter)
+
+        # output the results
         gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
         self.output_data = self.assign_outputs(
-            {x: x_pts, y: y_pts, gradient_title: smoothed_gradient}
+            {x: x_all, y: y_all, gradient_title: smoothed_gradient}
         )
+
+    @staticmethod
+    def get_x_sections(x: NDArray[np.float64]) -> List[slice]:
+        """Split the x data into uniformly sampled sections.
+
+        Args:
+            x (NDArray[np.float64]): The x values.
+
+        Returns:
+            List[slice]: A list of slices representing the uniformly sampled sections.
+        """
+        dx = np.diff(x)
+        ddx = np.diff(dx)
+        # find where ddx is above a threshold
+        dx_changes = np.argwhere(abs(ddx) > 0.05 * abs(dx[1:])).reshape(-1) + 2
+        x_sections = []
+        for i in range(len(dx_changes) + 1):
+            if i == 0:
+                x_sections.append(slice(0, dx_changes[i]))
+            elif i == len(dx_changes):
+                x_sections.append(slice(dx_changes[i - 1] - 1, len(x)))
+            else:
+                x_sections.append(slice(dx_changes[i - 1] - 1, dx_changes[i]))
+        # only consider sections where there are more than 5 data points
+        x_sections = [s for s in x_sections if (s.stop - s.start) >= 5]
+        return x_sections
 
     @staticmethod
     def get_dx(x: NDArray[np.float64]) -> float:

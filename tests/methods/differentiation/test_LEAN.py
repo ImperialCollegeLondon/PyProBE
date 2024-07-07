@@ -29,3 +29,15 @@ def test_differentiate():
     assert np.isclose(np.median(dxdy), 1 / average_gradient, rtol=0.1)
     x_pts, _, dydx = DifferentiateLEAN.gradient(x, y, 1, "dydx")
     assert np.isclose(np.median(dydx), average_gradient, rtol=0.1)
+
+
+def test_x_sections():
+    """Test the LEAN get_x_sections method."""
+    x = [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 20.5, 21, 21.5, 22, 22.5, 23]
+    x_sections = DifferentiateLEAN.get_x_sections(x)
+    x_sliced = [x[s] for s in x_sections]
+    assert x_sliced == [
+        [0, 1, 2, 3, 4, 5, 6],
+        [6, 8, 10, 12, 14, 16, 18, 20],
+        [20, 20.5, 21, 21.5, 22, 22.5, 23],
+    ]
