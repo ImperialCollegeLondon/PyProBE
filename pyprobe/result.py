@@ -1,5 +1,5 @@
 """A module for the Result class."""
-from typing import Dict, Tuple, Union
+from typing import Dict
 
 import numpy as np
 import polars as pl
@@ -32,25 +32,21 @@ class Result:
         self._data = _data
         self.info = info
 
-    def __call__(
-        self, *args: str
-    ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+    def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.
 
         Args:
-            *args (str): The column names to return.
+            column_name (str): The column names to return.
 
         Returns:
-            Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
-                The columns as numpy arrays.
+            Union[NDArray[np.float64]:
+                The column as a numpy array.
         """
-        arrays = []
-        for col in args:
-            self.check_units(col)
-            if col not in self.data.columns:
-                raise ValueError(f"Column '{col}' not in data.")
-            arrays.append(self.data[col].to_numpy())
-        return arrays[0] if len(arrays) == 1 else tuple(arrays)
+        self.check_units(column_name)
+        if column_name not in self.data.columns:
+            raise ValueError(f"Column '{column_name}' not in data.")
+        else:
+            return self.data[column_name].to_numpy()
 
     @property
     def data(self) -> pl.DataFrame:

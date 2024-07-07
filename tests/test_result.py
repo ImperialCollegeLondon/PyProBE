@@ -23,15 +23,9 @@ def test_init(Result_fixture):
 
 def test_call(Result_fixture):
     """Test the __call__ method."""
-    np_testing.assert_array_equal(
-        Result_fixture("Current [A]"), Result_fixture.data["Current [A]"].to_numpy()
-    )
-    current, voltage = Result_fixture("Current [A]", "Voltage [V]")
+    current = Result_fixture("Current [A]")
     np_testing.assert_array_equal(
         current, Result_fixture.data["Current [A]"].to_numpy()
-    )
-    np_testing.assert_array_equal(
-        voltage, Result_fixture.data["Voltage [V]"].to_numpy()
     )
     current_mA = Result_fixture("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
