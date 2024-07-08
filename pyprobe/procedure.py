@@ -40,8 +40,17 @@ class Procedure(Filter):
             self.steps_idx,
         ) = self.process_readme(readme_path)
         super().__init__(_data, info)
-        self.zero_column("Time [s]", "Procedure Time [s]")
-        self.zero_column("Capacity [Ah]", "Procedure Capacity [Ah]")
+        self.zero_column(
+            "Time [s]",
+            "Procedure Time [s]",
+            "Time elapsed since beginning of procedure.",
+        )
+
+        self.zero_column(
+            "Capacity [Ah]",
+            "Procedure Capacity [Ah]",
+            "The net charge passed since beginning of procedure.",
+        )
 
     def experiment(self, *experiment_names: str) -> BaseExperiment:
         """Return an experiment object from the procedure.

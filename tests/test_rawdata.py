@@ -97,7 +97,7 @@ def test_zero_column(RawData_fixture):
 
 def test_definitions(RawData_fixture):
     """Test that the definitions have been correctly set."""
-    definition_keys = list(RawData_fixture._column_definitions.keys())
+    definition_keys = list(RawData_fixture.column_definitions.keys())
     assert set(definition_keys) == set(
         [
             "Date",

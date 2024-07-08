@@ -50,7 +50,7 @@ class RawData(Result):
         self.define_column("Voltage [V]", "The terminal voltage in Volts.")
         self.define_column(
             "Capacity [Ah]",
-            "The capacity passed since the start of the current filter.",
+            "The net charge passed since the start of the current filter.",
         )
 
     @property
@@ -71,12 +71,15 @@ class RawData(Result):
             raise ValueError("No data exists for this filter.")
         return self._data
 
-    def zero_column(self, column: str, new_column_name: str) -> None:
+    def zero_column(
+        self, column: str, new_column_name: str, new_column_definition: Optional[str]
+    ) -> None:
         """Add a new column to the dataframe, zeroed to the first value.
 
         Args:
             column (str): The column to zero.
             new_column_name (str): The new column name.
+            new_column_definition (Optional[str]): The new column definition.
         """
         self._data = self._data.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)

@@ -201,5 +201,12 @@ class Cycle(Filter):
             info (Dict[str, str | int | float]): A dict containing test info.
         """
         super().__init__(_data, info)
-        self.zero_column("Time [s]", "Cycle Time [s]")
-        self.zero_column("Capacity [Ah]", "Cycle Capacity [Ah]")
+        self.zero_column(
+            "Time [s]", "Cycle Time [s]", "Time elapsed since beginning of cycle."
+        )
+
+        self.zero_column(
+            "Capacity [Ah]",
+            "Cycle Capacity [Ah]",
+            "The net charge passed since beginning of cycle.",
+        )
