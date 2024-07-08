@@ -1,6 +1,6 @@
 """A module for the Result class."""
 from pprint import pprint
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 import polars as pl
@@ -23,16 +23,22 @@ class Result:
         self,
         _data: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Initialize the Result object.
 
         Args:
             _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
             info (Dict[str, str | int | float]): A dict containing test info.
+            column_definitions(Optional[Dict[str, str]]):
+                A dict containing the definitions of the columns in _data.
         """
         self._data = _data
         self.info = info
-        self._column_definitions: Dict[str, str] = {}
+        if column_definitions is None:
+            self.column_definitions: Dict[str, str] = {}
+        else:
+            self.column_definitions = column_definitions
 
     def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.
@@ -82,8 +88,8 @@ class Result:
             column_name (str): The name of the column.
             definition (str): The definition of the quantity stored in the column
         """
-        self._column_definitions[column_name] = definition
+        self.column_definitions[column_name] = definition
 
     def print_definitions(self) -> None:
         """Print the definitions of the columns stored in this result object."""
-        pprint(self._column_definitions)
+        pprint(self.column_definitions)
