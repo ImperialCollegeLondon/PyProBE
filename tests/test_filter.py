@@ -1,4 +1,5 @@
 """Tests for the filter module."""
+import numpy as np
 import pytest
 
 
@@ -111,6 +112,30 @@ def test_cycle(BreakinCycles_fixture, benchmark):
 
     assert data["Cycle Time [s]"][0] == 0
     assert data["Cycle Capacity [Ah]"][0] == 0
+
+
+def test_constant_current(BreakinCycles_fixture, benchmark):
+    """Test the constant current method."""
+
+    def constant_current():
+        return BreakinCycles_fixture.constant_current(1).data
+
+    data = benchmark(constant_current)
+    assert np.isclose(data["Current [A]"].to_numpy().mean(), 0.004, rtol=0.001)
+    assert data["Current [A]"].min() > 0.003999
+    assert data["Current [A]"].max() < 0.004001
+
+
+def test_constant_voltage(BreakinCycles_fixture, benchmark):
+    """Test the constant current method."""
+
+    def constant_voltage():
+        return BreakinCycles_fixture.constant_voltage(1).data
+
+    data = benchmark(constant_voltage)
+    assert np.isclose(data["Voltage [V]"].to_numpy().mean(), 4.2, rtol=0.001)
+    assert data["Voltage [V]"].min() > 4.195
+    assert data["Voltage [V]"].max() < 4.2
 
 
 def test_all_steps(BreakinCycles_fixture, benchmark):
