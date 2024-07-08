@@ -20,3 +20,5 @@ class BaseExperiment(Filter):
             info (Dict[str, str | int | float]): A dict containing test info.
         """
         super().__init__(_data, info)
+        self.zero_column("Time [s]", "Experiment Time [s]")
+        self.zero_column("Capacity [Ah]", "Experiment Capacity [Ah]")

@@ -59,6 +59,17 @@ class RawData(Result):
             raise ValueError("No data exists for this filter.")
         return self._data
 
+    def zero_column(self, column: str, new_column_name: str) -> None:
+        """Add a new column to the dataframe, zeroed to the first value.
+
+        Args:
+            column (str): The column to zero.
+            new_column_name (str): The new column name.
+        """
+        self._data = self._data.with_columns(
+            (pl.col(column) - pl.col(column).first()).alias(new_column_name)
+        )
+
     @property
     def capacity(self) -> float:
         """Calculate the capacity passed during the step.

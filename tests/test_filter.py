@@ -109,6 +109,9 @@ def test_cycle(BreakinCycles_fixture, benchmark):
     assert (data["Cycle"] == 2).all()
     assert (data["Step"].unique() == [4, 5, 6, 7]).all()
 
+    assert data["Cycle Time [s]"][0] == 0
+    assert data["Cycle Capacity [Ah]"][0] == 0
+
 
 def test_all_steps(BreakinCycles_fixture, benchmark):
     """Test the all_steps method."""

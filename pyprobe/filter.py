@@ -1,5 +1,5 @@
 """A module for filtering data."""
-from typing import Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import polars as pl
 
@@ -10,7 +10,7 @@ class Filter(RawData):
     """A class for filtering data."""
 
     def __init__(
-        self, _data: pl.LazyFrame | pl.DataFrame, info: dict[str, str | int | float]
+        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
     ):
         """Create a filter object.
 
@@ -89,7 +89,7 @@ class Filter(RawData):
             Filter: A filter object for the specified cycles.
         """
         lf_filtered = self.filter_numerical(self._data, "Cycle", cycle_numbers)
-        return Filter(lf_filtered, self.info)
+        return Cycle(lf_filtered, self.info)
 
     def charge(self, *charge_numbers: Union[int, range]) -> RawData:
         """Return a charge step object from the cycle.
@@ -186,3 +186,20 @@ class Filter(RawData):
             < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
         )
         return self.step(*constant_voltage_numbers, condition=condition)
+
+
+class Cycle(Filter):
+    """A cycle of an experiment."""
+
+    def __init__(
+        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
+    ):
+        """Create an experiment.
+
+        Args:
+            _data (polars.LazyFrame): The _data of data being filtered.
+            info (Dict[str, str | int | float]): A dict containing test info.
+        """
+        super().__init__(_data, info)
+        self.zero_column("Time [s]", "Cycle Time [s]")
+        self.zero_column("Capacity [Ah]", "Cycle Capacity [Ah]")
