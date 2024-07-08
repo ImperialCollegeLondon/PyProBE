@@ -93,3 +93,17 @@ def test_zero_column(RawData_fixture):
     """Test method for zeroing the first value of a selected column."""
     RawData_fixture.zero_column("Capacity [Ah]", "Zeroed Capacity [Ah]")
     assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
+
+
+def test_definitions(RawData_fixture):
+    """Test that the definitions have been correctly set."""
+    definition_keys = list(RawData_fixture._column_definitions.keys())
+    assert set(definition_keys) == set(
+        [
+            "Date",
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+        ]
+    )

@@ -41,6 +41,18 @@ class RawData(Result):
         super().__init__(_data, info)
         self.data_property_called = False
 
+        self.define_column("Date", "The timestamp of the data point. Type: datetime.")
+        self.define_column(
+            "Time [s]",
+            "The time in seconds passed from the start of the current filter.",
+        )
+        self.define_column("Current [A]", "The current in Amperes.")
+        self.define_column("Voltage [V]", "The terminal voltage in Volts.")
+        self.define_column(
+            "Capacity [Ah]",
+            "The capacity passed since the start of the current filter.",
+        )
+
     @property
     def data(self) -> pl.DataFrame:
         """Return the data as a polars DataFrame.

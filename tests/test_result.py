@@ -51,3 +51,16 @@ def test_print(Result_fixture, capsys):
     Result_fixture.print()
     captured = capsys.readouterr()
     assert captured.out.strip() == str(Result_fixture.data)
+
+
+def test_print_definitions(Result_fixture, capsys):
+    """Test the print_definitions method."""
+    Result_fixture.define_column("Voltage [V]", "Voltage across the circuit")
+    Result_fixture.define_column("Resistance [Ohm]", "Resistance of the circuit")
+    Result_fixture.print_definitions()
+    captured = capsys.readouterr()
+    expected_output = (
+        "{'Resistance [Ohm]': 'Resistance of the circuit'"
+        ",\n 'Voltage [V]': 'Voltage across the circuit'}"
+    )
+    assert captured.out.strip() == expected_output

@@ -1,4 +1,5 @@
 """A module for the Result class."""
+from pprint import pprint
 from typing import Dict
 
 import numpy as np
@@ -31,6 +32,7 @@ class Result:
         """
         self._data = _data
         self.info = info
+        self._column_definitions: Dict[str, str] = {}
 
     def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.
@@ -72,3 +74,16 @@ class Result:
         if column_name not in self.data.columns:
             instruction = UnitConverter(column_name).from_default()
             self._data = self.data.with_columns(instruction)
+
+    def define_column(self, column_name: str, definition: str) -> None:
+        """Define a new column when it is added to the dataframe.
+
+        Args:
+            column_name (str): The name of the column.
+            definition (str): The definition of the quantity stored in the column
+        """
+        self._column_definitions[column_name] = definition
+
+    def print_definitions(self) -> None:
+        """Print the definitions of the columns stored in this result object."""
+        pprint(self._column_definitions)
