@@ -1,5 +1,5 @@
 """Module for the BaseMethod class."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import polars as pl
@@ -29,7 +29,7 @@ class BaseMethod:
         """
         self.input_data = input_data
         self.variable_list: List[str] = []
-        self.output_data: Result
+        self.output_data: Result | Tuple[Result, ...]
 
     def variable(self, name: str) -> NDArray[Any]:
         """Return a variable from the input data.
@@ -47,8 +47,8 @@ class BaseMethod:
         else:
             return np.vstack([input(name) for input in self.input_data])
 
-    def assign_outputs(self, output_dict: Dict[str, NDArray[Any]]) -> Result:
-        """Assign the outputs of the method.
+    def make_result(self, output_dict: Dict[str, NDArray[Any]]) -> Result:
+        """Make a result object from the method.
 
         Args:
             Dict[str, NDArray]: A dictionary of the outputs.

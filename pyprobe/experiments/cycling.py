@@ -98,4 +98,22 @@ class Cycling(BaseExperiment):
                 pl.col("Discharge Capacity [Ah]").shift()
                 / pl.col("Charge Capacity [Ah]")
             ).alias("Coulombic Efficiency")
-        return Result(lf, self.info)
+        column_definitions = {
+            "Cycle": "The cycle number.",
+            "Capacity Throughput [Ah]": "The cumulative capacity throughput.",
+            "Time [s]": "The time since the beginning of the experiment.",
+            "Charge Capacity [Ah]": "The capacity passed during charge in a cycle.",
+            "Discharge Capacity [Ah]": (
+                "The capacity passed during discharge in a cycle."
+            ),
+            "SOH Charge [%]": (
+                "The charge passed during charge normalized to the first charge."
+            ),
+            "SOH Discharge [%]": (
+                "The charge passed during discharge normalised to the first discharge."
+            ),
+            "Coulombic Efficiency": (
+                "The ratio between a discharge and its preceding charge."
+            ),
+        }
+        return Result(lf, self.info, column_definitions=column_definitions)

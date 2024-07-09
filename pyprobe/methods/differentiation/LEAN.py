@@ -99,9 +99,15 @@ class DifferentiateLEAN(BaseMethod):
 
         # output the results
         gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
-        self.output_data = self.assign_outputs(
+        self.gradient_result = self.make_result(
             {x: x_all, y: y_all, gradient_title: smoothed_gradient}
         )
+        self.gradient_result.column_definitions = {
+            x: rawdata.column_definitions[x],
+            y: rawdata.column_definitions[y],
+            gradient_title: "The calculated gradient.",
+        }
+        self.output_data = self.gradient_result
 
     @staticmethod
     def get_x_sections(x: NDArray[np.float64]) -> List[slice]:

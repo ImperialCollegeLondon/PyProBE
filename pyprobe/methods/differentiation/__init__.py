@@ -1,5 +1,5 @@
 """A module for differentiation methods."""
-from typing import Any
+from typing import Any, cast
 
 from pyprobe.methods.differentiation import LEAN
 from pyprobe.result import Result
@@ -23,4 +23,5 @@ def gradient(
     Returns:
         Result: The result object from the gradient method.
     """
-    return method_dict[method](input_data, x, y, *args, **kwargs).output_data
+    result = method_dict[method](input_data, x, y, *args, **kwargs).output_data
+    return cast(Result, result)

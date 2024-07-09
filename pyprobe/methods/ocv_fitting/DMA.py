@@ -23,7 +23,7 @@ class DMA(BaseMethod):
             self.cell_capacity, self.pe_capacity, self.ne_capacity, self.li_inventory
         )
 
-        self.dma_result = self.assign_outputs(
+        self.dma_result = self.make_result(
             {
                 "SOH": SOH,
                 "LAM_pe": LAM_pe,
@@ -31,6 +31,13 @@ class DMA(BaseMethod):
                 "LLI": LLI,
             }
         )
+        self.dma_result.column_definitions = {
+            "SOH": "Cell capacity normalized to initial capacity.",
+            "LAM_pe": "Loss of active material in positive electrode.",
+            "LAM_ne": "Loss of active material in positive electrode.",
+            "LLI": "Loss of lithium inventory.",
+        }
+        self.output_data = self.dma_result
 
     @classmethod
     def calculate_dma_parameters(
