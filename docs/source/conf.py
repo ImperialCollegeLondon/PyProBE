@@ -20,7 +20,6 @@ author = "Thomas Holland"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx_tabs.tabs",
     "sphinxcontrib.bibtex",
