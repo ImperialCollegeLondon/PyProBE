@@ -91,7 +91,11 @@ def test_set_reference_capacity(BreakinCycles_fixture):
 
 def test_zero_column(RawData_fixture):
     """Test method for zeroing the first value of a selected column."""
-    RawData_fixture.zero_column("Capacity [Ah]", "Zeroed Capacity [Ah]")
+    RawData_fixture.zero_column(
+        "Capacity [Ah]",
+        "Zeroed Capacity [Ah]",
+        "Capacity column with first value zeroed.",
+    )
     assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
 
 
