@@ -23,15 +23,9 @@ def test_init(Result_fixture):
 
 def test_call(Result_fixture):
     """Test the __call__ method."""
-    np_testing.assert_array_equal(
-        Result_fixture("Current [A]"), Result_fixture.data["Current [A]"].to_numpy()
-    )
-    current, voltage = Result_fixture("Current [A]", "Voltage [V]")
+    current = Result_fixture("Current [A]")
     np_testing.assert_array_equal(
         current, Result_fixture.data["Current [A]"].to_numpy()
-    )
-    np_testing.assert_array_equal(
-        voltage, Result_fixture.data["Voltage [V]"].to_numpy()
     )
     current_mA = Result_fixture("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
@@ -57,3 +51,16 @@ def test_print(Result_fixture, capsys):
     Result_fixture.print()
     captured = capsys.readouterr()
     assert captured.out.strip() == str(Result_fixture.data)
+
+
+def test_print_definitions(Result_fixture, capsys):
+    """Test the print_definitions method."""
+    Result_fixture.define_column("Voltage [V]", "Voltage across the circuit")
+    Result_fixture.define_column("Resistance [Ohm]", "Resistance of the circuit")
+    Result_fixture.print_definitions()
+    captured = capsys.readouterr()
+    expected_output = (
+        "{'Resistance [Ohm]': 'Resistance of the circuit'"
+        ",\n 'Voltage [V]': 'Voltage across the circuit'}"
+    )
+    assert captured.out.strip() == expected_output

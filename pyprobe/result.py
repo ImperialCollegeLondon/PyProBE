@@ -1,5 +1,6 @@
 """A module for the Result class."""
-from typing import Dict, Tuple, Union
+from pprint import pprint
+from typing import Dict, Optional
 
 import numpy as np
 import polars as pl
@@ -22,35 +23,38 @@ class Result:
         self,
         _data: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Initialize the Result object.
 
         Args:
             _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
             info (Dict[str, str | int | float]): A dict containing test info.
+            column_definitions(Optional[Dict[str, str]]):
+                A dict containing the definitions of the columns in _data.
         """
         self._data = _data
         self.info = info
+        if column_definitions is None:
+            self.column_definitions: Dict[str, str] = {}
+        else:
+            self.column_definitions = column_definitions
 
-    def __call__(
-        self, *args: str
-    ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+    def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.
 
         Args:
-            *args (str): The column names to return.
+            column_name (str): The column names to return.
 
         Returns:
-            Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
-                The columns as numpy arrays.
+            Union[NDArray[np.float64]:
+                The column as a numpy array.
         """
-        arrays = []
-        for col in args:
-            self.check_units(col)
-            if col not in self.data.columns:
-                raise ValueError(f"Column '{col}' not in data.")
-            arrays.append(self.data[col].to_numpy())
-        return arrays[0] if len(arrays) == 1 else tuple(arrays)
+        self.check_units(column_name)
+        if column_name not in self.data.columns:
+            raise ValueError(f"Column '{column_name}' not in data.")
+        else:
+            return self.data[column_name].to_numpy()
 
     @property
     def data(self) -> pl.DataFrame:
@@ -76,3 +80,16 @@ class Result:
         if column_name not in self.data.columns:
             instruction = UnitConverter(column_name).from_default()
             self._data = self.data.with_columns(instruction)
+
+    def define_column(self, column_name: str, definition: str) -> None:
+        """Define a new column when it is added to the dataframe.
+
+        Args:
+            column_name (str): The name of the column.
+            definition (str): The definition of the quantity stored in the column
+        """
+        self.column_definitions[column_name] = definition
+
+    def print_definitions(self) -> None:
+        """Print the definitions of the columns stored in this result object."""
+        pprint(self.column_definitions)

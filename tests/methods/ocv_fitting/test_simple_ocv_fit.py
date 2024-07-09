@@ -162,8 +162,8 @@ def test_result(OCP_result_fixture, ocp_ne_fixture, ocp_pe_fixture):
         "x_pe high SOC",
         "x_ne low SOC",
         "x_ne high SOC",
-        "Cell Capacity",
-        "Cathode Capacity",
-        "Anode Capacity",
-        "Li Inventory",
+        "Cell Capacity [Ah]",
+        "Cathode Capacity [Ah]",
+        "Anode Capacity [Ah]",
+        "Li Inventory [Ah]",
     ]

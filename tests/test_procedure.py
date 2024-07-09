@@ -24,6 +24,9 @@ def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark)
         steps_fixture[1] + steps_fixture[2]
     )
 
+    assert experiment.data["Experiment Time [s]"][0] == 0
+    assert experiment.data["Experiment Capacity [Ah]"][0] == 0
+
 
 def test_verify_yaml(procedure_fixture):
     """Test the verify_yaml method."""
@@ -74,3 +77,9 @@ def test_flatten(procedure_fixture):
     lst = [[1, 2, 3], [4, 5], 6]
     flat_list = procedure_fixture.flatten(lst)
     assert flat_list == [1, 2, 3, 4, 5, 6]
+
+
+def test_zero_columns(procedure_fixture):
+    """Test methods to set the first value of columns to zero."""
+    assert procedure_fixture.data["Procedure Time [s]"][0] == 0
+    assert procedure_fixture.data["Procedure Capacity [Ah]"][0] == 0

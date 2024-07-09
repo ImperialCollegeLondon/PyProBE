@@ -36,14 +36,14 @@ def test_variable(method_fixture, input_data_fixture):
 
 
 def test_assign_outputs(method_fixture):
-    """Test the assign_outputs method."""
-    result = method_fixture.assign_outputs(
+    """Test the make_result method."""
+    result = method_fixture.make_result(
         {"y": np.array([4, 5, 6]), "z": np.array([7, 8, 9])}
     )
     expected_result = pl.DataFrame({"y": np.array([4, 5, 6]), "z": np.array([7, 8, 9])})
     pl.testing.assert_frame_equal(result.data, expected_result)
 
-    result = method_fixture.assign_outputs(
+    result = method_fixture.make_result(
         {"y": np.array([[10, 11]]), "z": np.array([12])}
     )
     expected_result = pl.DataFrame({"y": np.array([[10, 11]]), "z": np.array([12])})

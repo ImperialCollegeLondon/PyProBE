@@ -23,8 +23,18 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
     "sphinx_tabs.tabs",
+    "sphinxcontrib.bibtex",
+    "sphinx_design",
 ]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
+html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
+
+# -- sphinxcontrib-bibtex configuration --------------------------------------
+bibtex_bibfiles = ["../../CITATIONS.bib"]
+bibtex_style = "unsrt"
+bibtex_footbibliography_header = """.. rubric:: References"""
+bibtex_reference_style = "author_year"
+bibtex_tooltips = True

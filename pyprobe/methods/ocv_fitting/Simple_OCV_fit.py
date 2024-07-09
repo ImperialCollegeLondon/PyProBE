@@ -60,18 +60,28 @@ class Simple_OCV_fit(BaseMethod):
             self.x_guess,
         )
 
-        self.stoichiometry_limits = self.assign_outputs(
+        self.stoichiometry_limits = self.make_result(
             {
                 "x_pe low SOC": np.array([self.x_pe_lo]),
                 "x_pe high SOC": np.array([self.x_pe_hi]),
                 "x_ne low SOC": np.array([self.x_ne_lo]),
                 "x_ne high SOC": np.array([self.x_ne_hi]),
-                "Cell Capacity": np.array([self.cell_capacity]),
-                "Cathode Capacity": np.array([self.pe_capacity]),
-                "Anode Capacity": np.array([self.ne_capacity]),
-                "Li Inventory": np.array([self.li_inventory]),
+                "Cell Capacity [Ah]": np.array([self.cell_capacity]),
+                "Cathode Capacity [Ah]": np.array([self.pe_capacity]),
+                "Anode Capacity [Ah]": np.array([self.ne_capacity]),
+                "Li Inventory [Ah]": np.array([self.li_inventory]),
             }
         )
+        self.stoichiometry_limits.column_definitions = {
+            "x_pe low SOC": "Positive electrode stoichiometry at lowest SOC point.",
+            "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
+            "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
+            "x_ne high SOC": "Negative electrode stoichiometry at highest SOC point.",
+            "Cell Capacity [Ah]": "Total cell capacity.",
+            "Cathode Capacity [Ah]": "Cathode capacity.",
+            "Anode Capacity [Ah]": "Anode capacity.",
+            "Li Inventory [Ah]": "Lithium inventory.",
+        }
         SOC = np.linspace(0, 1, 10000)
         OCV = self.calc_full_cell_OCV(
             SOC,
@@ -84,7 +94,12 @@ class Simple_OCV_fit(BaseMethod):
             self.x_ne,
             self.ocp_ne,
         )
-        self.fitted_OCV = self.assign_outputs({"SOC": SOC, "Voltage [V]": OCV})
+        self.fitted_OCV = self.make_result({"SOC": SOC, "Voltage [V]": OCV})
+        self.fitted_OCV.column_definitions = {
+            "SOC": "Cell state of charge.",
+            "Voltage [V]": "Fitted OCV values.",
+        }
+        self.output_data = (self.stoichiometry_limits, self.fitted_OCV)
 
     @classmethod
     def fit_ocv(

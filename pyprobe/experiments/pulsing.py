@@ -94,6 +94,11 @@ class Pulsing(BaseExperiment):
                 }
             ),
             self.info,
+            column_definitions={
+                "Pulse number": "The pulse number.",
+                "R0 [Ohm]": "The ohmic resistance for each pulse.",
+                "V0 [V]": "The voltage values immediately before each pulse.",
+            },
         )
 
     def Rt(self, t: float) -> NDArray[np.float64]:
