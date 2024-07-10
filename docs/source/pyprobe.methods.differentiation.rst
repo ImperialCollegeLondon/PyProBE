@@ -9,12 +9,10 @@ pyprobe.methods.differentiation package
 Submodules
 ----------
 
-pyprobe.methods.differentiation.LEAN module
--------------------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: pyprobe.methods.differentiation.LEAN
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   pyprobe.methods.differentiation.LEAN
+
 
 .. footbibliography::

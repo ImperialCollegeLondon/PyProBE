@@ -25,7 +25,11 @@ jobs:
     
     - name: Run sphinx-apidoc
       run: |
-        sphinx-apidoc -f -o docs/source/ pyprobe
+        sphinx-apidoc -f -e -M -o docs/source/ pyprobe
+
+    - name: Add bibliographies
+      run: |
+        python docs/source/_append_footbib.py docs/source
 
     - name: Clean old HTML files
       run: |

@@ -83,3 +83,5 @@ stored in the :attr:`~pyprobe.rawdata.RawData.data` Dataframe:
 .. code-block:: python
 
    current_mA = cell.procedure['Procedure Name'].experiment('Experiment Name')("Current [mA]")
+
+.. footbibliography::

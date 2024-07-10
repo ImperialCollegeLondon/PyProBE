@@ -63,3 +63,5 @@ The steps to install PyProBE wih developer settings are as follows:
    .. code-block:: bash
 
       pre-commit install
+
+.. footbibliography::

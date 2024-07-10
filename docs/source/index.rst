@@ -79,3 +79,5 @@ PyProBE documentation
          :click-parent:
 
          To the developers's guide
+
+.. footbibliography::

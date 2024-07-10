@@ -26,3 +26,5 @@ Then you can add data to and display the plot:
 plotted, the second and third arguments are quantities to plot in x and y.
 
 For other plot types see the :class:`~pyprobe.plot.Plot` class documentation.
+
+.. footbibliography::

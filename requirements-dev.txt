@@ -4,6 +4,8 @@
 #
 #    pip-compile --extra=dev --output-file=requirements-dev.txt
 #
+accessible-pygments==0.0.5
+    # via pydata-sphinx-theme
 alabaster==0.7.16
     # via sphinx
 altair==5.3.0
@@ -14,7 +16,11 @@ attrs==23.2.0
     #   pytest-mypy
     #   referencing
 babel==2.14.0
-    # via sphinx
+    # via
+    #   pydata-sphinx-theme
+    #   sphinx
+beautifulsoup4==4.12.3
+    # via pydata-sphinx-theme
 black==24.3.0
     # via PyProBE (pyproject.toml)
 blinker==1.8.2
@@ -47,6 +53,7 @@ distlib==0.3.8
 docutils==0.20.1
     # via
     #   pybtex-docutils
+    #   pydata-sphinx-theme
     #   sphinx
     #   sphinx-tabs
     #   sphinxcontrib-bibtex
@@ -143,6 +150,7 @@ packaging==24.0
     #   build
     #   matplotlib
     #   plotly
+    #   pydata-sphinx-theme
     #   pytest
     #   sphinx
     #   streamlit
@@ -188,6 +196,8 @@ pybtex-docutils==1.0.3
     # via sphinxcontrib-bibtex
 pycodestyle==2.11.1
     # via flake8
+pydata-sphinx-theme==0.15.4
+    # via PyProBE (pyproject.toml)
 pydeck==0.9.1
     # via streamlit
 pydocstyle==6.3.0
@@ -196,6 +206,8 @@ pyflakes==3.2.0
     # via flake8
 pygments==2.17.2
     # via
+    #   accessible-pygments
+    #   pydata-sphinx-theme
     #   rich
     #   sphinx
     #   sphinx-tabs
@@ -259,9 +271,12 @@ snowballstemmer==2.2.0
     # via
     #   pydocstyle
     #   sphinx
+soupsieve==2.5
+    # via beautifulsoup4
 sphinx==7.2.6
     # via
     #   PyProBE (pyproject.toml)
+    #   pydata-sphinx-theme
     #   sphinx-design
     #   sphinx-tabs
     #   sphinxcontrib-bibtex
@@ -306,6 +321,7 @@ types-pyyaml==6.0.12.20240311
 typing-extensions==4.11.0
     # via
     #   mypy
+    #   pydata-sphinx-theme
     #   streamlit
 tzdata==2024.1
     # via pandas
