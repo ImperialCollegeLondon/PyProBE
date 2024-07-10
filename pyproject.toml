@@ -45,6 +45,7 @@ dev = [
     "sphinx-tabs",
     "types-PyYAML",
     "sphinxcontrib-bibtex",
+    "sphinx-design",
 ]
 
 [tool.mypy]

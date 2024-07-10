@@ -262,8 +262,11 @@ snowballstemmer==2.2.0
 sphinx==7.2.6
     # via
     #   PyProBE (pyproject.toml)
+    #   sphinx-design
     #   sphinx-tabs
     #   sphinxcontrib-bibtex
+sphinx-design==0.6.0
+    # via PyProBE (pyproject.toml)
 sphinx-tabs==3.4.5
     # via PyProBE (pyproject.toml)
 sphinxcontrib-applehelp==1.0.8
