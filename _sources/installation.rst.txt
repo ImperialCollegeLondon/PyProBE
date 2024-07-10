@@ -86,3 +86,5 @@ The steps to install PyProBE are as follows:
    .. code-block:: python
 
       import pyprobe
+
+.. footbibliography::

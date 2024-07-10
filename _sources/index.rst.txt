@@ -7,17 +7,77 @@ PyProBE documentation
 =====================
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+   :maxdepth: 1
+   :hidden:
 
    user_guide
    developer_guide
    modules
 
+.. grid:: 2
 
-Indices and tables
-==================
+   .. grid-item-card::
+      
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+      User Guide
+      ^^^^^^^^^^
+      Get an introduction to PyProBE's capabilities and how to make use of them.
+      +++
+
+      .. button-ref:: user_guide
+         :expand:
+         :color: secondary
+         :click-parent:
+
+         To the user guide
+
+   .. grid-item-card::
+      
+
+      Examples
+      ^^^^^^^^
+
+      See examples of PyProBE in use.
+
+      +++
+
+      .. button-ref:: https://github.com/ImperialCollegeLondon/PyProBE/tree/main/examples
+         :expand:
+         :color: secondary
+         :click-parent:
+
+         To the examples
+
+   .. grid-item-card::
+
+      API Documentation
+      ^^^^^^^^^^^^^^^^^
+
+      Explore the modules and classes that make up PyProBE.
+
+      +++
+
+      .. button-ref:: modules
+         :expand:
+         :color: secondary
+         :click-parent:
+
+         To the API documentation
+
+   .. grid-item-card::
+
+      Developer's Guide
+      ^^^^^^^^^^^^^^^^^^^
+
+      Learn how to contribute to PyProBE.
+
+      +++
+
+      .. button-link:: developer_guide
+         :expand:
+         :color: secondary
+         :click-parent:
+
+         To the developers's guide
+
+.. footbibliography::

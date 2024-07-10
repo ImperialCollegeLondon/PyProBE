@@ -95,3 +95,5 @@ just a single number for the total number of steps in the experiment:
       Type: SOC Reset
       # The total number of steps in the experiment
       Total Steps: 3
+
+.. footbibliography::

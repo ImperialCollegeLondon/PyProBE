@@ -1,6 +1,11 @@
 pyprobe.methods package
 =======================
 
+.. automodule:: pyprobe.methods
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -13,18 +18,10 @@ Subpackages
 Submodules
 ----------
 
-pyprobe.methods.basemethod module
----------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: pyprobe.methods.basemethod
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   pyprobe.methods.basemethod
 
-Module contents
----------------
 
-.. automodule:: pyprobe.methods
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. footbibliography::

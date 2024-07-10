@@ -1,45 +1,21 @@
 pyprobe.experiments package
 ===========================
 
-Submodules
-----------
-
-pyprobe.experiments.baseexperiment module
------------------------------------------
-
-.. automodule:: pyprobe.experiments.baseexperiment
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.experiments.cycling module
-----------------------------------
-
-.. automodule:: pyprobe.experiments.cycling
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.experiments.pOCV module
--------------------------------
-
-.. automodule:: pyprobe.experiments.pOCV
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.experiments.pulsing module
-----------------------------------
-
-.. automodule:: pyprobe.experiments.pulsing
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
 .. automodule:: pyprobe.experiments
    :members:
    :undoc-members:
    :show-inheritance:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pyprobe.experiments.baseexperiment
+   pyprobe.experiments.cycling
+   pyprobe.experiments.pOCV
+   pyprobe.experiments.pulsing
+
+
+.. footbibliography::

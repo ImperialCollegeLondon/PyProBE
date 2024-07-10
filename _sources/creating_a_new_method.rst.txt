@@ -45,9 +45,9 @@ however this would have made the code less readable.
             # perform the calculations
             self.charge = self.coulomb_count(self.current, self.time)
 
-            # assign the results, by calling the assign_outputs method on a dictionary
+            # assign the results, by calling the make_result method on a dictionary
             # of the results of your method
-            self.result = self.assign_outputs({"Charge [C]": self.charge})
+            self.result = self.make_result({"Charge [C]": self.charge})
         
         def coulomb_count(self, current, time):
             """Calculate the charge passed.
@@ -69,3 +69,5 @@ The result of the method above can be accessed as a result object by calling:
 
 Which can be passed to any other Method or used in the :class:`~pyprobe.plot.Plot` 
 class.
+
+.. footbibliography::

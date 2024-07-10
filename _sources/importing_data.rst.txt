@@ -171,3 +171,6 @@ parametrically. The steps are as follows:
                           filename = output_name_generator,
                           filename_inputs = ["Cycler", "Channel"])
 
+
+
+.. footbibliography::

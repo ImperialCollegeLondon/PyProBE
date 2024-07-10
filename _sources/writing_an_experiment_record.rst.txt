@@ -14,3 +14,5 @@ The following is an example of an experiment record file. It includes the key co
 :code:`Name`, as well as additional details about the experimental setup.
 
 .. image:: images/Example_experiment_record.png
+
+.. footbibliography::
