@@ -6,3 +6,5 @@ Developer Guide
 
    developer_installation
    creating_a_new_method
+
+.. footbibliography::

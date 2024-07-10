@@ -9,26 +9,12 @@ pyprobe.cyclers package
 Submodules
 ----------
 
-pyprobe.cyclers.basecycler module
----------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: pyprobe.cyclers.basecycler
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   pyprobe.cyclers.basecycler
+   pyprobe.cyclers.biologic
+   pyprobe.cyclers.neware
 
-pyprobe.cyclers.biologic module
--------------------------------
 
-.. automodule:: pyprobe.cyclers.biologic
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.cyclers.neware module
------------------------------
-
-.. automodule:: pyprobe.cyclers.neware
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. footbibliography::

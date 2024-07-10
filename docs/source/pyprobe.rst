@@ -19,66 +19,17 @@ Subpackages
 Submodules
 ----------
 
-pyprobe.cell module
--------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: pyprobe.cell
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   pyprobe.cell
+   pyprobe.dashboard
+   pyprobe.filter
+   pyprobe.plot
+   pyprobe.procedure
+   pyprobe.rawdata
+   pyprobe.result
+   pyprobe.unitconverter
 
-pyprobe.dashboard module
-------------------------
 
-.. automodule:: pyprobe.dashboard
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.filter module
----------------------
-
-.. automodule:: pyprobe.filter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.plot module
--------------------
-
-.. automodule:: pyprobe.plot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.procedure module
-------------------------
-
-.. automodule:: pyprobe.procedure
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.rawdata module
-----------------------
-
-.. automodule:: pyprobe.rawdata
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.result module
----------------------
-
-.. automodule:: pyprobe.result
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pyprobe.unitconverter module
-----------------------------
-
-.. automodule:: pyprobe.unitconverter
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. footbibliography::

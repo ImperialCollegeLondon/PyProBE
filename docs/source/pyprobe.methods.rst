@@ -18,18 +18,10 @@ Subpackages
 Submodules
 ----------
 
-pyprobe.methods.basemethod module
----------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: pyprobe.methods.basemethod
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   pyprobe.methods.basemethod
 
-pyprobe.methods.methodregistry module
--------------------------------------
 
-.. automodule:: pyprobe.methods.methodregistry
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. footbibliography::

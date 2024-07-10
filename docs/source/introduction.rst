@@ -90,3 +90,5 @@ specific to your release locally by running the following commands:
 
 Then navigate to :code:`PyProBE/docs/build/html/` and open :code:`index.html` in your
 web browser.
+
+.. footbibliography::

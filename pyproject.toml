@@ -46,6 +46,7 @@ dev = [
     "types-PyYAML",
     "sphinxcontrib-bibtex",
     "sphinx-design",
+    "pydata-sphinx-theme",
 ]
 
 [tool.mypy]

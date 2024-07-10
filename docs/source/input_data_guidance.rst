@@ -78,3 +78,6 @@ base units using the :class:`~pyprobe.unitconverter.UnitConverter` class.
 
 
 
+
+
+.. footbibliography::

@@ -69,3 +69,5 @@ The result of the method above can be accessed as a result object by calling:
 
 Which can be passed to any other Method or used in the :class:`~pyprobe.plot.Plot` 
 class.
+
+.. footbibliography::

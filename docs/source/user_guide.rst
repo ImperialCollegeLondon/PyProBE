@@ -12,3 +12,5 @@ User Guide
    input_data_guidance
    writing_a_readme_file
    writing_an_experiment_record
+
+.. footbibliography::
