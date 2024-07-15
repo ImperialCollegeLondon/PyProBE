@@ -1,10 +1,10 @@
 """Module for simple OCV fitting."""
 
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import curve_fit
+from scipy.optimize import minimize
 
 from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.rawdata import RawData
@@ -43,23 +43,15 @@ class Simple_OCV_fit(BaseMethod):
         self.ocp_pe = ocp_pe
         self.x_guess = x_guess
 
+        fitting_result = minimize(self.cost_function, x_guess)
+
+        self.x_pe_lo, self.x_pe_hi, self.x_ne_lo, self.x_ne_hi = fitting_result.x
         (
-            self.x_pe_lo,
-            self.x_pe_hi,
-            self.x_ne_lo,
-            self.x_ne_hi,
-            self.cell_capacity,
             self.pe_capacity,
             self.ne_capacity,
             self.li_inventory,
-        ) = self.fit_ocv(
-            self.capacity,
-            self.voltage,
-            self.x_pe,
-            self.ocp_pe,
-            self.x_ne,
-            self.ocp_ne,
-            self.x_guess,
+        ) = self.calc_electrode_capacities(
+            self.x_pe_lo, self.x_pe_hi, self.x_ne_lo, self.x_ne_hi, self.cell_capacity
         )
 
         self.stoichiometry_limits = self.make_result(
@@ -84,9 +76,8 @@ class Simple_OCV_fit(BaseMethod):
             "Anode Capacity [Ah]": "Anode capacity.",
             "Li Inventory [Ah]": "Lithium inventory.",
         }
-        SOC = np.linspace(0, 1, 10000)
         OCV = self.calc_full_cell_OCV(
-            SOC,
+            self.SOC,
             self.x_pe_lo,
             self.x_pe_hi,
             self.x_ne_lo,
@@ -96,86 +87,28 @@ class Simple_OCV_fit(BaseMethod):
             self.x_ne,
             self.ocp_ne,
         )
-        self.fitted_OCV = self.make_result({"SOC": SOC, "Voltage [V]": OCV})
+        self.fitted_OCV = self.make_result({"SOC": self.SOC, "Voltage [V]": OCV})
         self.fitted_OCV.column_definitions = {
             "SOC": "Cell state of charge.",
             "Voltage [V]": "Fitted OCV values.",
         }
         self.output_data = (self.stoichiometry_limits, self.fitted_OCV)
 
-    @classmethod
-    def fit_ocv(
-        cls,
-        capacity: NDArray[np.float64],
-        voltage: NDArray[np.float64],
-        x_pe: NDArray[np.float64],
-        ocp_pe: NDArray[np.float64],
-        x_ne: NDArray[np.float64],
-        ocp_ne: NDArray[np.float64],
-        x_guess: List[float],
-    ) -> Tuple[float, float, float, float, float, float, float, float,]:
-        """Fit the OCV curve.
-
-        Args:
-            capacity (NDArray[np.float64]): The capacity data.
-            voltage (NDArray[np.float64]): The voltage data.
-            x_pe (NDArray[np.float64]): The cathode stoichiometry data.
-            ocp_pe (NDArray[np.float64]): The cathode OCP data.
-            x_ne (NDArray[np.float64]): The anode stoichiometry data.
-            ocp_ne (NDArray[np.float64]): The anode OCP data.
-            x_guess (List[float]): The initial guess for the fit.
-
-        Returns:
-            Tuple[float, float, float, float, float, float, float, float]:
-                - float: The cathode stoichiometry at lowest cell SOC.
-                - float: The cathode stoichiometry at highest cell SOC.
-                - float: The anode stoichiometry at lowest cell SOC.
-                - float: The anode stoichiometry at highest cell SOC.
-                - float: The cell capacity.
-                - float: The cathode capacity.
-                - float: The anode capacity.
-                - float: The lithium inventory.
-        """
-        cell_capacity = np.ptp(capacity)
-        SOC = (capacity - capacity.min()) / cell_capacity
-
-        def objective_func(
-            SOC: NDArray[np.float64],
-            x_pe_lo: float,
-            x_pe_hi: float,
-            x_ne_lo: float,
-            x_ne_hi: float,
-        ) -> NDArray[np.float64]:
-            modelled_OCV = cls.calc_full_cell_OCV(
-                SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
-            )
-            return modelled_OCV
-
-        x_out = curve_fit(
-            objective_func,
-            SOC,
-            voltage,
-            p0=x_guess,
-            bounds=([0, 0, 0, 0], [1, 1, 1, 1]),
+    def cost_function(self, params: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Cost function for the curve fitting."""
+        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
+        modelled_OCV = self.calc_full_cell_OCV(
+            self.SOC,
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
+            self.x_pe,
+            self.ocp_pe,
+            self.x_ne,
+            self.ocp_ne,
         )
-        x_pe_lo_out = x_out[0][0]
-        x_pe_hi_out = x_out[0][1]
-        x_ne_lo_out = x_out[0][2]
-        x_ne_hi_out = x_out[0][3]
-
-        pe_capacity, ne_capacity, li_inventory = cls.calc_electrode_capacities(
-            x_pe_lo_out, x_pe_hi_out, x_ne_lo_out, x_ne_hi_out, cell_capacity
-        )
-        return (
-            x_pe_lo_out,
-            x_pe_hi_out,
-            x_ne_lo_out,
-            x_ne_hi_out,
-            cell_capacity,
-            pe_capacity,
-            ne_capacity,
-            li_inventory,
-        )
+        return np.sum((modelled_OCV - self.voltage) ** 2)
 
     @staticmethod
     def calc_electrode_capacities(
