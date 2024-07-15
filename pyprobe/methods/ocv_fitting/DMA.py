@@ -15,10 +15,10 @@ class DMA(BaseMethod):
     def __init__(self, input_data: List[Result]) -> None:
         """Initialize the DMA method."""
         super().__init__(input_data)
-        self.cell_capacity = self.variable("Cell Capacity")
-        self.pe_capacity = self.variable("Cathode Capacity")
-        self.ne_capacity = self.variable("Anode Capacity")
-        self.li_inventory = self.variable("Li Inventory")
+        self.cell_capacity = self.variable("Cell Capacity [Ah]")
+        self.pe_capacity = self.variable("Cathode Capacity [Ah]")
+        self.ne_capacity = self.variable("Anode Capacity [Ah]")
+        self.li_inventory = self.variable("Li Inventory [Ah]")
         SOH, LAM_pe, LAM_ne, LLI = self.calculate_dma_parameters(
             self.cell_capacity, self.pe_capacity, self.ne_capacity, self.li_inventory
         )

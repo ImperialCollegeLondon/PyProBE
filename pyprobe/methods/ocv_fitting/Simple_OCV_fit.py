@@ -35,6 +35,8 @@ class Simple_OCV_fit(BaseMethod):
         super().__init__(rawdata)
         self.voltage = self.variable("Voltage [V]")
         self.capacity = self.variable("Capacity [Ah]")
+        self.cell_capacity = np.abs(np.ptp(self.capacity))
+        self.SOC = (self.capacity - self.capacity.min()) / self.cell_capacity
         self.x_ne = x_ne
         self.x_pe = x_pe
         self.ocp_ne = ocp_ne
@@ -125,10 +127,10 @@ class Simple_OCV_fit(BaseMethod):
 
         Returns:
             Tuple[float, float, float, float, float, float, float, float]:
-                - float: The cathode stoihiometry at lowest cell SOC.
-                - float: The cathode stoihiometry at highest cell SOC.
-                - float: The anode stoihiometry at lowest cell SOC.
-                - float: The anode stoihiometry at highest cell SOC.
+                - float: The cathode stoichiometry at lowest cell SOC.
+                - float: The cathode stoichiometry at highest cell SOC.
+                - float: The anode stoichiometry at lowest cell SOC.
+                - float: The anode stoichiometry at highest cell SOC.
                 - float: The cell capacity.
                 - float: The cathode capacity.
                 - float: The anode capacity.
