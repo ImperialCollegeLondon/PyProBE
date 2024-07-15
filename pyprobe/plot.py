@@ -150,9 +150,15 @@ class Plot:
             showlegend (bool): Whether to show the legend.
         """
         if color is None:
-            color = str(result.info["color"])
+            if "color" in result.info:
+                color = str(result.info["color"])
+            else:
+                color = "blue"
         if label is None:
-            label = str(result.info["Name"])
+            if "Name" in result.info:
+                label = str(result.info["Name"])
+            else:
+                label = "Data"
 
         self.check_limits(result(x), result(y))
         self.xaxis_title = x
