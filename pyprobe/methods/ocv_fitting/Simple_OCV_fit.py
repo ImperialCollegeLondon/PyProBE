@@ -87,7 +87,14 @@ class Simple_OCV_fit(BaseMethod):
             self.x_ne,
             self.ocp_ne,
         )
-        self.fitted_OCV = self.make_result({"SOC": self.SOC, "Voltage [V]": OCV})
+        self.fitted_OCV = self.make_result(
+            {
+                "Capacity [Ah]": self.capacity,
+                "SOC": self.SOC,
+                "Input Voltage [V]": self.voltage,
+                "Fitted Voltage [V]": OCV,
+            }
+        )
         self.fitted_OCV.column_definitions = {
             "SOC": "Cell state of charge.",
             "Voltage [V]": "Fitted OCV values.",
