@@ -1,4 +1,4 @@
-"""Module for calculating stoichiometry limits using dQdV data."""
+"""Module for calculating stoichiometry limits using dVdQ data."""
 
 from typing import Optional
 
@@ -11,7 +11,7 @@ from pyprobe.methods.ocv_fitting.Simple_OCV_fit import Simple_OCV_fit
 from pyprobe.rawdata import RawData
 
 
-class dQdV_OCV_fit(BaseMethod):
+class dVdQ_OCV_fit(BaseMethod):
     """A method for fitting OCV curves."""
 
     def __init__(
