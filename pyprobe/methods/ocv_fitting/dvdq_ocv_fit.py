@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import minimize
+from scipy.optimize import differential_evolution
 
 from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.methods.ocv_fitting.Simple_OCV_fit import Simple_OCV_fit
@@ -46,13 +46,13 @@ class dQdV_OCV_fit(BaseMethod):
         self.ocp_pe = ocp_pe
         self.x_guess = x_guess
 
-        self.dVdQ = np.gradient(self.SOC, self.voltage)
+        self.dVdQ = np.gradient(self.voltage, self.SOC)
 
         self.cost_function(self.x_guess)
-        fitting_result = minimize(
-            self.cost_function, x_guess, bounds=[(0, 1)] * 4, method=method
+        fitting_result = differential_evolution(
+            self.cost_function,
+            bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)],
         )
-        self.x_pe_lo, self.x_pe_hi, self.x_ne_lo, self.x_ne_hi = fitting_result.x
 
         self.x_pe_lo, self.x_pe_hi, self.x_ne_lo, self.x_ne_hi = fitting_result.x
         (
@@ -117,6 +117,6 @@ class dQdV_OCV_fit(BaseMethod):
             self.x_ne,
             self.ocp_ne,
         )
-        dVdQ = np.gradient(self.SOC, modelled_OCV)
+        dVdQ = np.gradient(modelled_OCV, self.SOC)
         # print(dVdQ)
         return np.sum((dVdQ - self.dVdQ) ** 2)
