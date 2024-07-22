@@ -26,7 +26,8 @@ def spline_smoothing(
 
     Returns:
         Result:
-            A result object containing the columns, `x` and the smoothed `y`.
+            A result object containing the columns, `x`, the smoothed `y` and the
+            gradient of the smoothed `y` with resepct to `x`.
     """
     method = BaseMethod(rawdata)
     x_data = method.variable(x)
@@ -45,4 +46,15 @@ def spline_smoothing(
         x_data = np.flip(x_data)
         smoothed_y = np.flip(smoothed_y)
 
-    return method.make_result({x: x_data, y: smoothed_y})
+    derivative = y_spline.derivative()
+    smoothed_dydx = derivative(x_data)
+
+    smoothing_result = method.make_result(
+        {x: x_data, y: smoothed_y, f"d({y})/d({x})": smoothed_dydx}
+    )
+    smoothing_result.column_definitions = {
+        x: rawdata.column_definitions[x],
+        y: rawdata.column_definitions[y],
+        f"d({y})/d({x})": "The gradient of the smoothed data.",
+    }
+    return smoothing_result
