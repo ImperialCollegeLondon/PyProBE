@@ -1,16 +1,17 @@
 """Module for simple OCV fitting."""
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
+import scipy.interpolate as interp
+import scipy.optimize as opt
 from numpy.typing import NDArray
-from scipy.optimize import minimize
 
 from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.rawdata import RawData
 
 
-class Simple_OCV_fit(BaseMethod):
+class Spline_OCV_fit(BaseMethod):
     """A method for fitting OCV curves."""
 
     def __init__(
@@ -21,6 +22,9 @@ class Simple_OCV_fit(BaseMethod):
         ocp_ne: NDArray[np.float64],
         ocp_pe: NDArray[np.float64],
         x_guess: NDArray[np.float64],
+        smoothing_lambda: Optional[float] = None,
+        fitting_target: str = "OCV",
+        optimizer: Optional[str] = None,
     ):
         """Initialize the Simple_OCV_fit method.
 
@@ -31,19 +35,44 @@ class Simple_OCV_fit(BaseMethod):
             ocp_ne (NDArray[np.float64]): The anode OCP data.
             ocp_pe (NDArray[np.float64]): The cathode OCP data.
             x_guess (NDArray[np.float64]): The initial guess for the fit.
+            smoothing_lambda (float, optional): The smoothing parameter. Default None.
+            fitting_target (str, optional): The target for the fitting. Default "OCV".
+            optimizer (str, optional): The optimizer to use. Default is None.
         """
         super().__init__(rawdata)
         self.voltage = self.variable("Voltage [V]")
         self.capacity = self.variable("Capacity [Ah]")
         self.cell_capacity = np.abs(np.ptp(self.capacity))
         self.SOC = (self.capacity - self.capacity.min()) / self.cell_capacity
+        if self.SOC[0] > self.SOC[-1]:
+            self.SOC = np.flip(self.SOC)
+            self.voltage = np.flip(self.voltage)
+        self.voltage_spline = interp.make_smoothing_spline(
+            self.SOC, self.voltage, lam=smoothing_lambda
+        )
+        self.voltage = self.voltage_spline(self.SOC)
+        self.dVdSOC_spline = self.voltage_spline.derivative()
+        self.dVdSOC = self.dVdSOC_spline(self.SOC)
+        self.dSOCdV = 1 / self.dVdSOC
         self.x_ne = x_ne
         self.x_pe = x_pe
         self.ocp_ne = ocp_ne
         self.ocp_pe = ocp_pe
         self.x_guess = x_guess
+        self.fitting_target = fitting_target
 
-        fitting_result = minimize(self.cost_function, x_guess)
+        if self.fitting_target == "OCV" and optimizer is None:
+            optimizer = "minimize"
+        elif self.fitting_target in ["dQdV", "dVdQ"] and optimizer is None:
+            optimizer = "differential_evolution"
+
+        if optimizer == "minimize":
+            fitting_result = opt.minimize(self.cost_function, x_guess)
+        elif optimizer == "differential_evolution":
+            fitting_result = opt.differential_evolution(
+                self.cost_function,
+                bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)],
+            )
 
         self.x_pe_lo, self.x_pe_hi, self.x_ne_lo, self.x_ne_hi = fitting_result.x
         (
@@ -76,7 +105,7 @@ class Simple_OCV_fit(BaseMethod):
             "Anode Capacity [Ah]": "Anode capacity.",
             "Li Inventory [Ah]": "Lithium inventory.",
         }
-        OCV = self.calc_full_cell_OCV(
+        fitted_voltage = self.calc_full_cell_OCV(
             self.SOC,
             self.x_pe_lo,
             self.x_pe_hi,
@@ -92,7 +121,11 @@ class Simple_OCV_fit(BaseMethod):
                 "Capacity [Ah]": self.capacity,
                 "SOC": self.SOC,
                 "Input Voltage [V]": self.voltage,
-                "Fitted Voltage [V]": OCV,
+                "Fitted Voltage [V]": fitted_voltage,
+                "Input dSOCdV [1/V]": self.dSOCdV,
+                "Fitted dSOCdV [1/V]": np.gradient(self.SOC, fitted_voltage),
+                "Input dVdSOC [V]": self.dVdSOC,
+                "Fitted dVdSOC [V]": np.gradient(fitted_voltage, self.SOC),
             }
         )
         self.fitted_OCV.column_definitions = {
@@ -115,7 +148,16 @@ class Simple_OCV_fit(BaseMethod):
             self.x_ne,
             self.ocp_ne,
         )
-        return np.sum((modelled_OCV - self.voltage) ** 2)
+        if self.fitting_target == "dQdV":
+            model = np.gradient(self.SOC, modelled_OCV)
+            truth = self.dSOCdV
+        elif self.fitting_target == "dVdQ":
+            model = np.gradient(modelled_OCV, self.SOC)
+            truth = self.dVdSOC
+        else:
+            model = modelled_OCV
+            truth = self.voltage
+        return np.sum((model - truth) ** 2)
 
     @staticmethod
     def calc_electrode_capacities(
@@ -172,7 +214,7 @@ class Simple_OCV_fit(BaseMethod):
         Returns:
             NDArray: The full cell OCV.
         """
-        n_points = 10000
+        n_points = 1000
         # make vectors between stoichiometry limits during charge
         z_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
         z_pe = np.linspace(
