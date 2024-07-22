@@ -10,6 +10,52 @@ from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.result import Result
 
 
+def differentiate_FD(
+    rawdata: Result,
+    x: str,
+    y: str,
+    gradient: str = "dydx",
+) -> Result:
+    """Differentiate smooth data with the finite difference method.
+
+    A light wrapper of the numpy.gradient function.
+
+    Args:
+        rawdata (Result): The input data to the method
+        x (str): The name of the x variable.
+        y (str): The name of the y variable.
+        gradient (str, optional):
+            The gradient to calculate, either 'dydx' or 'dxdy'.
+            Defaults to "dydx".
+
+    Returns:
+        Result:
+        A result object containing the columns, `x`, `y` and the calculated gradient.
+    """
+    method = BaseMethod(rawdata)
+    x_data = method.variable(x)
+    y_data = method.variable(y)
+    gradient = gradient
+    if gradient == "dydx":
+        gradient_title = f"d({y})/d({x})"
+        gradient_data = np.gradient(y_data, x_data)
+    elif gradient == "dxdy":
+        gradient_title = f"d({x})/d({y})"
+        gradient_data = np.gradient(x_data, y_data)
+    else:
+        raise ValueError("Gradient must be either 'dydx' or 'dxdy'.")
+
+    gradient_result = method.make_result(
+        {x: x_data, y: y_data, gradient_title: gradient_data}
+    )
+    gradient_result.column_definitions = {
+        x: rawdata.column_definitions[x],
+        y: rawdata.column_definitions[y],
+        gradient_title: "The calculated gradient.",
+    }
+    return gradient_result
+
+
 def differentiate_LEAN(
     rawdata: Result,
     x: str,
