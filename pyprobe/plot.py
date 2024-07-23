@@ -160,14 +160,14 @@ class Plot:
             else:
                 label = "Data"
 
-        self.check_limits(result.array(x), result.array(y))
+        self.check_limits(result.get(x), result.get(y))
         self.xaxis_title = x
         self.yaxis_title = y
 
         self._fig.add_trace(
             go.Scatter(
-                x=result.array(x),
-                y=result.array(y),
+                x=result.get(x),
+                y=result.get(y),
                 mode="lines",
                 line=dict(color=color),
                 name=label,
@@ -202,12 +202,12 @@ class Plot:
         if label is None:
             label = str(result.info["Name"])
 
-        self.check_limits(result.array(x), result.array(y))
+        self.check_limits(result.get(x), result.get(y))
 
         self._fig.add_trace(
             go.Scatter(
-                x=result.array(x),
-                y=result.array(y),
+                x=result.get(x),
+                y=result.get(y),
                 mode="lines",
                 line=dict(color=color, dash="dash"),
                 name=label,
@@ -244,7 +244,7 @@ class Plot:
             color_by (str): The column to color by.
             colormap (str): The colormap to use.
         """
-        self.check_limits(result.array(x), result.array(y))
+        self.check_limits(result.get(x), result.get(y))
         self.xaxis_title = x
         self.yaxis_title = y
 

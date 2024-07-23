@@ -83,7 +83,7 @@ class Result:
         else:
             return Result(self.data.select(column_names), self.info)
 
-    def array(self, column_name: str) -> NDArray[np.float64]:
+    def get(self, column_name: str) -> NDArray[np.float64]:
         """Return a column of the data as a numpy array.
 
         Args:
@@ -97,6 +97,28 @@ class Result:
             raise ValueError(f"Column '{column_name}' not in data.")
         else:
             return self.data[column_name].to_numpy()
+
+    def array(self, *filtering_column_names: str) -> NDArray[np.float64]:
+        """Return the data as a numpy array.
+
+        Args:
+            *filtering_column_names (str): The column names to return.
+
+        Returns:
+            NDArray[np.float64]: The data as a numpy array.
+        """
+        print("filtering_column_names", filtering_column_names)
+        if len(filtering_column_names) == 0:
+            return self.data.to_numpy()
+        else:
+            column_names = list(filtering_column_names)
+            for col in column_names:
+                self.check_units(col)
+            if not all(col in self.data.columns for col in column_names):
+                raise ValueError("One or more columns not in data.")
+            else:
+                data_to_convert = self.data.select(column_names)
+                return data_to_convert.to_numpy()
 
     @property
     def data(self) -> pl.DataFrame:
@@ -140,3 +162,21 @@ class Result:
     def print_definitions(self) -> None:
         """Print the definitions of the columns stored in this result object."""
         pprint(self.column_definitions)
+
+    def clean_copy(
+        self,
+        data: Optional[Dict[str, NDArray[np.float64]]] = {},
+        column_definitions: Optional[Dict[str, str]] = None,
+    ) -> "Result":
+        """Create a copy of the result object with info dictionary but without data.
+
+        Args:
+            data (Optional[Dict[str, NDArray[np.float64]]):
+                The data to include in the new result object.
+            column_definitions (Optional[Dict[str, str]]):
+                The definitions of the columns in the new result object.
+
+        Returns:
+            Result: A new result object with the specified data.
+        """
+        return Result(pl.DataFrame(data), self.info, column_definitions)

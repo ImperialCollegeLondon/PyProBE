@@ -43,9 +43,9 @@ class BaseMethod:
         self.variable_list.append(name)
 
         if not isinstance(self.input_data, list):
-            return self.input_data(name)
+            return self.input_data.get(name)
         else:
-            return np.vstack([input(name) for input in self.input_data])
+            return np.vstack([input.get(name) for input in self.input_data])
 
     def make_result(self, output_dict: Dict[str, NDArray[Any]]) -> Result:
         """Make a result object from the method.

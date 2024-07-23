@@ -31,14 +31,26 @@ def test_call(Result_fixture):
     np_testing.assert_array_equal(current_mA, current * 1000)
 
 
-def test_array(Result_fixture):
-    """Test the array method."""
-    current = Result_fixture.array("Current [A]")
+def test_get(Result_fixture):
+    """Test the get method."""
+    current = Result_fixture.get("Current [A]")
     np_testing.assert_array_equal(
         current, Result_fixture.data["Current [A]"].to_numpy()
     )
-    current_mA = Result_fixture.array("Current [mA]")
+    current_mA = Result_fixture.get("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
+
+
+def test_array(Result_fixture):
+    """Test the array method."""
+    array = Result_fixture.array()
+    np_testing.assert_array_equal(array, Result_fixture.data.to_numpy())
+
+    filtered_array = Result_fixture.array("Current [A]", "Voltage [V]")
+    np_testing.assert_array_equal(
+        filtered_array,
+        Result_fixture.data.select("Current [A]", "Voltage [V]").to_numpy(),
+    )
 
 
 def test_getitem(Result_fixture):
@@ -53,7 +65,7 @@ def test_getitem(Result_fixture):
     assert "Current [mA]" in current_mA.column_list
     assert "Current [A]" not in current_mA.column_list
     np_testing.assert_allclose(
-        current_mA.array("Current [mA]"), Result_fixture.array("Current [mA]")
+        current_mA.get("Current [mA]"), Result_fixture.get("Current [mA]")
     )
 
 
