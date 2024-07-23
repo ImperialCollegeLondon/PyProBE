@@ -21,13 +21,16 @@ def get_x_sections(x: NDArray[np.float64]) -> List[slice]:
     # find where ddx is above a threshold
     dx_changes = np.argwhere(abs(ddx) > 0.05 * abs(dx[1:])).reshape(-1) + 2
     x_sections = []
-    for i in range(len(dx_changes) + 1):
-        if i == 0:
-            x_sections.append(slice(0, dx_changes[i]))
-        elif i == len(dx_changes):
-            x_sections.append(slice(dx_changes[i - 1] - 1, len(x)))
-        else:
-            x_sections.append(slice(dx_changes[i - 1] - 1, dx_changes[i]))
+    if len(dx_changes) == 0:
+        x_sections.append(slice(0, len(x)))
+    else:
+        for i in range(len(dx_changes) + 1):
+            if i == 0:
+                x_sections.append(slice(0, dx_changes[i]))
+            elif i == len(dx_changes):
+                x_sections.append(slice(dx_changes[i - 1] - 1, len(x)))
+            else:
+                x_sections.append(slice(dx_changes[i - 1] - 1, dx_changes[i]))
     # only consider sections where there are more than 5 data points
     x_sections = [s for s in x_sections if (s.stop - s.start) >= 5]
     return x_sections
