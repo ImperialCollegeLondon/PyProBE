@@ -7,7 +7,7 @@ import scipy.interpolate as interp
 import scipy.optimize as opt
 from numpy.typing import NDArray
 
-from pyprobe.methods.basemethod import BaseMethod
+from pyprobe.methods.utils import BaseMethod
 from pyprobe.rawdata import RawData
 
 

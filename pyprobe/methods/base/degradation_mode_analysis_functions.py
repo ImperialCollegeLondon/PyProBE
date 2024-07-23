@@ -3,7 +3,53 @@
 from typing import Tuple
 
 import numpy as np
+import scipy.optimize as opt
 from numpy.typing import NDArray
+
+
+def ocv_curve_fit(
+    SOC: NDArray[np.float64],
+    fitting_target_data: NDArray[np.float64],
+    x_pe: NDArray[np.float64],
+    ocp_pe: NDArray[np.float64],
+    x_ne: NDArray[np.float64],
+    ocp_ne: NDArray[np.float64],
+    fitting_target: str,
+    optimizer: str,
+    x_guess: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    """Fit half cell open circuit potential curves to full cell OCV data."""
+
+    def cost_function(params: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Cost function for the curve fitting."""
+        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
+        modelled_OCV = calc_full_cell_OCV(
+            SOC,
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
+            x_pe,
+            ocp_pe,
+            x_ne,
+            ocp_ne,
+        )
+        if fitting_target == "dQdV":
+            model = np.gradient(SOC, modelled_OCV)
+        elif fitting_target == "dVdQ":
+            model = np.gradient(modelled_OCV, SOC)
+        else:
+            model = modelled_OCV
+        return np.sum((model - fitting_target_data) ** 2)
+
+    if optimizer == "minimize":
+        fitting_result = opt.minimize(cost_function, x_guess)
+    elif optimizer == "differential_evolution":
+        fitting_result = opt.differential_evolution(
+            cost_function, bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)]
+        )
+
+    return fitting_result.x
 
 
 def calc_electrode_capacities(

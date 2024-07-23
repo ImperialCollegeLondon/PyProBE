@@ -2,11 +2,10 @@
 from typing import List, Optional, Tuple
 
 import numpy as np
-import scipy.optimize as opt
 from numpy.typing import NDArray
 
 import pyprobe.methods.base.degradation_mode_analysis_functions as dma_functions
-from pyprobe.methods.basemethod import BaseMethod
+import pyprobe.methods.utils as utils
 from pyprobe.rawdata import RawData, Result
 
 
@@ -35,12 +34,11 @@ def fit_ocv(
             - Result: The stoichiometry limits and electrode capacities.
             - Result: The fitted OCV data.
     """
-    method = BaseMethod(rawdata)
-    voltage = method.variable("Voltage [V]")
-    capacity = method.variable("Capacity [Ah]")
+    voltage = rawdata.get("Voltage [V]")
+    capacity = rawdata.get("Capacity [Ah]")
 
     if "SOC" in rawdata.column_list:
-        SOC = method.variable("SOC")
+        SOC = rawdata.get("SOC")
         cell_capacity = np.abs(np.ptp(capacity)) / SOC.max()
     else:
         cell_capacity = np.abs(np.ptp(capacity))
@@ -48,44 +46,28 @@ def fit_ocv(
     dSOCdV = np.gradient(SOC, voltage)
     dVdSOC = np.gradient(voltage, SOC)
 
-    if fitting_target == "OCV" and optimizer is None:
-        optimizer = "minimize"
-    elif fitting_target in ["dQdV", "dVdQ"] and optimizer is None:
-        optimizer = "differential_evolution"
-
-    def cost_function(params: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Cost function for the curve fitting."""
-        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
-        modelled_OCV = dma_functions.calc_full_cell_OCV(
-            SOC,
-            x_pe_lo,
-            x_pe_hi,
-            x_ne_lo,
-            x_ne_hi,
-            x_pe,
-            ocp_pe,
-            x_ne,
-            ocp_ne,
-        )
-        if fitting_target == "dQdV":
-            model = np.gradient(SOC, modelled_OCV)
-            truth = dSOCdV
-        elif fitting_target == "dVdQ":
-            model = np.gradient(modelled_OCV, SOC)
-            truth = dVdSOC
+    if optimizer is None:
+        if fitting_target == "OCV":
+            optimizer = "minimize"
         else:
-            model = modelled_OCV
-            truth = voltage
-        return np.sum((model - truth) ** 2)
+            optimizer = "differential_evolution"
 
-    if optimizer == "minimize":
-        fitting_result = opt.minimize(cost_function, x_guess)
-    elif optimizer == "differential_evolution":
-        fitting_result = opt.differential_evolution(
-            cost_function, bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)]
-        )
+    fitting_target_data = {"OCV": voltage, "dQdV": dSOCdV, "dVdQ": dVdSOC}[
+        fitting_target
+    ]
 
-    x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = fitting_result.x
+    x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = dma_functions.ocv_curve_fit(
+        SOC,
+        fitting_target_data,
+        x_pe,
+        ocp_pe,
+        x_ne,
+        ocp_ne,
+        fitting_target,
+        optimizer,
+        x_guess,
+    )
+
     (
         pe_capacity,
         ne_capacity,
@@ -147,11 +129,11 @@ def fit_ocv(
     return stoichiometry_limits, fitted_OCV
 
 
-def quantify_degradation_modes(electrode_capacities: List[Result]) -> Result:
+def quantify_degradation_modes(electrode_capacity_results: List[Result]) -> Result:
     """Quantify the change in degradation modes between at least two OCV fits.
 
     Args:
-        electrode_capacities (List[Result]):
+        electrode_capacity_results (List[Result]):
             A list of result objects containing the fitted electrode capacities of the
             cell. The first output of the fit_ocv method.
 
@@ -160,16 +142,21 @@ def quantify_degradation_modes(electrode_capacities: List[Result]) -> Result:
             A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of the
             provided OCV fits.
     """
-    method = BaseMethod(electrode_capacities)
-    cell_capacity = method.variable("Cell Capacity [Ah]")
-    pe_capacity = method.variable("Cathode Capacity [Ah]")
-    ne_capacity = method.variable("Anode Capacity [Ah]")
-    li_inventory = method.variable("Li Inventory [Ah]")
+    cell_capacity = utils.assemble_array(
+        electrode_capacity_results, "Cell Capacity [Ah]"
+    )
+    pe_capacity = utils.assemble_array(
+        electrode_capacity_results, "Cathode Capacity [Ah]"
+    )
+    ne_capacity = utils.assemble_array(
+        electrode_capacity_results, "Anode Capacity [Ah]"
+    )
+    li_inventory = utils.assemble_array(electrode_capacity_results, "Li Inventory [Ah]")
     SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
         cell_capacity, pe_capacity, ne_capacity, li_inventory
     )
 
-    dma_result = method.make_result(
+    dma_result = electrode_capacity_results[0].clean_copy(
         {
             "SOH": SOH,
             "LAM_pe": LAM_pe,

@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import interp1d
 
-from pyprobe.methods.basemethod import BaseMethod
+from pyprobe.methods.utils import BaseMethod
 from pyprobe.result import Result
 
 
