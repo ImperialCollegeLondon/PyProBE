@@ -3,6 +3,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+import pyprobe.methods.base.degradation_mode_analysis_functions as dma_functions
 import pyprobe.methods.degradation_mode_analysis as dma
 from pyprobe.result import Result
 
@@ -160,7 +161,7 @@ def eol_pe_limits_fixture():
 def bol_capacity_fixture(bol_ne_limits_fixture, bol_pe_limits_fixture):
     """Return the cell and electrode capacities."""
     cell_capacity = 5
-    pe_capacity, ne_capacity, li_inventory = dma._calc_electrode_capacities(
+    pe_capacity, ne_capacity, li_inventory = dma_functions.calc_electrode_capacities(
         bol_pe_limits_fixture[0],
         bol_pe_limits_fixture[1],
         bol_ne_limits_fixture[0],
@@ -174,7 +175,7 @@ def bol_capacity_fixture(bol_ne_limits_fixture, bol_pe_limits_fixture):
 def eol_capacity_fixture(eol_ne_limits_fixture, eol_pe_limits_fixture):
     """Return the cell and electrode capacities."""
     cell_capacity = 4.5
-    pe_capacity, ne_capacity, li_inventory = dma._calc_electrode_capacities(
+    pe_capacity, ne_capacity, li_inventory = dma_functions.calc_electrode_capacities(
         eol_pe_limits_fixture[0],
         eol_pe_limits_fixture[1],
         eol_ne_limits_fixture[0],
