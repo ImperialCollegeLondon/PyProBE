@@ -31,6 +31,32 @@ def test_call(Result_fixture):
     np_testing.assert_array_equal(current_mA, current * 1000)
 
 
+def test_array(Result_fixture):
+    """Test the array method."""
+    current = Result_fixture.array("Current [A]")
+    np_testing.assert_array_equal(
+        current, Result_fixture.data["Current [A]"].to_numpy()
+    )
+    current_mA = Result_fixture.array("Current [mA]")
+    np_testing.assert_array_equal(current_mA, current * 1000)
+
+
+def test_getitem(Result_fixture):
+    """Test the __getitem__ method."""
+    current = Result_fixture["Current [A]"]
+    assert "Current [A]" in current.column_list
+    assert isinstance(current, Result)
+    pl_testing.assert_frame_equal(
+        current.data, Result_fixture.data.select("Current [A]")
+    )
+    current_mA = Result_fixture["Current [mA]"]
+    assert "Current [mA]" in current_mA.column_list
+    assert "Current [A]" not in current_mA.column_list
+    np_testing.assert_allclose(
+        current_mA.array("Current [mA]"), Result_fixture.array("Current [mA]")
+    )
+
+
 def test_data(Result_fixture):
     """Test the data property."""
     assert isinstance(Result_fixture._data, pl.LazyFrame)

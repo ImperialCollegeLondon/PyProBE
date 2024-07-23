@@ -1,6 +1,7 @@
 """A module for the Result class."""
+import warnings
 from pprint import pprint
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import polars as pl
@@ -49,6 +50,47 @@ class Result:
         Returns:
             Union[NDArray[np.float64]:
                 The column as a numpy array.
+        Deprecated:
+            This method will be removed in a future version. Use `array` instead.
+        """
+        warnings.warn(
+            "The __call__ method is deprecated and will be removed in a future version."
+            "Use `array` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        self.check_units(column_name)
+        if column_name not in self.data.columns:
+            raise ValueError(f"Column '{column_name}' not in data.")
+        else:
+            return self.data[column_name].to_numpy()
+
+    def __getitem__(self, *column_name: str) -> "Result":
+        """Return a new result object with the specified columns.
+
+        Args:
+            *column_name (str): The columns to include in the new result object.
+
+        Returns:
+            Result: A new result object with the specified columns.
+        """
+        column_names = list(column_name)
+        for col in column_names:
+            self.check_units(col)
+        if not all(col in self.data.columns for col in column_names):
+            raise ValueError("One or more columns not in data.")
+        else:
+            return Result(self.data.select(column_names), self.info)
+
+    def array(self, column_name: str) -> NDArray[np.float64]:
+        """Return a column of the data as a numpy array.
+
+        Args:
+            column_name (str): The column name to return.
+
+        Returns:
+            NDArray[np.float64]: The column as a numpy array.
         """
         self.check_units(column_name)
         if column_name not in self.data.columns:
@@ -80,6 +122,11 @@ class Result:
         if column_name not in self.data.columns:
             instruction = UnitConverter(column_name).from_default()
             self._data = self.data.with_columns(instruction)
+
+    @property
+    def column_list(self) -> List[str]:
+        """Return a list of the columns in the data."""
+        return self.data.columns
 
     def define_column(self, column_name: str, definition: str) -> None:
         """Define a new column when it is added to the dataframe.
