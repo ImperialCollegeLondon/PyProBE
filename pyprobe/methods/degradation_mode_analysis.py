@@ -5,6 +5,7 @@ import numpy as np
 import scipy.optimize as opt
 from numpy.typing import NDArray
 
+import pyprobe.methods.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.methods.basemethod import BaseMethod
 from pyprobe.rawdata import RawData, Result
 
@@ -38,8 +39,12 @@ def fit_ocv(
     voltage = method.variable("Voltage [V]")
     capacity = method.variable("Capacity [Ah]")
 
-    cell_capacity = np.abs(np.ptp(capacity))
-    SOC = (capacity - capacity.min()) / cell_capacity
+    if "SOC" in rawdata.column_list:
+        SOC = method.variable("SOC")
+        cell_capacity = np.abs(np.ptp(capacity)) / SOC.max()
+    else:
+        cell_capacity = np.abs(np.ptp(capacity))
+        SOC = (capacity - capacity.min()) / cell_capacity
     dSOCdV = np.gradient(SOC, voltage)
     dVdSOC = np.gradient(voltage, SOC)
 
@@ -51,7 +56,7 @@ def fit_ocv(
     def cost_function(params: NDArray[np.float64]) -> NDArray[np.float64]:
         """Cost function for the curve fitting."""
         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
-        modelled_OCV = _calc_full_cell_OCV(
+        modelled_OCV = dma_functions.calc_full_cell_OCV(
             SOC,
             x_pe_lo,
             x_pe_hi,
@@ -85,9 +90,11 @@ def fit_ocv(
         pe_capacity,
         ne_capacity,
         li_inventory,
-    ) = _calc_electrode_capacities(x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity)
+    ) = dma_functions.calc_electrode_capacities(
+        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
+    )
 
-    stoichiometry_limits = method.make_result(
+    stoichiometry_limits = rawdata.clean_copy(
         {
             "x_pe low SOC": np.array([x_pe_lo]),
             "x_pe high SOC": np.array([x_pe_hi]),
@@ -109,7 +116,7 @@ def fit_ocv(
         "Anode Capacity [Ah]": "Anode capacity.",
         "Li Inventory [Ah]": "Lithium inventory.",
     }
-    fitted_voltage = _calc_full_cell_OCV(
+    fitted_voltage = dma_functions.calc_full_cell_OCV(
         SOC,
         x_pe_lo,
         x_pe_hi,
@@ -120,7 +127,7 @@ def fit_ocv(
         x_ne,
         ocp_ne,
     )
-    fitted_OCV = method.make_result(
+    fitted_OCV = rawdata.clean_copy(
         {
             "Capacity [Ah]": capacity,
             "SOC": SOC,
@@ -138,80 +145,6 @@ def fit_ocv(
     }
 
     return stoichiometry_limits, fitted_OCV
-
-
-def _calc_electrode_capacities(
-    x_pe_lo: float,
-    x_pe_hi: float,
-    x_ne_lo: float,
-    x_ne_hi: float,
-    cell_capacity: float,
-) -> Tuple[float, float, float]:
-    """Calculate the electrode capacities.
-
-    Args:
-        x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
-        x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
-        x_ne_lo (float): The anode stoichiometry at lowest cell SOC.
-        x_ne_hi (float): The anode stoichiometry at highest cell SOC.
-
-    Returns:
-        Tuple[float, float, float]:
-            - NDArray: The cathode capacity.
-            - NDArray: The anode capacity.
-            - NDArray: The lithium inventory.
-    """
-    pe_capacity = cell_capacity / (x_pe_lo - x_pe_hi)
-    ne_capacity = cell_capacity / (x_ne_hi - x_ne_lo)
-    li_inventory = (pe_capacity * x_pe_lo) + (ne_capacity * x_ne_lo)
-    return pe_capacity, ne_capacity, li_inventory
-
-
-def _calc_full_cell_OCV(
-    SOC: NDArray[np.float64],
-    x_pe_lo: NDArray[np.float64],
-    x_pe_hi: NDArray[np.float64],
-    x_ne_lo: NDArray[np.float64],
-    x_ne_hi: NDArray[np.float64],
-    x_pe: NDArray[np.float64],
-    ocp_pe: NDArray[np.float64],
-    x_ne: NDArray[np.float64],
-    ocp_ne: NDArray[np.float64],
-) -> NDArray[np.float64]:
-    """Calculate the full cell OCV.
-
-    Args:
-        SOC (NDArray[np.float64]): The full cell SOC.
-        x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
-        x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
-        x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
-        x_ne_hi (float): The anode stoichiometry at highest cell SOC.
-        x_pe (NDArray[np.float64]): The cathode stoichiometry data.
-        ocp_pe (NDArray[np.float64]): The cathode OCP data.
-        x_ne (NDArray[np.float64]): The anode stoichiometry data.
-        ocp_ne (NDArray[np.float64]): The anode OCP data.
-
-    Returns:
-        NDArray: The full cell OCV.
-    """
-    n_points = 10000
-    # make vectors between stoichiometry limits during charge
-    z_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
-    z_pe = np.linspace(
-        x_pe_lo, x_pe_hi, n_points
-    )  # flip the cathode limits to match charge direction
-
-    # make an SOC vector with the same number of points
-    SOC_sampling = np.linspace(0, 1, n_points)
-
-    # interpolate the real electrode OCP data with the created stoichiometry vectors
-    OCP_ne = np.interp(z_ne, x_ne, ocp_ne)
-    OCP_pe = np.interp(z_pe, x_pe, ocp_pe)
-    # OCP_pe = np.flip(OCP_pe) # flip the cathode OCP to match charge direction
-
-    # interpolate the final OCV curve with the original SOC vector
-    OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
-    return OCV
 
 
 def quantify_degradation_modes(electrode_capacities: List[Result]) -> Result:
@@ -232,7 +165,7 @@ def quantify_degradation_modes(electrode_capacities: List[Result]) -> Result:
     pe_capacity = method.variable("Cathode Capacity [Ah]")
     ne_capacity = method.variable("Anode Capacity [Ah]")
     li_inventory = method.variable("Li Inventory [Ah]")
-    SOH, LAM_pe, LAM_ne, LLI = _calculate_dma_parameters(
+    SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
         cell_capacity, pe_capacity, ne_capacity, li_inventory
     )
 
@@ -251,33 +184,3 @@ def quantify_degradation_modes(electrode_capacities: List[Result]) -> Result:
         "LLI": "Loss of lithium inventory.",
     }
     return dma_result
-
-
-def _calculate_dma_parameters(
-    cell_capacity: NDArray[np.float64],
-    pe_capacity: NDArray[np.float64],
-    ne_capacity: NDArray[np.float64],
-    li_inventory: NDArray[np.float64],
-) -> Tuple[
-    NDArray[np.float64],
-    NDArray[np.float64],
-    NDArray[np.float64],
-    NDArray[np.float64],
-]:
-    """Calculate the DMA parameters.
-
-    Args:
-        pe_stoich_limits (NDArray[np.float64]): The cathode stoichiometry limits.
-        ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
-        pe_capacity (NDArray[np.float64]): The cathode capacity.
-        ne_capacity (NDArray[np.float64]): The anode capacity.
-        li_inventory (NDArray[np.float64]): The lithium inventory.
-
-    Returns:
-        Tuple[float, float, float, float]: The SOH, LAM_pe, LAM_ne, and LLI.
-    """
-    SOH = cell_capacity / cell_capacity[0]
-    LAM_pe = 1 - pe_capacity / pe_capacity[0]
-    LAM_ne = 1 - ne_capacity / ne_capacity[0]
-    LLI = 1 - li_inventory / li_inventory[0]
-    return SOH, LAM_pe, LAM_ne, LLI
