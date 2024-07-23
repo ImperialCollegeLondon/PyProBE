@@ -3,6 +3,7 @@
 from typing import Tuple
 
 import numpy as np
+import scipy.interpolate as interp
 import scipy.optimize as opt
 from numpy.typing import NDArray
 
@@ -154,3 +155,35 @@ def calculate_dma_parameters(
     LAM_ne = 1 - ne_capacity / ne_capacity[0]
     LLI = 1 - li_inventory / li_inventory[0]
     return SOH, LAM_pe, LAM_ne, LLI
+
+
+def average_OCV_curves(
+    charge_SOC: NDArray[np.float64],
+    charge_OCV: NDArray[np.float64],
+    charge_current: NDArray[np.float64],
+    discharge_SOC: NDArray[np.float64],
+    discharge_OCV: NDArray[np.float64],
+    discharge_current: NDArray[np.float64],
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Average the charge and discharge OCV curves.
+
+    Args:
+        charge_capacity (NDArray[np.float64]): The charge capacity data.
+        charge_OCV (NDArray[np.float64]): The charge OCV data.
+        discharge_capacity (NDArray[np.float64]): The discharge capacity data.
+        discharge_OCV (NDArray[np.float64]): The discharge OCV data.
+
+    Returns:
+        Tuple[NDArray[np.float64], NDArray[np.float64]]:
+            An average between the charge and discharge OCV curves.
+    """
+    f_discharge_OCV = interp.interp1d(discharge_SOC, discharge_OCV, kind="linear")
+    f_discharge_current = interp.interp1d(
+        discharge_SOC, discharge_current, kind="linear"
+    )
+    discharge_OCV = f_discharge_OCV(charge_SOC)
+    discharge_current = f_discharge_current(charge_SOC)
+
+    return ((charge_current * discharge_OCV) - (discharge_current * charge_OCV)) / (
+        charge_current - discharge_current
+    )

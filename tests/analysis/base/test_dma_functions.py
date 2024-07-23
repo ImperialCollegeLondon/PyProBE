@@ -58,3 +58,25 @@ def test_calculate_dma_parameters():
     np.testing.assert_allclose(LAM_pe, [0, 0.1, 0.2, 0.3])
     np.testing.assert_allclose(LAM_ne, [0, 0.1, 0.2, 0.3])
     np.testing.assert_allclose(LLI, [0, 0.1, 0.2, 0.3])
+
+
+def test_average_OCV_curves():
+    """Test the average_OCV_curves function."""
+    charge_SOC = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    charge_OCV = np.array([3.2, 3.4, 3.6, 3.8, 4.0])
+    charge_current = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+    discharge_SOC = np.array([1.0, 0.8, 0.6, 0.4, 0.2, 0.0])
+    discharge_OCV = np.array([4.0, 3.8, 3.6, 3.4, 3.2, 3.0])
+    discharge_current = np.array([-2.0, -2.0, -2.0, -2.0, -2.0, -2.0])
+
+    expected_result = np.array([3.1666667, 3.3666667, 3.5666667, 3.7666667, 3.9666667])
+
+    result = dma_functions.average_OCV_curves(
+        charge_SOC,
+        charge_OCV,
+        charge_current,
+        discharge_SOC,
+        discharge_OCV,
+        discharge_current,
+    )
+    np.testing.assert_allclose(result, expected_result)

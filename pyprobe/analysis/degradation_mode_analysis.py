@@ -171,3 +171,38 @@ def quantify_degradation_modes(electrode_capacity_results: List[Result]) -> Resu
         "LLI": "Loss of lithium inventory.",
     }
     return dma_result
+
+
+def average_ocvs(discharge_result: Result, charge_result: Result) -> Result:
+    """Average the charge and discharge OCV curves.
+
+    Args:
+        discharge_result (Result): The discharge OCV data.
+        charge_result (Result): The charge OCV data.
+
+    Returns:
+        Tuple[Result, Result]: The averaged charge and discharge OCV curves.
+    """
+    charge_SOC = charge_result.get("SOC")
+    charge_OCV = charge_result.get("Voltage [V]")
+    charge_current = charge_result.get("Current [A]")
+    discharge_SOC = discharge_result.get("SOC")
+    discharge_OCV = discharge_result.get("Voltage [V]")
+    discharge_current = discharge_result.get("Current [A]")
+
+    average_OCV = dma_functions.average_OCV_curves(
+        charge_SOC,
+        charge_OCV,
+        charge_current,
+        discharge_SOC,
+        discharge_OCV,
+        discharge_current,
+    )
+
+    average_result = charge_result.clean_copy(
+        {
+            "Voltage [V]": average_OCV,
+            "SOC": charge_SOC,
+        }
+    )
+    return average_result
