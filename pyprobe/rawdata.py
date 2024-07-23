@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 import polars as pl
 
-from pyprobe.methods import differentiation
+from pyprobe.analysis import differentiation
 from pyprobe.result import Result
 
 

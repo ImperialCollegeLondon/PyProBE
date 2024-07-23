@@ -4,7 +4,7 @@ from typing import Any, List, cast
 
 import numpy as np
 
-import pyprobe.methods.base.differentiation_functions as diff_functions
+import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.result import Result
 
 

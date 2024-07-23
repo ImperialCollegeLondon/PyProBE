@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-import pyprobe.methods.base.degradation_mode_analysis_functions as dma_functions
+import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 
 
 def test_calc_full_cell_OCV():

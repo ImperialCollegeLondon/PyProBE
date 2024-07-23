@@ -4,8 +4,8 @@ from typing import List, Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-import pyprobe.methods.base.degradation_mode_analysis_functions as dma_functions
-import pyprobe.methods.utils as utils
+import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
+import pyprobe.analysis.utils as utils
 from pyprobe.rawdata import RawData, Result
 
 

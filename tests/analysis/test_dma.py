@@ -3,8 +3,8 @@ import numpy as np
 import polars as pl
 import pytest
 
-import pyprobe.methods.base.degradation_mode_analysis_functions as dma_functions
-import pyprobe.methods.degradation_mode_analysis as dma
+import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
+import pyprobe.analysis.degradation_mode_analysis as dma
 from pyprobe.result import Result
 
 

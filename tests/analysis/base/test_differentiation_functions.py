@@ -2,7 +2,7 @@
 
 import numpy as np
 
-import pyprobe.methods.base.differentiation_functions as diff_functions
+import pyprobe.analysis.base.differentiation_functions as diff_functions
 
 
 def test_differentiate_LEAN():

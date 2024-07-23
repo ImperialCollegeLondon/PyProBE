@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 from scipy.interpolate import make_smoothing_spline
 
-from pyprobe.methods.utils import BaseMethod
+from pyprobe.analysis.utils import BaseMethod
 from pyprobe.result import Result
 
 

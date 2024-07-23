@@ -2,7 +2,7 @@
 
 Creating a New Method
 =====================
-In PyProBE :class:`Methods <pyprobe.methods.basemethod.BaseMethod>` are classes that 
+In PyProBE :class:`analysis <pyprobe.methods.basemethod.BaseMethod>` are classes that 
 perform further analysis of the data. They can be peformed on any 
 :class:`~pyprobe.rawdata.RawData` or :class:`~pyprobe.result.Result` object.
 
