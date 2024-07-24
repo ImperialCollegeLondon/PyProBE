@@ -1,18 +1,36 @@
 """A module for the Procedure class."""
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import polars as pl
 import yaml
 
-from pyprobe.experiments.baseexperiment import BaseExperiment
-from pyprobe.experiments.cycling import Cycling
-from pyprobe.experiments.pOCV import pOCV
-from pyprobe.experiments.pulsing import Pulsing
-from pyprobe.filter import Filter
+from pyprobe.rawdata import RawData
+
+method_registry: Dict[str, Dict[str, Callable[..., Any]]] = {}
 
 
-class Procedure(Filter):
+def register_method(*class_names: str) -> Callable[..., Any]:
+    """Decorator to register a method to multiple class names.
+
+    Args:
+        *class_names (str): Variable-length argument list of class names.
+
+    Returns:
+        Callable[..., Any]: A decorator function.
+    """
+
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        for class_name in class_names:
+            if class_name not in method_registry:
+                method_registry[class_name] = {}
+            method_registry[class_name][func.__name__] = func
+        return func
+
+    return decorator
+
+
+class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
     def __init__(
@@ -40,19 +58,21 @@ class Procedure(Filter):
             self.steps_idx,
         ) = self.process_readme(readme_path)
         super().__init__(_data, info)
-        self.zero_column(
+        self._data = self.zero_column(
+            self._data,
             "Time [s]",
             "Procedure Time [s]",
             "Time elapsed since beginning of procedure.",
         )
 
-        self.zero_column(
+        self._data = self.zero_column(
+            self._data,
             "Capacity [Ah]",
             "Procedure Capacity [Ah]",
             "The net charge passed since beginning of procedure.",
         )
 
-    def experiment(self, *experiment_names: str) -> BaseExperiment:
+    def experiment(self, *experiment_names: str) -> RawData:
         """Return an experiment object from the procedure.
 
         Args:
@@ -62,14 +82,6 @@ class Procedure(Filter):
         Returns:
             BaseExperiment: An experiment object from the procedure.
         """
-        experiment_types = {
-            "Constant Current": BaseExperiment,
-            "Pulsing": Pulsing,
-            "Cycling": Cycling,
-            "pOCV": pOCV,
-            "SOC Reset": BaseExperiment,
-            "General": BaseExperiment,
-        }
         steps_idx = []
         for experiment_name in experiment_names:
             if experiment_name not in self.titles:
@@ -81,19 +93,240 @@ class Procedure(Filter):
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self._data.filter(conditions)
-        if len(experiment_names) == 1:  # when one experiment is selected
-            experiment_name = experiment_names[0]
-            try:
-                experiment_obj = experiment_types[self.titles[experiment_name]]
-            except KeyError:
-                experiment_obj = BaseExperiment
-                print(
-                    f"Experiment type for {experiment_name} not found,"
-                    " BaseExperiment used instead."
+        lf_filtered = self.zero_column(
+            lf_filtered,
+            "Time [s]",
+            "Experiment Time [s]",
+            "Time elapsed since beginning of experiment.",
+        )
+
+        lf_filtered = self.zero_column(
+            lf_filtered,
+            "Capacity [Ah]",
+            "Experiment Capacity [Ah]",
+            "The net charge passed since beginning of experiment.",
+        )
+        return self.Experiment(lf_filtered, self.info)
+
+    @staticmethod
+    def create_class(
+        class_name: str, methods: Optional[Dict[str, Callable[..., Any]]] = None
+    ) -> type:
+        """Dynamically creates a class with the given specifications.
+
+        Args:
+            class_name (str): The name of the class to create.
+            class_name_attr (str): The value of the 'name' attribute for the class.
+            methods (dict, optional):
+                A dictionary of method names and their implementations. Defaults to
+                None.
+
+        Returns:
+            A new class.
+        """
+        class_dict = {}
+
+        # Automatically add any registered methods for this class
+        if class_name in method_registry:
+            class_dict.update(method_registry[class_name])
+
+        # Add other callable objects to the class dictionary
+        if methods is not None:
+            class_dict.update(methods)
+
+        # Use type to dynamically create the class
+        return type(class_name, (RawData,), class_dict)
+
+    @register_method("Experiment", "Cycle")
+    @staticmethod
+    def filter_numerical(
+        _data: pl.LazyFrame | pl.DataFrame,
+        column: str,
+        indices: Tuple[Union[int, range], ...],
+    ) -> pl.LazyFrame:
+        """Filter a LazyFrame by a numerical condition.
+
+        Args:
+            _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
+            column (str): The column to filter on.
+            indices (Tuple[Union[int, range], ...]): A tuple of index
+                values to filter by.
+        """
+        index_list = []
+        for index in indices:
+            if isinstance(index, range):
+                index_list.extend(list(index))
+            else:
+                index_list.extend([index])
+
+        if len(index_list) > 0:
+            if all(item >= 0 for item in index_list):
+                index_list = [item + 1 for item in index_list]
+                return _data.filter(pl.col(column).rank("dense").is_in(index_list))
+            elif all(item < 0 for item in index_list):
+                index_list = [item * -1 for item in index_list]
+                return _data.filter(
+                    pl.col(column).rank("dense", descending=True).is_in(index_list)
                 )
-        else:  # when multiple experiments are selected
-            experiment_obj = BaseExperiment
-        return experiment_obj(lf_filtered, self.info)
+            else:
+                raise ValueError("Indices must be all positive or all negative.")
+        else:
+            return _data
+
+    @register_method("Experiment", "Cycle")
+    def step(
+        self,
+        *step_numbers: Union[int, range],
+        condition: Optional[pl.Expr] = None,
+    ) -> RawData:
+        """Return a step object from the cycle.
+
+        Args:
+            step_number (int | range): Variable-length argument list of
+                step numbers or a range object.
+
+        Returns:
+            RawData: A step object from the cycle.
+        """
+        if condition is not None:
+            _data = self.filter_numerical(
+                self._data.filter(condition), "Event", step_numbers
+            )
+        else:
+            _data = self.filter_numerical(self._data, "Event", step_numbers)
+        return RawData(_data, self.info)
+
+    @register_method("Experiment")
+    def cycle(self, *cycle_numbers: Union[int]) -> RawData:
+        """Return a cycle object from the experiment.
+
+        Args:
+            cycle_number (int | range): Variable-length argument list of
+                cycle numbers or a range object.
+
+        Returns:
+            Filter: A filter object for the specified cycles.
+        """
+        lf_filtered = self.filter_numerical(self._data, "Cycle", cycle_numbers)
+        lf_filtered = self.zero_column(
+            lf_filtered,
+            "Time [s]",
+            "Cycle Time [s]",
+            "Time elapsed since beginning of cycle.",
+        )
+
+        lf_filtered = self.zero_column(
+            lf_filtered,
+            "Capacity [Ah]",
+            "Cycle Capacity [Ah]",
+            "The net charge passed since beginning of cycle.",
+        )
+        return self.Cycle(lf_filtered, self.info)
+
+    @register_method("Experiment", "Cycle")
+    def charge(self, *charge_numbers: Union[int, range]) -> RawData:
+        """Return a charge step object from the cycle.
+
+        Args:
+            charge_number (int | range): Variable-length argument list of
+                charge numbers or a range object.
+
+        Returns:
+            RawData: A charge step object from the cycle.
+        """
+        condition = pl.col("Current [A]") > 0
+        return self.step(*charge_numbers, condition=condition)
+
+    @register_method("Experiment", "Cycle")
+    def discharge(self, *discharge_numbers: Union[int, range]) -> RawData:
+        """Return a discharge step object from the cycle.
+
+        Args:
+            discharge_number (int | range): Variable-length argument list of
+                discharge numbers or a range object.
+
+        Returns:
+            RawData: A discharge step object from the cycle.
+        """
+        condition = pl.col("Current [A]") < 0
+        return self.step(*discharge_numbers, condition=condition)
+
+    @register_method("Experiment", "Cycle")
+    def chargeordischarge(
+        self, *chargeordischarge_numbers: Union[int, range]
+    ) -> RawData:
+        """Return a charge or discharge step object from the cycle.
+
+        Args:
+            chargeordischarge_number (int | range): Variable-length argument list of
+                charge or discharge numbers or a range object.
+
+        Returns:
+            RawData: A charge or discharge step object from the cycle.
+        """
+        condition = pl.col("Current [A]") != 0
+        return self.step(*chargeordischarge_numbers, condition=condition)
+
+    @register_method("Experiment", "Cycle")
+    def rest(self, *rest_numbers: Union[int, range]) -> RawData:
+        """Return a rest step object from the cycle.
+
+        Args:
+            rest_number (int | range): Variable-length argument list of rest
+                numbers or a range object.
+
+        Returns:
+            RawData: A rest step object from the cycle.
+        """
+        condition = pl.col("Current [A]") == 0
+        return self.step(*rest_numbers, condition=condition)
+
+    @register_method("Experiment", "Cycle")
+    def constant_current(self, *constant_current_numbers: Union[int, range]) -> RawData:
+        """Return a constant current step object.
+
+        Args:
+            constant_current_numbers (int | range): Variable-length argument list of
+                constant current numbers or a range object.
+
+        Returns:
+            RawData: A constant current step object.
+        """
+        condition = (
+            (pl.col("Current [A]") != 0)
+            & (
+                pl.col("Current [A]").abs()
+                > 0.999 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
+            )
+            & (
+                pl.col("Current [A]").abs()
+                < 1.001 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
+            )
+        )
+        return self.step(*constant_current_numbers, condition=condition)
+
+    @register_method("Experiment", "Cycle")
+    def constant_voltage(self, *constant_voltage_numbers: Union[int, range]) -> RawData:
+        """Return a constant voltage step object.
+
+        Args:
+            constant_current_numbers (int | range): Variable-length argument list of
+                constant voltage numbers or a range object.
+
+        Returns:
+            RawData: A constant voltage step object.
+        """
+        condition = (
+            pl.col("Voltage [V]").abs()
+            > 0.999 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
+        ) & (
+            pl.col("Voltage [V]").abs()
+            < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
+        )
+        return self.step(*constant_voltage_numbers, condition=condition)
+
+    Cycle = create_class("Cycle")
+    Experiment = create_class("Experiment", {"Cycle": Cycle})
 
     @property
     def experiment_names(self) -> List[str]:
@@ -113,7 +346,7 @@ class Procedure(Filter):
         # Get the file extension of output_filename
         _, ext = os.path.splitext(readme_name)
 
-        # If the file extension is not .parquet, replace it with .parquet
+        # If the file extension is not .yaml, replace it with .yaml
         if ext != ".yaml":
             readme_name = os.path.splitext(readme_name)[0] + ".yaml"
         return readme_name
