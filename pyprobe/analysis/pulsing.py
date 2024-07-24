@@ -1,28 +1,27 @@
 """A module for the Pulsing class."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
-from pyprobe.experiments.baseexperiment import BaseExperiment
+from pyprobe.procedure import Procedure
+from pyprobe.rawdata import RawData
 from pyprobe.result import Result
 
 
-class Pulsing(BaseExperiment):
-    """A pulsing experiment in a battery procedure."""
+class Pulsing(Procedure.Experiment):
+    """A pulsing experiment in a battery procedure.
 
-    def __init__(
-        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
-    ):
-        """Create a pulsing experiment.
+    Args:
+        experiment (RawData): The raw data for the pulsing experiment.
+    """
 
-        Args:
-            _data (polars.LazyFrame): The _data of data being filtered.
-            info (Dict[str, str | int | float]): A dict containing test info.
-        """
-        super().__init__(_data, info)
+    def __init__(self, experiment: RawData):
+        """Create a pulsing experiment."""
+        self._data = experiment.data
+        self.info = experiment.info
 
         self.rests: List[Optional[Result]] = [None] * self.data.select(
             "Cycle"

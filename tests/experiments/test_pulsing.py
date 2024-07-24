@@ -1,8 +1,16 @@
 """Tests for the pulsing experiment."""
 
 import numpy as np
+import pytest
 
+from pyprobe.analysis.pulsing import Pulsing
 from pyprobe.result import Result
+
+
+@pytest.fixture
+def Pulsing_fixture(procedure_fixture):
+    """Pytest fixture for example pulsing experiment."""
+    return Pulsing(procedure_fixture.experiment("Discharge Pulses"))
 
 
 def test_pulse(Pulsing_fixture):
