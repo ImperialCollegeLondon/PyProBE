@@ -102,3 +102,23 @@ def test_print_definitions(Result_fixture, capsys):
         ",\n 'Voltage [V]': 'Voltage across the circuit'}"
     )
     assert captured.out.strip() == expected_output
+
+
+def test_build():
+    """Test the build method."""
+    data1 = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+    data2 = pl.DataFrame({"x": [7, 8, 9], "y": [10, 11, 12]})
+    info = {"test": "info"}
+    result = Result.build([data1, data2], info)
+    assert isinstance(result, Result)
+    expected_data = pl.DataFrame(
+        {
+            "x": [1, 2, 3, 7, 8, 9],
+            "y": [4, 5, 6, 10, 11, 12],
+            "Step": [0, 0, 0, 1, 1, 1],
+            "Cycle": [0, 0, 0, 0, 0, 0],
+        }
+    )
+    pl_testing.assert_frame_equal(
+        result.data, expected_data, check_column_order=False, check_dtype=False
+    )

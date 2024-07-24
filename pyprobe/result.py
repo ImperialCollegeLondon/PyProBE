@@ -180,3 +180,45 @@ class Result:
             Result: A new result object with the specified data.
         """
         return Result(pl.DataFrame(data), self.info, column_definitions)
+
+    @classmethod
+    def build(
+        cls,
+        data_list: List[
+            pl.LazyFrame
+            | pl.DataFrame
+            | Dict[str, NDArray[np.float64] | List[float]]
+            | List[
+                pl.LazyFrame
+                | pl.DataFrame
+                | Dict[str, NDArray[np.float64] | List[float]]
+            ]
+        ],
+        info: Dict[str, str | int | float],
+    ) -> "Result":
+        """Build a Result object from a list of dataframes.
+
+        Args:
+            data_list (List[List[pl.LazyFrame | pl.DataFrame | Dict]]):
+                The data to include in the new result object.
+                The first index indicates the cycle and the second index indicates the
+                step.
+            info (Dict[str, str | int | float]): A dict containing test info.
+
+        Returns:
+            Result: A new result object with the specified data.
+        """
+        cycles_and_steps_given = all(isinstance(item, list) for item in data_list)
+        if not cycles_and_steps_given:
+            data_list = [data_list]
+        data = []
+        for cycle, cycle_data in enumerate(data_list):
+            for step, step_data in enumerate(cycle_data):
+                if isinstance(step_data, dict):
+                    step_data = pl.DataFrame(step_data)
+                step_data = step_data.with_columns(
+                    pl.lit(cycle).alias("Cycle"), pl.lit(step).alias("Step")
+                )
+                data.append(step_data)
+        data = pl.concat(data)
+        return cls(data, info)
