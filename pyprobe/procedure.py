@@ -6,21 +6,23 @@ import polars as pl
 import yaml
 
 from pyprobe.rawdata import RawData
-from pyprobe.typing import PyProBEFilterType
+from pyprobe.typing import (  # , FilterToStepType
+    FilterToCycleType,
+    FilterToExperimentType,
+)
 
 
 def filter_numerical(
-    _data: pl.LazyFrame | pl.DataFrame,
+    data: pl.LazyFrame | pl.DataFrame,
     column: str,
     indices: Tuple[Union[int, range], ...],
 ) -> pl.LazyFrame:
     """Filter a LazyFrame by a numerical condition.
 
     Args:
-        _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
+        data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
         column (str): The column to filter on.
-        indices (Tuple[Union[int, range], ...]): A tuple of index
-            values to filter by.
+        indices (Tuple[Union[int, range], ...]): A tuple of index values to filter by.
     """
     index_list = []
     for index in indices:
@@ -32,45 +34,45 @@ def filter_numerical(
     if len(index_list) > 0:
         if all(item >= 0 for item in index_list):
             index_list = [item + 1 for item in index_list]
-            return _data.filter(pl.col(column).rank("dense").is_in(index_list))
+            return data.filter(pl.col(column).rank("dense").is_in(index_list))
         elif all(item < 0 for item in index_list):
             index_list = [item * -1 for item in index_list]
-            return _data.filter(
+            return data.filter(
                 pl.col(column).rank("dense", descending=True).is_in(index_list)
             )
         else:
             raise ValueError("Indices must be all positive or all negative.")
     else:
-        return _data
+        return data
 
 
 def step(
-    self: "PyProBEFilterType",
+    self: "FilterToCycleType",
     *step_numbers: Union[int, range],
     condition: Optional[pl.Expr] = None,
-) -> RawData:
+) -> "Step":
     """Return a step object from the cycle.
 
     Args:
-        step_number (int | range): Variable-length argument list of
-            step numbers or a range object.
+        step_number (int | range):
+            Variable-length argument list of step indices or a range object.
 
     Returns:
-        RawData: A step object from the cycle.
+        Step: A step object from the cycle.
     """
     if condition is not None:
         _data = filter_numerical(self._data.filter(condition), "Event", step_numbers)
     else:
         _data = filter_numerical(self._data, "Event", step_numbers)
-    return RawData(_data, self.info)
+    return Step(_data, self.info)
 
 
-def cycle(self: "PyProBEFilterType", *cycle_numbers: Union[int]) -> "Cycle":
+def cycle(self: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
     """Return a cycle object from the experiment.
 
     Args:
-        cycle_number (int | range): Variable-length argument list of
-            cycle numbers or a range object.
+        cycle_number (int | range):
+            Variable-length argument list of cycle indices or a range object.
 
     Returns:
         Filter: A filter object for the specified cycles.
@@ -80,80 +82,81 @@ def cycle(self: "PyProBEFilterType", *cycle_numbers: Union[int]) -> "Cycle":
     return Cycle(lf_filtered, self.info)
 
 
-def charge(self: "PyProBEFilterType", *charge_numbers: Union[int, range]) -> RawData:
+def charge(self: "FilterToCycleType", *charge_numbers: Union[int, range]) -> "Step":
     """Return a charge step object from the cycle.
 
     Args:
-        charge_number (int | range): Variable-length argument list of
-            charge numbers or a range object.
+        charge_number (int | range):
+            Variable-length argument list of charge indices or a range object.
 
     Returns:
-        RawData: A charge step object from the cycle.
+        Step: A charge step object from the cycle.
     """
     condition = pl.col("Current [A]") > 0
     return self.step(*charge_numbers, condition=condition)
 
 
 def discharge(
-    self: "PyProBEFilterType",
+    self: "FilterToCycleType",
     *discharge_numbers: Union[int, range],
-) -> RawData:
+) -> "Step":
     """Return a discharge step object from the cycle.
 
     Args:
-        discharge_number (int | range): Variable-length argument list of
-            discharge numbers or a range object.
+        discharge_number (int | range):
+            Variable-length argument list of discharge indices or a range object.
 
     Returns:
-        RawData: A discharge step object from the cycle.
+        Step: A discharge step object from the cycle.
     """
     condition = pl.col("Current [A]") < 0
     return self.step(*discharge_numbers, condition=condition)
 
 
 def chargeordischarge(
-    self: "PyProBEFilterType",
+    self: "FilterToCycleType",
     *chargeordischarge_numbers: Union[int, range],
-) -> RawData:
+) -> "Step":
     """Return a charge or discharge step object from the cycle.
 
     Args:
-        chargeordischarge_number (int | range): Variable-length argument list of
-            charge or discharge numbers or a range object.
+        chargeordischarge_number (int | range):
+            Variable-length argument list of charge or discharge indices or a range
+            object.
 
     Returns:
-        RawData: A charge or discharge step object from the cycle.
+        Step: A charge or discharge step object from the cycle.
     """
     condition = pl.col("Current [A]") != 0
     return self.step(*chargeordischarge_numbers, condition=condition)
 
 
-def rest(self: "PyProBEFilterType", *rest_numbers: Union[int, range]) -> RawData:
+def rest(self: "FilterToCycleType", *rest_numbers: Union[int, range]) -> "Step":
     """Return a rest step object from the cycle.
 
     Args:
-        rest_number (int | range): Variable-length argument list of rest
-            numbers or a range object.
+        rest_number (int | range):
+            Variable-length argument list of rest indices or a range object.
 
     Returns:
-        RawData: A rest step object from the cycle.
+        Step: A rest step object from the cycle.
     """
     condition = pl.col("Current [A]") == 0
     return self.step(*rest_numbers, condition=condition)
 
 
 def constant_current(
-    self: "PyProBEFilterType",
+    self: "FilterToCycleType",
     *constant_current_numbers: Union[int, range],
-) -> RawData:
+) -> "Step":
     """Return a constant current step object.
 
     Args:
-        constant_current_numbers (int | range): Variable-length argument list of
-            constant current numbers or a range object.
+        constant_current_numbers (int | range):
+            Variable-length argument list of constant current indices or a range object.
 
     Returns:
-        RawData: A constant current step object.
+        Step: A constant current step object.
     """
     condition = (
         (pl.col("Current [A]") != 0)
@@ -170,17 +173,17 @@ def constant_current(
 
 
 def constant_voltage(
-    self: "PyProBEFilterType",
+    self: "FilterToCycleType",
     *constant_voltage_numbers: Union[int, range],
-) -> RawData:
+) -> "Step":
     """Return a constant voltage step object.
 
     Args:
-        constant_current_numbers (int | range): Variable-length argument list of
-            constant voltage numbers or a range object.
+        constant_current_numbers (int | range):
+            Variable-length argument list of constant voltage indices or a range object.
 
     Returns:
-        RawData: A constant voltage step object.
+        Step: A constant voltage step object.
     """
     condition = (
         pl.col("Voltage [V]").abs()
@@ -265,7 +268,7 @@ class Procedure(RawData):
     constant_current = constant_current
     constant_voltage = constant_voltage
 
-    def experiment(self, *experiment_names: str) -> RawData:
+    def experiment(self, *experiment_names: str) -> "Experiment":
         """Return an experiment object from the procedure.
 
         Args:
@@ -324,8 +327,8 @@ class Procedure(RawData):
             Tuple[Dict[str, str], List[int], List[int]]:
                 - dict: The titles of the experiments inside a procedure.
                     Format {title: experiment type}.
-                - list: The cycle numbers inside the procedure.
-                - list: The step numbers inside the procedure.
+                - list: The cycle indices inside the procedure.
+                - list: The step indices inside the procedure.
         """
         with open(readme_path, "r") as file:
             readme_dict = yaml.safe_load(file)
@@ -367,10 +370,10 @@ class Procedure(RawData):
 
 
 class Experiment(RawData):
-    """A class for an experiment in a battery procedure.
+    """A class for an experiment in a battery experimental procedure.
 
     Args:
-        _data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
+        data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
         info (Dict[str, str | int | float]): A dict containing test info.
 
     Filtering attributes:
@@ -396,7 +399,7 @@ class Experiment(RawData):
 
     def __init__(
         self,
-        _data: pl.LazyFrame | pl.DataFrame,
+        data: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
         """Create an experiment class.
@@ -405,7 +408,7 @@ class Experiment(RawData):
             data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(_data, info)
+        super().__init__(data, info)
 
         self.zero_column(
             "Time [s]",
@@ -430,15 +433,13 @@ class Experiment(RawData):
 
 
 class Cycle(RawData):
-    """A class for a cycle in a battery experiment.
+    """A class for a cycle in a battery experimental procedure.
 
     Args:
-        _data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+        data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
         info (Dict[str, str | int | float]): A dict containing test info.
 
     Filtering attributes:
-        _data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
-        info (Dict[str, str | int | float]): A dict containing
         step (Callable[..., int]):
             A method to return a step object from the cycle. See `step`.
         charge (Callable[..., int]):
@@ -461,7 +462,7 @@ class Cycle(RawData):
 
     def __init__(
         self,
-        _data: pl.LazyFrame | pl.DataFrame,
+        data: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
         """Create a cycle class.
@@ -470,7 +471,7 @@ class Cycle(RawData):
             data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(_data, info)
+        super().__init__(data, info)
 
         self.zero_column(
             "Time [s]",
@@ -491,3 +492,36 @@ class Cycle(RawData):
     rest = rest
     constant_current = constant_current
     constant_voltage = constant_voltage
+
+
+class Step(RawData):
+    """A class for a step in a battery experimental procedure.
+
+    Args:
+        data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+        info (Dict[str, str | int | float]): A dict containing test info.
+
+    Filtering attributes:
+        constant_current (Callable[..., int]):
+            A method to return a constant current step object.
+            See `constant_current`.
+        constant_voltage (Callable[..., int]):
+            A method to return a constant voltage step object.
+            See `constant_voltage`.
+    """
+
+    def __init__(
+        self,
+        data: pl.LazyFrame | pl.DataFrame,
+        info: Dict[str, str | int | float],
+    ) -> None:
+        """Create a step class.
+
+        Args:
+            data (pl.LazyFrame | pl.DataFrame): The data for the step.
+            info (Dict[str, str | int | float]): A dict containing test info.
+        """
+        super().__init__(data, info)
+
+    # constant_current = constant_current
+    # constant_voltage = constant_voltage

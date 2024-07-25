@@ -2,8 +2,14 @@
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from pyprobe.procedure import Cycle, Experiment, Procedure, RawData
+    from pyprobe.procedure import Cycle, Experiment, Procedure, Step
+    from pyprobe.rawdata import RawData
+    from pyprobe.result import Result
 
-PyProBEFilterType = Union["Procedure", "Experiment", "Cycle"]
+FilterToExperimentType = Union["Procedure", "Experiment"]
+FilterToCycleType = Union["Procedure", "Experiment", "Cycle"]
+FilterToStepType = Union["Procedure", "Experiment", "Cycle", "Step"]
 
-PyProBERawDataType = Union["RawData", PyProBEFilterType]
+PyProBERawDataType = Union["RawData", FilterToStepType]
+
+PyProBEDataType = Union[PyProBERawDataType, "Result"]
