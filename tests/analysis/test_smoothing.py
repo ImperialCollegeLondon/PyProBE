@@ -43,18 +43,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed):
 
     expected_dydx = 2 * x
     np.testing.assert_allclose(result.get("d(y)/d(x)"), expected_dydx, atol=0.5)
-    import matplotlib.pyplot as plt
 
-    plt.plot(result.get("x"), result.get("y"), label="Smoothed")
-    plt.plot(result.get("x"), noisy_data.get("y"), label="Noisy")
-    plt.plot(result.get("x"), expected_y, label="Expected")
-    plt.legend()
-    plt.show()
-
-    plt.figure()
-    plt.plot(result.get("x"), result.get("d(y)/d(x)"), label="Smoothed Gradient")
-    plt.plot(result.get("x"), expected_dydx, label="Expected Gradient")
-    plt.show()
     # reverse the data
     smoothing = Smoothing(noisy_data_reversed)
     flipped_x = np.flip(x)

@@ -6,6 +6,7 @@ import polars as pl
 import yaml
 
 from pyprobe.rawdata import RawData
+from pyprobe.typing import PyProBEFilterType
 
 
 def filter_numerical(
@@ -44,7 +45,7 @@ def filter_numerical(
 
 
 def step(
-    self: "PyProBEFilter",
+    self: "PyProBEFilterType",
     *step_numbers: Union[int, range],
     condition: Optional[pl.Expr] = None,
 ) -> RawData:
@@ -64,7 +65,7 @@ def step(
     return RawData(_data, self.info)
 
 
-def cycle(self: "PyProBEFilter", *cycle_numbers: Union[int]) -> "Cycle":
+def cycle(self: "PyProBEFilterType", *cycle_numbers: Union[int]) -> "Cycle":
     """Return a cycle object from the experiment.
 
     Args:
@@ -79,7 +80,7 @@ def cycle(self: "PyProBEFilter", *cycle_numbers: Union[int]) -> "Cycle":
     return Cycle(lf_filtered, self.info)
 
 
-def charge(self: "PyProBEFilter", *charge_numbers: Union[int, range]) -> RawData:
+def charge(self: "PyProBEFilterType", *charge_numbers: Union[int, range]) -> RawData:
     """Return a charge step object from the cycle.
 
     Args:
@@ -94,7 +95,7 @@ def charge(self: "PyProBEFilter", *charge_numbers: Union[int, range]) -> RawData
 
 
 def discharge(
-    self: "PyProBEFilter",
+    self: "PyProBEFilterType",
     *discharge_numbers: Union[int, range],
 ) -> RawData:
     """Return a discharge step object from the cycle.
@@ -111,7 +112,7 @@ def discharge(
 
 
 def chargeordischarge(
-    self: "PyProBEFilter",
+    self: "PyProBEFilterType",
     *chargeordischarge_numbers: Union[int, range],
 ) -> RawData:
     """Return a charge or discharge step object from the cycle.
@@ -127,7 +128,7 @@ def chargeordischarge(
     return self.step(*chargeordischarge_numbers, condition=condition)
 
 
-def rest(self: "PyProBEFilter", *rest_numbers: Union[int, range]) -> RawData:
+def rest(self: "PyProBEFilterType", *rest_numbers: Union[int, range]) -> RawData:
     """Return a rest step object from the cycle.
 
     Args:
@@ -142,7 +143,7 @@ def rest(self: "PyProBEFilter", *rest_numbers: Union[int, range]) -> RawData:
 
 
 def constant_current(
-    self: "PyProBEFilter",
+    self: "PyProBEFilterType",
     *constant_current_numbers: Union[int, range],
 ) -> RawData:
     """Return a constant current step object.
@@ -169,7 +170,7 @@ def constant_current(
 
 
 def constant_voltage(
-    self: "PyProBEFilter",
+    self: "PyProBEFilterType",
     *constant_voltage_numbers: Union[int, range],
 ) -> RawData:
     """Return a constant voltage step object.
@@ -490,6 +491,3 @@ class Cycle(RawData):
     rest = rest
     constant_current = constant_current
     constant_voltage = constant_voltage
-
-
-PyProBEFilter = Union[Procedure, Experiment, Cycle]

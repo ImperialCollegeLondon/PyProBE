@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 import polars as pl
 
-from pyprobe.analysis import differentiation
+from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
 
@@ -181,7 +181,7 @@ class RawData(Result):
         )
 
     def gradient(
-        self, method: str, x: str, y: str, *args: Any, **kwargs: Any
+        self, x: str, y: str, method: str, *args: Any, **kwargs: Any
     ) -> Result:
         """Calculate the gradient of the data from a variety of methods.
 
@@ -195,4 +195,10 @@ class RawData(Result):
         Returns:
             Result: The result object from the gradient method.
         """
-        return differentiation.gradient(method, self, x, y, *args, **kwargs)
+        differentiation = Differentiation(self)
+        if method == "LEAN":
+            return differentiation.differentiate_LEAN(x, y, *args, **kwargs)
+        elif method == "Finite Difference":
+            return differentiation.differentiate_FD(x, y, *args, **kwargs)
+        else:
+            raise ValueError("Invalid differentiation method.")

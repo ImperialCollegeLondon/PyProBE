@@ -36,7 +36,7 @@ def test_data(RawData_fixture):
 def test_gradient(BreakinCycles_fixture):
     """Test the gradient property."""
     discharge = BreakinCycles_fixture.cycle(0).discharge(0)
-    gradient = discharge.gradient("LEAN", "Capacity [Ah]", "Voltage [V]", 1, "dxdy")
+    gradient = discharge.gradient("Capacity [Ah]", "Voltage [V]", "LEAN", 1, "dxdy")
     assert isinstance(gradient, Result)
     assert isinstance(gradient.data, pl.DataFrame)
     assert gradient.data.columns == [
