@@ -54,9 +54,9 @@ class Neware(BaseCycler):
                 raise ValueError(f"Unsupported file extension: {file_ext}")
 
     @property
-    def time(self) -> pl.DataFrame:
+    def time(self) -> pl.Expr:
         """Make a time column."""
-        time = (
+        return (
             (
                 pl.col(self.column_dict["Date"])
                 .diff()
@@ -67,4 +67,3 @@ class Neware(BaseCycler):
             .fill_null(strategy="zero")
             .alias("Time [s]")
         )
-        return self.imported_dataframe.select(time)

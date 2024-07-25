@@ -91,7 +91,6 @@ class Biologic(BaseCycler):
         return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
 
     @property
-    def step(self) -> pl.DataFrame:
+    def step(self) -> pl.Expr:
         """Identify and format the step column."""
-        step = (pl.col(self.column_dict["Step"]) + 1).alias("Step")
-        return self.imported_dataframe.select(step)
+        return (pl.col(self.column_dict["Step"]) + 1).alias("Step")

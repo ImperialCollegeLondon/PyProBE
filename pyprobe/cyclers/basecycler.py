@@ -48,14 +48,12 @@ class BaseCycler:
             "Voltage [V]": self.voltage,
             "Capacity [Ah]": self.capacity,
         }
-
-        self.pyprobe_dataframe = pl.concat(
-            list(self.required_columns.values()),
-            how="horizontal",
+        self.pyprobe_dataframe = self.imported_dataframe.select(
+            list(self.required_columns.values())
         )
 
     @property
-    def date(self) -> pl.DataFrame:
+    def date(self) -> pl.Expr:
         """Identify and format the date column.
 
         Returns:
@@ -67,137 +65,122 @@ class BaseCycler:
             ]
             != pl.Datetime
         ):
-            date = pl.col("Date").str.to_datetime().alias("Date")
+            return pl.col("Date").str.to_datetime().alias("Date")
         else:
-            date = pl.col("Date")
-        return self.imported_dataframe.select(date)
+            return pl.col("Date")
 
     @property
-    def time(self) -> pl.DataFrame:
+    def time(self) -> pl.Expr:
         """Identify and format the time column.
 
         Returns:
             pl.DataFrame: A single column DataFrame containing the time in [s].
         """
-        time = pl.col(self.column_dict["Time"]).alias("Time [s]")
-        return self.imported_dataframe.select(time)
+        return pl.col(self.column_dict["Time"]).alias("Time [s]")
 
     @property
-    def step(self) -> pl.DataFrame:
+    def step(self) -> pl.Expr:
         """Identify and format the step column."""
-        step = pl.col(self.column_dict["Step"]).alias("Step")
-        return self.imported_dataframe.select(step)
+        return pl.col(self.column_dict["Step"]).alias("Step")
 
     @property
-    def current(self) -> pl.DataFrame:
+    def current(self) -> pl.Expr:
         """Identify and format the current column.
 
         Returns:
             pl.DataFrame: A single column DataFrame containing the current in [A].
         """
-        current = UnitConverter.search_columns(
+        return UnitConverter.search_columns(
             self._dataframe_columns,
             self.column_dict["Current"],
             self.column_name_pattern,
             "Current",
         ).to_default()
-        return self.imported_dataframe.select(current)
 
     @property
-    def voltage(self) -> pl.DataFrame:
+    def voltage(self) -> pl.Expr:
         """Identify and format the voltage column.
 
         Returns:
             pl.DataFrame: A single column DataFrame containing the voltage in [V].
         """
-        voltage = UnitConverter.search_columns(
+        return UnitConverter.search_columns(
             self._dataframe_columns,
             self.column_dict["Voltage"],
             self.column_name_pattern,
             "Voltage",
         ).to_default()
-        return self.imported_dataframe.select(voltage)
 
     @property
-    def charge_capacity(self) -> pl.DataFrame:
+    def charge_capacity(self) -> pl.Expr:
         """Identify and format the charge capacity column.
 
         Returns:
             pl.DataFrame: A single column DataFrame containing the charge capacity in
                 [Ah].
         """
-        charge_capacity = UnitConverter.search_columns(
+        return UnitConverter.search_columns(
             self._dataframe_columns,
             self.column_dict["Charge Capacity"],
             self.column_name_pattern,
             "Capacity",
         ).to_default(keep_name=True)
-        return self.imported_dataframe.select(charge_capacity)
 
     @property
-    def discharge_capacity(self) -> pl.DataFrame:
+    def discharge_capacity(self) -> pl.Expr:
         """Identify and format the discharge capacity column.
 
         Returns:
             pl.DataFrame: A single column DataFrame containing the discharge capacity in
                 [Ah].
         """
-        discharge_capacity = UnitConverter.search_columns(
+        return UnitConverter.search_columns(
             self._dataframe_columns,
             self.column_dict["Discharge Capacity"],
             self.column_name_pattern,
             "Capacity",
         ).to_default(keep_name=True)
-        return self.imported_dataframe.select(discharge_capacity)
 
     @property
-    def capacity_from_ch_dch(self) -> pl.DataFrame:
+    def capacity_from_ch_dch(self) -> pl.Expr:
         """Calculate the capacity from charge and discharge capacities.
 
         Returns:
             pl.DataFrame: A DataFrame containing the calculated capacity column in [Ah].
         """
-        charge_and_discharge_capacity = pl.concat(
-            [self.charge_capacity, self.discharge_capacity], how="horizontal"
-        )
         diff_charge_capacity = (
-            pl.col(f"{self.column_dict['Charge Capacity']} [Ah]")
-            .diff()
-            .clip(lower_bound=0)
-            .fill_null(strategy="zero")
+            self.charge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
         )
+
         diff_discharge_capacity = (
-            pl.col(f"{self.column_dict['Discharge Capacity']} [Ah]")
-            .diff()
+            self.discharge_capacity.diff()
             .clip(lower_bound=0)
             .fill_null(strategy="zero")
         )
-        capacity = (
+        return (
             (diff_charge_capacity - diff_discharge_capacity).cum_sum()
-            + pl.col(f"{self.column_dict['Charge Capacity']} [Ah]").max()
+            + self.charge_capacity.max()
         ).alias("Capacity [Ah]")
-        return charge_and_discharge_capacity.select(capacity)
 
     @property
-    def capacity(self) -> pl.DataFrame:
+    def capacity(self) -> pl.Expr:
         """Identify and format the capacity column.
 
         Returns:
             pl.DataFrame: A single column DataFrame containing the capacity in [Ah].
         """
         if "Capacity" in self.column_dict:
-            capacity = UnitConverter.search_columns(
+            return UnitConverter.search_columns(
                 self._dataframe_columns,
                 self.column_dict["Capacity"],
                 self.column_name_pattern,
                 "Capacity",
             ).to_default()
-            return self.imported_dataframe.select(capacity)
         else:
             return self.capacity_from_ch_dch
 
     @property
-    def cycle(self) -> pl.DataFrame:
+    def cycle(self) -> pl.Expr:
         """Identify the cycle number.
 
         Cycles are defined by repetition of steps. They are identified by a decrease
@@ -206,7 +189,7 @@ class BaseCycler:
         Returns:
             pl.DataFrame: A single column DataFrame containing the cycle number.
         """
-        cycle = (
+        return (
             (
                 pl.col(self.column_dict["Step"])
                 - pl.col(self.column_dict["Step"]).shift()
@@ -217,10 +200,9 @@ class BaseCycler:
             .alias("Cycle")
             .cast(pl.Int64)
         )
-        return self.imported_dataframe.select(cycle)
 
     @property
-    def event(self) -> pl.DataFrame:
+    def event(self) -> pl.Expr:
         """Identify the event number.
 
         Events are defined by any change in the step number, increase or decrease.
@@ -228,7 +210,7 @@ class BaseCycler:
         Returns:
             pl.DataFrame: A single column DataFrame containing the event number.
         """
-        event = (
+        return (
             (
                 pl.col(self.column_dict["Step"])
                 - pl.col(self.column_dict["Step"]).shift()
@@ -239,7 +221,6 @@ class BaseCycler:
             .alias("Event")
             .cast(pl.Int64)
         )
-        return self.imported_dataframe.select(event)
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame:
