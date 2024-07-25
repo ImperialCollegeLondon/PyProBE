@@ -57,17 +57,19 @@ def test_read_and_process(benchmark, neware_cycler):
         "Date",
         "Time [s]",
         "Step",
+        "Cycle",
+        "Event",
         "Current [A]",
         "Voltage [V]",
         "Capacity [Ah]",
     ]
     assert isinstance(pyprobe_dataframe, pl.DataFrame)
-    all(col in pyprobe_dataframe.columns for col in expected_columns)
+    assert set(pyprobe_dataframe.columns) == set(expected_columns)
 
     neware_cycler = Neware("tests/sample_data/neware/sample_data_neware*.xlsx")
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
     assert pyprobe_dataframe.shape[0] == rows * 2
-    all(col in pyprobe_dataframe.columns for col in expected_columns)
+    assert set(pyprobe_dataframe.columns) == set(expected_columns)
 
 
 def test_process_dataframe(monkeypatch):

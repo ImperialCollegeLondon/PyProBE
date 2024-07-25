@@ -9,7 +9,11 @@ from pyprobe.cyclers.basecycler import BaseCycler
 
 
 class Neware(BaseCycler):
-    """A class to load and process Neware battery cycler data."""
+    """A class to load and process Neware battery cycler data.
+
+    Args:
+        input_data_path: The path to the input data.
+    """
 
     def __init__(self, input_data_path: str) -> None:
         """Create a Biologic cycler object.
@@ -34,14 +38,14 @@ class Neware(BaseCycler):
         )
 
     @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame:
+    def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
             filepath (str): The path to the file.
 
         Returns:
-            pl.DataFrame: The DataFrame.
+            pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
         file = os.path.basename(filepath)
         file_ext = os.path.splitext(file)[1]
@@ -49,13 +53,17 @@ class Neware(BaseCycler):
             case ".xlsx":
                 return pl.read_excel(filepath, engine="calamine")
             case ".csv":
-                return pl.read_csv(filepath)
+                return pl.scan_csv(filepath)
             case _:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
 
     @property
     def time(self) -> pl.Expr:
-        """Make a time column."""
+        """Identify and format the time column.
+
+        Returns:
+            pl.Expr: A polars expression for the time column.
+        """
         return (
             (
                 pl.col(self.column_dict["Date"])

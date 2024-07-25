@@ -4,6 +4,7 @@ import glob
 import os
 import re
 import warnings
+from abc import ABC, abstractmethod
 from typing import Dict, List
 
 import polars as pl
@@ -11,8 +12,18 @@ import polars as pl
 from pyprobe.unitconverter import UnitConverter
 
 
-class BaseCycler:
-    """A class to load and process battery cycler data."""
+class BaseCycler(ABC):
+    """A class to load and process battery cycler data.
+
+    Args:
+        input_data_path (str): The path to the input data.
+        common_suffix (str): The part of the filename before an index number,
+            when a single procedure is split into multiple files.
+        column_name_pattern (str): The regular expression pattern to match the
+            column names.
+        column_dict (Dict[str, str]): A dictionary mapping the expected columns to
+            the actual column names in the data.
+    """
 
     def __init__(
         self,
@@ -21,17 +32,7 @@ class BaseCycler:
         column_name_pattern: str,
         column_dict: Dict[str, str],
     ) -> None:
-        """Create a cycler object.
-
-        Args:
-            input_data_path (str): The path to the input data.
-            common_suffix (str): The part of the filename before an index number,
-                when a single procedure is split into multiple files.
-            column_name_pattern (str): The regular expression pattern to match the
-                column names.
-            column_dict (Dict[str, str]): A dictionary mapping the expected columns to
-                the actual column names in the data.
-        """
+        """Create a cycler object."""
         self.input_data_path = input_data_path
         self.common_suffix = common_suffix
         self.column_name_pattern = column_name_pattern
@@ -57,7 +58,7 @@ class BaseCycler:
         """Identify and format the date column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the date.
+            pl.Expr: A polars expression for the date column.
         """
         if (
             self.imported_dataframe.dtypes[
@@ -74,7 +75,7 @@ class BaseCycler:
         """Identify and format the time column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the time in [s].
+            pl.Expr: A polars expression for the time column.
         """
         return pl.col(self.column_dict["Time"]).alias("Time [s]")
 
@@ -88,7 +89,7 @@ class BaseCycler:
         """Identify and format the current column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the current in [A].
+            pl.Expr: A polars expression for the current column.
         """
         return UnitConverter.search_columns(
             self._dataframe_columns,
@@ -102,7 +103,7 @@ class BaseCycler:
         """Identify and format the voltage column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the voltage in [V].
+            pl.Expr: A polars expression for the voltage column.
         """
         return UnitConverter.search_columns(
             self._dataframe_columns,
@@ -116,8 +117,7 @@ class BaseCycler:
         """Identify and format the charge capacity column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the charge capacity in
-                [Ah].
+            pl.Expr: A polars expression for the charge capacity column.
         """
         return UnitConverter.search_columns(
             self._dataframe_columns,
@@ -131,8 +131,7 @@ class BaseCycler:
         """Identify and format the discharge capacity column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the discharge capacity in
-                [Ah].
+            pl.Expr: A polars expression for the discharge capacity column.
         """
         return UnitConverter.search_columns(
             self._dataframe_columns,
@@ -146,7 +145,7 @@ class BaseCycler:
         """Calculate the capacity from charge and discharge capacities.
 
         Returns:
-            pl.DataFrame: A DataFrame containing the calculated capacity column in [Ah].
+            pl.Expr: A polars expression for the capacity column.
         """
         diff_charge_capacity = (
             self.charge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
@@ -167,7 +166,7 @@ class BaseCycler:
         """Identify and format the capacity column.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the capacity in [Ah].
+            pl.Expr: A polars expression for the capacity column.
         """
         if "Capacity" in self.column_dict:
             return UnitConverter.search_columns(
@@ -187,7 +186,7 @@ class BaseCycler:
         in the step number.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the cycle number.
+            pl.Expr: A polars expression for the cycle number.
         """
         return (
             (
@@ -208,7 +207,7 @@ class BaseCycler:
         Events are defined by any change in the step number, increase or decrease.
 
         Returns:
-            pl.DataFrame: A single column DataFrame containing the event number.
+            pl.Expr: A polars expression for the event number.
         """
         return (
             (
@@ -223,19 +222,20 @@ class BaseCycler:
         )
 
     @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame:
+    @abstractmethod
+    def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
             filepath (str): The path to the file.
 
         Returns:
-            pl.DataFrame: The DataFrame.
+            pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
-        raise NotImplementedError("Subclasses must implement this method")
+        pass
 
     @property
-    def dataframe_list(self) -> list[pl.DataFrame]:
+    def dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
         """Return a list of all the imported dataframes.
 
         Returns:
@@ -261,7 +261,7 @@ class BaseCycler:
         """Return the dataframe containing the data from all imported files.
 
         Returns:
-            pl.DataFrame: The DataFrame.
+            pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
         return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
 

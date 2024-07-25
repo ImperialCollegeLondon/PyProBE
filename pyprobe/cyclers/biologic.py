@@ -9,14 +9,14 @@ from pyprobe.cyclers.basecycler import BaseCycler
 
 
 class Biologic(BaseCycler):
-    """A class to load and process Biologic battery cycler data."""
+    """A class to load and process Biologic battery cycler data.
+
+    Args:
+            input_data_path: The path to the input data.
+    """
 
     def __init__(self, input_data_path: str) -> None:
-        """Create a Biologic cycler object.
-
-        Args:
-            input_data_path: The path to the input data.
-        """
+        """Create a Biologic cycler object."""
         super().__init__(
             input_data_path,
             common_suffix="_MB",
@@ -33,11 +33,14 @@ class Biologic(BaseCycler):
         )
 
     @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame:
+    def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
             filepath: The path to the file.
+
+        Returns:
+            pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
         with open(filepath, "r", encoding="iso-8859-1") as file:
             file.readline()  # Skip the first line
@@ -78,11 +81,14 @@ class Biologic(BaseCycler):
         return dataframe
 
     @property
-    def imported_dataframe(self) -> pl.DataFrame:
+    def imported_dataframe(self) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
             filepath: The path to the file.
+
+        Returns:
+            pl.DataFrame | pl.LazyFrame: The imported DataFrame.
         """
         df_list = []
         for i, df in enumerate(self.dataframe_list):
