@@ -13,14 +13,14 @@ from pyprobe.typing import (  # , FilterToStepType
 
 
 def filter_numerical(
-    data: pl.LazyFrame | pl.DataFrame,
+    dataframe: pl.LazyFrame | pl.DataFrame,
     column: str,
     indices: Tuple[Union[int, range], ...],
 ) -> pl.LazyFrame:
     """Filter a LazyFrame by a numerical condition.
 
     Args:
-        data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
+        dataframe (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
         column (str): The column to filter on.
         indices (Tuple[Union[int, range], ...]): A tuple of index values to filter by.
     """
@@ -34,16 +34,16 @@ def filter_numerical(
     if len(index_list) > 0:
         if all(item >= 0 for item in index_list):
             index_list = [item + 1 for item in index_list]
-            return data.filter(pl.col(column).rank("dense").is_in(index_list))
+            return dataframe.filter(pl.col(column).rank("dense").is_in(index_list))
         elif all(item < 0 for item in index_list):
             index_list = [item * -1 for item in index_list]
-            return data.filter(
+            return dataframe.filter(
                 pl.col(column).rank("dense", descending=True).is_in(index_list)
             )
         else:
             raise ValueError("Indices must be all positive or all negative.")
     else:
-        return data
+        return dataframe
 
 
 def step(
@@ -373,7 +373,7 @@ class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure.
 
     Args:
-        data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
+        dataframe (pl.LazyFrame | pl.DataFrame): The data for the experiment.
         info (Dict[str, str | int | float]): A dict containing test info.
 
     Filtering attributes:
@@ -399,16 +399,16 @@ class Experiment(RawData):
 
     def __init__(
         self,
-        data: pl.LazyFrame | pl.DataFrame,
+        dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
         """Create an experiment class.
 
         Args:
-            data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
+            dataframe (pl.LazyFrame | pl.DataFrame): The data for the experiment.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(data, info)
+        super().__init__(dataframe, info)
 
         self.zero_column(
             "Time [s]",
@@ -436,7 +436,7 @@ class Cycle(RawData):
     """A class for a cycle in a battery experimental procedure.
 
     Args:
-        data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+        dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
         info (Dict[str, str | int | float]): A dict containing test info.
 
     Filtering attributes:
@@ -462,16 +462,16 @@ class Cycle(RawData):
 
     def __init__(
         self,
-        data: pl.LazyFrame | pl.DataFrame,
+        dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
         """Create a cycle class.
 
         Args:
-            data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+            dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(data, info)
+        super().__init__(dataframe, info)
 
         self.zero_column(
             "Time [s]",
@@ -498,7 +498,7 @@ class Step(RawData):
     """A class for a step in a battery experimental procedure.
 
     Args:
-        data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+        dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
         info (Dict[str, str | int | float]): A dict containing test info.
 
     Filtering attributes:
@@ -512,16 +512,16 @@ class Step(RawData):
 
     def __init__(
         self,
-        data: pl.LazyFrame | pl.DataFrame,
+        dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
         """Create a step class.
 
         Args:
-            data (pl.LazyFrame | pl.DataFrame): The data for the step.
+            dataframe (pl.LazyFrame | pl.DataFrame): The data for the step.
             info (Dict[str, str | int | float]): A dict containing test info.
         """
-        super().__init__(data, info)
+        super().__init__(dataframe, info)
 
     # constant_current = constant_current
     # constant_voltage = constant_voltage

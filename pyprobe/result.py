@@ -14,27 +14,26 @@ class Result:
     """A result object for returning data and plotting.
 
     Attributes:
-        _data (pl.LazyFrame | pl.DataFrame): The data as a polars DataFrame or
+        dataframe (pl.LazyFrame | pl.DataFrame): The data as a polars DataFrame or
             LazyFrame.
-        data (Optional[pl.DataFrame]): The data as a polars DataFrame.
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
     def __init__(
         self,
-        _data: pl.LazyFrame | pl.DataFrame,
+        dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
         column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Initialize the Result object.
 
         Args:
-            _data (pl.LazyFrame | pl.DataFrame): The filtered _data.
+            dataframe (pl.LazyFrame | pl.DataFrame): The filtered data.
             info (Dict[str, str | int | float]): A dict containing test info.
             column_definitions(Optional[Dict[str, str]]):
-                A dict containing the definitions of the columns in _data.
+                A dict containing the definitions of the columns in data.
         """
-        self._data = _data
+        self._data = dataframe
         self.info = info
         if column_definitions is None:
             self.column_definitions: Dict[str, str] = {}
@@ -165,13 +164,13 @@ class Result:
 
     def clean_copy(
         self,
-        data: Optional[Dict[str, NDArray[np.float64]]] = {},
+        dataframe: Optional[Dict[str, NDArray[np.float64]]] = {},
         column_definitions: Optional[Dict[str, str]] = None,
     ) -> "Result":
         """Create a copy of the result object with info dictionary but without data.
 
         Args:
-            data (Optional[Dict[str, NDArray[np.float64]]):
+            dataframe (Optional[Dict[str, NDArray[np.float64]]):
                 The data to include in the new result object.
             column_definitions (Optional[Dict[str, str]]):
                 The definitions of the columns in the new result object.
@@ -179,7 +178,7 @@ class Result:
         Returns:
             Result: A new result object with the specified data.
         """
-        return Result(pl.DataFrame(data), self.info, column_definitions)
+        return Result(pl.DataFrame(dataframe), self.info, column_definitions)
 
     @classmethod
     def build(

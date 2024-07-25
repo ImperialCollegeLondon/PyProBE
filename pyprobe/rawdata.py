@@ -11,7 +11,7 @@ class RawData(Result):
     """A RawData object for returning data.
 
     Attributes:
-        _data (pl.LazyFrame | pl.DataFrame): The filtered _data with the following
+        dataframe (pl.LazyFrame | pl.DataFrame): The filtered data with the following
             columns:
 
             - 'Date' (pl.Datetime): the timestamp of the measurement
@@ -34,11 +34,11 @@ class RawData(Result):
 
     def __init__(
         self,
-        _data: pl.LazyFrame | pl.DataFrame,
+        dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
     ) -> None:
         """Initialize the RawData object."""
-        super().__init__(_data, info)
+        super().__init__(dataframe, info)
         self.data_property_called = False
 
         self.define_column("Date", "The timestamp of the data point. Type: datetime.")

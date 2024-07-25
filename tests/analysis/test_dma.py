@@ -208,7 +208,7 @@ def bol_result_fixture(bol_capacity_fixture):
     )
     dma = DMA(result)
     dma.stoichiometry_limits = Result(
-        _data=pl.LazyFrame(
+        dataframe=pl.LazyFrame(
             {
                 "Cell Capacity [Ah]": bol_capacity_fixture[0],
                 "Cathode Capacity [Ah]": bol_capacity_fixture[1],
@@ -231,7 +231,7 @@ def eol_result_fixture(eol_capacity_fixture):
     )
     dma = DMA(result)
     dma.stoichiometry_limits = Result(
-        _data=pl.LazyFrame(
+        dataframe=pl.LazyFrame(
             {
                 "Cell Capacity [Ah]": eol_capacity_fixture[0],
                 "Cathode Capacity [Ah]": eol_capacity_fixture[1],
