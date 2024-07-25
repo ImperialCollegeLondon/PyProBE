@@ -121,6 +121,8 @@ class Cell:
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path)
         dataframe = importer.pyprobe_dataframe
+        if isinstance(dataframe, pl.LazyFrame):
+            dataframe = dataframe.collect()
         dataframe.write_parquet(output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
