@@ -71,9 +71,3 @@ def procedure_fixture(info_fixture):
 def BreakinCycles_fixture(procedure_fixture):
     """Pytest fixture for example cycling experiment."""
     return procedure_fixture.experiment("Break-in Cycles")
-
-
-@pytest.fixture(scope="module")
-def Pulsing_fixture(procedure_fixture):
-    """Pytest fixture for example pulsing experiment."""
-    return procedure_fixture.experiment("Discharge Pulses")

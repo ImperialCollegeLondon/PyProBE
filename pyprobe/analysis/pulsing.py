@@ -6,22 +6,20 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
-from pyprobe.procedure import Procedure
-from pyprobe.rawdata import RawData
+from pyprobe.procedure import Experiment
 from pyprobe.result import Result
 
 
-class Pulsing(Procedure.Experiment):
+class Pulsing(Experiment):
     """A pulsing experiment in a battery procedure.
 
     Args:
         experiment (RawData): The raw data for the pulsing experiment.
     """
 
-    def __init__(self, experiment: RawData):
+    def __init__(self, experiment: Experiment) -> None:
         """Create a pulsing experiment."""
-        self._data = experiment.data
-        self.info = experiment.info
+        super().__init__(experiment.data, experiment.info)
 
         self.rests: List[Optional[Result]] = [None] * self.data.select(
             "Cycle"

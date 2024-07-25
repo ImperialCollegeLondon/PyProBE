@@ -1,33 +1,200 @@
 """A module for the Procedure class."""
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
 import yaml
 
 from pyprobe.rawdata import RawData
 
-method_registry: Dict[str, Dict[str, Callable[..., Any]]] = {}
 
-
-def register_method(*class_names: str) -> Callable[..., Any]:
-    """Decorator to register a method to multiple class names.
+def filter_numerical(
+    _data: pl.LazyFrame | pl.DataFrame,
+    column: str,
+    indices: Tuple[Union[int, range], ...],
+) -> pl.LazyFrame:
+    """Filter a LazyFrame by a numerical condition.
 
     Args:
-        *class_names (str): Variable-length argument list of class names.
+        _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
+        column (str): The column to filter on.
+        indices (Tuple[Union[int, range], ...]): A tuple of index
+            values to filter by.
+    """
+    index_list = []
+    for index in indices:
+        if isinstance(index, range):
+            index_list.extend(list(index))
+        else:
+            index_list.extend([index])
+
+    if len(index_list) > 0:
+        if all(item >= 0 for item in index_list):
+            index_list = [item + 1 for item in index_list]
+            return _data.filter(pl.col(column).rank("dense").is_in(index_list))
+        elif all(item < 0 for item in index_list):
+            index_list = [item * -1 for item in index_list]
+            return _data.filter(
+                pl.col(column).rank("dense", descending=True).is_in(index_list)
+            )
+        else:
+            raise ValueError("Indices must be all positive or all negative.")
+    else:
+        return _data
+
+
+def step(
+    self: Union["Procedure", "Experiment", "Cycle"],
+    *step_numbers: Union[int, range],
+    condition: Optional[pl.Expr] = None,
+) -> RawData:
+    """Return a step object from the cycle.
+
+    Args:
+        step_number (int | range): Variable-length argument list of
+            step numbers or a range object.
 
     Returns:
-        Callable[..., Any]: A decorator function.
+        RawData: A step object from the cycle.
     """
+    if condition is not None:
+        _data = filter_numerical(self._data.filter(condition), "Event", step_numbers)
+    else:
+        _data = filter_numerical(self._data, "Event", step_numbers)
+    return RawData(_data, self.info)
 
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        for class_name in class_names:
-            if class_name not in method_registry:
-                method_registry[class_name] = {}
-            method_registry[class_name][func.__name__] = func
-        return func
 
-    return decorator
+def cycle(
+    self: Union["Procedure", "Experiment", "Cycle"], *cycle_numbers: Union[int]
+) -> "Cycle":
+    """Return a cycle object from the experiment.
+
+    Args:
+        cycle_number (int | range): Variable-length argument list of
+            cycle numbers or a range object.
+
+    Returns:
+        Filter: A filter object for the specified cycles.
+    """
+    lf_filtered = filter_numerical(self._data, "Cycle", cycle_numbers)
+
+    return Cycle(lf_filtered, self.info)
+
+
+def charge(
+    self: Union["Procedure", "Experiment", "Cycle"], *charge_numbers: Union[int, range]
+) -> RawData:
+    """Return a charge step object from the cycle.
+
+    Args:
+        charge_number (int | range): Variable-length argument list of
+            charge numbers or a range object.
+
+    Returns:
+        RawData: A charge step object from the cycle.
+    """
+    condition = pl.col("Current [A]") > 0
+    return self.step(*charge_numbers, condition=condition)
+
+
+def discharge(
+    self: Union["Procedure", "Experiment", "Cycle"],
+    *discharge_numbers: Union[int, range],
+) -> RawData:
+    """Return a discharge step object from the cycle.
+
+    Args:
+        discharge_number (int | range): Variable-length argument list of
+            discharge numbers or a range object.
+
+    Returns:
+        RawData: A discharge step object from the cycle.
+    """
+    condition = pl.col("Current [A]") < 0
+    return self.step(*discharge_numbers, condition=condition)
+
+
+def chargeordischarge(
+    self: Union["Procedure", "Experiment", "Cycle"],
+    *chargeordischarge_numbers: Union[int, range],
+) -> RawData:
+    """Return a charge or discharge step object from the cycle.
+
+    Args:
+        chargeordischarge_number (int | range): Variable-length argument list of
+            charge or discharge numbers or a range object.
+
+    Returns:
+        RawData: A charge or discharge step object from the cycle.
+    """
+    condition = pl.col("Current [A]") != 0
+    return self.step(*chargeordischarge_numbers, condition=condition)
+
+
+def rest(
+    self: Union["Procedure", "Experiment", "Cycle"], *rest_numbers: Union[int, range]
+) -> RawData:
+    """Return a rest step object from the cycle.
+
+    Args:
+        rest_number (int | range): Variable-length argument list of rest
+            numbers or a range object.
+
+    Returns:
+        RawData: A rest step object from the cycle.
+    """
+    condition = pl.col("Current [A]") == 0
+    return self.step(*rest_numbers, condition=condition)
+
+
+def constant_current(
+    self: Union["Procedure", "Experiment", "Cycle"],
+    *constant_current_numbers: Union[int, range],
+) -> RawData:
+    """Return a constant current step object.
+
+    Args:
+        constant_current_numbers (int | range): Variable-length argument list of
+            constant current numbers or a range object.
+
+    Returns:
+        RawData: A constant current step object.
+    """
+    condition = (
+        (pl.col("Current [A]") != 0)
+        & (
+            pl.col("Current [A]").abs()
+            > 0.999 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
+        )
+        & (
+            pl.col("Current [A]").abs()
+            < 1.001 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
+        )
+    )
+    return self.step(*constant_current_numbers, condition=condition)
+
+
+def constant_voltage(
+    self: Union["Procedure", "Experiment", "Cycle"],
+    *constant_voltage_numbers: Union[int, range],
+) -> RawData:
+    """Return a constant voltage step object.
+
+    Args:
+        constant_current_numbers (int | range): Variable-length argument list of
+            constant voltage numbers or a range object.
+
+    Returns:
+        RawData: A constant voltage step object.
+    """
+    condition = (
+        pl.col("Voltage [V]").abs()
+        > 0.999 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
+    ) & (
+        pl.col("Voltage [V]").abs()
+        < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
+    )
+    return self.step(*constant_voltage_numbers, condition=condition)
 
 
 class Procedure(RawData):
@@ -46,6 +213,30 @@ class Procedure(RawData):
             info (Dict[str, str | int | float]): A dict containing test info.
             custom_readme_name (str, optional): The name of the custom README file.
                 Defaults to None.
+        Filtering attributes:
+            step (Callable[..., int]):
+                A method to return a step object from the procedure. See `step`.
+            cycle (Callable[..., int]):
+                A method to return a cycle object from the procedure.
+                See `cycle`.
+            charge (Callable[..., int]):
+                A method to return a charge step object from the procedure.
+                See `charge`.
+            discharge (Callable[..., int]):
+                A method to return a discharge step object from the procedure.
+                See `discharge`.
+            chargeordischarge (Callable[..., int]):
+                A method to return a charge or discharge step object from the procedure.
+                See `chargeordischarge`.
+            rest (Callable[..., int]):
+                A method to return a rest step object from the procedure.
+                See `rest`.
+            constant_current (Callable[..., int]):
+                A method to return a constant current step object.
+                See `constant_current`.
+            constant_voltage (Callable[..., int]):
+                A method to return a constant voltage step object.
+                See `constant_voltage`.
         """
         _data = pl.scan_parquet(data_path)
         data_folder = os.path.dirname(data_path)
@@ -58,19 +249,26 @@ class Procedure(RawData):
             self.steps_idx,
         ) = self.process_readme(readme_path)
         super().__init__(_data, info)
-        self._data = self.zero_column(
-            self._data,
+        self.zero_column(
             "Time [s]",
             "Procedure Time [s]",
             "Time elapsed since beginning of procedure.",
         )
 
-        self._data = self.zero_column(
-            self._data,
+        self.zero_column(
             "Capacity [Ah]",
             "Procedure Capacity [Ah]",
             "The net charge passed since beginning of procedure.",
         )
+
+    step = step
+    cycle = cycle
+    charge = charge
+    discharge = discharge
+    chargeordischarge = chargeordischarge
+    rest = rest
+    constant_current = constant_current
+    constant_voltage = constant_voltage
 
     def experiment(self, *experiment_names: str) -> RawData:
         """Return an experiment object from the procedure.
@@ -93,240 +291,7 @@ class Procedure(RawData):
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self._data.filter(conditions)
-        lf_filtered = self.zero_column(
-            lf_filtered,
-            "Time [s]",
-            "Experiment Time [s]",
-            "Time elapsed since beginning of experiment.",
-        )
-
-        lf_filtered = self.zero_column(
-            lf_filtered,
-            "Capacity [Ah]",
-            "Experiment Capacity [Ah]",
-            "The net charge passed since beginning of experiment.",
-        )
-        return self.Experiment(lf_filtered, self.info)
-
-    @staticmethod
-    def create_class(
-        class_name: str, methods: Optional[Dict[str, Callable[..., Any]]] = None
-    ) -> type:
-        """Dynamically creates a class with the given specifications.
-
-        Args:
-            class_name (str): The name of the class to create.
-            class_name_attr (str): The value of the 'name' attribute for the class.
-            methods (dict, optional):
-                A dictionary of method names and their implementations. Defaults to
-                None.
-
-        Returns:
-            A new class.
-        """
-        class_dict = {}
-
-        # Automatically add any registered methods for this class
-        if class_name in method_registry:
-            class_dict.update(method_registry[class_name])
-
-        # Add other callable objects to the class dictionary
-        if methods is not None:
-            class_dict.update(methods)
-
-        # Use type to dynamically create the class
-        return type(class_name, (RawData,), class_dict)
-
-    @register_method("Experiment", "Cycle")
-    @staticmethod
-    def filter_numerical(
-        _data: pl.LazyFrame | pl.DataFrame,
-        column: str,
-        indices: Tuple[Union[int, range], ...],
-    ) -> pl.LazyFrame:
-        """Filter a LazyFrame by a numerical condition.
-
-        Args:
-            _data (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
-            column (str): The column to filter on.
-            indices (Tuple[Union[int, range], ...]): A tuple of index
-                values to filter by.
-        """
-        index_list = []
-        for index in indices:
-            if isinstance(index, range):
-                index_list.extend(list(index))
-            else:
-                index_list.extend([index])
-
-        if len(index_list) > 0:
-            if all(item >= 0 for item in index_list):
-                index_list = [item + 1 for item in index_list]
-                return _data.filter(pl.col(column).rank("dense").is_in(index_list))
-            elif all(item < 0 for item in index_list):
-                index_list = [item * -1 for item in index_list]
-                return _data.filter(
-                    pl.col(column).rank("dense", descending=True).is_in(index_list)
-                )
-            else:
-                raise ValueError("Indices must be all positive or all negative.")
-        else:
-            return _data
-
-    @register_method("Experiment", "Cycle")
-    def step(
-        self,
-        *step_numbers: Union[int, range],
-        condition: Optional[pl.Expr] = None,
-    ) -> RawData:
-        """Return a step object from the cycle.
-
-        Args:
-            step_number (int | range): Variable-length argument list of
-                step numbers or a range object.
-
-        Returns:
-            RawData: A step object from the cycle.
-        """
-        if condition is not None:
-            _data = self.filter_numerical(
-                self._data.filter(condition), "Event", step_numbers
-            )
-        else:
-            _data = self.filter_numerical(self._data, "Event", step_numbers)
-        return RawData(_data, self.info)
-
-    @register_method("Experiment")
-    def cycle(self, *cycle_numbers: Union[int]) -> RawData:
-        """Return a cycle object from the experiment.
-
-        Args:
-            cycle_number (int | range): Variable-length argument list of
-                cycle numbers or a range object.
-
-        Returns:
-            Filter: A filter object for the specified cycles.
-        """
-        lf_filtered = self.filter_numerical(self._data, "Cycle", cycle_numbers)
-        lf_filtered = self.zero_column(
-            lf_filtered,
-            "Time [s]",
-            "Cycle Time [s]",
-            "Time elapsed since beginning of cycle.",
-        )
-
-        lf_filtered = self.zero_column(
-            lf_filtered,
-            "Capacity [Ah]",
-            "Cycle Capacity [Ah]",
-            "The net charge passed since beginning of cycle.",
-        )
-        return self.Cycle(lf_filtered, self.info)
-
-    @register_method("Experiment", "Cycle")
-    def charge(self, *charge_numbers: Union[int, range]) -> RawData:
-        """Return a charge step object from the cycle.
-
-        Args:
-            charge_number (int | range): Variable-length argument list of
-                charge numbers or a range object.
-
-        Returns:
-            RawData: A charge step object from the cycle.
-        """
-        condition = pl.col("Current [A]") > 0
-        return self.step(*charge_numbers, condition=condition)
-
-    @register_method("Experiment", "Cycle")
-    def discharge(self, *discharge_numbers: Union[int, range]) -> RawData:
-        """Return a discharge step object from the cycle.
-
-        Args:
-            discharge_number (int | range): Variable-length argument list of
-                discharge numbers or a range object.
-
-        Returns:
-            RawData: A discharge step object from the cycle.
-        """
-        condition = pl.col("Current [A]") < 0
-        return self.step(*discharge_numbers, condition=condition)
-
-    @register_method("Experiment", "Cycle")
-    def chargeordischarge(
-        self, *chargeordischarge_numbers: Union[int, range]
-    ) -> RawData:
-        """Return a charge or discharge step object from the cycle.
-
-        Args:
-            chargeordischarge_number (int | range): Variable-length argument list of
-                charge or discharge numbers or a range object.
-
-        Returns:
-            RawData: A charge or discharge step object from the cycle.
-        """
-        condition = pl.col("Current [A]") != 0
-        return self.step(*chargeordischarge_numbers, condition=condition)
-
-    @register_method("Experiment", "Cycle")
-    def rest(self, *rest_numbers: Union[int, range]) -> RawData:
-        """Return a rest step object from the cycle.
-
-        Args:
-            rest_number (int | range): Variable-length argument list of rest
-                numbers or a range object.
-
-        Returns:
-            RawData: A rest step object from the cycle.
-        """
-        condition = pl.col("Current [A]") == 0
-        return self.step(*rest_numbers, condition=condition)
-
-    @register_method("Experiment", "Cycle")
-    def constant_current(self, *constant_current_numbers: Union[int, range]) -> RawData:
-        """Return a constant current step object.
-
-        Args:
-            constant_current_numbers (int | range): Variable-length argument list of
-                constant current numbers or a range object.
-
-        Returns:
-            RawData: A constant current step object.
-        """
-        condition = (
-            (pl.col("Current [A]") != 0)
-            & (
-                pl.col("Current [A]").abs()
-                > 0.999 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
-            )
-            & (
-                pl.col("Current [A]").abs()
-                < 1.001 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
-            )
-        )
-        return self.step(*constant_current_numbers, condition=condition)
-
-    @register_method("Experiment", "Cycle")
-    def constant_voltage(self, *constant_voltage_numbers: Union[int, range]) -> RawData:
-        """Return a constant voltage step object.
-
-        Args:
-            constant_current_numbers (int | range): Variable-length argument list of
-                constant voltage numbers or a range object.
-
-        Returns:
-            RawData: A constant voltage step object.
-        """
-        condition = (
-            pl.col("Voltage [V]").abs()
-            > 0.999 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
-        ) & (
-            pl.col("Voltage [V]").abs()
-            < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
-        )
-        return self.step(*constant_voltage_numbers, condition=condition)
-
-    Cycle = create_class("Cycle")
-    Experiment = create_class("Experiment", {"Cycle": Cycle})
+        return Experiment(lf_filtered, self.info)
 
     @property
     def experiment_names(self) -> List[str]:
@@ -404,3 +369,130 @@ class Procedure(RawData):
             return [lst]
         else:
             return [item for sublist in lst for item in cls.flatten(sublist)]
+
+
+class Experiment(RawData):
+    """A class for an experiment in a battery procedure.
+
+    Args:
+        _data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
+        info (Dict[str, str | int | float]): A dict containing test info.
+
+    Filtering attributes:
+        step (Callable[..., int]):
+            A method to return a step object from the experiment. See `step`.
+        cycle (Callable[..., int]):
+            A method to return a cycle object from the experiment. See `cycle`.
+        charge (Callable[..., int]):
+            A method to return a charge step object from the experiment. See `charge`.
+        discharge (Callable[..., int]):
+            A method to return a discharge step object from the experiment.
+            See `discharge`.
+        chargeordischarge (Callable[..., int]):
+            A method to return a charge or discharge step object from the experiment.
+            See `chargeordischarge`.
+        rest (Callable[..., int]):
+            A method to return a rest step object from the experiment. See `rest`.
+        constant_current (Callable[..., int]):
+            A method to return a constant current step object. See `constant_current`.
+        constant_voltage (Callable[..., int]):
+            A method to return a constant voltage step object. See `constant_voltage`.
+    """
+
+    def __init__(
+        self,
+        _data: pl.LazyFrame | pl.DataFrame,
+        info: Dict[str, str | int | float],
+    ) -> None:
+        """Create an experiment class.
+
+        Args:
+            data (pl.LazyFrame | pl.DataFrame): The data for the experiment.
+            info (Dict[str, str | int | float]): A dict containing test info.
+        """
+        super().__init__(_data, info)
+
+        self.zero_column(
+            "Time [s]",
+            "Experiment Time [s]",
+            "Time elapsed since beginning of experiment.",
+        )
+
+        self.zero_column(
+            "Capacity [Ah]",
+            "Experiment Capacity [Ah]",
+            "The net charge passed since beginning of experiment.",
+        )
+
+    step = step
+    cycle = cycle
+    charge = charge
+    discharge = discharge
+    chargeordischarge = chargeordischarge
+    rest = rest
+    constant_current = constant_current
+    constant_voltage = constant_voltage
+
+
+class Cycle(RawData):
+    """A class for a cycle in a battery experiment.
+
+    Args:
+        _data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+        info (Dict[str, str | int | float]): A dict containing test info.
+
+    Filtering attributes:
+        _data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+        info (Dict[str, str | int | float]): A dict containing
+        step (Callable[..., int]):
+            A method to return a step object from the cycle. See `step`.
+        charge (Callable[..., int]):
+            A method to return a charge step object from the cycle. See `charge`.
+        discharge (Callable[..., int]):
+            A method to return a discharge step object from the cycle.
+            See `discharge`.
+        chargeordischarge (Callable[..., int]):
+            A method to return a charge or discharge step object from the cycle.
+            See `chargeordischarge`.
+        rest (Callable[..., int]):
+            A method to return a rest step object from the cycle. See `rest`.
+        constant_current (Callable[..., int]):
+            A method to return a constant current step object.
+            See `constant_current`.
+        constant_voltage (Callable[..., int]):
+            A method to return a constant voltage step object.
+            See `constant_voltage`.
+    """
+
+    def __init__(
+        self,
+        _data: pl.LazyFrame | pl.DataFrame,
+        info: Dict[str, str | int | float],
+    ) -> None:
+        """Create a cycle class.
+
+        Args:
+            data (pl.LazyFrame | pl.DataFrame): The data for the cycle.
+            info (Dict[str, str | int | float]): A dict containing test info.
+        """
+        super().__init__(_data, info)
+
+        self.zero_column(
+            "Time [s]",
+            "Cycle Time [s]",
+            "Time elapsed since beginning of cycle.",
+        )
+
+        self.zero_column(
+            "Capacity [Ah]",
+            "Cycle Capacity [Ah]",
+            "The net charge passed since beginning of cycle.",
+        )
+
+    step = step
+    charge = charge
+    discharge = discharge
+    chargeordischarge = chargeordischarge
+    rest = rest
+    constant_current = constant_current
+    constant_voltage = constant_voltage

@@ -71,13 +71,12 @@ class RawData(Result):
             raise ValueError("No data exists for this filter.")
         return self._data
 
-    @staticmethod
     def zero_column(
-        data: pl.DataFrame | pl.LazyFrame,
+        self,
         column: str,
         new_column_name: str,
         new_column_definition: Optional[str] = None,
-    ) -> pl.DataFrame | pl.LazyFrame:
+    ) -> None:
         """Add a new column to a dataframe or lazyframe, zeroed to the first value.
 
         Args:
@@ -88,7 +87,7 @@ class RawData(Result):
         Returns:
             pl.DataFrame | pl.LazyFrame: The dataframe or lazyframe with the new column.
         """
-        return data.with_columns(
+        self._data = self._data.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
 
