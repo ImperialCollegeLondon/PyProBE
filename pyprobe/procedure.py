@@ -278,7 +278,7 @@ class Procedure(RawData):
                 experiment names.
 
         Returns:
-            BaseExperiment: An experiment object from the procedure.
+            Experiment: An experiment object from the procedure.
         """
         steps_idx = []
         for experiment_name in experiment_names:

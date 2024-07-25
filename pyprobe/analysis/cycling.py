@@ -1,26 +1,24 @@
 """A module for the Cycing class."""
 
-from typing import Dict
-
 import polars as pl
 
-from pyprobe.experiments.baseexperiment import BaseExperiment
+from pyprobe.procedure import Experiment
 from pyprobe.result import Result
 
 
-class Cycling(BaseExperiment):
+class Cycling(Experiment):
     """A cycling experiment in a battery procedure."""
 
     def __init__(
-        self, _data: pl.LazyFrame | pl.DataFrame, info: Dict[str, str | int | float]
+        self,
+        experiment: Experiment,
     ):
         """Create a cycling experiment.
 
         Args:
-            _data (polars.LazyFrame): The _data of data being filtered.
-            info (Dict[str, str | int | float]): A dict containing test info.
+            experiment (Experiment): The cycling experiment to be analysed.
         """
-        super().__init__(_data, info)
+        super().__init__(experiment._data, experiment.info)
         self._create_capacity_throughput()
 
     def _create_capacity_throughput(self) -> None:

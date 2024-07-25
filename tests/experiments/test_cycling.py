@@ -4,14 +4,16 @@ import math
 
 import pytest
 
-from pyprobe.experiments.cycling import Cycling
+from pyprobe.analysis.cycling import Cycling
+from pyprobe.procedure import Experiment
 from pyprobe.result import Result
 
 
 @pytest.fixture
 def Cycling_fixture(lazyframe_fixture, info_fixture):
     """Return a Cycling instance."""
-    return Cycling(lazyframe_fixture, info_fixture)
+    experiment = Experiment(lazyframe_fixture, info_fixture)
+    return Cycling(experiment)
 
 
 def test_set_capacity_throughput(Cycling_fixture):
@@ -31,8 +33,9 @@ def test_set_capacity_throughput(Cycling_fixture):
 
 def test_summary(BreakinCycles_fixture):
     """Test the summary property."""
-    assert isinstance(BreakinCycles_fixture.summary(), Result)
-    columns = BreakinCycles_fixture.summary().data.columns
+    cycling_instance = Cycling(BreakinCycles_fixture)
+    assert isinstance(cycling_instance.summary(), Result)
+    columns = cycling_instance.summary().data.columns
     required_columns = [
         "Capacity Throughput [Ah]",
         "Time [s]",
@@ -43,22 +46,22 @@ def test_summary(BreakinCycles_fixture):
         "Coulombic Efficiency",
     ]
     assert all(item in columns for item in required_columns)
-    assert BreakinCycles_fixture.summary().data.shape[0] == 5
-    assert BreakinCycles_fixture.summary().data["SOH Charge [%]"].head(1)[0] == 100
-    assert BreakinCycles_fixture.summary().data["SOH Discharge [%]"].head(1)[0] == 100
+    assert cycling_instance.summary().data.shape[0] == 5
+    assert cycling_instance.summary().data["SOH Charge [%]"].head(1)[0] == 100
+    assert cycling_instance.summary().data["SOH Discharge [%]"].head(1)[0] == 100
     assert math.isclose(
-        BreakinCycles_fixture.summary().data["Charge Capacity [Ah]"].tail(1)[0],
+        cycling_instance.summary().data["Charge Capacity [Ah]"].tail(1)[0],
         0.04139,
         rel_tol=1e-5,
     )
     assert math.isclose(
-        BreakinCycles_fixture.summary().data["Discharge Capacity [Ah]"].tail(1)[0],
+        cycling_instance.summary().data["Discharge Capacity [Ah]"].tail(1)[0],
         0.0413295,
         rel_tol=1e-5,
     )
 
     assert math.isclose(
-        BreakinCycles_fixture.summary().data["Coulombic Efficiency"].tail(1)[0],
+        cycling_instance.summary().data["Coulombic Efficiency"].tail(1)[0],
         0.999212,
         rel_tol=1e-7,
     )
