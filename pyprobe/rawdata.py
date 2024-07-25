@@ -90,6 +90,8 @@ class RawData(Result):
         self._data = self._data.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
+        if new_column_definition is not None:
+            self.define_column(new_column_name, new_column_definition)
 
     @property
     def capacity(self) -> float:

@@ -97,6 +97,9 @@ def test_zero_column(RawData_fixture):
         "Capacity column with first value zeroed.",
     )
     assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
+    assert RawData_fixture.column_definitions["Zeroed Capacity [Ah]"] == (
+        "Capacity column with first value zeroed."
+    )
 
 
 def test_definitions(RawData_fixture):
