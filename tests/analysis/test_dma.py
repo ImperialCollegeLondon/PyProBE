@@ -1,10 +1,12 @@
 """Tests for the degradation mode analysis module."""
+import math
+
 import numpy as np
 import polars as pl
 import pytest
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
-import pyprobe.analysis.degradation_mode_analysis as dma
+from pyprobe.analysis.degradation_mode_analysis import DMA
 from pyprobe.result import Result
 
 
@@ -34,9 +36,12 @@ def nmc_LGM50_ocp_Chen2020(sto):
     return u_eq
 
 
+n_points = 1000
+z = np.linspace(0, 1, 1000)
+
+
 def test_fit_ocv():
     """Test the fit_ocv method."""
-    n_points = 1000
     capacity = np.linspace(0, 1, n_points)
     x_real = [0.8, 0.1, 0.1, 0.7]
     x_pe_real = np.linspace(x_real[0], x_real[1], n_points)
@@ -44,16 +49,18 @@ def test_fit_ocv():
 
     # test charge
     voltage = nmc_LGM50_ocp_Chen2020(x_pe_real) - graphite_LGM50_ocp_Chen2020(x_ne_real)
-    z = np.linspace(0, 1, n_points)
-    ocp_pe = nmc_LGM50_ocp_Chen2020(z)
-    ocp_ne = graphite_LGM50_ocp_Chen2020(z)
 
-    x_guess = [0.8, 0.4, 0.2, 0.6]
     result = Result(
         pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
     )
+    dma = DMA(result)
+    x_guess = [0.8, 0.4, 0.2, 0.6]
     params, fit = dma.fit_ocv(
-        result, x_ne=z, x_pe=z, ocp_ne=ocp_ne, ocp_pe=ocp_pe, x_guess=x_guess
+        x_ne=z,
+        x_pe=z,
+        ocp_ne=graphite_LGM50_ocp_Chen2020(z),
+        ocp_pe=nmc_LGM50_ocp_Chen2020(z),
+        x_guess=x_guess,
     )
     assert isinstance(params, Result)
     assert params.data.columns == [
@@ -92,8 +99,13 @@ def test_fit_ocv():
     result = Result(
         pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
     )
+    dma = DMA(result)
     params, _ = dma.fit_ocv(
-        result, x_ne=z, x_pe=z, ocp_ne=ocp_ne, ocp_pe=ocp_pe, x_guess=x_guess
+        x_ne=z,
+        x_pe=z,
+        ocp_ne=graphite_LGM50_ocp_Chen2020(z),
+        ocp_pe=nmc_LGM50_ocp_Chen2020(z),
+        x_guess=x_guess,
     )
 
     param_values = list(params.data.row(0))
@@ -121,8 +133,9 @@ def test_fit_ocv_discharge():
     result = Result(
         pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
     )
+    dma = DMA(result)
     params, _ = dma.fit_ocv(
-        result, x_ne=z, x_pe=z, ocp_ne=ocp_ne, ocp_pe=ocp_pe, x_guess=x_guess
+        x_ne=z, x_pe=z, ocp_ne=ocp_ne, ocp_pe=ocp_pe, x_guess=x_guess
     )
 
     param_values = list(params.data.row(0))
@@ -188,7 +201,13 @@ def eol_capacity_fixture(eol_ne_limits_fixture, eol_pe_limits_fixture):
 @pytest.fixture
 def bol_result_fixture(bol_capacity_fixture):
     """Return a Result instance."""
-    return Result(
+    voltage = np.linspace(0, 1, n_points)
+    capacity = np.linspace(0, 1, n_points)
+    result = Result(
+        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+    )
+    dma = DMA(result)
+    dma.stoichiometry_limits = Result(
         _data=pl.LazyFrame(
             {
                 "Cell Capacity [Ah]": bol_capacity_fixture[0],
@@ -199,12 +218,19 @@ def bol_result_fixture(bol_capacity_fixture):
         ),
         info={},
     )
+    return dma
 
 
 @pytest.fixture
 def eol_result_fixture(eol_capacity_fixture):
     """Return a Result instance."""
-    return Result(
+    voltage = np.linspace(0, 1, n_points)
+    capacity = np.linspace(0, 1, n_points)
+    result = Result(
+        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+    )
+    dma = DMA(result)
+    dma.stoichiometry_limits = Result(
         _data=pl.LazyFrame(
             {
                 "Cell Capacity [Ah]": eol_capacity_fixture[0],
@@ -215,6 +241,7 @@ def eol_result_fixture(eol_capacity_fixture):
         ),
         info={},
     )
+    return dma
 
 
 def test_calculate_dma_parameters(
@@ -228,9 +255,22 @@ def test_calculate_dma_parameters(
         bol_capacity_fixture[3] - eol_capacity_fixture[3]
     ) / bol_capacity_fixture[3]
 
-    result = dma.quantify_degradation_modes([bol_result_fixture, eol_result_fixture])
+    result = eol_result_fixture.quantify_degradation_modes(
+        bol_result_fixture.stoichiometry_limits
+    )
     assert result.data["SOH"].to_numpy()[1] == expected_SOH
     assert result.data["LAM_pe"].to_numpy()[1] == expected_LAM_pe
     assert result.data["LAM_ne"].to_numpy()[1] == expected_LAM_ne
     assert result.data["LLI"].to_numpy()[1] == expected_LLI
     assert result.data.columns == ["SOH", "LAM_pe", "LAM_ne", "LLI"]
+
+
+def test_average_ocvs(BreakinCycles_fixture):
+    """Test the average_ocvs method."""
+    break_in = BreakinCycles_fixture.cycle(0)
+    break_in.set_SOC()
+    print(type(break_in))
+    dma = DMA(break_in).average_ocvs(charge_filter="constant_current(1)")
+    assert math.isclose(dma.get("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(dma.get("Voltage [V]")[-1], 4.170649780122139)
+    np.testing.assert_allclose(dma.get("SOC"), break_in.constant_current(1).get("SOC"))
