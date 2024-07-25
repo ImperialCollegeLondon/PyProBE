@@ -2,7 +2,7 @@
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from pyprobe.procedure import Cycle, Experiment, Procedure, Step
+    from pyprobe.filters import Cycle, Experiment, Procedure, Step
     from pyprobe.rawdata import RawData
     from pyprobe.result import Result
 

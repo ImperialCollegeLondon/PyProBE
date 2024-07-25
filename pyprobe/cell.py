@@ -10,7 +10,7 @@ import distinctipy
 import polars as pl
 
 from pyprobe.cyclers import biologic, neware
-from pyprobe.procedure import Procedure
+from pyprobe.filters import Procedure
 
 
 class Cell:

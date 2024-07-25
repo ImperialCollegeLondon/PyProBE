@@ -2,7 +2,7 @@
 
 import polars as pl
 
-from pyprobe.procedure import Experiment
+from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 

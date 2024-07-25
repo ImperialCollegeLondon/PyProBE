@@ -2,7 +2,7 @@
 import polars as pl
 import pytest
 
-from pyprobe.procedure import Procedure
+from pyprobe.filters import Procedure
 
 
 @pytest.fixture(scope="module")

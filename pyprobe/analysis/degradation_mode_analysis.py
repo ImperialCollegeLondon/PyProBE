@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 import pyprobe.analysis.utils as utils
-from pyprobe.procedure import Cycle, Experiment, RawData
+from pyprobe.filters import Cycle, Experiment, RawData
 from pyprobe.result import Result
 
 

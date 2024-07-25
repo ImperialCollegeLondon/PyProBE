@@ -5,7 +5,7 @@ import math
 import pytest
 
 from pyprobe.analysis.cycling import Cycling
-from pyprobe.procedure import Experiment
+from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
