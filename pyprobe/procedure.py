@@ -64,9 +64,7 @@ def step(
     return RawData(_data, self.info)
 
 
-def cycle(
-    self: Union["Procedure", "Experiment", "Cycle"], *cycle_numbers: Union[int]
-) -> "Cycle":
+def cycle(self: "FilteredDataType", *cycle_numbers: Union[int]) -> "Cycle":
     """Return a cycle object from the experiment.
 
     Args:
@@ -496,3 +494,6 @@ class Cycle(RawData):
     rest = rest
     constant_current = constant_current
     constant_voltage = constant_voltage
+
+
+FilteredDataType = Union[Procedure, Experiment, Cycle]
