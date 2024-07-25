@@ -64,16 +64,16 @@ class Biologic(BaseCycler):
             found_columns = [col for col in all_columns if substring in col]
             selected_columns.extend(found_columns)
 
-        dataframe = pl.read_csv(
+        dataframe = pl.scan_csv(
             filepath,
             skip_rows=n_header_lines - 1,
             separator="\t",
-            columns=selected_columns,
         )
 
-        start = pl.DataFrame({"start": [start_time]})
         dataframe = dataframe.with_columns(
-            (pl.col("time/s") * 1000000 + start).cast(pl.Datetime).alias("Date")
+            (pl.col("time/s") * 1000000 + pl.lit(start_time))
+            .cast(pl.Datetime)
+            .alias("Date")
         )
         return dataframe
 
@@ -84,13 +84,45 @@ class Biologic(BaseCycler):
         Args:
             filepath: The path to the file.
         """
-        for i in range(len(self.dataframe_list)):
-            self.dataframe_list[i] = self.dataframe_list[i].with_columns(
-                pl.col("Ns") + self.dataframe_list[i - 1]["Ns"].max() + 1
-            )
-        return pl.concat(self.dataframe_list, how="vertical", rechunk=True)
+        df_list = []
+        for i, df in enumerate(self.dataframe_list):
+            df = df.with_columns(pl.lit(i).alias("MB File"))
+            df_list.append(df)
+        complete_df = pl.concat(df_list, how="vertical")
+        complete_df = self.apply_step_correction(complete_df)
+        return complete_df
 
     @property
     def step(self) -> pl.Expr:
         """Identify and format the step column."""
         return (pl.col(self.column_dict["Step"]) + 1).alias("Step")
+
+    @staticmethod
+    def apply_step_correction(
+        df: pl.DataFrame | pl.LazyFrame,
+    ) -> pl.DataFrame | pl.LazyFrame:
+        """Correct the step column.
+
+        This method adds the maximum step number from the previous MB file to the step
+        number of the following MB file so they monotonically increase.
+
+        Args:
+            df: The DataFrame to correct.
+
+        Returns:
+            pl.DataFrame: The corrected DataFrame.
+        """
+        # get the max step number for each MB file and add 1
+        max_steps = df.group_by("MB File").agg(
+            (pl.col("Ns").max() + 1).alias("Max_Step")
+        )
+        # sort the max steps by MB file
+        max_steps = max_steps.sort("MB File")
+        # get the cumulative sum of the max steps
+        max_steps = max_steps.with_columns(pl.col("Max_Step").cum_sum())
+        # add 1 to the MB file number to offset the join
+        max_steps = max_steps.with_columns(pl.col("MB File") + 1)
+        # join the max step number to the original dataframe and fill nulls with 0
+        df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
+        # add the max step number to the step number
+        return df_with_max_step.with_columns(pl.col("Ns") + pl.col("Max_Step"))
