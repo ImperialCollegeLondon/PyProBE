@@ -64,7 +64,7 @@ def step(
         _data = filter_numerical(self._data.filter(condition), "Event", step_numbers)
     else:
         _data = filter_numerical(self._data, "Event", step_numbers)
-    return Step(_data, self.info)
+    return Step(_data, self.info, self.column_definitions)
 
 
 def cycle(self: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
@@ -79,7 +79,7 @@ def cycle(self: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle"
     """
     lf_filtered = filter_numerical(self._data, "Cycle", cycle_numbers)
 
-    return Cycle(lf_filtered, self.info)
+    return Cycle(lf_filtered, self.info, self.column_definitions)
 
 
 def charge(self: "FilterToCycleType", *charge_numbers: Union[int, range]) -> "Step":
@@ -289,7 +289,7 @@ class Procedure(RawData):
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self._data.filter(conditions)
-        return Experiment(lf_filtered, self.info)
+        return Experiment(lf_filtered, self.info, self.column_definitions)
 
     @property
     def experiment_names(self) -> List[str]:
@@ -375,6 +375,8 @@ class Experiment(RawData):
     Args:
         dataframe (pl.LazyFrame | pl.DataFrame): The data for the experiment.
         info (Dict[str, str | int | float]): A dict containing test info.
+        column_definitions (Dict[str, str], optional):
+            A dict containing column definitions. Defaults to None.
 
     Filtering attributes:
         step (Callable[..., int]):
@@ -401,14 +403,10 @@ class Experiment(RawData):
         self,
         dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Create an experiment class.
-
-        Args:
-            dataframe (pl.LazyFrame | pl.DataFrame): The data for the experiment.
-            info (Dict[str, str | int | float]): A dict containing test info.
-        """
-        super().__init__(dataframe, info)
+        """Create an experiment class."""
+        super().__init__(dataframe, info, column_definitions)
 
         self.zero_column(
             "Time [s]",
@@ -438,6 +436,8 @@ class Cycle(RawData):
     Args:
         dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
         info (Dict[str, str | int | float]): A dict containing test info.
+        column_definitions (Dict[str, str], optional):
+            A dict containing column definitions. Defaults to None.
 
     Filtering attributes:
         step (Callable[..., int]):
@@ -464,14 +464,10 @@ class Cycle(RawData):
         self,
         dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Create a cycle class.
-
-        Args:
-            dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
-            info (Dict[str, str | int | float]): A dict containing test info.
-        """
-        super().__init__(dataframe, info)
+        """Create a cycle class."""
+        super().__init__(dataframe, info, column_definitions)
 
         self.zero_column(
             "Time [s]",
@@ -500,6 +496,8 @@ class Step(RawData):
     Args:
         dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
         info (Dict[str, str | int | float]): A dict containing test info.
+        column_definitions (Dict[str, str], optional):
+            A dict containing column definitions. Defaults to None.
 
     Filtering attributes:
         constant_current (Callable[..., int]):
@@ -514,14 +512,11 @@ class Step(RawData):
         self,
         dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Create a step class.
+        """Create a step class."""
+        super().__init__(dataframe, info, column_definitions)
 
-        Args:
-            dataframe (pl.LazyFrame | pl.DataFrame): The data for the step.
-            info (Dict[str, str | int | float]): A dict containing test info.
-        """
-        super().__init__(dataframe, info)
-
-    # constant_current = constant_current
-    # constant_voltage = constant_voltage
+    step = step
+    constant_current = constant_current
+    constant_voltage = constant_voltage

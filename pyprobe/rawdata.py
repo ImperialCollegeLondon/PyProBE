@@ -36,9 +36,10 @@ class RawData(Result):
         self,
         dataframe: pl.LazyFrame | pl.DataFrame,
         info: Dict[str, str | int | float],
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Initialize the RawData object."""
-        super().__init__(dataframe, info)
+        super().__init__(dataframe, info, column_definitions)
         self.data_property_called = False
 
         self.define_column("Date", "The timestamp of the data point. Type: datetime.")
