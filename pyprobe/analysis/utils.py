@@ -27,7 +27,7 @@ class BaseAnalysis:
         Returns:
             NDArray: The assembled array.
         """
-        return np.vstack([input.get(name) for input in input_data])
+        return np.vstack([input.get_only(name) for input in input_data])
 
     @property
     def analysis_methods(self) -> tuple[str, ...]:

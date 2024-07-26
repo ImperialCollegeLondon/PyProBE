@@ -40,6 +40,24 @@ def test_get(Result_fixture):
     current_mA = Result_fixture.get("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
 
+    current, voltage = Result_fixture.get("Current [A]", "Voltage [V]")
+    np_testing.assert_array_equal(
+        current, Result_fixture.data["Current [A]"].to_numpy()
+    )
+    np_testing.assert_array_equal(
+        voltage, Result_fixture.data["Voltage [V]"].to_numpy()
+    )
+
+
+def test_get_only(Result_fixture):
+    """Test the get_only method."""
+    current = Result_fixture.get_only("Current [A]")
+    np_testing.assert_array_equal(
+        current, Result_fixture.data["Current [A]"].to_numpy()
+    )
+    current_mA = Result_fixture.get_only("Current [mA]")
+    np_testing.assert_array_equal(current_mA, current * 1000)
+
 
 def test_array(Result_fixture):
     """Test the array method."""
@@ -65,7 +83,7 @@ def test_getitem(Result_fixture):
     assert "Current [mA]" in current_mA.column_list
     assert "Current [A]" not in current_mA.column_list
     np_testing.assert_allclose(
-        current_mA.get("Current [mA]"), Result_fixture.get("Current [mA]")
+        current_mA.get_only("Current [mA]"), Result_fixture.get_only("Current [mA]")
     )
 
 
@@ -82,13 +100,6 @@ def test_check_units(Result_fixture):
     assert "Current [mA]" not in Result_fixture.data.columns
     Result_fixture.check_units("Current [mA]")
     assert "Current [mA]" in Result_fixture.data.columns
-
-
-def test_print(Result_fixture, capsys):
-    """Test the print method."""
-    Result_fixture.print()
-    captured = capsys.readouterr()
-    assert captured.out.strip() == str(Result_fixture.data)
 
 
 def test_print_definitions(Result_fixture, capsys):

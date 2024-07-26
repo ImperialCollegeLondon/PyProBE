@@ -40,8 +40,8 @@ class Smoothing(BaseAnalysis):
                 A result object containing the columns, `x`, the smoothed `y` and the
                 gradient of the smoothed `y` with respect to `x`.
         """
-        x_data = self.rawdata.get(x)
-        y_data = self.rawdata.get(y)
+        x_data = self.rawdata.get_only(x)
+        y_data = self.rawdata.get_only(y)
         smoothing_lambda = smoothing_lambda
         data_flipped = False
         if x_data[0] > x_data[-1]:  # flip the data if it is not in ascending order

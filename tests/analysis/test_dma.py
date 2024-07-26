@@ -271,9 +271,11 @@ def test_average_ocvs(BreakinCycles_fixture):
     break_in.set_SOC()
     print(type(break_in))
     dma = DMA(break_in).average_ocvs(charge_filter="constant_current(1)")
-    assert math.isclose(dma.get("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(dma.get("Voltage [V]")[-1], 4.170649780122139)
-    np.testing.assert_allclose(dma.get("SOC"), break_in.constant_current(1).get("SOC"))
+    assert math.isclose(dma.get_only("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(dma.get_only("Voltage [V]")[-1], 4.170649780122139)
+    np.testing.assert_allclose(
+        dma.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
+    )
 
 
 def test_analysis_methods(bol_result_fixture):

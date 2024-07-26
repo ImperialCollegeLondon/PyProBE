@@ -46,8 +46,8 @@ class Differentiation(BaseAnalysis):
                 A result object containing the columns, `x`, `y` and the
                 calculated gradient.
         """
-        x_data = self.rawdata.get(x)
-        y_data = self.rawdata.get(y)
+        x_data = self.rawdata.get_only(x)
+        y_data = self.rawdata.get_only(y)
         gradient = gradient
         if gradient == "dydx":
             gradient_title = f"d({y})/d({x})"
@@ -117,8 +117,8 @@ class Differentiation(BaseAnalysis):
                 gradient.
         """
         # identify variables
-        x_data = self.rawdata.get(x)
-        y_data = self.rawdata.get(y)
+        x_data = self.rawdata.get_only(x)
+        y_data = self.rawdata.get_only(y)
         k = k
 
         # split input data into uniformly sampled sections

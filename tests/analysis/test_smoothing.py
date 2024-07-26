@@ -39,14 +39,14 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed):
     result = smoothing.spline_smoothing("x", "y")
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
-    np.testing.assert_allclose(result.get("y"), expected_y, atol=0.1)
+    np.testing.assert_allclose(result.get_only("y"), expected_y, atol=0.1)
 
     expected_dydx = 2 * x
-    np.testing.assert_allclose(result.get("d(y)/d(x)"), expected_dydx, atol=0.5)
+    np.testing.assert_allclose(result.get_only("d(y)/d(x)"), expected_dydx, atol=0.5)
 
     # reverse the data
     smoothing = Smoothing(noisy_data_reversed)
     flipped_x = np.flip(x)
     result = smoothing.spline_smoothing("x", "y")
     flipped_expected_y = flipped_x**2
-    np.testing.assert_allclose(result.get("y"), flipped_expected_y, atol=0.1)
+    np.testing.assert_allclose(result.get_only("y"), flipped_expected_y, atol=0.1)

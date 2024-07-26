@@ -23,11 +23,11 @@ class DMA(Result, BaseAnalysis):
         self.rawdata = rawdata
         self._data = rawdata._data
         self.info = rawdata.info
-        self.voltage = rawdata.get("Voltage [V]")
-        self.capacity = rawdata.get("Capacity [Ah]")
+        self.voltage = rawdata.get_only("Voltage [V]")
+        self.capacity = rawdata.get_only("Capacity [Ah]")
 
         if "SOC" in rawdata.column_list:
-            self.SOC = rawdata.get("SOC")
+            self.SOC = rawdata.get_only("SOC")
             self.cell_capacity = np.abs(np.ptp(self.capacity)) / np.abs(
                 np.ptp(self.SOC)
             )
@@ -231,12 +231,12 @@ class DMA(Result, BaseAnalysis):
             charge_result = self.rawdata.charge()
         else:
             charge_result = eval(f"self.rawdata.{charge_filter}")
-        charge_SOC = charge_result.get("SOC")
-        charge_OCV = charge_result.get("Voltage [V]")
-        charge_current = charge_result.get("Current [A]")
-        discharge_SOC = discharge_result.get("SOC")
-        discharge_OCV = discharge_result.get("Voltage [V]")
-        discharge_current = discharge_result.get("Current [A]")
+        charge_SOC = charge_result.get_only("SOC")
+        charge_OCV = charge_result.get_only("Voltage [V]")
+        charge_current = charge_result.get_only("Current [A]")
+        discharge_SOC = discharge_result.get_only("SOC")
+        discharge_OCV = discharge_result.get_only("Voltage [V]")
+        discharge_current = discharge_result.get_only("Current [A]")
 
         average_OCV = dma_functions.average_OCV_curves(
             charge_SOC,
@@ -250,7 +250,7 @@ class DMA(Result, BaseAnalysis):
         average_result = charge_result.clean_copy(
             {
                 "Voltage [V]": average_OCV,
-                "Capacity [Ah]": charge_result.get("Capacity [Ah]"),
+                "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
                 "SOC": charge_SOC,
             }
         )

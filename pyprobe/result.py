@@ -1,7 +1,7 @@
 """A module for the Result class."""
 import warnings
 from pprint import pprint
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import polars as pl
@@ -82,8 +82,33 @@ class Result:
         else:
             return Result(self.data.select(column_names), self.info)
 
-    def get(self, column_name: str) -> NDArray[np.float64]:
-        """Return a column of the data as a numpy array.
+    def get(
+        self, *column_names: str
+    ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+        """Return one or more columns of the data as numpy arrays.
+
+        Args:
+            column_names (str): The column name(s) to return.
+
+        Returns:
+            Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+                The column(s) as numpy array(s).
+        """
+        if not column_names:
+            raise ValueError("At least one column name must be provided.")
+
+        for column_name in column_names:
+            self.check_units(column_name)
+            if column_name not in self.data.columns:
+                raise ValueError(f"Column '{column_name}' not in data.")
+
+        arrays = tuple(
+            self.data[column_name].to_numpy() for column_name in column_names
+        )
+        return arrays if len(arrays) > 1 else arrays[0]
+
+    def get_only(self, column_name: str) -> NDArray[np.float64]:
+        """Return a single column of the data as a numpy array.
 
         Args:
             column_name (str): The column name to return.
@@ -91,11 +116,10 @@ class Result:
         Returns:
             NDArray[np.float64]: The column as a numpy array.
         """
-        self.check_units(column_name)
-        if column_name not in self.data.columns:
-            raise ValueError(f"Column '{column_name}' not in data.")
-        else:
-            return self.data[column_name].to_numpy()
+        data = self.get(column_name)
+        if not isinstance(data, np.ndarray):
+            raise ValueError("More than one column returned.")
+        return data
 
     def array(self, *filtering_column_names: str) -> NDArray[np.float64]:
         """Return the data as a numpy array.
@@ -129,10 +153,6 @@ class Result:
         if isinstance(self._data, pl.LazyFrame):
             self._data = self._data.collect()
         return self._data
-
-    def print(self) -> None:
-        """Print the data."""
-        print(self.data)
 
     def check_units(self, column_name: str) -> None:
         """Check if a column exists and convert the units if it does not.

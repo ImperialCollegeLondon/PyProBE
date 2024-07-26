@@ -25,13 +25,13 @@ def test_differentiate_FD(differentiation_fixture):
     result = differentiation_fixture.differentiate_FD("x", "y", gradient="dydx")
     expected_gradient = np.array([2, 2, 2, 2, 2])
     assert isinstance(result, Result)
-    assert np.allclose(result.get("d(y)/d(x)"), expected_gradient)
+    assert np.allclose(result.get_only("d(y)/d(x)"), expected_gradient)
 
     # Test case 2: dxdy gradient
     result = differentiation_fixture.differentiate_FD("x", "y", gradient="dxdy")
     expected_gradient = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
     assert isinstance(result, Result)
-    assert np.allclose(result.get("d(x)/d(y)"), expected_gradient)
+    assert np.allclose(result.get_only("d(x)/d(y)"), expected_gradient)
 
     # Test case 3: Invalid gradient option
     try:
