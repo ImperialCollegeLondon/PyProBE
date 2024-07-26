@@ -517,6 +517,18 @@ class Step(RawData):
         """Create a step class."""
         super().__init__(dataframe, info, column_definitions)
 
+        self.zero_column(
+            "Time [s]",
+            "Step Time [s]",
+            "Time elapsed since beginning of step.",
+        )
+
+        self.zero_column(
+            "Capacity [Ah]",
+            "Step Capacity [Ah]",
+            "The net charge passed since beginning of step.",
+        )
+
     step = step
     constant_current = constant_current
     constant_voltage = constant_voltage

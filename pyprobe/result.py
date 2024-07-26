@@ -152,6 +152,8 @@ class Result:
         """
         if isinstance(self._data, pl.LazyFrame):
             self._data = self._data.collect()
+        if self._data.is_empty():
+            raise ValueError("No data exists for this filter.")
         return self._data
 
     def check_units(self, column_name: str) -> None:

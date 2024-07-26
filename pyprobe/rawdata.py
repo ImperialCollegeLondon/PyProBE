@@ -54,24 +54,6 @@ class RawData(Result):
             "The net charge passed since the start of the current filter.",
         )
 
-    @property
-    def data(self) -> pl.DataFrame:
-        """Return the data as a polars DataFrame.
-
-        Returns:
-            pl.DataFrame: The data as a polars DataFrame.
-        """
-        instruction_list = []
-        zero_reference_list = ["Capacity [Ah]", "Time [s]"]
-        for column in zero_reference_list:
-            instruction_list.extend([pl.col(column) - pl.col(column).first()])
-        self._data = self._data.with_columns(instruction_list)
-        if isinstance(self._data, pl.LazyFrame):
-            self._data = self._data.collect()
-        if self._data.shape[0] == 0:
-            raise ValueError("No data exists for this filter.")
-        return self._data
-
     def zero_column(
         self,
         column: str,
