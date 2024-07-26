@@ -65,3 +65,8 @@ def test_summary(BreakinCycles_fixture):
         0.999212,
         rel_tol=1e-7,
     )
+
+
+def test_analysis_methods(Cycling_fixture):
+    """Test the analysis methods."""
+    assert set(Cycling_fixture.analysis_methods) == set(("summary",))

@@ -274,3 +274,10 @@ def test_average_ocvs(BreakinCycles_fixture):
     assert math.isclose(dma.get("Voltage [V]")[0], 3.14476284763849)
     assert math.isclose(dma.get("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(dma.get("SOC"), break_in.constant_current(1).get("SOC"))
+
+
+def test_analysis_methods(bol_result_fixture):
+    """Test the analysis methods."""
+    assert set(bol_result_fixture.analysis_methods) == set(
+        ("fit_ocv", "quantify_degradation_modes", "average_ocvs")
+    )

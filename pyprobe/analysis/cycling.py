@@ -2,11 +2,12 @@
 
 import polars as pl
 
+from pyprobe.analysis.utils import BaseAnalysis, analysismethod
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
-class Cycling(Experiment):
+class Cycling(Experiment, BaseAnalysis):
     """A cycling experiment in a battery procedure."""
 
     def __init__(
@@ -35,6 +36,7 @@ class Cycling(Experiment):
             ]
         )
 
+    @analysismethod
     def summary(self, dchg_before_chg: bool = True) -> Result:
         """Calculate the state of health of the battery.
 

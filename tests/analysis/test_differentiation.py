@@ -46,3 +46,10 @@ def test_differentiate_LEAN(differentiation_fixture):
     # Test case 1: dydx gradient
     result = differentiation_fixture.differentiate_LEAN("x", "y", gradient="dydx")
     assert isinstance(result, Result)
+
+
+def test_analysis_methods(differentiation_fixture):
+    """Test the analysis methods."""
+    assert set(differentiation_fixture.analysis_methods) == set(
+        ("differentiate_FD", "differentiate_LEAN")
+    )

@@ -5,10 +5,11 @@ from typing import Optional
 import numpy as np
 from scipy.interpolate import make_smoothing_spline
 
+from pyprobe.analysis.utils import BaseAnalysis, analysismethod
 from pyprobe.result import Result
 
 
-class Smoothing:
+class Smoothing(BaseAnalysis):
     """A class for smoothing noisy experimental data."""
 
     def __init__(self, rawdata: Result):
@@ -20,6 +21,7 @@ class Smoothing:
         """
         self.rawdata = rawdata
 
+    @analysismethod
     def spline_smoothing(
         self, x: str, y: str, smoothing_lambda: Optional[float] = None
     ) -> Result:

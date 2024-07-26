@@ -16,5 +16,7 @@ def input_data_fixture():
 
 def test_assemble_array(input_data_fixture):
     """Test the assemble array method."""
-    array = utils.assemble_array([input_data_fixture, input_data_fixture], "x")
+    array = utils.BaseAnalysis.assemble_array(
+        [input_data_fixture, input_data_fixture], "x"
+    )
     assert np.array_equal(array, np.array([[1, 2, 3], [1, 2, 3]]))
