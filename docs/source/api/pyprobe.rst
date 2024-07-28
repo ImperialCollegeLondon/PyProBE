@@ -12,9 +12,8 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   pyprobe.analysis
    pyprobe.cyclers
-   pyprobe.experiments
-   pyprobe.methods
 
 Submodules
 ----------
@@ -24,11 +23,11 @@ Submodules
 
    pyprobe.cell
    pyprobe.dashboard
-   pyprobe.filter
+   pyprobe.filters
    pyprobe.plot
-   pyprobe.procedure
    pyprobe.rawdata
    pyprobe.result
+   pyprobe.typing
    pyprobe.unitconverter
 
 

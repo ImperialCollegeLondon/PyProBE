@@ -1,7 +1,7 @@
-pyprobe.methods.ocv\_fitting.DMA module
+pyprobe.analysis.differentiation module
 =======================================
 
-.. automodule:: pyprobe.methods.ocv_fitting.DMA
+.. automodule:: pyprobe.analysis.differentiation
    :members:
    :undoc-members:
    :show-inheritance:

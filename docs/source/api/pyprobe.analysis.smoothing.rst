@@ -1,7 +1,7 @@
-pyprobe.methods.basemethod module
+pyprobe.analysis.smoothing module
 =================================
 
-.. automodule:: pyprobe.methods.basemethod
+.. automodule:: pyprobe.analysis.smoothing
    :members:
    :undoc-members:
    :show-inheritance:

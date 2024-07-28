@@ -12,3 +12,5 @@ integration with other PyProBE functionality such as plotting, or other methods.
 Analysis functions have been designed to be simple to read and implement. See the 
 :ref:`Writing a method <writing_a_method>` section of the 
 :ref:`Developer Guide <developer_guide>`. 
+
+.. footbibliography::

@@ -1,7 +1,7 @@
-pyprobe.experiments.pOCV module
+pyprobe.analysis.cycling module
 ===============================
 
-.. automodule:: pyprobe.experiments.pOCV
+.. automodule:: pyprobe.analysis.cycling
    :members:
    :undoc-members:
    :show-inheritance:

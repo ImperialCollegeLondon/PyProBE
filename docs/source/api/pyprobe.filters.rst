@@ -1,7 +1,7 @@
-pyprobe.filter module
-=====================
+pyprobe.filters module
+======================
 
-.. automodule:: pyprobe.filter
+.. automodule:: pyprobe.filters
    :members:
    :undoc-members:
    :show-inheritance:
