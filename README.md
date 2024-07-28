@@ -35,7 +35,7 @@ cell.procedure['Reference Test'].experiment('Discharge Pulses').cycle(3).dischar
 ```
 
 The PyProBE Dashboard can be launched on a list of ```Cell``` objects to allow rapid data exploration and plotting:
-![PyProBE Dashboard](./docs/source/images/Dashboard.png)
+![PyProBE Dashboard](./docs/source/user_guide/images/Dashboard.png)
 
 See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
 - [Importing data](https://congenial-adventure-mz797n5.pages.github.io/importing_data.html)
