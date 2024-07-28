@@ -91,11 +91,10 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the current column.
         """
-        return UnitConverter.search_columns(
+        return self.search_columns(
             self._dataframe_columns,
             self.column_dict["Current"],
             self.column_name_pattern,
-            "Current",
         ).to_default()
 
     @property
@@ -105,11 +104,10 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the voltage column.
         """
-        return UnitConverter.search_columns(
+        return self.search_columns(
             self._dataframe_columns,
             self.column_dict["Voltage"],
             self.column_name_pattern,
-            "Voltage",
         ).to_default()
 
     @property
@@ -119,11 +117,10 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the charge capacity column.
         """
-        return UnitConverter.search_columns(
+        return self.search_columns(
             self._dataframe_columns,
             self.column_dict["Charge Capacity"],
             self.column_name_pattern,
-            "Capacity",
         ).to_default(keep_name=True)
 
     @property
@@ -133,11 +130,10 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the discharge capacity column.
         """
-        return UnitConverter.search_columns(
+        return self.search_columns(
             self._dataframe_columns,
             self.column_dict["Discharge Capacity"],
             self.column_name_pattern,
-            "Capacity",
         ).to_default(keep_name=True)
 
     @property
@@ -169,11 +165,10 @@ class BaseCycler(ABC):
             pl.Expr: A polars expression for the capacity column.
         """
         if "Capacity" in self.column_dict:
-            return UnitConverter.search_columns(
+            return self.search_columns(
                 self._dataframe_columns,
                 self.column_dict["Capacity"],
                 self.column_name_pattern,
-                "Capacity",
             ).to_default()
         else:
             return self.capacity_from_ch_dch
@@ -299,3 +294,32 @@ class BaseCycler(ABC):
         # extract the first number in the filename
         match = re.search(r"\d+", stripped_filepath)
         return int(match.group()) if match else 0
+
+    @staticmethod
+    def search_columns(
+        columns: List[str],
+        search_quantity: str,
+        name_pattern: str,
+    ) -> "UnitConverter":
+        """Search for a quantity in the columns of the DataFrame.
+
+        Args:
+            columns: The columns to search.
+            search_quantity: The quantity to search for.
+            name_pattern: The pattern to match the column name.
+            default_quantity: The default quantity name.
+        """
+        for column_name in columns:
+            try:
+                quantity, _ = UnitConverter.get_quantity_and_unit(
+                    column_name, name_pattern
+                )
+            except ValueError:
+                continue
+
+            if quantity == search_quantity:
+                return UnitConverter(
+                    column_name=column_name,
+                    name_pattern=name_pattern,
+                )
+        raise ValueError(f"Quantity {search_quantity} not found in columns.")

@@ -1,7 +1,7 @@
 """A module for unit conversion and zero referencing of data columns."""
 
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import polars as pl
 
@@ -10,51 +10,60 @@ class UnitConverter:
     """A class to store unit conversion information about columns."""
 
     prefix_dict = {"m": 1e-3, "µ": 1e-6, "n": 1e-9, "p": 1e-12, "k": 1e3, "M": 1e6}
-    time_unit_dict = {"min": 60, "hr": 3600}
+    time_unit_dict = {"s": 1.0, "min": 60.0, "hr": 3600.0}
     unit_dict = {
-        "Current": ["A"],
-        "Voltage": ["V"],
-        "Capacity": ["Ah", "A.h"],
-        "Time": ["s"],
+        "A": "Current",
+        "V": "Voltage",
+        "Ah": "Capacity",
+        "A.h": "Capacity",
+        "s": "Time",
     }
 
     def __init__(
         self,
-        name: str,
+        column_name: str,
         name_pattern: str = r"(\w+)\s*\[(\w+)\]",
-        default_quantity: Optional[str] = None,
     ) -> None:
-        """Initialize the UnitConverter object.
+        """Initialize the UnitConverter object."""
+        self.name = column_name
+        self.input_quantity, self.input_unit = self.get_quantity_and_unit(
+            column_name, name_pattern
+        )
+        self.prefix, self.default_unit = self.get_default_unit(self.input_unit)
+        self.default_quantity = self.get_default_quantity(self.default_unit)
+        if self.default_quantity == "Time":
+            self.factor = self.time_unit_dict[self.input_unit]
+        else:
+            self.factor = (
+                self.prefix_dict[self.prefix] if self.prefix is not None else 1
+            )
+
+    def get_default_unit(self, unit: str) -> Tuple[Optional[str], str]:
+        """Return the default unit and prefix of a given unit.
 
         Args:
-            name (str): The column name.
-            name_pattern (str): The pattern to match the column name.
-            default_quantity (Optional[str]): The PyProBE default name of the column.
+            unit (str): The unit to convert.
+
+        Returns:
+            Tuple[Optional[str], str]: The prefix and default unit.
         """
-        self.name = name  # the column name
-
-        self.input_quantity, self.input_unit = self.get_quantity_and_unit(
-            name, name_pattern
-        )  # the quantity and unit of the column
-
-        # find the default quantity and unit
-        if default_quantity is not None:
-            self.default_quantity = default_quantity
+        if unit in self.time_unit_dict.keys():
+            return None, "s"
+        if unit[0] in self.prefix_dict:
+            return unit[0], unit[1:]
         else:
-            self.default_quantity = self.check_quantity()
-        base_units = self.unit_dict[self.default_quantity]
-        for unit in base_units:
-            if unit in self.input_unit:
-                self.base_unit = unit
-                break
-        self.default_unit = self.unit_dict[self.default_quantity][0]
-        self.default_name = f"{self.default_quantity} [{self.default_unit}]"
+            return None, unit
 
-        # find the prefix
-        if self.default_quantity == "Time":
-            self.prefix = ""
-        else:
-            self.prefix = self.input_unit.rstrip(self.base_unit)
+    def get_default_quantity(self, unit: str) -> str:
+        """Return the default quantity of a given unit.
+
+        Args:
+            unit (str): The unit to convert.
+        """
+        try:
+            return self.unit_dict[unit]
+        except KeyError:
+            raise ValueError(f"Unit {unit} is not recognized.")
 
     @staticmethod
     def get_quantity_and_unit(name: str, name_pattern: str) -> Tuple[str | Any, ...]:
@@ -71,41 +80,10 @@ class UnitConverter:
         else:
             raise ValueError(f"Name {name} does not match pattern.")
 
-    def check_quantity(self) -> str:
-        """Check the quantity being converted is recognised.
-
-        Returns:
-            str: The default quantity name.
-
-        Raises:
-            ValueError: If the quantity is not recognised.
-        """
-        if self.input_quantity in self.unit_dict.keys():
-            return self.input_quantity
-        else:
-            raise ValueError(f"Quantity {self.input_quantity} not recognised.")
-
-    def _convert(self, operation: str) -> pl.Expr:
-        """Make a unit conversion from or to the default unit.
-
-        Args:
-            operation (str): The operation to perform.
-        """
-        if self.prefix in self.prefix_dict:
-            factor = self.prefix_dict[self.prefix]
-        elif self.default_quantity == "Time" and self.input_unit in self.time_unit_dict:
-            factor = self.time_unit_dict[self.input_unit]
-        elif self.input_unit == self.default_unit:
-            factor = 1
-        else:
-            raise ValueError(
-                f"Unit {self.input_unit} for {self.default_quantity} not recognised."
-            )
-
-        if operation == "from":
-            return pl.col(self.default_name) / factor
-        elif operation == "to":
-            return pl.col(self.name) * factor
+    @property
+    def default_name(self) -> str:
+        """Return the default column name."""
+        return f"{self.default_quantity} [{self.default_unit}]"
 
     def from_default(self) -> pl.Expr:
         """Convert the column from the default unit.
@@ -113,52 +91,18 @@ class UnitConverter:
         Returns:
             pl.Expr: The converted column expression.
         """
-        return self._convert("from").alias(self.name)
+        return (pl.col(self.default_name) / self.factor).alias(
+            f"{self.input_quantity} [{self.input_unit}]"
+        )
 
     def to_default(self, keep_name: bool = False) -> pl.Expr:
         """Convert the column to the default unit.
 
-        Args:
-            keep_name (bool): Whether to keep the original quantity name.
-                False by default, converts quantity to default name.
-
         Returns:
             pl.Expr: The converted column expression.
         """
+        conversion = pl.col(self.name) * self.factor
         if keep_name:
-            return self._convert("to").alias(
-                f"{self.input_quantity} [{self.default_unit}]"
-            )
+            return conversion.alias(f"{self.input_quantity} [{self.default_unit}]")
         else:
-            return self._convert("to").alias(self.default_name)
-
-    @staticmethod
-    def search_columns(
-        columns: List[str],
-        search_quantity: str,
-        name_pattern: str,
-        default_quantity: str,
-    ) -> "UnitConverter":
-        """Search for a quantity in the columns of the DataFrame.
-
-        Args:
-            columns: The columns to search.
-            search_quantity: The quantity to search for.
-            name_pattern: The pattern to match the column name.
-            default_quantity: The default quantity name.
-        """
-        for column_name in columns:
-            try:
-                quantity, _ = UnitConverter.get_quantity_and_unit(
-                    column_name, name_pattern
-                )
-            except ValueError:
-                continue
-
-            if quantity == search_quantity:
-                return UnitConverter(
-                    name=column_name,
-                    name_pattern=name_pattern,
-                    default_quantity=default_quantity,
-                )
-        raise ValueError(f"Quantity {search_quantity} not found in columns.")
+            return conversion.alias(self.default_name)
