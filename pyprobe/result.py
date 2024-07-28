@@ -163,8 +163,29 @@ class Result:
             column_name (str): The column name to convert to.
         """
         if column_name not in self.data.columns:
-            instruction = UnitConverter(column_name).from_default()
-            self._data = self.data.with_columns(instruction)
+            converter_object = UnitConverter(column_name)
+            if converter_object.input_quantity in self.quantities:
+                instruction = converter_object.from_default()
+                self._data = self.data.with_columns(instruction)
+                self.define_column(
+                    column_name,
+                    self.column_definitions[
+                        f"{converter_object.input_quantity} "
+                        f"[{converter_object.default_unit}]"
+                    ],
+                )
+
+    @property
+    def quantities(self) -> List[str]:
+        """Return the quantities of the data, with unit information removed."""
+        _quantities = []
+        for _, column in enumerate(self.column_list):
+            try:
+                quantity, _ = UnitConverter.get_quantity_and_unit(column)
+                _quantities.append(quantity)
+            except ValueError:
+                continue
+        return _quantities
 
     @property
     def column_list(self) -> List[str]:

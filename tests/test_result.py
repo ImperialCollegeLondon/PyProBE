@@ -11,7 +11,13 @@ from pyprobe.result import Result
 @pytest.fixture
 def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
-    return Result(lazyframe_fixture, info_fixture)
+    return Result(
+        lazyframe_fixture,
+        info_fixture,
+        column_definitions={
+            "Current [A]": "Current definition",
+        },
+    )
 
 
 def test_init(Result_fixture):
@@ -95,11 +101,23 @@ def test_data(Result_fixture):
     pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture._data)
 
 
+def test_quantities(Result_fixture):
+    """Test the quantities property."""
+    assert set(Result_fixture.quantities) == set(
+        ["Time", "Current", "Voltage", "Capacity"]
+    )
+
+
 def test_check_units(Result_fixture):
     """Test the check_units method."""
     assert "Current [mA]" not in Result_fixture.data.columns
     Result_fixture.check_units("Current [mA]")
     assert "Current [mA]" in Result_fixture.data.columns
+    assert "Current [mA]" in Result_fixture.column_definitions.keys()
+    assert (
+        Result_fixture.column_definitions["Current [mA]"]
+        == Result_fixture.column_definitions["Current [A]"]
+    )
 
 
 def test_print_definitions(Result_fixture, capsys):
@@ -109,7 +127,8 @@ def test_print_definitions(Result_fixture, capsys):
     Result_fixture.print_definitions()
     captured = capsys.readouterr()
     expected_output = (
-        "{'Resistance [Ohm]': 'Resistance of the circuit'"
+        "{'Current [A]': 'Current definition'"
+        ",\n 'Resistance [Ohm]': 'Resistance of the circuit'"
         ",\n 'Voltage [V]': 'Voltage across the circuit'}"
     )
     assert captured.out.strip() == expected_output
