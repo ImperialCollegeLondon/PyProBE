@@ -5,6 +5,3 @@ pyprobe.analysis.differentiation module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

@@ -5,6 +5,3 @@ pyprobe
    :maxdepth: 4
 
    pyprobe
-
-
-.. footbibliography::

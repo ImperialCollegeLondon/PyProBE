@@ -30,6 +30,8 @@ extensions = [
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
 bibtex_bibfiles = ["../../CITATIONS.bib"]

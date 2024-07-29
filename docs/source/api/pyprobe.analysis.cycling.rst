@@ -5,6 +5,3 @@ pyprobe.analysis.cycling module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

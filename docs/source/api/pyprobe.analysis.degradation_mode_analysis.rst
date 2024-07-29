@@ -5,6 +5,3 @@ pyprobe.analysis.degradation\_mode\_analysis module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

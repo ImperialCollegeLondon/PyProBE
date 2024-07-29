@@ -5,6 +5,3 @@ pyprobe.filters module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

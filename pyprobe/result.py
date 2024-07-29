@@ -15,15 +15,21 @@ from pyprobe.unitconverter import UnitConverter
 class Result:
     """A result object for returning data and plotting.
 
-    Attributes:
-        dataframe (pl.LazyFrame | pl.DataFrame): The data as a polars DataFrame or
-            LazyFrame.
-        info (Dict[str, str | int | float]): A dictionary containing test info.
+    Args:
+        base_dataframe (Union[pl.LazyFrame, pl.DataFrame]):
+            The data as a polars DataFrame or LazyFrame.
+        info (Dict[str, Union[str, int, float]]):
+            A dictionary containing test info.
+        column_definitions (Dict[str, str], optional):
+            A dictionary containing the definitions of the columns in the data.
     """
 
     base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
+    """The data as a polars DataFrame or LazyFrame."""
     info: Dict[str, Union[str, int, float]]
+    """A dictionary containing test info."""
     column_definitions: Dict[str, str] = field(default_factory=dict)
+    """A dictionary containing the definitions of the columns in the data."""
 
     def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.
@@ -66,6 +72,19 @@ class Result:
             raise ValueError("One or more columns not in data.")
         else:
             return Result(base_dataframe=self.data.select(column_names), info=self.info)
+
+    @property
+    def data(self) -> pl.DataFrame:
+        """Return the data as a polars DataFrame.
+
+        Returns:
+            pl.DataFrame: The data as a polars DataFrame.
+        """
+        if isinstance(self.base_dataframe, pl.LazyFrame):
+            self.base_dataframe = self.base_dataframe.collect()
+        if self.base_dataframe.is_empty():
+            raise ValueError("No data exists for this filter.")
+        return self.base_dataframe
 
     def get(
         self, *column_names: str
@@ -128,21 +147,10 @@ class Result:
                 data_to_convert = self.data.select(column_names)
                 return data_to_convert.to_numpy()
 
-    @property
-    def data(self) -> pl.DataFrame:
-        """Return the data as a polars DataFrame.
-
-        Returns:
-            pl.DataFrame: The data as a polars DataFrame.
-        """
-        if isinstance(self.base_dataframe, pl.LazyFrame):
-            self.base_dataframe = self.base_dataframe.collect()
-        if self.base_dataframe.is_empty():
-            raise ValueError("No data exists for this filter.")
-        return self.base_dataframe
-
     def check_units(self, column_name: str) -> None:
         """Check if a column exists and convert the units if it does not.
+
+        Adds a new column to the dataframe with the desired unit.
 
         Args:
             column_name (str): The column name to convert to.
@@ -158,6 +166,11 @@ class Result:
                         f"{converter_object.input_quantity} "
                         f"[{converter_object.default_unit}]"
                     ],
+                )
+            else:
+                raise ValueError(
+                    f"Column with quantity'{converter_object.input_quantity}' not in"
+                    " data."
                 )
 
     @property

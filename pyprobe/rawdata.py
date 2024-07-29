@@ -1,6 +1,6 @@
 """A module for the RawData class."""
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import polars as pl
 
@@ -12,30 +12,15 @@ from pyprobe.result import Result
 class RawData(Result):
     """A RawData object for returning data.
 
-    Attributes:
-        dataframe (pl.LazyFrame | pl.DataFrame): The filtered data with the following
-            columns:
-
-            - 'Date' (pl.Datetime): the timestamp of the measurement
-            - 'Time [s]' (pl.Float64): the measurement time from the start of the
-              filtered section in seconds
-            - 'Step' (pl.Int64): the unique step number corresponding to a single
-              instruction in the cycling program
-            - 'Cycle' (pl.Int64): the cycle number, automatically identified when Step
-              decreases
-            - 'Event' (pl.Int64): the event number, automatically identified when Step
-              changes
-            - 'Current [A]' (pl.Float64): the current in Amperes
-            - 'Voltage [V]' (pl.Float64): the voltage in Volts
-            - 'Capacity [Ah]' (pl.Float64): the capacity relative to the start of the
-              filtered section in Ampere-hours. Its value increases when charge
-              current is passed and decreases when discharge current is passed.
-
-        info (Dict[str, str | int | float]): A dictionary containing test info.
+    Args:
+        base_dataframe (Union[pl.LazyFrame, pl.DataFrame]):
+            The data as a polars DataFrame or LazyFrame.
+        info (Dict[str, Union[str, int, float]]):
+            A dictionary containing test info.
+        column_definitions (Dict[str, str], optional):
+            A dictionary containing the definitions of the columns in the data.
     """
 
-    base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
-    info: Dict[str, Union[str, int, float]]
     column_definitions: Dict[str, str] = field(
         default_factory=lambda: {
             "Date": "The timestamp of the data point. Type: datetime.",
@@ -47,6 +32,7 @@ class RawData(Result):
             "filter.",
         }
     )
+    """A dictionary containing the definitions of the columns in the data."""
 
     def zero_column(
         self,

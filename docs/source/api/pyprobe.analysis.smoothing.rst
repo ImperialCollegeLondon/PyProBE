@@ -5,6 +5,3 @@ pyprobe.analysis.smoothing module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

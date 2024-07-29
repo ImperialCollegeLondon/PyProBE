@@ -5,6 +5,3 @@ pyprobe.unitconverter module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

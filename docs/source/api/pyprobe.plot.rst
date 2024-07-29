@@ -5,6 +5,3 @@ pyprobe.plot module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

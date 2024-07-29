@@ -15,6 +15,3 @@ Submodules
    pyprobe.cyclers.basecycler
    pyprobe.cyclers.biologic
    pyprobe.cyclers.neware
-
-
-.. footbibliography::

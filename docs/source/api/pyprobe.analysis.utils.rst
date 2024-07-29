@@ -5,6 +5,3 @@ pyprobe.analysis.utils module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::

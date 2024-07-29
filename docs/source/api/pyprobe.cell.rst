@@ -5,6 +5,3 @@ pyprobe.cell module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-.. footbibliography::
