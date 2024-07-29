@@ -32,8 +32,8 @@ Additions to the code should be made in accordance with the structure of PyProBE
 maximise compatibility and ensure it is a maintainable package. Guidance for writing
 code for PyProBE includes:
 1. DataFrame operations should only be done using polars expressions. Data should be kept by default in polars LazyFrame format and only converted to DataFrame if needed for a particular operation.
-2. Method classes should be written in the format described in the [documentation](
-    https://congenial-adventure-mz797n5.pages.github.io/creating_a_new_method.html
+2. Analysis classes should be written in the format described in the [documentation](
+    https://congenial-adventure-mz797n5.pages.github.io/contributing_to_the_analysis_module.html
 ).
 
 ## Viewing the API documentation

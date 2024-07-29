@@ -6,6 +6,6 @@ Developer Guide
    :maxdepth: 2
 
    developer_installation
-   creating_a_new_method
+   contributing_to_the_analysis_module
 
 .. footbibliography::

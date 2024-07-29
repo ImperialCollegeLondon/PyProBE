@@ -53,7 +53,7 @@ battery cyclers. It has four core objectives:
     battery data, maintaining compatibility with the PyProBE data format and plotting
     tools while ensuring functions are simply defined, portable and tested.
 
-    It is easy to write your own method. See the :ref:`guidance <creating_a_new_method>`
+    It is easy to write your own method. See the :ref:`guidance <contributing_to_the_analysis_module>`
     and `contributing guidelines <https://github.com/ImperialCollegeLondon/PyProBE/blob/main/CONTRIBUTING.md>`_.
 
 PyProBE Structure

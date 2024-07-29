@@ -1,12 +1,11 @@
-.. _creating_a_new_method:
+.. _contributing_to_the_analysis_module:
 
-Creating a New Method
-=====================
-In PyProBE :class:`analysis <pyprobe.methods.basemethod.BaseMethod>` are classes that 
-perform further analysis of the data. They can be peformed on any 
-:class:`~pyprobe.rawdata.RawData` or :class:`~pyprobe.result.Result` object.
+Contributing to the Analysis Module
+===================================
+:mod:`pyprobe.analysis` classes are classes that 
+perform further analysis of the data.
 
-This document describes the standard format to be used for all PyProBE methods. 
+This document describes the standard format to be used for all PyProBE analysis classes. 
 Constructing your method in this way ensures compatibility with the rest of the 
 PyProBE package, while keeping your code clean and easy to read.
 
