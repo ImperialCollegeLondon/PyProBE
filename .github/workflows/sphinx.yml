@@ -25,7 +25,7 @@ jobs:
     
     - name: Run sphinx-apidoc
       run: |
-        sphinx-apidoc -f -e -M -o docs/source/ pyprobe
+        sphinx-apidoc -f -e -M -o docs/source/api pyprobe
 
     - name: Add bibliographies
       run: |
