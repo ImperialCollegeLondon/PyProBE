@@ -6,11 +6,10 @@ from typing import List
 import numpy as np
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
-from pyprobe.analysis.utils import PyProBEValidator
 from pyprobe.result import Result
 
 # from __future__ import annotations
-from pyprobe.typing import PyProBERawDataType
+from pyprobe.typing import PyProBERawDataType, PyProBEValidator
 
 
 @dataclass(kw_only=True)

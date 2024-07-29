@@ -5,6 +5,7 @@ import polars as pl
 import pytest
 
 from pyprobe.analysis.differentiation import Differentiation
+from pyprobe.rawdata import RawData
 from pyprobe.result import Result
 
 x_data = np.array([1, 2, 3, 4, 5])
@@ -14,7 +15,7 @@ y_data = np.array([2, 4, 6, 8, 10])
 @pytest.fixture
 def differentiation_fixture():
     """Return a Differentiation instance."""
-    rawdata = Result(base_dataframe=pl.DataFrame({"x": x_data, "y": y_data}), info={})
+    rawdata = RawData(base_dataframe=pl.DataFrame({"x": x_data, "y": y_data}), info={})
     rawdata.column_definitions = {"x": "The x data", "y": "The y data"}
     return Differentiation(rawdata=rawdata)
 

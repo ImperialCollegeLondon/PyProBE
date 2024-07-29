@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 import polars as pl
 
-from pyprobe.analysis.utils import PyProBEValidator
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
+from pyprobe.typing import PyProBEValidator
 
 
 @dataclass(kw_only=True)
