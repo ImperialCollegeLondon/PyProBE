@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import polars as pl
 
+from pyprobe.analysis.utils import PyProBEValidator
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
@@ -17,6 +18,20 @@ class Cycling:
     """
 
     experiment: Experiment
+
+    required_columns = ["Capacity [Ah]"]
+
+    def __post_init__(self) -> None:
+        """Validate the Cycling class setup."""
+        schema = {
+            "experiment": {
+                "type": "Experiment",
+                "contains_columns": self.required_columns,
+            }
+        }
+        v = PyProBEValidator(schema)
+        if not v.validate({"experiment": self.experiment}):
+            raise ValueError(v.errors)
 
     def _create_capacity_throughput(self) -> None:
         """Calculate the capcity throughput of the experiment."""
