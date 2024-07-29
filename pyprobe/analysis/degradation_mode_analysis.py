@@ -6,13 +6,13 @@ import numpy as np
 from numpy.typing import NDArray
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
-from pyprobe.analysis.utils import BaseAnalysis
+from pyprobe.analysis import utils
 from pyprobe.filters import Cycle, Experiment, RawData
 from pyprobe.result import Result
 
 
 @dataclass(kw_only=True)
-class DMA(BaseAnalysis):
+class DMA:
     """A class for degradation mode analysis methods.
 
     Args:
@@ -191,16 +191,16 @@ class DMA(BaseAnalysis):
             reference_stoichiometry_limits,
             self.stoichiometry_limits,
         ]
-        cell_capacity = self.assemble_array(
+        cell_capacity = utils.assemble_array(
             electrode_capacity_results, "Cell Capacity [Ah]"
         )
-        pe_capacity = self.assemble_array(
+        pe_capacity = utils.assemble_array(
             electrode_capacity_results, "Cathode Capacity [Ah]"
         )
-        ne_capacity = self.assemble_array(
+        ne_capacity = utils.assemble_array(
             electrode_capacity_results, "Anode Capacity [Ah]"
         )
-        li_inventory = self.assemble_array(
+        li_inventory = utils.assemble_array(
             electrode_capacity_results, "Li Inventory [Ah]"
         )
         SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(

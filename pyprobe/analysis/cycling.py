@@ -4,13 +4,12 @@ from dataclasses import dataclass
 
 import polars as pl
 
-from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
 @dataclass(kw_only=True)
-class Cycling(BaseAnalysis):
+class Cycling:
     """A cycling experiment in a battery procedure.
 
     Args:
