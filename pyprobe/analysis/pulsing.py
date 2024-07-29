@@ -1,17 +1,18 @@
 """A module for the Pulsing class."""
 
-from typing import Any, List, Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
-from pydantic import Field
 
 from pyprobe.analysis.utils import BaseAnalysis, analysismethod
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
+@dataclass(kw_only=True)
 class Pulsing(BaseAnalysis):
     """A pulsing experiment in a battery procedure.
 
@@ -20,10 +21,10 @@ class Pulsing(BaseAnalysis):
     """
 
     experiment: Experiment
-    rests: List[Optional[Result]] = Field(default_factory=list)
-    pulses: List[Optional[Result]] = Field(default_factory=list)
+    rests: List[Optional[Result]] = field(default_factory=list)
+    pulses: List[Optional[Result]] = field(default_factory=list)
 
-    def model_post_init(self, __context: Any) -> None:
+    def __post_init__(self) -> None:
         """Create a pulsing experiment."""
         self.rests: List[Optional[Result]] = [None] * self.experiment.data.select(
             "Cycle"

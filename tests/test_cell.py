@@ -94,3 +94,30 @@ def test_set_color_scheme(cell_instance):
         "#f03504",
         "#a09988",
     ]
+
+
+def test_process_readme(cell_instance, titles_fixture, benchmark):
+    """Test processing a readme file in yaml format."""
+    expected_steps = [
+        [1, 2, 3],
+        [4, 5, 6, 7, 8],
+        [9, 10, 11, 12, 13],
+    ]
+
+    def process_readme():
+        return cell_instance.process_readme("tests/sample_data/neware/README.yaml")
+
+    titles, steps = benchmark(process_readme)
+    assert titles == titles_fixture
+    assert steps == expected_steps
+
+    # Test with total steps
+    titles, steps = cell_instance.process_readme(
+        "tests/sample_data/neware/README_total_steps.yaml"
+    )
+    assert titles == titles_fixture
+    assert steps == [
+        [1, 2, 3],
+        [4, 5, 6, 7],
+        [8, 9, 10, 11],
+    ]

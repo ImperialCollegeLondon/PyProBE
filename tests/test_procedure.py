@@ -40,33 +40,6 @@ def test_verify_yaml(procedure_fixture):
     assert procedure_fixture.verify_yaml(file) == "readme.yaml"
 
 
-def test_process_readme(procedure_fixture, titles_fixture, benchmark):
-    """Test processing a readme file in yaml format."""
-    expected_steps = [
-        [1, 2, 3],
-        [4, 5, 6, 7, 8],
-        [9, 10, 11, 12, 13],
-    ]
-
-    def process_readme():
-        return procedure_fixture.process_readme("tests/sample_data/neware/README.yaml")
-
-    titles, steps = benchmark(process_readme)
-    assert titles == titles_fixture
-    assert steps == expected_steps
-
-    # Test with total steps
-    titles, steps = procedure_fixture.process_readme(
-        "tests/sample_data/neware/README_total_steps.yaml"
-    )
-    assert titles == titles_fixture
-    assert steps == [
-        [1, 2, 3],
-        [4, 5, 6, 7],
-        [8, 9, 10, 11],
-    ]
-
-
 def test_experiment_names(procedure_fixture, titles_fixture):
     """Test the experiment_names method."""
     assert procedure_fixture.experiment_names == list(titles_fixture.keys())

@@ -16,7 +16,7 @@ def differentiation_fixture():
     """Return a Differentiation instance."""
     rawdata = Result(base_dataframe=pl.DataFrame({"x": x_data, "y": y_data}), info={})
     rawdata.column_definitions = {"x": "The x data", "y": "The y data"}
-    return Differentiation(rawdata)
+    return Differentiation(rawdata=rawdata)
 
 
 def test_differentiate_FD(differentiation_fixture):
@@ -46,10 +46,3 @@ def test_differentiate_LEAN(differentiation_fixture):
     # Test case 1: dydx gradient
     result = differentiation_fixture.differentiate_LEAN("x", "y", gradient="dydx")
     assert isinstance(result, Result)
-
-
-def test_analysis_methods(differentiation_fixture):
-    """Test the analysis methods."""
-    assert set(differentiation_fixture.analysis_methods) == set(
-        ("differentiate_FD", "differentiate_LEAN")
-    )

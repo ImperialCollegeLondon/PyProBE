@@ -1,5 +1,6 @@
 """A module for the RawData class."""
-from typing import Any, Dict, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional, Union
 
 import polars as pl
 
@@ -7,6 +8,7 @@ from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
 
+@dataclass(kw_only=True)
 class RawData(Result):
     """A RawData object for returning data.
 
@@ -32,13 +34,19 @@ class RawData(Result):
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
-    column_definitions: Dict[str, str] = {
-        "Date": "The timestamp of the data point. Type: datetime.",
-        "Time [s]": "The time in seconds passed from the start of the current filter.",
-        "Current [A]": "The current in Amperes.",
-        "Voltage [V]": "The terminal voltage in Volts.",
-        "Capacity [Ah]": "The net charge passed since the start of the current filter.",
-    }
+    base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = field(
+        default_factory=lambda: {
+            "Date": "The timestamp of the data point. Type: datetime.",
+            "Time [s]": "The time in seconds passed from the start of the current "
+            "filter.",
+            "Current [A]": "The current in Amperes.",
+            "Voltage [V]": "The terminal voltage in Volts.",
+            "Capacity [Ah]": "The net charge passed since the start of the current "
+            "filter.",
+        }
+    )
 
     def zero_column(
         self,
@@ -168,7 +176,7 @@ class RawData(Result):
         Returns:
             Result: The result object from the gradient method.
         """
-        differentiation = Differentiation(self)
+        differentiation = Differentiation(rawdata=self)
         if method == "LEAN":
             return differentiation.differentiate_LEAN(x, y, *args, **kwargs)
         elif method == "Finite Difference":

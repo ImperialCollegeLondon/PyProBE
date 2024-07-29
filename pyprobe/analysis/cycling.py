@@ -1,5 +1,7 @@
 """A module for the Cycing class."""
 
+from dataclasses import dataclass
+
 import polars as pl
 
 from pyprobe.analysis.utils import BaseAnalysis
@@ -7,38 +9,11 @@ from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
+@dataclass(kw_only=True)
 class Cycling(BaseAnalysis):
     """A cycling experiment in a battery procedure."""
 
     experiment: Experiment
-
-    # experiment.base_dataframe = experiment.base_dataframe.with_columns(
-    #         [
-    #             (
-    #                 pl.col("Capacity [Ah]")
-    #                 .diff()
-    #                 .fill_null(strategy="zero")
-    #                 .abs()
-    #                 .cum_sum()
-    #             ).alias("Capacity Throughput [Ah]")
-    #         ]
-    #     )
-    # def __post_init_post_parse__(
-    #     self
-    # ) -> None:
-    #     """Create a cycling experiment."""
-    #     self._create_capacity_throughput()
-    # # def __init__(
-    # #     self,
-    # #     experiment: Experiment,
-    # # ):
-    # #     """Create a cycling experiment.
-
-    # #     Args:
-    # #         experiment (Experiment): The cycling experiment to be analysed.
-    # #     """
-    # #     super().__init__(experiment.base_dataframe, experiment.info)
-    # #     self._create_capacity_throughput()
 
     def _create_capacity_throughput(self) -> None:
         """Calculate the capcity throughput of the experiment."""

@@ -1,5 +1,6 @@
 """A module for differentiating experimental data."""
 
+from dataclasses import dataclass
 from typing import List
 
 import numpy as np
@@ -12,16 +13,11 @@ from pyprobe.result import Result
 from pyprobe.typing import PyProBERawDataType
 
 
+@dataclass(kw_only=True)
 class Differentiation(BaseAnalysis):
     """A class for differentiating experimental data."""
 
-    def __init__(self, rawdata: PyProBERawDataType):
-        """Create a Differentiation object.
-
-        Args:
-            rawdata (Result): The data to be differentiated.
-        """
-        self.rawdata = rawdata
+    rawdata: PyProBERawDataType
 
     @analysismethod
     def differentiate_FD(

@@ -1,4 +1,5 @@
 """Module for degradation mode analysis methods."""
+from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
 import numpy as np
@@ -10,6 +11,7 @@ from pyprobe.filters import Cycle, Experiment, RawData
 from pyprobe.result import Result
 
 
+@dataclass(kw_only=True)
 class DMA(BaseAnalysis):
     """A class for degradation mode analysis methods.
 

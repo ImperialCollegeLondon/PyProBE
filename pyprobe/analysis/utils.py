@@ -3,7 +3,6 @@ from typing import Any, Callable, List
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import BaseModel
 
 from pyprobe.result import Result
 
@@ -14,7 +13,7 @@ def analysismethod(func: Callable[..., Any]) -> Callable[..., Any]:
     return func
 
 
-class BaseAnalysis(BaseModel):
+class BaseAnalysis:
     """Base class for analysis methods."""
 
     @staticmethod

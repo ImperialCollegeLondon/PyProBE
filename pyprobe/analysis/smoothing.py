@@ -1,5 +1,6 @@
 """Module containing methods for smoothing noisy experimental data."""
 
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -9,17 +10,11 @@ from pyprobe.analysis.utils import BaseAnalysis, analysismethod
 from pyprobe.result import Result
 
 
+@dataclass(kw_only=True)
 class Smoothing(BaseAnalysis):
     """A class for smoothing noisy experimental data."""
 
-    def __init__(self, rawdata: Result):
-        """Create a smoothing object.
-
-        Args:
-            rawdata (Result):
-                The input data to the method.
-        """
-        self.rawdata = rawdata
+    rawdata: Result
 
     @analysismethod
     def spline_smoothing(

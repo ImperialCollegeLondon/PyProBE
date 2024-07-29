@@ -1,5 +1,6 @@
 """A module for the Procedure class."""
 import os
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
@@ -204,13 +205,14 @@ def constant_voltage(
     return self.step(*constant_voltage_numbers, condition=condition)
 
 
+@dataclass(kw_only=True)
 class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
     titles: Dict[str, str]
     steps_idx: List[List[int]]
 
-    def __post_init_post_parse__(self) -> None:
+    def __post_init__(self) -> None:
         """Create a procedure class.
 
         Args:
@@ -330,6 +332,7 @@ class Procedure(RawData):
             return [item for sublist in lst for item in cls.flatten(sublist)]
 
 
+@dataclass(kw_only=True)
 class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure.
 
@@ -360,7 +363,7 @@ class Experiment(RawData):
             A method to return a constant voltage step object. See `constant_voltage`.
     """
 
-    def __post_init_post_parse__(
+    def __post_init__(
         self,
     ) -> None:
         """Create an experiment class."""
@@ -386,6 +389,7 @@ class Experiment(RawData):
     constant_voltage = constant_voltage
 
 
+@dataclass(kw_only=True)
 class Cycle(RawData):
     """A class for a cycle in a battery experimental procedure.
 
@@ -416,7 +420,7 @@ class Cycle(RawData):
             See `constant_voltage`.
     """
 
-    def __post_init_post_parse__(
+    def __post_init__(
         self,
     ) -> None:
         """Create a cycle class."""
@@ -441,6 +445,7 @@ class Cycle(RawData):
     constant_voltage = constant_voltage
 
 
+@dataclass(kw_only=True)
 class Step(RawData):
     """A class for a step in a battery experimental procedure.
 
@@ -459,11 +464,8 @@ class Step(RawData):
             See `constant_voltage`.
     """
 
-    def __post_init_post_parse__(
+    def __post_init__(
         self,
-        # dataframe: pl.LazyFrame | pl.DataFrame,
-        # info: Dict[str, str | int | float],
-        # column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Create a step class."""
         self.zero_column(

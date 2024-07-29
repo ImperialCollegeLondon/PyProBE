@@ -159,15 +159,15 @@ class Cell:
         else:
             readme_path = os.path.join(data_folder, "README.yaml")
         (
-            self.titles,
-            self.steps_idx,
+            titles,
+            steps_idx,
         ) = self.process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
+            titles=titles,
+            steps_idx=steps_idx,
             base_dataframe=base_dataframe,
             info=self.info,
-            titles=self.titles,
-            steps_idx=self.steps_idx,
         )
         self.processed_data[procedure_name] = {}
 

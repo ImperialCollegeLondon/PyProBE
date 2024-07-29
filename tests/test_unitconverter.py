@@ -69,7 +69,7 @@ def test_init(
     assert current_quantity.name == "Current [A]"
     assert current_quantity.default_quantity == "Current"
     assert current_quantity.default_unit == "A"
-    assert current_quantity.prefix is not None
+    assert current_quantity.prefix is None
     assert current_quantity.default_name == "Current [A]"
 
     assert capacity_quantity.name == "Capacity [mAh]"
@@ -80,13 +80,13 @@ def test_init(
     assert time_quantity.name == "Time [hr]"
     assert time_quantity.default_quantity == "Time"
     assert time_quantity.default_unit == "s"
-    assert time_quantity.prefix is not None
+    assert time_quantity.prefix is None
     assert time_quantity.default_name == "Time [s]"
 
     assert current_from_cycler_quantity.name == "Current/A"
     assert current_from_cycler_quantity.default_quantity == "Current"
     assert current_from_cycler_quantity.default_unit == "A"
-    assert current_from_cycler_quantity.prefix is not None
+    assert current_from_cycler_quantity.prefix is None
     assert current_from_cycler_quantity.default_name == "Current [A]"
 
     assert I_from_cycler_quantity.name == "I/mA"
