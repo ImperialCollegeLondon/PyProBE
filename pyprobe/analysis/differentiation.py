@@ -6,6 +6,7 @@ from typing import List
 import numpy as np
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
+from pyprobe.analysis.utils import PyProBEValidator
 from pyprobe.result import Result
 
 # from __future__ import annotations
@@ -21,6 +22,17 @@ class Differentiation:
     """
 
     rawdata: PyProBERawDataType
+
+    def __post_init__(self) -> None:
+        """Initialise the Differentiation class."""
+        schema = {
+            "rawdata": {
+                "type": "PyProBERawDataType",
+            }
+        }
+        v = PyProBEValidator(schema)
+        if not v.validate({"rawdata": self.rawdata}):
+            raise ValueError(v.errors)
 
     def differentiate_FD(
         self,

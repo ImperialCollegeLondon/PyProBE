@@ -1,15 +1,17 @@
 """A module for the filtering classes."""
 import os
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import polars as pl
 
 from pyprobe.rawdata import RawData
-from pyprobe.typing import (  # , FilterToStepType
-    FilterToCycleType,
-    FilterToExperimentType,
-)
+
+if TYPE_CHECKING:
+    from pyprobe.typing import (  # , FilterToStepType
+        FilterToCycleType,
+        FilterToExperimentType,
+    )
 
 
 def filter_numerical(

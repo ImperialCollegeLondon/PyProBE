@@ -1,10 +1,10 @@
 """A module for the RawData class."""
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import polars as pl
 
-from pyprobe.analysis.differentiation import Differentiation
+# from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
 
@@ -147,25 +147,25 @@ class RawData(Result):
             ).alias("Capacity - Referenced [Ah]")
         )
 
-    def gradient(
-        self, x: str, y: str, method: str, *args: Any, **kwargs: Any
-    ) -> Result:
-        """Calculate the gradient of the data from a variety of methods.
+    # def gradient(
+    #     self, x: str, y: str, method: str, *args: Any, **kwargs: Any
+    # ) -> Result:
+    #     """Calculate the gradient of the data from a variety of methods.
 
-        Args:
-            method (str): The differentiation method.
-            x (str): The x data column.
-            y (str): The y data column.
-            *args: Additional arguments.
-            **kwargs: Additional keyword arguments.
+    #     Args:
+    #         method (str): The differentiation method.
+    #         x (str): The x data column.
+    #         y (str): The y data column.
+    #         *args: Additional arguments.
+    #         **kwargs: Additional keyword arguments.
 
-        Returns:
-            Result: The result object from the gradient method.
-        """
-        differentiation = Differentiation(rawdata=self)
-        if method == "LEAN":
-            return differentiation.differentiate_LEAN(x, y, *args, **kwargs)
-        elif method == "Finite Difference":
-            return differentiation.differentiate_FD(x, y, *args, **kwargs)
-        else:
-            raise ValueError("Invalid differentiation method.")
+    #     Returns:
+    #         Result: The result object from the gradient method.
+    #     """
+    #     differentiation = Differentiation(rawdata=self)
+    #     if method == "LEAN":
+    #         return differentiation.differentiate_LEAN(x, y, *args, **kwargs)
+    #     elif method == "Finite Difference":
+    #         return differentiation.differentiate_FD(x, y, *args, **kwargs)
+    #     else:
+    #         raise ValueError("Invalid differentiation method.")
