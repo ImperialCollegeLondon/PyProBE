@@ -12,8 +12,8 @@ from pyprobe.result import Result
 def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
     return Result(
-        lazyframe_fixture,
-        info_fixture,
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
         column_definitions={
             "Current [A]": "Current definition",
         },
@@ -23,7 +23,7 @@ def Result_fixture(lazyframe_fixture, info_fixture):
 def test_init(Result_fixture):
     """Test the __init__ method."""
     assert isinstance(Result_fixture, Result)
-    assert isinstance(Result_fixture._data, pl.LazyFrame)
+    assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(Result_fixture.info, dict)
 
 
@@ -95,10 +95,10 @@ def test_getitem(Result_fixture):
 
 def test_data(Result_fixture):
     """Test the data property."""
-    assert isinstance(Result_fixture._data, pl.LazyFrame)
+    assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(Result_fixture.data, pl.DataFrame)
-    assert isinstance(Result_fixture._data, pl.DataFrame)
-    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture._data)
+    assert isinstance(Result_fixture.base_dataframe, pl.DataFrame)
+    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.base_dataframe)
 
 
 def test_quantities(Result_fixture):

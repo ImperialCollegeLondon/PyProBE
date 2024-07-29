@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
+import yaml
 
 from pyprobe.cyclers import biologic, neware
 from pyprobe.filters import Procedure
@@ -150,8 +151,23 @@ class Cell:
         output_data_path = self.verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
+
+        base_dataframe = pl.scan_parquet(output_data_path)
+        data_folder = os.path.dirname(output_data_path)
+        if custom_readme_name:
+            readme_path = os.path.join(data_folder, f"{custom_readme_name}.yaml")
+        else:
+            readme_path = os.path.join(data_folder, "README.yaml")
+        (
+            self.titles,
+            self.steps_idx,
+        ) = self.process_readme(readme_path)
+
         self.procedure[procedure_name] = Procedure(
-            output_data_path, self.info, custom_readme_name=custom_readme_name
+            base_dataframe=base_dataframe,
+            info=self.info,
+            titles=self.titles,
+            steps_idx=self.steps_idx,
         )
         self.processed_data[procedure_name] = {}
 
@@ -276,3 +292,42 @@ class Cell:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT,
             )
+
+    @staticmethod
+    def process_readme(
+        readme_path: str,
+    ) -> tuple[Dict[str, str], List[List[int]]]:
+        """Function to process the README.yaml file.
+
+        Args:
+            readme_path (str): The path to the README.yaml file.
+
+        Returns:
+            Tuple[Dict[str, str], List[int], List[int]]:
+                - dict: The titles of the experiments inside a procedure.
+                    Format {title: experiment type}.
+                - list: The cycle indices inside the procedure.
+                - list: The step indices inside the procedure.
+        """
+        with open(readme_path, "r") as file:
+            readme_dict = yaml.safe_load(file)
+
+        titles = {
+            experiment: readme_dict[experiment]["Type"] for experiment in readme_dict
+        }
+
+        max_step = 0
+        steps: List[List[int]] = []
+        for experiment in readme_dict:
+            if "Step Numbers" in readme_dict[experiment]:
+                step_list = readme_dict[experiment]["Step Numbers"]
+            elif "Total Steps" in readme_dict[experiment]:
+                step_list = list(range(readme_dict[experiment]["Total Steps"]))
+                step_list = [x + max_step + 1 for x in step_list]
+            else:
+                step_list = list(range(len(readme_dict[experiment]["Steps"])))
+                step_list = [x + max_step + 1 for x in step_list]
+            max_step = step_list[-1]
+            steps.append(step_list)
+
+        return titles, steps

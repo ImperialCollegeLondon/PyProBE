@@ -1,31 +1,34 @@
 """A module for the Pulsing class."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
+from pydantic import Field
 
 from pyprobe.analysis.utils import BaseAnalysis, analysismethod
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
-class Pulsing(Experiment, BaseAnalysis):
+class Pulsing(BaseAnalysis):
     """A pulsing experiment in a battery procedure.
 
     Args:
         experiment (RawData): The raw data for the pulsing experiment.
     """
 
-    def __init__(self, experiment: Experiment) -> None:
-        """Create a pulsing experiment."""
-        super().__init__(experiment.data, experiment.info)
+    experiment: Experiment
+    rests: List[Optional[Result]] = Field(default_factory=list)
+    pulses: List[Optional[Result]] = Field(default_factory=list)
 
-        self.rests: List[Optional[Result]] = [None] * self.data.select(
+    def model_post_init(self, __context: Any) -> None:
+        """Create a pulsing experiment."""
+        self.rests: List[Optional[Result]] = [None] * self.experiment.data.select(
             "Cycle"
         ).n_unique("Cycle")
-        self.pulses: List[Optional[Result]] = [None] * self.data.select(
+        self.pulses: List[Optional[Result]] = [None] * self.experiment.data.select(
             "Cycle"
         ).n_unique("Cycle")
 
@@ -36,7 +39,9 @@ class Pulsing(Experiment, BaseAnalysis):
         Returns:
             pl.DataFrame: A dataframe with rows for the start of each pulse.
         """
-        df = self.data.with_columns(pl.col("Current [A]").shift().alias("Prev Current"))
+        df = self.experiment.data.with_columns(
+            pl.col("Current [A]").shift().alias("Prev Current")
+        )
         df = df.with_columns(pl.col("Voltage [V]").shift().alias("Prev Voltage"))
         return df.filter((df["Current [A]"].shift() == 0) & (df["Current [A]"] != 0))
 
@@ -85,14 +90,14 @@ class Pulsing(Experiment, BaseAnalysis):
             Result: A result object containing resistance values for each pulse.
         """
         return Result(
-            pl.DataFrame(
+            base_dataframe=pl.DataFrame(
                 {
                     "Pulse number": list(range(len(self.R0))),
                     "R0 [Ohm]": self.R0,
                     "V0 [V]": self.V0,
                 }
             ),
-            self.info,
+            info=self.experiment.info,
             column_definitions={
                 "Pulse number": "The pulse number.",
                 "R0 [Ohm]": "The ohmic resistance for each pulse.",
@@ -109,8 +114,8 @@ class Pulsing(Experiment, BaseAnalysis):
         t_point = self.pulse_starts["Time [s]"] + t
         Vt = np.zeros(len(t_point))
         for i in range(len(Vt)):
-            condition = self.data["Time [s]"] >= t_point[i]
-            first_row = self.data.filter(condition).sort("Time [s]").head(1)
+            condition = self.experiment.data["Time [s]"] >= t_point[i]
+            first_row = self.experiment.data.filter(condition).sort("Time [s]").head(1)
             Vt[i] = first_row["Voltage [V]"].to_numpy()[0]
         return (Vt - self.V0) / self.I1
 
@@ -124,7 +129,9 @@ class Pulsing(Experiment, BaseAnalysis):
             Result: A step object for a pulse in the pulsing experiment.
         """
         if self.pulses[pulse_number] is None:
-            self.pulses[pulse_number] = self.cycle(pulse_number).chargeordischarge(0)
+            self.pulses[pulse_number] = self.experiment.cycle(
+                pulse_number
+            ).chargeordischarge(0)
         return self.pulses[pulse_number]
 
     def pulse_rest(self, rest_number: int) -> Optional[Result]:
@@ -137,5 +144,5 @@ class Pulsing(Experiment, BaseAnalysis):
             Result: A step object for a rest in the pulsing experiment.
         """
         if self.rests[rest_number] is None:
-            self.rests[rest_number] = self.cycle(rest_number).rest(0)
+            self.rests[rest_number] = self.experiment.cycle(rest_number).rest(0)
         return self.rests[rest_number]

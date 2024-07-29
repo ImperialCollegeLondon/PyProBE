@@ -14,7 +14,7 @@ y_data = np.array([2, 4, 6, 8, 10])
 @pytest.fixture
 def differentiation_fixture():
     """Return a Differentiation instance."""
-    rawdata = Result(pl.DataFrame({"x": x_data, "y": y_data}), {})
+    rawdata = Result(base_dataframe=pl.DataFrame({"x": x_data, "y": y_data}), info={})
     rawdata.column_definitions = {"x": "The x data", "y": "The y data"}
     return Differentiation(rawdata)
 

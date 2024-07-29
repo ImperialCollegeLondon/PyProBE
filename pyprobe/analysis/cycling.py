@@ -2,29 +2,47 @@
 
 import polars as pl
 
-from pyprobe.analysis.utils import BaseAnalysis, analysismethod
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
-class Cycling(Experiment, BaseAnalysis):
+class Cycling(BaseAnalysis):
     """A cycling experiment in a battery procedure."""
 
-    def __init__(
-        self,
-        experiment: Experiment,
-    ):
-        """Create a cycling experiment.
+    experiment: Experiment
 
-        Args:
-            experiment (Experiment): The cycling experiment to be analysed.
-        """
-        super().__init__(experiment._data, experiment.info)
-        self._create_capacity_throughput()
+    # experiment.base_dataframe = experiment.base_dataframe.with_columns(
+    #         [
+    #             (
+    #                 pl.col("Capacity [Ah]")
+    #                 .diff()
+    #                 .fill_null(strategy="zero")
+    #                 .abs()
+    #                 .cum_sum()
+    #             ).alias("Capacity Throughput [Ah]")
+    #         ]
+    #     )
+    # def __post_init_post_parse__(
+    #     self
+    # ) -> None:
+    #     """Create a cycling experiment."""
+    #     self._create_capacity_throughput()
+    # # def __init__(
+    # #     self,
+    # #     experiment: Experiment,
+    # # ):
+    # #     """Create a cycling experiment.
+
+    # #     Args:
+    # #         experiment (Experiment): The cycling experiment to be analysed.
+    # #     """
+    # #     super().__init__(experiment.base_dataframe, experiment.info)
+    # #     self._create_capacity_throughput()
 
     def _create_capacity_throughput(self) -> None:
         """Calculate the capcity throughput of the experiment."""
-        self._data = self._data.with_columns(
+        self.experiment.base_dataframe = self.experiment.base_dataframe.with_columns(
             [
                 (
                     pl.col("Capacity [Ah]")
@@ -36,7 +54,6 @@ class Cycling(Experiment, BaseAnalysis):
             ]
         )
 
-    @analysismethod
     def summary(self, dchg_before_chg: bool = True) -> Result:
         """Calculate the state of health of the battery.
 
@@ -47,22 +64,23 @@ class Cycling(Experiment, BaseAnalysis):
         Returns:
             Result: A result object for the capacity SOH of the cell.
         """
-        lf_capacity_throughput = self._data.groupby("Cycle", maintain_order=True).agg(
-            pl.col("Capacity Throughput [Ah]").first()
-        )
-        lf_time = self._data.groupby("Cycle", maintain_order=True).agg(
-            pl.col("Time [s]").first()
-        )
+        self._create_capacity_throughput()
+        lf_capacity_throughput = self.experiment.base_dataframe.groupby(
+            "Cycle", maintain_order=True
+        ).agg(pl.col("Capacity Throughput [Ah]").first())
+        lf_time = self.experiment.base_dataframe.groupby(
+            "Cycle", maintain_order=True
+        ).agg(pl.col("Time [s]").first())
 
         lf_charge = (
-            self.charge()
-            ._data.groupby("Cycle", maintain_order=True)
+            self.experiment.charge()
+            .base_dataframe.groupby("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
         )
         lf_discharge = (
-            self.discharge()
-            ._data.groupby("Cycle", maintain_order=True)
+            self.experiment.discharge()
+            .base_dataframe.groupby("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
         )
@@ -116,4 +134,8 @@ class Cycling(Experiment, BaseAnalysis):
                 "The ratio between a discharge and its preceding charge."
             ),
         }
-        return Result(lf, self.info, column_definitions=column_definitions)
+        return Result(
+            base_dataframe=lf,
+            info=self.experiment.info,
+            column_definitions=column_definitions,
+        )

@@ -55,8 +55,10 @@ It is possible to filter data by a number of methods:
 
 RawData objects
 ---------------
-Any filter applied to a cell returns a :class:`pyprobe.rawdata.RawData` object. This 
-holds:
+Any filter applied to a cell returns a :class:`pyprobe.rawdata.RawData` object. This is
+a special type of :class:`~pyprobe.result.Result` object that is designed to hold cell
+experimental data processed by PyProBE. It therefore has all of the attributes of the
+:class:`~pyprobe.result.Result` class. This includes:
 
 * :attr:`~pyprobe.rawdata.RawData.data` attribute
    a `polars Dataframe <https://docs.pola.rs/py-polars/html/reference/dataframe/index.html>`_
@@ -71,7 +73,7 @@ To access the data, you can access the full polars Dataframe:
    dataframe = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1).step(1).data
 
 Or you can access individual columns as 1D numpy arrays by calling the 
-:class:`~pyprobe.rawdata.RawData` object:
+:func:`~pyprobe.result.Result.get` method:
 
 .. code-block:: python
 

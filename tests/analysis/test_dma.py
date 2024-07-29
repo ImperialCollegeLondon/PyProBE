@@ -51,7 +51,10 @@ def test_fit_ocv():
     voltage = nmc_LGM50_ocp_Chen2020(x_pe_real) - graphite_LGM50_ocp_Chen2020(x_ne_real)
 
     result = Result(
-        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+        base_dataframe=pl.DataFrame(
+            {"Voltage [V]": voltage, "Capacity [Ah]": capacity}
+        ),
+        info={},
     )
     dma = DMA(result)
     x_guess = [0.8, 0.4, 0.2, 0.6]
@@ -97,7 +100,10 @@ def test_fit_ocv():
     voltage = np.flip(voltage)
     capacity = -1 * capacity
     result = Result(
-        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+        base_dataframe=pl.DataFrame(
+            {"Voltage [V]": voltage, "Capacity [Ah]": capacity}
+        ),
+        info={},
     )
     dma = DMA(result)
     params, _ = dma.fit_ocv(
@@ -131,7 +137,10 @@ def test_fit_ocv_discharge():
 
     x_guess = [0.8, 0.4, 0.2, 0.6]
     result = Result(
-        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+        base_dataframe=pl.DataFrame(
+            {"Voltage [V]": voltage, "Capacity [Ah]": capacity}
+        ),
+        info={},
     )
     dma = DMA(result)
     params, _ = dma.fit_ocv(
@@ -204,11 +213,14 @@ def bol_result_fixture(bol_capacity_fixture):
     voltage = np.linspace(0, 1, n_points)
     capacity = np.linspace(0, 1, n_points)
     result = Result(
-        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+        base_dataframe=pl.DataFrame(
+            {"Voltage [V]": voltage, "Capacity [Ah]": capacity}
+        ),
+        info={},
     )
     dma = DMA(result)
     dma.stoichiometry_limits = Result(
-        dataframe=pl.LazyFrame(
+        base_dataframe=pl.LazyFrame(
             {
                 "Cell Capacity [Ah]": bol_capacity_fixture[0],
                 "Cathode Capacity [Ah]": bol_capacity_fixture[1],
@@ -231,7 +243,7 @@ def eol_result_fixture(eol_capacity_fixture):
     )
     dma = DMA(result)
     dma.stoichiometry_limits = Result(
-        dataframe=pl.LazyFrame(
+        base_dataframe=pl.LazyFrame(
             {
                 "Cell Capacity [Ah]": eol_capacity_fixture[0],
                 "Cathode Capacity [Ah]": eol_capacity_fixture[1],

@@ -15,8 +15,8 @@ y = x**2 + np.random.normal(0, 0.1, size=x.size)  # y = x^2 with noise
 def noisy_data():
     """Generate noisy data."""
     return Result(
-        pl.DataFrame({"x": x, "y": y}),
-        {},
+        base_dataframe=pl.DataFrame({"x": x, "y": y}),
+        info={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -27,8 +27,8 @@ def noisy_data_reversed():
     flipped_x = np.flip(x)
     flipped_y = np.flip(y)
     return Result(
-        pl.DataFrame({"x": flipped_x, "y": flipped_y}),
-        {},
+        base_dataframe=pl.DataFrame({"x": flipped_x, "y": flipped_y}),
+        info={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 

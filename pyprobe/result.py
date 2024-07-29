@@ -6,11 +6,12 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
+from pydantic import BaseModel, Field
 
 from pyprobe.unitconverter import UnitConverter
 
 
-class Result:
+class Result(BaseModel):
     """A result object for returning data and plotting.
 
     Attributes:
@@ -19,26 +20,14 @@ class Result:
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
-    def __init__(
-        self,
-        dataframe: pl.LazyFrame | pl.DataFrame,
-        info: Dict[str, str | int | float],
-        column_definitions: Optional[Dict[str, str]] = None,
-    ) -> None:
-        """Initialize the Result object.
+    base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(default_factory=dict)
 
-        Args:
-            dataframe (pl.LazyFrame | pl.DataFrame): The filtered data.
-            info (Dict[str, str | int | float]): A dict containing test info.
-            column_definitions(Optional[Dict[str, str]]):
-                A dict containing the definitions of the columns in data.
-        """
-        self._data = dataframe
-        self.info = info
-        if column_definitions is None:
-            self.column_definitions: Dict[str, str] = {}
-        else:
-            self.column_definitions = column_definitions
+    class Config:
+        """Pydantic configuration."""
+
+        arbitrary_types_allowed = True
 
     def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.
@@ -80,7 +69,7 @@ class Result:
         if not all(col in self.data.columns for col in column_names):
             raise ValueError("One or more columns not in data.")
         else:
-            return Result(self.data.select(column_names), self.info)
+            return Result(base_dataframe=self.data.select(column_names), info=self.info)
 
     def get(
         self, *column_names: str
@@ -150,11 +139,11 @@ class Result:
         Returns:
             pl.DataFrame: The data as a polars DataFrame.
         """
-        if isinstance(self._data, pl.LazyFrame):
-            self._data = self._data.collect()
-        if self._data.is_empty():
+        if isinstance(self.base_dataframe, pl.LazyFrame):
+            self.base_dataframe = self.base_dataframe.collect()
+        if self.base_dataframe.is_empty():
             raise ValueError("No data exists for this filter.")
-        return self._data
+        return self.base_dataframe
 
     def check_units(self, column_name: str) -> None:
         """Check if a column exists and convert the units if it does not.
@@ -166,7 +155,7 @@ class Result:
             converter_object = UnitConverter(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default()
-                self._data = self.data.with_columns(instruction)
+                self.base_dataframe = self.data.with_columns(instruction)
                 self.define_column(
                     column_name,
                     self.column_definitions[
@@ -208,7 +197,7 @@ class Result:
     def clean_copy(
         self,
         dataframe: Optional[Dict[str, NDArray[np.float64]]] = {},
-        column_definitions: Optional[Dict[str, str]] = None,
+        column_definitions: Dict[str, str] = {},
     ) -> "Result":
         """Create a copy of the result object with info dictionary but without data.
 
@@ -221,7 +210,11 @@ class Result:
         Returns:
             Result: A new result object with the specified data.
         """
-        return Result(pl.DataFrame(dataframe), self.info, column_definitions)
+        return Result(
+            base_dataframe=pl.DataFrame(dataframe),
+            info=self.info,
+            column_definitions=column_definitions,
+        )
 
     @classmethod
     def build(
@@ -263,4 +256,4 @@ class Result:
                 )
                 data.append(step_data)
         data = pl.concat(data)
-        return cls(data, info)
+        return cls(base_dataframe=data, info=info)

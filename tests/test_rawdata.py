@@ -11,13 +11,13 @@ from pyprobe.result import Result
 @pytest.fixture
 def RawData_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
-    return RawData(lazyframe_fixture, info_fixture)
+    return RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
 
 
 def test_init(RawData_fixture):
     """Test the __init__ method."""
     assert isinstance(RawData_fixture, RawData)
-    assert isinstance(RawData_fixture._data, pl.LazyFrame)
+    assert isinstance(RawData_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(RawData_fixture.info, dict)
 
 

@@ -11,7 +11,7 @@ from pyprobe.result import Result
 @pytest.fixture
 def input_data_fixture():
     """Return a Result instance."""
-    return Result(dataframe=pl.LazyFrame({"x": [1, 2, 3]}), info={})
+    return Result(base_dataframe=pl.LazyFrame({"x": [1, 2, 3]}), info={})
 
 
 def test_assemble_array(input_data_fixture):

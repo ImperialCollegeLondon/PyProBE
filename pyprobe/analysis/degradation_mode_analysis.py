@@ -21,7 +21,7 @@ class DMA(Result, BaseAnalysis):
         """Initialize the DMA object."""
         self.result_list = ["stoichiometry_limits", "fitted_OCV", "dma_result"]
         self.rawdata = rawdata
-        self._data = rawdata._data
+        self.base_dataframe = rawdata.base_dataframe
         self.info = rawdata.info
         self.voltage = rawdata.get_only("Voltage [V]")
         self.capacity = rawdata.get_only("Capacity [Ah]")

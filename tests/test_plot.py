@@ -72,7 +72,7 @@ def plot_result_fixture():
         {"x": [1, 2, 3, 4], "y": [5, 6, 7, 8], "secondary_y": [2, 3, 4, 5]}
     )
 
-    return Result(data, info)
+    return Result(base_dataframe=data, info=info)
 
 
 def test_make_colorscale(Plot_fixture):

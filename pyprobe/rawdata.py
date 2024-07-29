@@ -32,27 +32,13 @@ class RawData(Result):
         info (Dict[str, str | int | float]): A dictionary containing test info.
     """
 
-    def __init__(
-        self,
-        dataframe: pl.LazyFrame | pl.DataFrame,
-        info: Dict[str, str | int | float],
-        column_definitions: Optional[Dict[str, str]] = None,
-    ) -> None:
-        """Initialize the RawData object."""
-        super().__init__(dataframe, info, column_definitions)
-        self.data_property_called = False
-
-        self.define_column("Date", "The timestamp of the data point. Type: datetime.")
-        self.define_column(
-            "Time [s]",
-            "The time in seconds passed from the start of the current filter.",
-        )
-        self.define_column("Current [A]", "The current in Amperes.")
-        self.define_column("Voltage [V]", "The terminal voltage in Volts.")
-        self.define_column(
-            "Capacity [Ah]",
-            "The net charge passed since the start of the current filter.",
-        )
+    column_definitions: Dict[str, str] = {
+        "Date": "The timestamp of the data point. Type: datetime.",
+        "Time [s]": "The time in seconds passed from the start of the current filter.",
+        "Current [A]": "The current in Amperes.",
+        "Voltage [V]": "The terminal voltage in Volts.",
+        "Capacity [Ah]": "The net charge passed since the start of the current filter.",
+    }
 
     def zero_column(
         self,
@@ -70,7 +56,7 @@ class RawData(Result):
         Returns:
             pl.DataFrame | pl.LazyFrame: The dataframe or lazyframe with the new column.
         """
-        self._data = self._data.with_columns(
+        self.base_dataframe = self.base_dataframe.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
         if new_column_definition is not None:
@@ -111,7 +97,7 @@ class RawData(Result):
             )
         if reference_charge is None:
             # capacity_reference = pl.select(pl.col("Capacity [Ah]").max())
-            self._data = self._data.with_columns(
+            self.base_dataframe = self.base_dataframe.with_columns(
                 (
                     (
                         pl.col("Capacity [Ah]")
@@ -127,11 +113,13 @@ class RawData(Result):
                 pl.col("Date").max()
             )[0][0]
             capacity_reference = (
-                self._data.filter(pl.col("Date") == fully_charged_reference_point)
+                self.base_dataframe.filter(
+                    pl.col("Date") == fully_charged_reference_point
+                )
                 .select("Capacity [Ah]")
                 .head(1)
             )
-            self._data = self._data.with_columns(
+            self.base_dataframe = self.base_dataframe.with_columns(
                 (
                     (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
                     / reference_capacity
@@ -157,7 +145,7 @@ class RawData(Result):
             reference_capacity = (
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
-        self._data = self._data.with_columns(
+        self.base_dataframe = self.base_dataframe.with_columns(
             (
                 pl.col("Capacity [Ah]")
                 - pl.col("Capacity [Ah]").max()

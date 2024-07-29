@@ -2,7 +2,7 @@
 import polars as pl
 import pytest
 
-from pyprobe.filters import Procedure
+from pyprobe.cell import Cell
 
 
 @pytest.fixture(scope="module")
@@ -62,9 +62,11 @@ def step_names_fixture():
 @pytest.fixture(scope="module")
 def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
-    return Procedure(
-        "tests/sample_data/neware/sample_data_neware.parquet", info_fixture
+    cell = Cell(info_fixture)
+    cell.add_procedure(
+        "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
     )
+    return cell.procedure["Sample"]
 
 
 @pytest.fixture(scope="module")

@@ -3,7 +3,6 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
-import yaml
 
 from pyprobe.rawdata import RawData
 from pyprobe.typing import (  # , FilterToStepType
@@ -61,10 +60,16 @@ def step(
         Step: A step object from the cycle.
     """
     if condition is not None:
-        _data = filter_numerical(self._data.filter(condition), "Event", step_numbers)
+        base_dataframe = filter_numerical(
+            self.base_dataframe.filter(condition), "Event", step_numbers
+        )
     else:
-        _data = filter_numerical(self._data, "Event", step_numbers)
-    return Step(_data, self.info, self.column_definitions)
+        base_dataframe = filter_numerical(self.base_dataframe, "Event", step_numbers)
+    return Step(
+        base_dataframe=base_dataframe,
+        info=self.info,
+        column_definitions=self.column_definitions,
+    )
 
 
 def cycle(self: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
@@ -77,9 +82,13 @@ def cycle(self: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle"
     Returns:
         Filter: A filter object for the specified cycles.
     """
-    lf_filtered = filter_numerical(self._data, "Cycle", cycle_numbers)
+    lf_filtered = filter_numerical(self.base_dataframe, "Cycle", cycle_numbers)
 
-    return Cycle(lf_filtered, self.info, self.column_definitions)
+    return Cycle(
+        base_dataframe=lf_filtered,
+        info=self.info,
+        column_definitions=self.column_definitions,
+    )
 
 
 def charge(self: "FilterToCycleType", *charge_numbers: Union[int, range]) -> "Step":
@@ -198,12 +207,10 @@ def constant_voltage(
 class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
-    def __init__(
-        self,
-        data_path: str,
-        info: Dict[str, str | int | float],
-        custom_readme_name: Optional[str] = None,
-    ) -> None:
+    titles: Dict[str, str]
+    steps_idx: List[List[int]]
+
+    def __post_init_post_parse__(self) -> None:
         """Create a procedure class.
 
         Args:
@@ -236,17 +243,6 @@ class Procedure(RawData):
                 A method to return a constant voltage step object.
                 See `constant_voltage`.
         """
-        _data = pl.scan_parquet(data_path)
-        data_folder = os.path.dirname(data_path)
-        if custom_readme_name:
-            readme_path = os.path.join(data_folder, f"{custom_readme_name}.yaml")
-        else:
-            readme_path = os.path.join(data_folder, "README.yaml")
-        (
-            self.titles,
-            self.steps_idx,
-        ) = self.process_readme(readme_path)
-        super().__init__(_data, info)
         self.zero_column(
             "Time [s]",
             "Procedure Time [s]",
@@ -288,8 +284,12 @@ class Procedure(RawData):
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
-        lf_filtered = self._data.filter(conditions)
-        return Experiment(lf_filtered, self.info, self.column_definitions)
+        lf_filtered = self.base_dataframe.filter(conditions)
+        return Experiment(
+            base_dataframe=lf_filtered,
+            info=self.info,
+            column_definitions=self.column_definitions,
+        )
 
     @property
     def experiment_names(self) -> List[str]:
@@ -313,45 +313,6 @@ class Procedure(RawData):
         if ext != ".yaml":
             readme_name = os.path.splitext(readme_name)[0] + ".yaml"
         return readme_name
-
-    @staticmethod
-    def process_readme(
-        readme_path: str,
-    ) -> tuple[Dict[str, str], List[List[int]]]:
-        """Function to process the README.yaml file.
-
-        Args:
-            readme_path (str): The path to the README.yaml file.
-
-        Returns:
-            Tuple[Dict[str, str], List[int], List[int]]:
-                - dict: The titles of the experiments inside a procedure.
-                    Format {title: experiment type}.
-                - list: The cycle indices inside the procedure.
-                - list: The step indices inside the procedure.
-        """
-        with open(readme_path, "r") as file:
-            readme_dict = yaml.safe_load(file)
-
-        titles = {
-            experiment: readme_dict[experiment]["Type"] for experiment in readme_dict
-        }
-
-        max_step = 0
-        steps: List[List[int]] = []
-        for experiment in readme_dict:
-            if "Step Numbers" in readme_dict[experiment]:
-                step_list = readme_dict[experiment]["Step Numbers"]
-            elif "Total Steps" in readme_dict[experiment]:
-                step_list = list(range(readme_dict[experiment]["Total Steps"]))
-                step_list = [x + max_step + 1 for x in step_list]
-            else:
-                step_list = list(range(len(readme_dict[experiment]["Steps"])))
-                step_list = [x + max_step + 1 for x in step_list]
-            max_step = step_list[-1]
-            steps.append(step_list)
-
-        return titles, steps
 
     @classmethod
     def flatten(cls, lst: int | List[Any]) -> List[int]:
@@ -399,15 +360,10 @@ class Experiment(RawData):
             A method to return a constant voltage step object. See `constant_voltage`.
     """
 
-    def __init__(
+    def __post_init_post_parse__(
         self,
-        dataframe: pl.LazyFrame | pl.DataFrame,
-        info: Dict[str, str | int | float],
-        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Create an experiment class."""
-        super().__init__(dataframe, info, column_definitions)
-
         self.zero_column(
             "Time [s]",
             "Experiment Time [s]",
@@ -460,15 +416,10 @@ class Cycle(RawData):
             See `constant_voltage`.
     """
 
-    def __init__(
+    def __post_init_post_parse__(
         self,
-        dataframe: pl.LazyFrame | pl.DataFrame,
-        info: Dict[str, str | int | float],
-        column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Create a cycle class."""
-        super().__init__(dataframe, info, column_definitions)
-
         self.zero_column(
             "Time [s]",
             "Cycle Time [s]",
@@ -508,15 +459,13 @@ class Step(RawData):
             See `constant_voltage`.
     """
 
-    def __init__(
+    def __post_init_post_parse__(
         self,
-        dataframe: pl.LazyFrame | pl.DataFrame,
-        info: Dict[str, str | int | float],
-        column_definitions: Optional[Dict[str, str]] = None,
+        # dataframe: pl.LazyFrame | pl.DataFrame,
+        # info: Dict[str, str | int | float],
+        # column_definitions: Optional[Dict[str, str]] = None,
     ) -> None:
         """Create a step class."""
-        super().__init__(dataframe, info, column_definitions)
-
         self.zero_column(
             "Time [s]",
             "Step Time [s]",
