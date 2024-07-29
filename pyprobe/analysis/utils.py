@@ -1,16 +1,10 @@
 """Module for the BaseMethod class."""
-from typing import Any, Callable, List
+from typing import Any, List
 
 import numpy as np
 from numpy.typing import NDArray
 
 from pyprobe.result import Result
-
-
-def analysismethod(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator to mark a method as an analysis method."""
-    setattr(func, "is_analysis_method", True)
-    return func
 
 
 class BaseAnalysis:

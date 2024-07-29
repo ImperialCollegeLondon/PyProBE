@@ -11,7 +11,11 @@ from pyprobe.result import Result
 
 @dataclass(kw_only=True)
 class Cycling(BaseAnalysis):
-    """A cycling experiment in a battery procedure."""
+    """A cycling experiment in a battery procedure.
+
+    Args:
+        experiment (Experiment): The experiment to analyse.
+    """
 
     experiment: Experiment
 

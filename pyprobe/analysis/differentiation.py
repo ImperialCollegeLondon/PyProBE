@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
-from pyprobe.analysis.utils import BaseAnalysis, analysismethod
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
 
 # from __future__ import annotations
@@ -15,11 +15,14 @@ from pyprobe.typing import PyProBERawDataType
 
 @dataclass(kw_only=True)
 class Differentiation(BaseAnalysis):
-    """A class for differentiating experimental data."""
+    """A class for differentiating experimental data.
+
+    Args:
+        rawdata (PyProBERawDataType): The raw data to analyse.
+    """
 
     rawdata: PyProBERawDataType
 
-    @analysismethod
     def differentiate_FD(
         self,
         x: str,
@@ -64,7 +67,6 @@ class Differentiation(BaseAnalysis):
         }
         return gradient_result
 
-    @analysismethod
     def differentiate_LEAN(
         self,
         x: str,

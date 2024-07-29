@@ -7,7 +7,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
-from pyprobe.analysis.utils import BaseAnalysis, analysismethod
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
@@ -83,7 +83,6 @@ class Pulsing(BaseAnalysis):
         return (self.V1 - self.V0) / self.I1
 
     @property
-    @analysismethod
     def pulse_summary(self) -> Result:
         """Find the resistance values for each pulse.
 

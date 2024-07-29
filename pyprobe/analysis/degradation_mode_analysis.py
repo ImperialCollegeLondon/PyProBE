@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
-from pyprobe.analysis.utils import BaseAnalysis, analysismethod
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Cycle, Experiment, RawData
 from pyprobe.result import Result
 
@@ -61,7 +61,6 @@ class DMA(BaseAnalysis):
         """Return the dVdSOC data from the input data."""
         return np.gradient(self.voltage, self.SOC)
 
-    @analysismethod
     def fit_ocv(
         self,
         x_ne: NDArray[np.float64],
@@ -171,7 +170,6 @@ class DMA(BaseAnalysis):
 
         return self.stoichiometry_limits, self.fitted_OCV
 
-    @analysismethod
     def quantify_degradation_modes(
         self, reference_stoichiometry_limits: Result
     ) -> Result:
@@ -225,7 +223,6 @@ class DMA(BaseAnalysis):
         }
         return self.dma_result
 
-    @analysismethod
     def average_ocvs(
         self,
         discharge_filter: Optional[str] = None,

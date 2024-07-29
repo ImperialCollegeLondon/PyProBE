@@ -6,17 +6,20 @@ from typing import Optional
 import numpy as np
 from scipy.interpolate import make_smoothing_spline
 
-from pyprobe.analysis.utils import BaseAnalysis, analysismethod
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
 
 
 @dataclass(kw_only=True)
 class Smoothing(BaseAnalysis):
-    """A class for smoothing noisy experimental data."""
+    """A class for smoothing noisy experimental data.
+
+    Args:
+        rawdata (Result): The raw data to analyse.
+    """
 
     rawdata: Result
 
-    @analysismethod
     def spline_smoothing(
         self, x: str, y: str, smoothing_lambda: Optional[float] = None
     ) -> Result:
