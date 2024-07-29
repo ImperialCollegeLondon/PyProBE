@@ -17,24 +17,16 @@ from pyprobe.filters import Procedure
 class Cell:
     """A class for a cell in a battery experiment.
 
-    Attributes:
+    Args:
         info (dict): Rig and setup information on the cell
             e.g. cycler number, thermocouple channel.
-        procedure (dict): The raw data from each procedure conducted on the cell.
-        processed_data (dict): A place to store processed data for each procedure
-            for use later.
     """
 
     def __init__(
         self,
         info: Dict[str, str | int | float],
     ):
-        """Create a cell object.
-
-        Args:
-            info (dict): Rig and setup information on the cell
-                e.g. cycler number, thermocouple channel.
-        """
+        """Create a cell object."""
         self.info = info
         self.info["color"] = distinctipy.get_hex(
             distinctipy.get_colors(
@@ -60,6 +52,9 @@ class Cell:
         Args:
             record_filepath (str): The path to the experiment record .xlsx file.
             worksheet_name (str): The worksheet name to read from the record.
+
+        Returns:
+            list: The list of cell objects
         """
         record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
 
