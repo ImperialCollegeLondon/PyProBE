@@ -4,11 +4,12 @@ import math
 import numpy as np
 import polars as pl
 import pytest
+import re
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis.degradation_mode_analysis import DMA
 from pyprobe.result import Result
-
+from pydantic import ValidationError
 
 def graphite_LGM50_ocp_Chen2020(sto):
     """Chen2020 graphite ocp fit."""
@@ -39,6 +40,18 @@ def nmc_LGM50_ocp_Chen2020(sto):
 n_points = 1000
 z = np.linspace(0, 1, 1000)
 
+def test_init():
+    """Test the __init__ method."""
+    result = Result(
+        base_dataframe=pl.DataFrame(
+            {"Time [s]": np.linspace(0, 1, n_points), "Current [A]": np.linspace(0, 1, n_points)}
+        ),
+        info={},
+    )
+    with pytest.raises(ValidationError):
+        DMA(input_data=result)
+
+
 
 def test_fit_ocv():
     """Test the fit_ocv method."""
@@ -56,7 +69,7 @@ def test_fit_ocv():
         ),
         info={},
     )
-    dma = DMA(rawdata=result)
+    dma = DMA(input_data=result)
     x_guess = [0.8, 0.4, 0.2, 0.6]
     params, fit = dma.fit_ocv(
         x_ne=z,
@@ -105,7 +118,7 @@ def test_fit_ocv():
         ),
         info={},
     )
-    dma = DMA(rawdata=result)
+    dma = DMA(input_data=result)
     params, _ = dma.fit_ocv(
         x_ne=z,
         x_pe=z,
@@ -142,7 +155,7 @@ def test_fit_ocv_discharge():
         ),
         info={},
     )
-    dma = DMA(rawdata=result)
+    dma = DMA(input_data=result)
     params, _ = dma.fit_ocv(
         x_ne=z, x_pe=z, ocp_ne=ocp_ne, ocp_pe=ocp_pe, x_guess=x_guess
     )
@@ -218,7 +231,7 @@ def bol_result_fixture(bol_capacity_fixture):
         ),
         info={},
     )
-    dma = DMA(rawdata=result)
+    dma = DMA(input_data=result)
     dma.stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
@@ -244,7 +257,7 @@ def eol_result_fixture(eol_capacity_fixture):
         ),
         info={},
     )
-    dma = DMA(rawdata=result)
+    dma = DMA(input_data=result)
     dma.stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
@@ -285,9 +298,9 @@ def test_average_ocvs(BreakinCycles_fixture):
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_SOC()
     print(type(break_in))
-    dma = DMA(rawdata=break_in).average_ocvs(charge_filter="constant_current(1)")
-    assert math.isclose(dma.rawdata.get_only("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(dma.rawdata.get_only("Voltage [V]")[-1], 4.170649780122139)
+    dma = DMA(input_data=break_in).average_ocvs(charge_filter="constant_current(1)")
+    assert math.isclose(dma.input_data.get_only("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(dma.input_data.get_only("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(
-        dma.rawdata.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
+        dma.input_data.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
     )

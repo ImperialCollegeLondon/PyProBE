@@ -1,6 +1,6 @@
 """Module for degradation mode analysis methods."""
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
 
 import numpy as np
 from numpy.typing import NDArray
@@ -9,17 +9,20 @@ import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_function
 from pyprobe.analysis import utils
 from pyprobe.filters import Cycle, Experiment, RawData
 from pyprobe.result import Result
+from pyprobe.typing import PyProBEValidator, PyProBEDataType
+from pyprobe.analysis.utils import BaseAnalysis 
 
 
-@dataclass(kw_only=True)
-class DMA:
+class DMA(BaseAnalysis):
     """A class for degradation mode analysis methods.
 
     Args:
-        rawdata (RawData): The input data to the method.
+        input_data (RawData): The input data to the method.
     """
+    
 
-    rawdata: Union[Experiment, Cycle, RawData, Result]
+    input_data: PyProBEDataType
+    required_columns: List =["Voltage [V]", "Capacity [Ah]"]
 
     stoichiometry_limits: Optional[Result] = None
     fitted_OCV: Optional[Result] = None
@@ -28,25 +31,25 @@ class DMA:
     @property
     def voltage(self) -> NDArray[np.float64]:
         """Return the voltage data from the input data."""
-        return self.rawdata.get_only("Voltage [V]")
+        return self.input_data.get_only("Voltage [V]")
 
     @property
     def capacity(self) -> NDArray[np.float64]:
         """Return the capacity data from the input data."""
-        return self.rawdata.get_only("Capacity [Ah]")
+        return self.input_data.get_only("Capacity [Ah]")
 
     @property
     def SOC(self) -> NDArray[np.float64]:
         """Return the state of charge data from the input data."""
-        if "SOC" in self.rawdata.column_list:
-            return self.rawdata.get_only("SOC")
+        if "SOC" in self.input_data.column_list:
+            return self.input_data.get_only("SOC")
         else:
             return (self.capacity - self.capacity.min()) / self.cell_capacity
 
     @property
     def cell_capacity(self) -> float:
         """Return the cell capacity from the input data."""
-        if "SOC" in self.rawdata.column_list:
+        if "SOC" in self.input_data.column_list:
             return np.abs(np.ptp(self.capacity)) / np.abs(np.ptp(self.SOC))
         else:
             return np.abs(np.ptp(self.capacity))
@@ -117,7 +120,7 @@ class DMA:
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, self.cell_capacity
         )
 
-        self.stoichiometry_limits = self.rawdata.clean_copy(
+        self.stoichiometry_limits = self.input_data.clean_copy(
             {
                 "x_pe low SOC": np.array([x_pe_lo]),
                 "x_pe high SOC": np.array([x_pe_hi]),
@@ -151,7 +154,7 @@ class DMA:
             x_ne,
             ocp_ne,
         )
-        self.fitted_OCV = self.rawdata.clean_copy(
+        self.fitted_OCV = self.input_data.clean_copy(
             {
                 "Capacity [Ah]": self.capacity,
                 "SOC": self.SOC,
@@ -184,6 +187,25 @@ class DMA:
                 A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
                 the provided OCV fits.
         """
+        required_columns = [
+            "Cell Capacity [Ah]",
+            "Cathode Capacity [Ah]",
+            "Anode Capacity [Ah]",
+            "Li Inventory [Ah]",
+        ]
+        schema = {
+            "reference_stoichiometry_limits": {
+                "type": "Result",
+                "contains_columns": required_columns,
+            },
+            "stoichiometry_limits": {
+                "type": "Result",
+                "contains_columns": required_columns,}
+        }
+        v = PyProBEValidator(schema)
+        if not v.validate({"reference_stoichiometry_limits": reference_stoichiometry_limits, "stoichiometry_limits": self.stoichiometry_limits}):
+            raise ValueError(v.errors)
+        
         if self.stoichiometry_limits is None:
             raise ValueError("No electrode capacities have been calculated.")
 
@@ -237,21 +259,27 @@ class DMA:
         Returns:
             DMA: A DMA object containing the averaged OCV curve.
         """
-        if not (
-            isinstance(self.rawdata, Experiment) or isinstance(self.rawdata, Cycle)
-        ):
-            raise ValueError(
-                "RawData object must be a Cycle or Experiment object to"
-                " average OCVs."
-            )
+        required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
+        schema = {
+            "discharge_filter": {"type": "string", "nullable": True},
+            "charge_filter": {"type": "string", "nullable": True},
+            "input_data": {
+                "type": "FilterToCycleType",
+                "contains_columns": required_columns,
+            },
+        }
+        v = PyProBEValidator(schema)
+        if not v.validate({"discharge_filter": discharge_filter, "charge_filter": charge_filter, "input_data": self.input_data}):
+            raise ValueError(v.errors)
+        
         if discharge_filter is None:
-            discharge_result = self.rawdata.discharge()
+            discharge_result = self.input_data.discharge()
         else:
-            discharge_result = eval(f"self.rawdata.{discharge_filter}")
+            discharge_result = eval(f"self.input_data.{discharge_filter}")
         if charge_filter is None:
-            charge_result = self.rawdata.charge()
+            charge_result = self.input_data.charge()
         else:
-            charge_result = eval(f"self.rawdata.{charge_filter}")
+            charge_result = eval(f"self.input_data.{charge_filter}")
         charge_SOC = charge_result.get_only("SOC")
         charge_OCV = charge_result.get_only("Voltage [V]")
         charge_current = charge_result.get_only("Current [A]")
@@ -275,4 +303,4 @@ class DMA:
                 "SOC": charge_SOC,
             }
         )
-        return DMA(rawdata=average_result)
+        return DMA(input_data=average_result)
