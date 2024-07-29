@@ -56,7 +56,7 @@ def test_fit_ocv():
         ),
         info={},
     )
-    dma = DMA(result)
+    dma = DMA(rawdata=result)
     x_guess = [0.8, 0.4, 0.2, 0.6]
     params, fit = dma.fit_ocv(
         x_ne=z,
@@ -105,7 +105,7 @@ def test_fit_ocv():
         ),
         info={},
     )
-    dma = DMA(result)
+    dma = DMA(rawdata=result)
     params, _ = dma.fit_ocv(
         x_ne=z,
         x_pe=z,
@@ -142,7 +142,7 @@ def test_fit_ocv_discharge():
         ),
         info={},
     )
-    dma = DMA(result)
+    dma = DMA(rawdata=result)
     params, _ = dma.fit_ocv(
         x_ne=z, x_pe=z, ocp_ne=ocp_ne, ocp_pe=ocp_pe, x_guess=x_guess
     )
@@ -218,7 +218,7 @@ def bol_result_fixture(bol_capacity_fixture):
         ),
         info={},
     )
-    dma = DMA(result)
+    dma = DMA(rawdata=result)
     dma.stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
@@ -239,9 +239,12 @@ def eol_result_fixture(eol_capacity_fixture):
     voltage = np.linspace(0, 1, n_points)
     capacity = np.linspace(0, 1, n_points)
     result = Result(
-        pl.DataFrame({"Voltage [V]": voltage, "Capacity [Ah]": capacity}), {}
+        base_dataframe=pl.DataFrame(
+            {"Voltage [V]": voltage, "Capacity [Ah]": capacity}
+        ),
+        info={},
     )
-    dma = DMA(result)
+    dma = DMA(rawdata=result)
     dma.stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
@@ -282,16 +285,9 @@ def test_average_ocvs(BreakinCycles_fixture):
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_SOC()
     print(type(break_in))
-    dma = DMA(break_in).average_ocvs(charge_filter="constant_current(1)")
-    assert math.isclose(dma.get_only("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(dma.get_only("Voltage [V]")[-1], 4.170649780122139)
+    dma = DMA(rawdata=break_in).average_ocvs(charge_filter="constant_current(1)")
+    assert math.isclose(dma.rawdata.get_only("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(dma.rawdata.get_only("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(
-        dma.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
-    )
-
-
-def test_analysis_methods(bol_result_fixture):
-    """Test the analysis methods."""
-    assert set(bol_result_fixture.analysis_methods) == set(
-        ("fit_ocv", "quantify_degradation_modes", "average_ocvs")
+        dma.rawdata.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
     )

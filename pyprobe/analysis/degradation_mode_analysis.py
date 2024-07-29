@@ -10,32 +10,54 @@ from pyprobe.filters import Cycle, Experiment, RawData
 from pyprobe.result import Result
 
 
-class DMA(Result, BaseAnalysis):
+class DMA(BaseAnalysis):
     """A class for degradation mode analysis methods.
 
     Args:
         rawdata (RawData): The input data to the method.
     """
 
-    def __init__(self, rawdata: Union[Experiment, Cycle, RawData, Result]) -> None:
-        """Initialize the DMA object."""
-        self.result_list = ["stoichiometry_limits", "fitted_OCV", "dma_result"]
-        self.rawdata = rawdata
-        self.base_dataframe = rawdata.base_dataframe
-        self.info = rawdata.info
-        self.voltage = rawdata.get_only("Voltage [V]")
-        self.capacity = rawdata.get_only("Capacity [Ah]")
+    rawdata: Union[Experiment, Cycle, RawData, Result]
 
-        if "SOC" in rawdata.column_list:
-            self.SOC = rawdata.get_only("SOC")
-            self.cell_capacity = np.abs(np.ptp(self.capacity)) / np.abs(
-                np.ptp(self.SOC)
-            )
+    stoichiometry_limits: Optional[Result] = None
+    fitted_OCV: Optional[Result] = None
+    dma_result: Optional[Result] = None
+
+    @property
+    def voltage(self) -> NDArray[np.float64]:
+        """Return the voltage data from the input data."""
+        return self.rawdata.get_only("Voltage [V]")
+
+    @property
+    def capacity(self) -> NDArray[np.float64]:
+        """Return the capacity data from the input data."""
+        return self.rawdata.get_only("Capacity [Ah]")
+
+    @property
+    def SOC(self) -> NDArray[np.float64]:
+        """Return the state of charge data from the input data."""
+        if "SOC" in self.rawdata.column_list:
+            return self.rawdata.get_only("SOC")
         else:
-            self.cell_capacity = np.abs(np.ptp(self.capacity))
-            self.SOC = (self.capacity - self.capacity.min()) / self.cell_capacity
-        self.dSOCdV = np.gradient(self.SOC, self.voltage)
-        self.dVdSOC = np.gradient(self.voltage, self.SOC)
+            return (self.capacity - self.capacity.min()) / self.cell_capacity
+
+    @property
+    def cell_capacity(self) -> float:
+        """Return the cell capacity from the input data."""
+        if "SOC" in self.rawdata.column_list:
+            return np.abs(np.ptp(self.capacity)) / np.abs(np.ptp(self.SOC))
+        else:
+            return np.abs(np.ptp(self.capacity))
+
+    @property
+    def dSOCdV(self) -> NDArray[np.float64]:
+        """Return the dSOCdV data from the input data."""
+        return np.gradient(self.SOC, self.voltage)
+
+    @property
+    def dVdSOC(self) -> NDArray[np.float64]:
+        """Return the dVdSOC data from the input data."""
+        return np.gradient(self.voltage, self.SOC)
 
     @analysismethod
     def fit_ocv(
@@ -117,7 +139,7 @@ class DMA(Result, BaseAnalysis):
             "Li Inventory [Ah]": "Lithium inventory.",
         }
 
-        self.fitted_voltage = dma_functions.calc_full_cell_OCV(
+        fitted_voltage = dma_functions.calc_full_cell_OCV(
             self.SOC,
             x_pe_lo,
             x_pe_hi,
@@ -133,11 +155,11 @@ class DMA(Result, BaseAnalysis):
                 "Capacity [Ah]": self.capacity,
                 "SOC": self.SOC,
                 "Input Voltage [V]": self.voltage,
-                "Fitted Voltage [V]": self.fitted_voltage,
+                "Fitted Voltage [V]": fitted_voltage,
                 "Input dSOCdV [1/V]": self.dSOCdV,
-                "Fitted dSOCdV [1/V]": np.gradient(self.SOC, self.fitted_voltage),
+                "Fitted dSOCdV [1/V]": np.gradient(self.SOC, fitted_voltage),
                 "Input dVdSOC [V]": self.dVdSOC,
-                "Fitted dVdSOC [V]": np.gradient(self.fitted_voltage, self.SOC),
+                "Fitted dVdSOC [V]": np.gradient(fitted_voltage, self.SOC),
             }
         )
         self.fitted_OCV.column_definitions = {
@@ -162,7 +184,7 @@ class DMA(Result, BaseAnalysis):
                 A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
                 the provided OCV fits.
         """
-        if not hasattr(self, "stoichiometry_limits"):
+        if self.stoichiometry_limits is None:
             raise ValueError("No electrode capacities have been calculated.")
 
         electrode_capacity_results = [
@@ -206,7 +228,7 @@ class DMA(Result, BaseAnalysis):
         self,
         discharge_filter: Optional[str] = None,
         charge_filter: Optional[str] = None,
-    ) -> Result:
+    ) -> "DMA":
         """Average the charge and discharge OCV curves.
 
         Args:
@@ -214,7 +236,7 @@ class DMA(Result, BaseAnalysis):
             charge_result (Result): The charge OCV data.
 
         Returns:
-            Tuple[Result, Result]: The averaged charge and discharge OCV curves.
+            DMA: A DMA object containing the averaged OCV curve.
         """
         if not (
             isinstance(self.rawdata, Experiment) or isinstance(self.rawdata, Cycle)
