@@ -291,14 +291,14 @@ class Cell:
     @staticmethod
     def process_readme(
         readme_path: str,
-    ) -> tuple[Dict[str, str], List[List[int]]]:
+    ) -> tuple[List[str], List[List[int]]]:
         """Function to process the README.yaml file.
 
         Args:
             readme_path (str): The path to the README.yaml file.
 
         Returns:
-            Tuple[Dict[str, str], List[int], List[int]]:
+            Tuple[List[str], List[int], List[int]]:
                 - dict: The titles of the experiments inside a procedure.
                     Format {title: experiment type}.
                 - list: The cycle indices inside the procedure.
@@ -307,9 +307,7 @@ class Cell:
         with open(readme_path, "r") as file:
             readme_dict = yaml.safe_load(file)
 
-        titles = {
-            experiment: readme_dict[experiment]["Type"] for experiment in readme_dict
-        }
+        titles = list(readme_dict.keys())
 
         max_step = 0
         steps: List[List[int]] = []

@@ -1,7 +1,7 @@
 """A module for the filtering classes."""
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import polars as pl
 
@@ -228,7 +228,7 @@ class Procedure(RawData):
         info (Dict[str, str | int | float]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
-        titles (Dict[str, str]): A dict containing the titles of the experiments.
+        titles (List[str]): A dict containing the titles of the experiments.
         steps_idx (List[List[int]]): A list of lists containing the step indices for
             each experiment.
 
@@ -258,7 +258,7 @@ class Procedure(RawData):
             See :func:`constant_voltage`.
     """
 
-    titles: Dict[str, str]
+    titles: List[str]
     steps_idx: List[List[int]]
 
     def __post_init__(self) -> None:
@@ -298,7 +298,7 @@ class Procedure(RawData):
         for experiment_name in experiment_names:
             if experiment_name not in self.titles:
                 raise ValueError(f"{experiment_name} not in procedure.")
-            experiment_number = list(self.titles.keys()).index(experiment_name)
+            experiment_number = self.titles.index(experiment_name)
             steps_idx.append(self.steps_idx[experiment_number])
         flattened_steps = self.flatten(steps_idx)
         conditions = [
@@ -318,7 +318,7 @@ class Procedure(RawData):
         Returns:
             List[str]: The names of the experiments in the procedure.
         """
-        return list(self.titles.keys())
+        return list(self.titles)
 
     def verify_yaml(self, readme_name: str) -> str:
         """Verify that the readme has YAML extension.

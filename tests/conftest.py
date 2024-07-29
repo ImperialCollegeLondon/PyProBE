@@ -20,11 +20,11 @@ def lazyframe_fixture():
 @pytest.fixture(scope="module")
 def titles_fixture():
     """Pytest fixture for example data titles."""
-    return {
-        "Initial Charge": "SOC Reset",
-        "Break-in Cycles": "Cycling",
-        "Discharge Pulses": "Pulsing",
-    }
+    return [
+        "Initial Charge",
+        "Break-in Cycles",
+        "Discharge Pulses",
+    ]
 
 
 @pytest.fixture(scope="module")

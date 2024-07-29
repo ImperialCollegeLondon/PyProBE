@@ -42,7 +42,7 @@ def test_verify_yaml(procedure_fixture):
 
 def test_experiment_names(procedure_fixture, titles_fixture):
     """Test the experiment_names method."""
-    assert procedure_fixture.experiment_names == list(titles_fixture.keys())
+    assert procedure_fixture.experiment_names == titles_fixture
 
 
 def test_flatten(procedure_fixture):
