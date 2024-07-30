@@ -90,9 +90,11 @@ def test_zero_column(RawData_fixture):
     )
 
 
-def test_definitions(RawData_fixture):
+def test_definitions(lazyframe_fixture, info_fixture):
     """Test that the definitions have been correctly set."""
-    definition_keys = list(RawData_fixture.column_definitions.keys())
+    rawdata = RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
+    definition_keys = list(rawdata.column_definitions.keys())
+    print(rawdata.column_definitions)
     assert set(definition_keys) == set(
         [
             "Date",

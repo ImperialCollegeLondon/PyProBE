@@ -1,14 +1,21 @@
 """A module for the RawData class."""
-from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import polars as pl
+from pydantic import Field
 
 # from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
+default_column_definitions = {
+    "Date": "The timestamp of the data point. Type: datetime.",
+    "Time [s]": "The time in seconds passed from the start of the current filter.",
+    "Current [A]": "The current in Amperes.",
+    "Voltage [V]": "The terminal voltage in Volts.",
+    "Capacity [Ah]": "The net charge passed since the start of the current filter.",
+}
 
-@dataclass(kw_only=True)
+
 class RawData(Result):
     """A RawData object for returning data.
 
@@ -21,16 +28,10 @@ class RawData(Result):
             A dictionary containing the definitions of the columns in the data.
     """
 
-    column_definitions: Dict[str, str] = field(
-        default_factory=lambda: {
-            "Date": "The timestamp of the data point. Type: datetime.",
-            "Time [s]": "The time in seconds passed from the start of the current "
-            "filter.",
-            "Current [A]": "The current in Amperes.",
-            "Voltage [V]": "The terminal voltage in Volts.",
-            "Capacity [Ah]": "The net charge passed since the start of the current "
-            "filter.",
-        }
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
     )
     """A dictionary containing the definitions of the columns in the data."""
 

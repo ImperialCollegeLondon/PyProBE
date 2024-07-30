@@ -1,11 +1,11 @@
 """A module for the filtering classes."""
 import os
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
+from pydantic import Field
 
-from pyprobe.rawdata import RawData
+from pyprobe.rawdata import RawData, default_column_definitions
 
 if TYPE_CHECKING:
     from pyprobe.typing import (  # , FilterToStepType
@@ -221,7 +221,6 @@ def constant_voltage(
     return filter.step(*constant_voltage_numbers, condition=condition)
 
 
-@dataclass(kw_only=True)
 class Procedure(RawData):
     """A class for a procedure in a battery experiment.
 
@@ -263,7 +262,13 @@ class Procedure(RawData):
     titles: List[str]
     steps_idx: List[List[int]]
 
-    def __post_init__(self) -> None:
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
+
+    def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
         self.zero_column(
             "Time [s]",
@@ -352,7 +357,6 @@ class Procedure(RawData):
             return [item for sublist in lst for item in cls.flatten(sublist)]
 
 
-@dataclass(kw_only=True)
 class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure.
 
@@ -387,9 +391,13 @@ class Experiment(RawData):
             See :func:`constant_voltage`.
     """
 
-    def __post_init__(
-        self,
-    ) -> None:
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
+
+    def model_post_init(self, __context: Any) -> None:
         """Create an experiment class."""
         self.zero_column(
             "Time [s]",
@@ -413,7 +421,6 @@ class Experiment(RawData):
     constant_voltage = constant_voltage
 
 
-@dataclass(kw_only=True)
 class Cycle(RawData):
     """A class for a cycle in a battery experimental procedure.
 
@@ -446,9 +453,13 @@ class Cycle(RawData):
             See :func:`constant_voltage`.
     """
 
-    def __post_init__(
-        self,
-    ) -> None:
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
+
+    def model_post_init(self, __context: Any) -> None:
         """Create a cycle class."""
         self.zero_column(
             "Time [s]",
@@ -471,7 +482,6 @@ class Cycle(RawData):
     constant_voltage = constant_voltage
 
 
-@dataclass(kw_only=True)
 class Step(RawData):
     """A class for a step in a battery experimental procedure.
 
@@ -490,9 +500,13 @@ class Step(RawData):
             See :func:`constant_voltage`.
     """
 
-    def __post_init__(
-        self,
-    ) -> None:
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
+
+    def model_post_init(self, __context: Any) -> None:
         """Create a step class."""
         self.zero_column(
             "Time [s]",
