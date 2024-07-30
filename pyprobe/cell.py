@@ -31,28 +31,32 @@ class Cell(BaseModel):
     def check_and_set_name(
         cls, info: Dict[str, str | int | float]
     ) -> Dict[str, str | int | float]:
-        """Check if the 'Name' field is in info. If not, set it to 'Default Name'."""
+        """Validate the `info` field.
+
+        Checks that a `Name` field is present in the `info` dictionary, if not it is
+        set to 'Default Name'. If the `color` field is not present, a color is
+        generated.
+        """
         if "Name" not in info.keys():
             info["Name"] = "Default Name"
             warnings.warn(
                 "The 'Name' field was not in info. It has been set to 'Default Name'."
             )
+
+        if "color" not in info.keys():
+            info["color"] = distinctipy.get_hex(
+                distinctipy.get_colors(
+                    1,
+                    rng=1,  # Set the random seed
+                    exclude_colors=[
+                        (0, 0, 0),
+                        (1, 1, 1),
+                        (1, 1, 0),
+                    ],
+                )[0]
+            )
         values = info
         return values
-
-    def model_post_init(self, __context: Any) -> None:
-        """Post init method for the Pydantic model."""
-        self.info["color"] = distinctipy.get_hex(
-            distinctipy.get_colors(
-                1,
-                rng=1,  # Set the random seed
-                exclude_colors=[
-                    (0, 0, 0),
-                    (1, 1, 1),
-                    (1, 1, 0),
-                ],
-            )[0]
-        )
 
     @classmethod
     def make_cell_list(
@@ -75,8 +79,9 @@ class Cell(BaseModel):
         cell_list = []
         colors = cls.set_color_scheme(n_cells, scheme="distinctipy")
         for i in range(n_cells):
-            cell_list.append(cls(info=record.row(i, named=True)))
-            cell_list[i].info["color"] = colors[i]
+            info = record.row(i, named=True)
+            info["color"] = colors[i]
+            cell_list.append(cls(info=info))
         return cell_list
 
     @staticmethod
