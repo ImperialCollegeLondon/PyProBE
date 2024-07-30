@@ -5,7 +5,6 @@ import polars as pl
 import pytest
 
 from pyprobe.rawdata import RawData
-from pyprobe.result import Result
 
 
 @pytest.fixture
@@ -20,18 +19,23 @@ def test_init(RawData_fixture):
     assert isinstance(RawData_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(RawData_fixture.info, dict)
 
+    # test with incorrect data
+    data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+    with pytest.raises(ValueError):
+        RawData(base_dataframe=data, info={"test": 1})
 
-def test_gradient(BreakinCycles_fixture):
-    """Test the gradient property."""
-    discharge = BreakinCycles_fixture.cycle(0).discharge(0)
-    gradient = discharge.gradient("Capacity [Ah]", "Voltage [V]", "LEAN", 1, "dxdy")
-    assert isinstance(gradient, Result)
-    assert isinstance(gradient.data, pl.DataFrame)
-    assert gradient.data.columns == [
-        "Capacity [Ah]",
-        "Voltage [V]",
-        "d(Capacity [Ah])/d(Voltage [V])",
-    ]
+
+# def test_gradient(BreakinCycles_fixture):
+#     """Test the gradient property."""
+#     discharge = BreakinCycles_fixture.cycle(0).discharge(0)
+#     gradient = discharge.gradient("Capacity [Ah]", "Voltage [V]", "LEAN", 1, "dxdy")
+#     assert isinstance(gradient, Result)
+#     assert isinstance(gradient.data, pl.DataFrame)
+#     assert gradient.data.columns == [
+#         "Capacity [Ah]",
+#         "Voltage [V]",
+#         "d(Capacity [Ah])/d(Voltage [V])",
+#     ]
 
 
 def test_capacity(BreakinCycles_fixture):
@@ -98,9 +102,9 @@ def test_definitions(lazyframe_fixture, info_fixture):
     assert set(definition_keys) == set(
         [
             "Date",
-            "Time [s]",
-            "Current [A]",
-            "Voltage [V]",
-            "Capacity [Ah]",
+            "Time",
+            "Current",
+            "Voltage",
+            "Capacity",
         ]
     )

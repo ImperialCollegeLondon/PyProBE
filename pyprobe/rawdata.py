@@ -2,18 +2,20 @@
 from typing import Dict, Optional, Union
 
 import polars as pl
-from pydantic import Field
+from pydantic import Field, field_validator
 
 # from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
 default_column_definitions = {
     "Date": "The timestamp of the data point. Type: datetime.",
-    "Time [s]": "The time in seconds passed from the start of the current filter.",
-    "Current [A]": "The current in Amperes.",
-    "Voltage [V]": "The terminal voltage in Volts.",
-    "Capacity [Ah]": "The net charge passed since the start of the current filter.",
+    "Time": "The time passed from the start of the procedure.",
+    "Current": "The current through the cell.",
+    "Voltage": "The terminal voltage.",
+    "Capacity": "The net charge passed since the start of the procedure.",
 }
+
+required_columns = ["Date", "Time [s]", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
 
 
 class RawData(Result):
@@ -34,6 +36,19 @@ class RawData(Result):
         default_factory=lambda: default_column_definitions.copy()
     )
     """A dictionary containing the definitions of the columns in the data."""
+
+    @field_validator("base_dataframe")
+    @classmethod
+    def check_required_columns(
+        cls, dataframe: pl.LazyFrame | pl.DataFrame
+    ) -> "RawData":
+        """Check if the required columns are present in the input_data."""
+        missing_columns = [
+            col for col in required_columns if col not in dataframe.columns
+        ]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {missing_columns}")
+        return dataframe
 
     def zero_column(
         self,
