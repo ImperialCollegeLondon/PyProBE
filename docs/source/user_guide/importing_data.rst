@@ -8,7 +8,7 @@ object. It has two main attributes: a dictionary of cell details and experimenta
 (:attr:`pyprobe.cell.Cell.info`) and a dictionary of experimental procedures performed 
 on the cell (:attr:`pyprobe.cell.Cell.procedure`).
 
-A cell object can be created by providing an info dictionary to 
+A cell object can be created by providing an info dictionary as a keyword argument to 
 `info`:
 
 .. code-block:: python
@@ -26,7 +26,9 @@ A cell object can be created by providing an info dictionary to
    cell = pyprobe.Cell(info = info_dictionary)
 
 The info dictionary can contain any number of key-value pairs. The only required key is
-'Name', which is used to identify the cell in plots.
+'Name', which is used to identify the cell in plots. PyProBE will verify that the 
+info dictionary contains the 'Name' field. If it does not, it will fill this field with
+'Default Name'.
 
 Converting data to PyProBE Format
 ---------------------------------
@@ -36,7 +38,7 @@ multiple procedures, such as beginning-of-life testing, degradation cycles, refe
 performance tests (RPTs) etc. 
 
 Before adding data to a cell object, it must be converted into the PyProBE standard 
-format. This is done with the :func:`pyprobe.cell.Cell.process_cycler_file` method:
+format. This is done with the :func:`~pyprobe.cell.Cell.process_cycler_file` method:
 
 .. code-block:: python
 
@@ -89,7 +91,7 @@ experimental procedure that generated the data. See the :ref:`writing_a_readme_f
 section for guidance.
 
 A data file in the standard PyProBE format can be added to a cell object using the
-:func:`pyprobe.cell.Cell.add_procedure` method:
+:func:`~pyprobe.cell.Cell.add_procedure` method:
 
 .. code-block:: python
 
@@ -119,7 +121,7 @@ Batch preprocessing
 -------------------
 If you have multiple cells undergoing the same experimental procedures, you can use the
 built-in batch processing functionality in PyProBE to speed up your workflow. You must
-first create a list of :attr:`pyprobe.cell.Cell` objects.
+first create a list of :attr:`~pyprobe.cell.Cell` objects.
 
 The fastest way to do this is to store an Experiment Record alongside your data. This is
 an Excel file that contains important experimental information about your cells and the
@@ -127,27 +129,27 @@ procedures they have undergone. See the :ref:`writing_an_experiment_record` sect
 guidance.
 
 Once you have an Experiment Record, you can create a list of cells using the 
-:func:`pyprobe.cell.Cell.make_cell_list` function:
+:func:`~pyprobe.cell.Cell.make_cell_list` function:
 
 .. code-block:: python
 
    cell_list = Cell.make_cell_list(record_filepath = 'path/to/experiment_record.xlsx',
-                                   worsheet_name = 'Sample experiment')
+                                   worksheet_name = 'Sample experiment')
 
-This function creates a list of cells, where the :attr:`pyprobe.cell.Cell.info` 
+This function creates a list of cells, where the :attr:`~pyprobe.cell.Cell.info` 
 dictionary is populated with the information from the Experiment Record.
 
 You can then add procedures to each cell in the list. 
-:func:`pyprobe.cell.Cell.add_procedure` includes the functionality to do this 
+:func:`~pyprobe.cell.Cell.add_procedure` includes the functionality to do this 
 parametrically. The steps are as follows:
 
 1. Define a function that generates the filename for each cell.
 2. Assign the filename generator function to the :code:`filename` argument in 
-   :func:`pyprobe.cell.Cell.add_procedure`.
+   :func:`~pyprobe.cell.Cell.add_procedure`.
 3. Provide the inputs to the filename generator function in the 
    :code:`filename_inputs` argument. The order of the inputs must match the order of the
    arguments in the filename generator function. These inputs must be keys of the 
-   :attr:`pyprobe.cell.Cell.info` dictionary. This means that they are likely to be 
+   :attr:`~pyprobe.cell.Cell.info` dictionary. This means that they are likely to be 
    column names in the Experiment Record Excel file.
 
 .. code-block:: python
