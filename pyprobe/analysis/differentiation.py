@@ -7,7 +7,7 @@ import numpy as np
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
-from pyprobe.typing import PyProBERawDataType
+from pyprobe.typing import PyProBEDataType
 
 
 class Differentiation(BaseAnalysis):
@@ -17,7 +17,7 @@ class Differentiation(BaseAnalysis):
         input_data (PyProBERawDataType): The raw data to analyse.
     """
 
-    input_data: PyProBERawDataType
+    input_data: PyProBEDataType
     required_columns: List[str] = []
 
     def differentiate_FD(

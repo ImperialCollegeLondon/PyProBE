@@ -11,14 +11,15 @@ from pyprobe.cell import Cell
 @pytest.fixture
 def cell_instance(info_fixture):
     """Return a Cell instance."""
-    return Cell(info_fixture)
+    return Cell(info=info_fixture)
 
 
 def test_init(cell_instance, info_fixture):
     """Test the __init__ method."""
-    assert cell_instance.info == info_fixture
+    expected_info = copy.copy(info_fixture)
+    expected_info["color"] = "#ff00ff"
+    assert cell_instance.info == expected_info
     assert cell_instance.procedure == {}
-    assert cell_instance.processed_data == {}
 
 
 def test_make_cell_list(info_fixture):

@@ -9,12 +9,13 @@ from typing import Any, Callable, Dict, List, Optional
 import distinctipy
 import polars as pl
 import yaml
+from pydantic import BaseModel, Field, validate_call
 
 from pyprobe.cyclers import biologic, neware
 from pyprobe.filters import Procedure
 
 
-class Cell:
+class Cell(BaseModel):
     """A class for a cell in a battery experiment.
 
     Args:
@@ -22,12 +23,11 @@ class Cell:
             e.g. cycler number, thermocouple channel.
     """
 
-    def __init__(
-        self,
-        info: Dict[str, str | int | float],
-    ):
-        """Create a cell object."""
-        self.info = info
+    info: Dict[str, str | int | float]
+    procedure: Dict[str, Procedure] = Field(default_factory=dict)
+
+    def model_post_init(self, __context: Any) -> None:
+        """Post init method for the Pydantic model."""
         self.info["color"] = distinctipy.get_hex(
             distinctipy.get_colors(
                 1,
@@ -38,8 +38,6 @@ class Cell:
                 ],
             )[0]
         )
-        self.procedure: Dict[str, Procedure] = {}
-        self.processed_data: Dict[str, pl.DataFrame] = {}
 
     @classmethod
     def make_cell_list(
@@ -62,7 +60,7 @@ class Cell:
         cell_list = []
         colors = cls.set_color_scheme(n_cells, scheme="distinctipy")
         for i in range(n_cells):
-            cell_list.append(cls(record.row(i, named=True)))
+            cell_list.append(cls(info=record.row(i, named=True)))
             cell_list[i].info["color"] = colors[i]
         return cell_list
 
@@ -84,6 +82,7 @@ class Cell:
             filename = os.path.splitext(filename)[0] + ".parquet"
         return filename
 
+    @validate_call
     def process_cycler_file(
         self,
         cycler: str,
@@ -122,6 +121,7 @@ class Cell:
         dataframe.write_parquet(output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
+    @validate_call
     def add_procedure(
         self,
         procedure_name: str,
@@ -164,7 +164,6 @@ class Cell:
             base_dataframe=base_dataframe,
             info=self.info,
         )
-        self.processed_data[procedure_name] = {}
 
     @staticmethod
     def get_filename(
