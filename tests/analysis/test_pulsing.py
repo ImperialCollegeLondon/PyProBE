@@ -10,7 +10,7 @@ from pyprobe.result import Result
 @pytest.fixture
 def Pulsing_fixture(procedure_fixture):
     """Pytest fixture for example pulsing experiment."""
-    return Pulsing(experiment=procedure_fixture.experiment("Discharge Pulses"))
+    return Pulsing(input_data=procedure_fixture.experiment("Discharge Pulses"))
 
 
 def test_pulse(Pulsing_fixture):

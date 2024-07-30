@@ -1,34 +1,35 @@
 """A module for the Pulsing class."""
 
-from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
+from pydantic import Field
 
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
-@dataclass(kw_only=True)
-class Pulsing:
+class Pulsing(BaseAnalysis):
     """A pulsing experiment in a battery procedure.
 
     Args:
-        experiment (RawData): The raw data for the pulsing experiment.
+        input_data (Experiment): The raw data for the pulsing experiment.
     """
 
-    experiment: Experiment
-    rests: List[Optional[Result]] = field(default_factory=list)
-    pulses: List[Optional[Result]] = field(default_factory=list)
+    input_data: Experiment
+    required_columns: List[str] = ["Current [A]", "Voltage [V]", "Time [s]"]
+    rests: List[Optional[Result]] = Field(default_factory=list)
+    pulses: List[Optional[Result]] = Field(default_factory=list)
 
-    def __post_init__(self) -> None:
+    def model_post_init(self, __context: Any) -> None:
         """Create a pulsing experiment."""
-        self.rests: List[Optional[Result]] = [None] * self.experiment.data.select(
+        self.rests: List[Optional[Result]] = [None] * self.input_data.data.select(
             "Cycle"
         ).n_unique("Cycle")
-        self.pulses: List[Optional[Result]] = [None] * self.experiment.data.select(
+        self.pulses: List[Optional[Result]] = [None] * self.input_data.data.select(
             "Cycle"
         ).n_unique("Cycle")
 
@@ -39,7 +40,7 @@ class Pulsing:
         Returns:
             pl.DataFrame: A dataframe with rows for the start of each pulse.
         """
-        df = self.experiment.data.with_columns(
+        df = self.input_data.data.with_columns(
             pl.col("Current [A]").shift().alias("Prev Current")
         )
         df = df.with_columns(pl.col("Voltage [V]").shift().alias("Prev Voltage"))
@@ -96,7 +97,7 @@ class Pulsing:
                     "V0 [V]": self.V0,
                 }
             ),
-            info=self.experiment.info,
+            info=self.input_data.info,
             column_definitions={
                 "Pulse number": "The pulse number.",
                 "R0 [Ohm]": "The ohmic resistance for each pulse.",
@@ -113,8 +114,8 @@ class Pulsing:
         t_point = self.pulse_starts["Time [s]"] + t
         Vt = np.zeros(len(t_point))
         for i in range(len(Vt)):
-            condition = self.experiment.data["Time [s]"] >= t_point[i]
-            first_row = self.experiment.data.filter(condition).sort("Time [s]").head(1)
+            condition = self.input_data.data["Time [s]"] >= t_point[i]
+            first_row = self.input_data.data.filter(condition).sort("Time [s]").head(1)
             Vt[i] = first_row["Voltage [V]"].to_numpy()[0]
         return (Vt - self.V0) / self.I1
 
@@ -128,7 +129,7 @@ class Pulsing:
             Result: A step object for a pulse in the pulsing experiment.
         """
         if self.pulses[pulse_number] is None:
-            self.pulses[pulse_number] = self.experiment.cycle(
+            self.pulses[pulse_number] = self.input_data.cycle(
                 pulse_number
             ).chargeordischarge(0)
         return self.pulses[pulse_number]
@@ -143,5 +144,5 @@ class Pulsing:
             Result: A step object for a rest in the pulsing experiment.
         """
         if self.rests[rest_number] is None:
-            self.rests[rest_number] = self.experiment.cycle(rest_number).rest(0)
+            self.rests[rest_number] = self.input_data.cycle(rest_number).rest(0)
         return self.rests[rest_number]
