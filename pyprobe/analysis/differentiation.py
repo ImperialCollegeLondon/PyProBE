@@ -3,35 +3,22 @@
 from typing import List
 
 import numpy as np
-from pydantic.dataclasses import dataclass
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
-
-# from __future__ import annotations
-from pyprobe.typing import PyProBERawDataType, PyProBEValidator
+from pyprobe.typing import PyProBERawDataType
 
 
-@dataclass(kw_only=True, config={"arbitrary_types_allowed": True})
-class Differentiation:
+class Differentiation(BaseAnalysis):
     """A class for differentiating experimental data.
 
     Args:
-        rawdata (PyProBERawDataType): The raw data to analyse.
+        input_data (PyProBERawDataType): The raw data to analyse.
     """
 
-    rawdata: PyProBERawDataType
-
-    def __post_init__(self) -> None:
-        """Initialise the Differentiation class."""
-        schema = {
-            "rawdata": {
-                "type": "PyProBERawDataType",
-            }
-        }
-        v = PyProBEValidator(schema)
-        if not v.validate({"rawdata": self.rawdata}):
-            raise ValueError(v.errors)
+    input_data: PyProBERawDataType
+    required_columns: List[str] = []
 
     def differentiate_FD(
         self,
@@ -55,8 +42,8 @@ class Differentiation:
                 A result object containing the columns, `x`, `y` and the
                 calculated gradient.
         """
-        x_data = self.rawdata.get_only(x)
-        y_data = self.rawdata.get_only(y)
+        x_data = self.input_data.get_only(x)
+        y_data = self.input_data.get_only(y)
         gradient = gradient
         if gradient == "dydx":
             gradient_title = f"d({y})/d({x})"
@@ -67,12 +54,12 @@ class Differentiation:
         else:
             raise ValueError("Gradient must be either 'dydx' or 'dxdy'.")
 
-        gradient_result = self.rawdata.clean_copy(
+        gradient_result = self.input_data.clean_copy(
             {x: x_data, y: y_data, gradient_title: gradient_data}
         )
         gradient_result.column_definitions = {
-            x: self.rawdata.column_definitions[x],
-            y: self.rawdata.column_definitions[y],
+            x: self.input_data.column_definitions[x],
+            y: self.input_data.column_definitions[y],
             gradient_title: "The calculated gradient.",
         }
         return gradient_result
@@ -125,8 +112,8 @@ class Differentiation:
                 gradient.
         """
         # identify variables
-        x_data = self.rawdata.get_only(x)
-        y_data = self.rawdata.get_only(y)
+        x_data = self.input_data.get_only(x)
+        y_data = self.input_data.get_only(y)
         k = k
 
         # split input data into uniformly sampled sections
@@ -155,12 +142,12 @@ class Differentiation:
 
         # output the results
         gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
-        gradient_result = self.rawdata.clean_copy(
+        gradient_result = self.input_data.clean_copy(
             {x: x_all, y: y_all, gradient_title: smoothed_gradient}
         )
         gradient_result.column_definitions = {
-            x: self.rawdata.column_definitions[x],
-            y: self.rawdata.column_definitions[y],
+            x: self.input_data.column_definitions[x],
+            y: self.input_data.column_definitions[y],
             gradient_title: "The calculated gradient.",
         }
         return gradient_result
