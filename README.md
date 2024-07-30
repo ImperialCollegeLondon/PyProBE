@@ -8,7 +8,7 @@ PyProBE is designed to:
 - Host a library of post-processing methods
 
 ## Installing PyProBE
-Please follow the [user installation guide](https://congenial-adventure-mz797n5.pages.github.io/installation.html) to install PyProBE.
+Please follow the [user installation guide](https://congenial-adventure-mz797n5.pages.github.io/user_guide/installation.html) to install PyProBE.
 
 ## Getting Started with PyProBE
 PyProBE should be imported as a package into an external post-processing script or jupyter notebook.
@@ -38,18 +38,18 @@ The PyProBE Dashboard can be launched on a list of ```Cell``` objects to allow r
 ![PyProBE Dashboard](./docs/source/user_guide/images/Dashboard.png)
 
 See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
-- [Importing data](https://congenial-adventure-mz797n5.pages.github.io/importing_data.html)
-- [Accessing data](https://congenial-adventure-mz797n5.pages.github.io/accessing_data.html)
-- [Plotting](https://congenial-adventure-mz797n5.pages.github.io/plotting.html)
+- [Importing data](https://congenial-adventure-mz797n5.pages.github.io/user_guide/importing_data.html)
+- [Accessing data](https://congenial-adventure-mz797n5.pages.github.io/user_guide/accessing_data.html)
+- [Plotting](https://congenial-adventure-mz797n5.pages.github.io/user_guide/plotting.html)
 
 You can find example notebooks in the [examples folder](examples/).
 
 ## Input data guidelines
-PyProBE works with numerous cyclers. For guidance on how to export your data to work with PyProBE see the [Input Data Guidance](https://congenial-adventure-mz797n5.pages.github.io/input_data_guidance.html).
+PyProBE works with numerous cyclers. For guidance on how to export your data to work with PyProBE see the [Input Data Guidance](https://congenial-adventure-mz797n5.pages.github.io/user_guide/input_data_guidance.html).
 
 The PyProBE workflow encourages thorough documentation of experimental data. For guidance please see:
-- [README file guidelines](https://congenial-adventure-mz797n5.pages.github.io/writing_a_readme_file.html)
-- [Experiment record guidelines](https://congenial-adventure-mz797n5.pages.github.io/writing_an_experiment_record.html#)
+- [README file guidelines](https://congenial-adventure-mz797n5.pages.github.io/user_guide/writing_a_readme_file.html)
+- [Experiment record guidelines](https://congenial-adventure-mz797n5.pages.github.io/user_guide/writing_an_experiment_record.html)
 
 ## Data Analysis Tools
 PyProBE provides easy access to tools for further analysis of battery data, including:
@@ -57,7 +57,7 @@ PyProBE provides easy access to tools for further analysis of battery data, incl
 - dQ/dV on OCV data
 - OCV fitting and Degradation Mode Analysis (DMA)
 
-PyProBE's [Method](https://congenial-adventure-mz797n5.pages.github.io/creating_a_new_method.html) framework allows new data analysis tools to be added quickly and easily.
+PyProBE's [analysis](https://congenial-adventure-mz797n5.pages.github.io/developer_guide/contributing_to_the_analysis_module.html) framework allows new data analysis tools to be added quickly and easily.
 
 ## Contributing to PyProBE
 
