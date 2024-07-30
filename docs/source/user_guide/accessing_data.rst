@@ -26,7 +26,7 @@ It is possible to filter data by a number of methods:
 
       cell.procedure['Procedure Name'].experiment('Experiment Name')
 
-* Then by the **numerical filter methods** in the :class:`pyprobe.filter.Filter` class:
+* Then by the **numerical filter methods** in the :mod:`pyprobe.filters` module:
 
    .. code-block:: python
 
@@ -60,11 +60,11 @@ a special type of :class:`~pyprobe.result.Result` object that is designed to hol
 experimental data processed by PyProBE. It therefore has all the attributes of the
 :class:`~pyprobe.result.Result` class. This includes:
 
-* :attr:`~pyprobe.rawdata.RawData.data` attribute
+* :attr:`~pyprobe.result.Result.data` attribute
    a `polars Dataframe <https://docs.pola.rs/py-polars/html/reference/dataframe/index.html>`_
    containing the filtered data.
-* :attr:`~pyprobe.rawdata.RawData.info` attribute
-   the cell's :attr:`~pyprobe.cell.Cell.info` dictionary.
+* :attr:`~pyprobe.result.Result.info` attribute
+   the cell's `info` dictionary.
 
 To access the data, you can access the full polars Dataframe:
 
@@ -77,13 +77,17 @@ Or you can access individual columns as 1D numpy arrays by calling the
 
 .. code-block:: python
 
-   voltage = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1).step(1)("Voltage [V]")
+   voltage = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1).step(1).get("Voltage [V]")
 
-Accessing columns directly with this method is useful for converting data to units not
-stored in the :attr:`~pyprobe.rawdata.RawData.data` Dataframe:
+Accessing columns directly with this method is useful for converting data to unit 
+variants:
 
 .. code-block:: python
 
-   current_mA = cell.procedure['Procedure Name'].experiment('Experiment Name')("Current [mA]")
+   current_mA = cell.procedure['Procedure Name'].experiment('Experiment Name').get("Current [mA]")
+
+To retrieve more than one column, simply pass multiple column names to 
+:func:`~pyprobe.result.Result.get` or use :func:`~pyprobe.result.Result.array` to
+return an N-dimensional array of the selected columns.
 
 .. footbibliography::
