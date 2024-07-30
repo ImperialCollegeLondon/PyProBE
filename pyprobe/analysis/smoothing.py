@@ -1,23 +1,23 @@
 """Module containing methods for smoothing noisy experimental data."""
 
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 from scipy.interpolate import make_smoothing_spline
 
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
 
 
-@dataclass(kw_only=True)
-class Smoothing:
+class Smoothing(BaseAnalysis):
     """A class for smoothing noisy experimental data.
 
     Args:
-        rawdata (Result): The raw data to analyse.
+        input_data (Result): The raw data to analyse.
     """
 
-    rawdata: Result
+    input_data: Result
+    required_columns: list[str] = []
 
     def spline_smoothing(
         self, x: str, y: str, smoothing_lambda: Optional[float] = None
@@ -37,8 +37,8 @@ class Smoothing:
                 A result object containing the columns, `x`, the smoothed `y` and the
                 gradient of the smoothed `y` with respect to `x`.
         """
-        x_data = self.rawdata.get_only(x)
-        y_data = self.rawdata.get_only(y)
+        x_data = self.input_data.get_only(x)
+        y_data = self.input_data.get_only(y)
         smoothing_lambda = smoothing_lambda
         data_flipped = False
         if x_data[0] > x_data[-1]:  # flip the data if it is not in ascending order
@@ -56,12 +56,12 @@ class Smoothing:
         derivative = y_spline.derivative()
         smoothed_dydx = derivative(x_data)
 
-        smoothing_result = self.rawdata.clean_copy(
+        smoothing_result = self.input_data.clean_copy(
             {x: x_data, y: smoothed_y, f"d({y})/d({x})": smoothed_dydx}
         )
         smoothing_result.column_definitions = {
-            x: self.rawdata.column_definitions[x],
-            y: self.rawdata.column_definitions[y],
+            x: self.input_data.column_definitions[x],
+            y: self.input_data.column_definitions[y],
             f"d({y})/d({x})": "The gradient of the smoothed data.",
         }
         return smoothing_result
