@@ -5,3 +5,6 @@ pyprobe.cyclers.neware module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

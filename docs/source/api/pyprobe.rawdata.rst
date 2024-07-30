@@ -5,3 +5,6 @@ pyprobe.rawdata module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

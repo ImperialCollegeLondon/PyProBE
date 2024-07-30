@@ -5,3 +5,6 @@ pyprobe.typing module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

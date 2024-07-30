@@ -5,3 +5,6 @@ pyprobe.analysis.pulsing module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

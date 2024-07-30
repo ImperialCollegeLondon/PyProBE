@@ -5,3 +5,6 @@ pyprobe.result module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

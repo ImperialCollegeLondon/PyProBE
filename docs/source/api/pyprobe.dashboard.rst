@@ -5,3 +5,6 @@ pyprobe.dashboard module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

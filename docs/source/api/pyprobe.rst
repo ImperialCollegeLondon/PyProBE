@@ -29,3 +29,6 @@ Submodules
    pyprobe.result
    pyprobe.typing
    pyprobe.unitconverter
+
+
+.. footbibliography::

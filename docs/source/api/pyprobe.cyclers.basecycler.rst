@@ -5,3 +5,6 @@ pyprobe.cyclers.basecycler module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+.. footbibliography::

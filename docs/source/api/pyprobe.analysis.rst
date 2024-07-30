@@ -18,3 +18,6 @@ Submodules
    pyprobe.analysis.pulsing
    pyprobe.analysis.smoothing
    pyprobe.analysis.utils
+
+
+.. footbibliography::
