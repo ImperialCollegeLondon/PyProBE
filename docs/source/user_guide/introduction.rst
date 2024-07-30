@@ -49,11 +49,12 @@ battery cyclers. It has four core objectives:
    experiments.
 
 4. Host a library of post processing methods
-    PyProBE's :mod:`method <~pyprobe.methods>` framework enables further analysis of
-    battery data, maintaining compatibility with the PyProBE data format and plotting
-    tools while ensuring functions are simply defined, portable and tested.
+    PyProBE's :mod:`~pyprobe.analysis` module contains classes and methods to
+    perform further analysis of battery data. It is designed to maintain compatibility 
+    with the PyProBE data format and plotting tools while ensuring functions are simply 
+    defined, portable and tested.
 
-    It is easy to write your own method. See the :ref:`guidance <contributing_to_the_analysis_module>`
+    It is easy to contribute to the analysis module. See the :ref:`guidance <contributing_to_the_analysis_module>`
     and `contributing guidelines <https://github.com/ImperialCollegeLondon/PyProBE/blob/main/CONTRIBUTING.md>`_.
 
 PyProBE Structure
@@ -69,13 +70,13 @@ procedures run on the cell. These can be further filtered as described in the
 :ref:`filtering` section of the user guide.
 
 Once the data is filtered, it can be processed further with a 
-:mod:`method <pyprobe.methods>` or displayed using the built-in :mod:`~pyprobe.plot` 
-module. All filters and methods produce objects that are compatible with the plotting
-module, making it easy to visualise the data at any stage of the analysis. Additionally, 
-all methods produce a :class:`~pyprobe.result.Result` which can be an input to further
-methods. This is summarised in the flowchart below:
+method in the :mod:`~pyprobe.analysis` module or displayed using the built-in 
+:mod:`~pyprobe.plot` module. All filters produce objects that are compatible with the 
+plotting module, making it easy to visualise the data at any stage of the analysis. Additionally, 
+all methods in the analysis module produce a :class:`~pyprobe.result.Result` which can 
+be an input to further methods. This is summarised in the flowchart below:
 
-.. image:: images/Result_flowchart.png
+.. image:: images/Result_flowchart.jpg
 
 This documentation
 ------------------
