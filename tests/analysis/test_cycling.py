@@ -1,4 +1,4 @@
-"""Tests for the cycling experiment class."""
+"""Tests for the cycling class."""
 
 import math
 
@@ -12,21 +12,27 @@ from pyprobe.result import Result
 @pytest.fixture
 def Cycling_fixture(lazyframe_fixture, info_fixture):
     """Return a Cycling instance."""
-    experiment = Experiment(base_dataframe=lazyframe_fixture, info=info_fixture)
-    return Cycling(experiment=experiment)
+    input_data = Experiment(base_dataframe=lazyframe_fixture, info=info_fixture)
+    return Cycling(input_data=input_data)
+
+
+def test_init():
+    """Test the __init__ method."""
+    with pytest.raises(ValueError):
+        Cycling(input_data=Result(base_dataframe=None, info=None))
 
 
 def test_set_capacity_throughput(Cycling_fixture):
     """Test the set_capacity_throughput method."""
     Cycling_fixture._create_capacity_throughput()
-    assert "Capacity Throughput [Ah]" in Cycling_fixture.experiment.data.columns
-    assert Cycling_fixture.experiment.data["Capacity Throughput [Ah]"].head(1)[0] == 0
+    assert "Capacity Throughput [Ah]" in Cycling_fixture.input_data.data.columns
+    assert Cycling_fixture.input_data.data["Capacity Throughput [Ah]"].head(1)[0] == 0
     assert (
-        Cycling_fixture.experiment.step(0).data["Capacity Throughput [Ah]"].max()
-        == Cycling_fixture.experiment.step(0).capacity
+        Cycling_fixture.input_data.step(0).data["Capacity Throughput [Ah]"].max()
+        == Cycling_fixture.input_data.step(0).capacity
     )
     assert math.isclose(
-        Cycling_fixture.experiment.data["Capacity Throughput [Ah]"].tail(1)[0],
+        Cycling_fixture.input_data.data["Capacity Throughput [Ah]"].tail(1)[0],
         0.472115,
         rel_tol=1e-5,
     )
@@ -34,7 +40,7 @@ def test_set_capacity_throughput(Cycling_fixture):
 
 def test_summary(BreakinCycles_fixture):
     """Test the summary property."""
-    cycling_instance = Cycling(experiment=BreakinCycles_fixture)
+    cycling_instance = Cycling(input_data=BreakinCycles_fixture)
     assert isinstance(cycling_instance.summary(), Result)
     columns = cycling_instance.summary().data.columns
     required_columns = [

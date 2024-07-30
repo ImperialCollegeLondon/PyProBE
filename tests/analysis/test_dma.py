@@ -4,12 +4,12 @@ import math
 import numpy as np
 import polars as pl
 import pytest
-import re
+from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis.degradation_mode_analysis import DMA
 from pyprobe.result import Result
-from pydantic import ValidationError
+
 
 def graphite_LGM50_ocp_Chen2020(sto):
     """Chen2020 graphite ocp fit."""
@@ -40,17 +40,20 @@ def nmc_LGM50_ocp_Chen2020(sto):
 n_points = 1000
 z = np.linspace(0, 1, 1000)
 
+
 def test_init():
     """Test the __init__ method."""
     result = Result(
         base_dataframe=pl.DataFrame(
-            {"Time [s]": np.linspace(0, 1, n_points), "Current [A]": np.linspace(0, 1, n_points)}
+            {
+                "Time [s]": np.linspace(0, 1, n_points),
+                "Current [A]": np.linspace(0, 1, n_points),
+            }
         ),
         info={},
     )
     with pytest.raises(ValidationError):
         DMA(input_data=result)
-
 
 
 def test_fit_ocv():
@@ -292,15 +295,36 @@ def test_calculate_dma_parameters(
     assert result.data["LLI"].to_numpy()[1] == expected_LLI
     assert result.data.columns == ["SOH", "LAM_pe", "LAM_ne", "LLI"]
 
+    # test with missing or incorrect input data
+    result = Result(
+        base_dataframe=pl.DataFrame(
+            {
+                "Voltage [V]": np.linspace(0, 1, 10),
+                "Capacity [Ah]": np.linspace(0, 1, 10),
+            }
+        ),
+        info={},
+    )
+
+    with pytest.raises(ValidationError):
+        eol_result_fixture.quantify_degradation_modes(bol_result_fixture.fitted_OCV)
+
+    eol_result_fixture.stoichiometry_limits = result
+    with pytest.raises(ValidationError):
+        eol_result_fixture.quantify_degradation_modes(bol_result_fixture)
+
 
 def test_average_ocvs(BreakinCycles_fixture):
     """Test the average_ocvs method."""
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_SOC()
     print(type(break_in))
-    dma = DMA(input_data=break_in).average_ocvs(charge_filter="constant_current(1)")
+    dma = DMA.average_ocvs(input_data=break_in, charge_filter="constant_current(1)")
     assert math.isclose(dma.input_data.get_only("Voltage [V]")[0], 3.14476284763849)
     assert math.isclose(dma.input_data.get_only("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(
         dma.input_data.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
     )
+    # test invalid input
+    with pytest.raises(AttributeError):
+        DMA.average_ocvs(input_data=break_in.charge(0))

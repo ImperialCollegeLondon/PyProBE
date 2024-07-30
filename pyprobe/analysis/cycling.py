@@ -1,41 +1,27 @@
-"""A module for the Cycing class."""
+"""A module for the Cycling class."""
 
-from dataclasses import dataclass
+from typing import List
 
 import polars as pl
 
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
-from pyprobe.typing import PyProBEValidator
 
 
-@dataclass(kw_only=True)
-class Cycling:
+class Cycling(BaseAnalysis):
     """A cycling experiment in a battery procedure.
 
     Args:
-        experiment (Experiment): The experiment to analyse.
+        input_data (Experiment): The input_data to analyse.
     """
 
-    experiment: Experiment
-
-    required_columns = ["Capacity [Ah]"]
-
-    def __post_init__(self) -> None:
-        """Validate the Cycling class setup."""
-        schema = {
-            "experiment": {
-                "type": "Experiment",
-                "contains_columns": self.required_columns,
-            }
-        }
-        v = PyProBEValidator(schema)
-        if not v.validate({"experiment": self.experiment}):
-            raise ValueError(v.errors)
+    input_data: Experiment
+    required_columns: List[str] = ["Capacity [Ah]"]
 
     def _create_capacity_throughput(self) -> None:
-        """Calculate the capcity throughput of the experiment."""
-        self.experiment.base_dataframe = self.experiment.base_dataframe.with_columns(
+        """Calculate the capcity throughput of the input_data."""
+        self.input_data.base_dataframe = self.input_data.base_dataframe.with_columns(
             [
                 (
                     pl.col("Capacity [Ah]")
@@ -58,21 +44,21 @@ class Cycling:
             Result: A result object for the capacity SOH of the cell.
         """
         self._create_capacity_throughput()
-        lf_capacity_throughput = self.experiment.base_dataframe.groupby(
+        lf_capacity_throughput = self.input_data.base_dataframe.groupby(
             "Cycle", maintain_order=True
         ).agg(pl.col("Capacity Throughput [Ah]").first())
-        lf_time = self.experiment.base_dataframe.groupby(
+        lf_time = self.input_data.base_dataframe.groupby(
             "Cycle", maintain_order=True
         ).agg(pl.col("Time [s]").first())
 
         lf_charge = (
-            self.experiment.charge()
+            self.input_data.charge()
             .base_dataframe.groupby("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
         )
         lf_discharge = (
-            self.experiment.discharge()
+            self.input_data.discharge()
             .base_dataframe.groupby("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
@@ -112,7 +98,7 @@ class Cycling:
         column_definitions = {
             "Cycle": "The cycle number.",
             "Capacity Throughput [Ah]": "The cumulative capacity throughput.",
-            "Time [s]": "The time since the beginning of the experiment.",
+            "Time [s]": "The time since the beginning of the input_data.",
             "Charge Capacity [Ah]": "The capacity passed during charge in a cycle.",
             "Discharge Capacity [Ah]": (
                 "The capacity passed during discharge in a cycle."
@@ -129,6 +115,6 @@ class Cycling:
         }
         return Result(
             base_dataframe=lf,
-            info=self.experiment.info,
+            info=self.input_data.info,
             column_definitions=column_definitions,
         )

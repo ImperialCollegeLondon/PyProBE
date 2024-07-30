@@ -1,16 +1,16 @@
 """Module for degradation mode analysis methods."""
-from dataclasses import dataclass
-from typing import Optional, Tuple, Union, List
+from __future__ import annotations
+
+from typing import List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import utils
-from pyprobe.filters import Cycle, Experiment, RawData
+from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
-from pyprobe.typing import PyProBEValidator, PyProBEDataType
-from pyprobe.analysis.utils import BaseAnalysis 
+from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
 
 class DMA(BaseAnalysis):
@@ -19,10 +19,9 @@ class DMA(BaseAnalysis):
     Args:
         input_data (RawData): The input data to the method.
     """
-    
 
     input_data: PyProBEDataType
-    required_columns: List =["Voltage [V]", "Capacity [Ah]"]
+    required_columns: List[str] = ["Voltage [V]", "Capacity [Ah]"]
 
     stoichiometry_limits: Optional[Result] = None
     fitted_OCV: Optional[Result] = None
@@ -193,21 +192,14 @@ class DMA(BaseAnalysis):
             "Anode Capacity [Ah]",
             "Li Inventory [Ah]",
         ]
-        schema = {
-            "reference_stoichiometry_limits": {
-                "type": "Result",
-                "contains_columns": required_columns,
-            },
-            "stoichiometry_limits": {
-                "type": "Result",
-                "contains_columns": required_columns,}
-        }
-        v = PyProBEValidator(schema)
-        if not v.validate({"reference_stoichiometry_limits": reference_stoichiometry_limits, "stoichiometry_limits": self.stoichiometry_limits}):
-            raise ValueError(v.errors)
-        
+        BaseAnalysis(
+            input_data=reference_stoichiometry_limits, required_columns=required_columns
+        )
         if self.stoichiometry_limits is None:
-            raise ValueError("No electrode capacities have been calculated.")
+            raise ValueError("No stoichiometry limits have been calculated.")
+        BaseAnalysis(
+            input_data=self.stoichiometry_limits, required_columns=required_columns
+        )
 
         electrode_capacity_results = [
             reference_stoichiometry_limits,
@@ -245,8 +237,9 @@ class DMA(BaseAnalysis):
         }
         return self.dma_result
 
+    @staticmethod
     def average_ocvs(
-        self,
+        input_data: FilterToCycleType,
         discharge_filter: Optional[str] = None,
         charge_filter: Optional[str] = None,
     ) -> "DMA":
@@ -260,26 +253,16 @@ class DMA(BaseAnalysis):
             DMA: A DMA object containing the averaged OCV curve.
         """
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
-        schema = {
-            "discharge_filter": {"type": "string", "nullable": True},
-            "charge_filter": {"type": "string", "nullable": True},
-            "input_data": {
-                "type": "FilterToCycleType",
-                "contains_columns": required_columns,
-            },
-        }
-        v = PyProBEValidator(schema)
-        if not v.validate({"discharge_filter": discharge_filter, "charge_filter": charge_filter, "input_data": self.input_data}):
-            raise ValueError(v.errors)
-        
+        BaseAnalysis(input_data=input_data, required_columns=required_columns)
+
         if discharge_filter is None:
-            discharge_result = self.input_data.discharge()
+            discharge_result = input_data.discharge()
         else:
-            discharge_result = eval(f"self.input_data.{discharge_filter}")
+            discharge_result = eval(f"input_data.{discharge_filter}")
         if charge_filter is None:
-            charge_result = self.input_data.charge()
+            charge_result = input_data.charge()
         else:
-            charge_result = eval(f"self.input_data.{charge_filter}")
+            charge_result = eval(f"input_data.{charge_filter}")
         charge_SOC = charge_result.get_only("SOC")
         charge_OCV = charge_result.get_only("Voltage [V]")
         charge_current = charge_result.get_only("Current [A]")

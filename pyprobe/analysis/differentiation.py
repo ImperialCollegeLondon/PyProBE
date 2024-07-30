@@ -1,9 +1,9 @@
 """A module for differentiating experimental data."""
 
-from dataclasses import dataclass
 from typing import List
 
 import numpy as np
+from pydantic.dataclasses import dataclass
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.result import Result
@@ -12,7 +12,7 @@ from pyprobe.result import Result
 from pyprobe.typing import PyProBERawDataType, PyProBEValidator
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, config={"arbitrary_types_allowed": True})
 class Differentiation:
     """A class for differentiating experimental data.
 
