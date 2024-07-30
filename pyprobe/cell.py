@@ -4,12 +4,13 @@ import pickle
 import platform
 import subprocess
 import time
+import warnings
 from typing import Any, Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
 import yaml
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import biologic, neware
 from pyprobe.filters import Procedure
@@ -26,11 +27,25 @@ class Cell(BaseModel):
     info: Dict[str, str | int | float]
     procedure: Dict[str, Procedure] = Field(default_factory=dict)
 
+    @field_validator("info")
+    def check_and_set_name(
+        cls, info: Dict[str, str | int | float]
+    ) -> Dict[str, str | int | float]:
+        """Check if the 'Name' field is in info. If not, set it to 'Default Name'."""
+        if "Name" not in info.keys():
+            info["Name"] = "Default Name"
+            warnings.warn(
+                "The 'Name' field was not in info. It has been set to 'Default Name'."
+            )
+        values = info
+        return values
+
     def model_post_init(self, __context: Any) -> None:
         """Post init method for the Pydantic model."""
         self.info["color"] = distinctipy.get_hex(
             distinctipy.get_colors(
                 1,
+                rng=1,  # Set the random seed
                 exclude_colors=[
                     (0, 0, 0),
                     (1, 1, 1),

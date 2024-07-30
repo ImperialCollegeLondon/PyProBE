@@ -21,6 +21,12 @@ def test_init(cell_instance, info_fixture):
     assert cell_instance.info == expected_info
     assert cell_instance.procedure == {}
 
+    info = {"not name": "test"}
+    Cell(info=info)
+    with pytest.warns(UserWarning):
+        cell = Cell(info=info)
+        assert cell.info["Name"] == "Default Name"
+
 
 def test_make_cell_list(info_fixture):
     """Test the make_cell_list method."""
