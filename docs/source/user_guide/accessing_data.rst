@@ -57,7 +57,7 @@ RawData objects
 ---------------
 Any filter applied to a cell returns a :class:`pyprobe.rawdata.RawData` object. This is
 a special type of :class:`~pyprobe.result.Result` object that is designed to hold cell
-experimental data processed by PyProBE. It therefore has all of the attributes of the
+experimental data processed by PyProBE. It therefore has all the attributes of the
 :class:`~pyprobe.result.Result` class. This includes:
 
 * :attr:`~pyprobe.rawdata.RawData.data` attribute

@@ -8,7 +8,8 @@ object. It has two main attributes: a dictionary of cell details and experimenta
 (:attr:`pyprobe.cell.Cell.info`) and a dictionary of experimental procedures performed 
 on the cell (:attr:`pyprobe.cell.Cell.procedure`).
 
-A cell object can be created by providing an info dictionary:
+A cell object can be created by providing an info dictionary to 
+`info`:
 
 .. code-block:: python
 
@@ -22,7 +23,7 @@ A cell object can be created by providing an info dictionary:
                       'Channel number': 1,}
 
    # Create a cell object
-   cell = pyprobe.Cell(info_dictionary)
+   cell = pyprobe.Cell(info = info_dictionary)
 
 The info dictionary can contain any number of key-value pairs. The only required key is
 'Name', which is used to identify the cell in plots.
