@@ -1,18 +1,17 @@
 """A module for the Result class."""
 import warnings
-from dataclasses import dataclass, field
 from pprint import pprint
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
+from pydantic import BaseModel, Field
 
 from pyprobe.unitconverter import UnitConverter
 
 
-@dataclass(kw_only=True)
-class Result:
+class Result(BaseModel):
     """A result object for returning data and plotting.
 
     Args:
@@ -24,11 +23,16 @@ class Result:
             A dictionary containing the definitions of the columns in the data.
     """
 
+    class Config:
+        """Pydantic configuration."""
+
+        arbitrary_types_allowed = True
+
     base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
     """The data as a polars DataFrame or LazyFrame."""
     info: Dict[str, Union[str, int, float]]
     """A dictionary containing test info."""
-    column_definitions: Dict[str, str] = field(default_factory=dict)
+    column_definitions: Dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
 
     def __call__(self, column_name: str) -> NDArray[np.float64]:
