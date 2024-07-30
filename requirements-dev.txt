@@ -10,6 +10,8 @@ alabaster==0.7.16
     # via sphinx
 altair==5.3.0
     # via streamlit
+annotated-types==0.7.0
+    # via pydantic
 attrs==23.2.0
     # via
     #   jsonschema
@@ -196,6 +198,10 @@ pybtex-docutils==1.0.3
     # via sphinxcontrib-bibtex
 pycodestyle==2.11.1
     # via flake8
+pydantic==2.8.2
+    # via PyProBE (pyproject.toml)
+pydantic-core==2.20.1
+    # via pydantic
 pydata-sphinx-theme==0.15.4
     # via PyProBE (pyproject.toml)
 pydeck==0.9.1
@@ -321,6 +327,8 @@ types-pyyaml==6.0.12.20240311
 typing-extensions==4.11.0
     # via
     #   mypy
+    #   pydantic
+    #   pydantic-core
     #   pydata-sphinx-theme
     #   streamlit
 tzdata==2024.1
