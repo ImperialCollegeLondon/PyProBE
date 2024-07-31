@@ -32,6 +32,9 @@ html_theme = "pydata_sphinx_theme"
 html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
+autodoc_default_options = {
+    "exclude-members": "model_computed_fields, model_config, model_fields, Config",
+}
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
 bibtex_bibfiles = ["../../CITATIONS.bib"]
