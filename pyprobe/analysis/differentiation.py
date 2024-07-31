@@ -3,6 +3,7 @@
 from typing import List
 
 import numpy as np
+from pydantic import BaseModel
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import BaseAnalysis
@@ -10,7 +11,7 @@ from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
 
 
-class Differentiation(BaseAnalysis):
+class Differentiation(BaseModel):
     """A class for differentiating experimental data.
 
     Args:
@@ -42,9 +43,8 @@ class Differentiation(BaseAnalysis):
                 A result object containing the columns, `x`, `y` and the
                 calculated gradient.
         """
-        x_data = self.input_data.get_only(x)
-        y_data = self.input_data.get_only(y)
-        gradient = gradient
+        validator = BaseAnalysis(input_data=self.input_data, required_columns=[x, y])
+        x_data, y_data = validator.variables
         if gradient == "dydx":
             gradient_title = f"d({y})/d({x})"
             gradient_data = np.gradient(y_data, x_data)
@@ -111,10 +111,9 @@ class Differentiation(BaseAnalysis):
                 A result object containing the columns, `x`, `y` and the calculated
                 gradient.
         """
-        # identify variables
-        x_data = self.input_data.get_only(x)
-        y_data = self.input_data.get_only(y)
-        k = k
+        # validate and identify variables
+        validator = BaseAnalysis(input_data=self.input_data, required_columns=[x, y])
+        x_data, y_data = validator.variables
 
         # split input data into uniformly sampled sections
         x_sections = diff_functions.get_x_sections(x_data)
