@@ -1,15 +1,15 @@
 """A module for the Cycling class."""
 
-from typing import List
 
 import polars as pl
+from pydantic import BaseModel
 
 from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
-class Cycling(BaseAnalysis):
+class Cycling(BaseModel):
     """A cycling experiment in a battery procedure.
 
     Args:
@@ -17,7 +17,6 @@ class Cycling(BaseAnalysis):
     """
 
     input_data: Experiment
-    required_columns: List[str] = ["Capacity [Ah]"]
 
     def _create_capacity_throughput(self) -> None:
         """Calculate the capcity throughput of the input_data."""
@@ -43,6 +42,10 @@ class Cycling(BaseAnalysis):
         Returns:
             Result: A result object for the capacity SOH of the cell.
         """
+        BaseAnalysis(
+            input_data=self.input_data, required_columns=["Capacity [Ah]", "Time [s]"]
+        )
+
         self._create_capacity_throughput()
         lf_capacity_throughput = self.input_data.base_dataframe.groupby(
             "Cycle", maintain_order=True
