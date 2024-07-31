@@ -105,15 +105,12 @@ class Result(BaseModel):
         if not column_names:
             raise ValueError("At least one column name must be provided.")
 
-        for column_name in column_names:
-            self.check_units(column_name)
-            if column_name not in self.data.columns:
-                raise ValueError(f"Column '{column_name}' not in data.")
-
-        arrays = tuple(
-            self.data[column_name].to_numpy() for column_name in column_names
-        )
-        return arrays if len(arrays) > 1 else arrays[0]
+        full_array = self._get_filtered_array(column_names)
+        seperated_columns = tuple(full_array.T)
+        if len(seperated_columns) == 1:
+            return seperated_columns[0]
+        else:
+            return seperated_columns
 
     def get_only(self, column_name: str) -> NDArray[np.float64]:
         """Return a single column of the data as a numpy array.
@@ -124,10 +121,10 @@ class Result(BaseModel):
         Returns:
             NDArray[np.float64]: The column as a numpy array.
         """
-        data = self.get(column_name)
-        if not isinstance(data, np.ndarray):
+        column = self.get(column_name)
+        if not isinstance(column, np.ndarray):
             raise ValueError("More than one column returned.")
-        return data
+        return column
 
     def array(self, *filtering_column_names: str) -> NDArray[np.float64]:
         """Return the data as a numpy array.
@@ -138,18 +135,22 @@ class Result(BaseModel):
         Returns:
             NDArray[np.float64]: The data as a numpy array.
         """
-        print("filtering_column_names", filtering_column_names)
         if len(filtering_column_names) == 0:
             return self.data.to_numpy()
         else:
-            column_names = list(filtering_column_names)
-            for col in column_names:
-                self.check_units(col)
-            if not all(col in self.data.columns for col in column_names):
-                raise ValueError("One or more columns not in data.")
-            else:
-                data_to_convert = self.data.select(column_names)
-                return data_to_convert.to_numpy()
+            return self._get_filtered_array(filtering_column_names)
+
+    def _get_filtered_array(
+        self, filtering_column_names: Tuple[str, ...]
+    ) -> NDArray[np.float64]:
+        for column_name in filtering_column_names:
+            self.check_units(column_name)
+            if column_name not in self.base_dataframe.columns:
+                raise ValueError(f"Column '{column_name}' not in data.")
+        frame_to_return = self.base_dataframe.select(filtering_column_names)
+        if isinstance(frame_to_return, pl.LazyFrame):
+            frame_to_return = frame_to_return.collect()
+        return frame_to_return.to_numpy()
 
     def check_units(self, column_name: str) -> None:
         """Check if a column exists and convert the units if it does not.
@@ -159,11 +160,11 @@ class Result(BaseModel):
         Args:
             column_name (str): The column name to convert to.
         """
-        if column_name not in self.data.columns:
+        if column_name not in self.base_dataframe.columns:
             converter_object = UnitConverter(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default()
-                self.base_dataframe = self.data.with_columns(instruction)
+                self.base_dataframe = self.base_dataframe.with_columns(instruction)
                 self.define_column(
                     column_name,
                     self.column_definitions[
@@ -192,7 +193,7 @@ class Result(BaseModel):
     @property
     def column_list(self) -> List[str]:
         """Return a list of the columns in the data."""
-        return self.data.columns
+        return self.base_dataframe.columns
 
     def define_column(self, column_name: str, definition: str) -> None:
         """Define a new column when it is added to the dataframe.
