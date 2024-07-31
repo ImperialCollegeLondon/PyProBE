@@ -3,71 +3,80 @@
 Contributing to the Analysis Module
 ===================================
 
-:mod:`pyprobe.analysis` classes are classes that 
-perform further analysis of the data.
+:mod:`pyprobe.analysis` classes are classes that perform further analysis of the data.
 
 This document describes the standard format to be used for all PyProBE analysis classes. 
 Constructing your method in this way ensures compatibility with the rest of the 
 PyProBE package, while keeping your code clean and easy to read.
 
-Start by creating your class, and an __init__ method. This is where all of the 
-variable assignement is performed:
-1. Define the input variables to the method using the 
-   :meth:`~pyprobe.methods.basemethod.BaseMethod.variable` method.
-2. Perform the calculations using the input variables and any other functions defined
-   inside this method class.
-3. Assign the results to the class attributes, which allows them to be read as 
-   :class:`~pyprobe.result.Result` objects.
+Analysis classes are based on :ref:`pydantic <https://docs.pydantic.dev/latest/>` 
+BaseModel to provide input validation. However, following the steps below should allow
+you to write your own analysis class without any direct interaction with pydantic 
+itself. 
 
-Then you can add any additional functions to perform your calculations. Keep these
-simple, defining all inputs as numpy arrays with minimal dimensionality. For instance,
-in the example below, current and time are both 1D numpy arrays. The code could have
-performed the same calculations using a single 2D array with a column for each variable,
-however this would have made the code less readable.
+Setup
+-----
+1. Start by creating your class, which must inherit from 
+   pydantic :code:`BaseModel`.
+2. Declare :code:`input_data` as a variable and specify its type. The :mod:`pyprobe.typing`
+   module has type aliases that may be helpful here. This type should be the most
+   lenient type that the methods of your analysis class require.
 
-.. code-block:: python
+.. literalinclude:: ../../../pyprobe/analysis/differentiation.py
+    :language: python
+    :linenos:
+    :lines: 13-22
 
-    from pyprobe.methods.basemethod import BaseMethod
+3. Some analysis classes have multiple methods that need to pass information to each 
+   other. For instance the :class:`~pyprobe.analysis.degradation_mode_analysis.DMA`
+   analysis class first calculates stoichiometry limits with the 
+   :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv` method, that are then
+   used in the :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes`
+   method. So, when `fit_ocv` is called, it saves this result in `stoichiometry_limits`
+   for use later. If they are required, these attributes must also be defined at the 
+   top of the class.
 
-    class CoulombCounter(BaseMethod):
-      """"A method for calculating the charge passed.""""
+.. literalinclude:: ../../../pyprobe/analysis/degradation_mode_analysis.py
+    :language: python
+    :linenos:
+    :lines: 15-29
 
-        def __init__(self, input_data: Result):
-            """Initialise the coulomb counter method.
-            
-            Args:
-                data: The input data to the method.
-            """
-            # define input variables to the method
-            self.current = self.variable("Current [A]")
-            self.time = self.variable("Time [s]")
 
-            # perform the calculations
-            self.charge = self.coulomb_count(self.current, self.time)
+Then you can add any additional methods to perform your calculations. 
 
-            # assign the results, by calling the make_result method on a dictionary
-            # of the results of your method
-            self.result = self.make_result({"Charge [C]": self.charge})
-        
-        def coulomb_count(self, current, time):
-            """Calculate the charge passed.
-            
-            Args:
-                current: The current data.
-                time: The time data.
-            
-            Returns:
-                The charge passed.
-            """
-            return np.trapz(current, time)
+Methods
+-------
 
-The result of the method above can be accessed as a result object by calling:
+All calculations should be conducted inside methods. These are called by the user with
+any additional information required to perform the analysis, and always return 
+:class:`~pyprobe.result.Result` objects. We will use the 
+:func:`~pyprobe.analysis.differentiation.Differentiation.differentiate_FD` method as an example. 
+The steps to write a method are as follows:
 
-.. code-block:: python
+1. Define the method and its input parameters.
+2. Check that inputs to the method are valid with the 
+   :class:`~pyprobe.analysis.utils.AnalysisValidator` class. Provide the class the 
+   input data to the method, the columns that are required for the computation to 
+   be performed and the required data type for `input_data`` (only if it is a stricter 
+   requirement than the type assigned to `input_data` above).
+3. If needed, you can retrieve the columns specified in the `required_columns` field
+   as numpy arrays by accessing the :attr:`~pyprobe.analysis.utils.AnalysisValidator.variables`
+   attribute of the instance of :class:`~pyprobe.analysis.utils.AnalysisValidator`.
+4. Perform the required computation. In this example, this is done with :func:`np.gradient`,
+   a numpy built-in method. It is encouraged to perform as little of the underlying
+   computation as possible in the analysis class method. Instead, write simple functions
+   in the :mod:`pyprobe.analysis.base` module that process only numpy arrays. This
+   keeps the mathematical underpinnings of PyProBE analysis methods readable, portable and
+   testable.
+5. Create a result object to return. This is easily done with the :func:`~pyprobe.result.Result.clean_copy`
+   method, which provides a copy of the input data including the `info` attribute but
+   replacing the data stored with a dataframe created from the provided dictionary.
+6. Add column definitions to the created result object.
+7. Return the result object.
 
-    result = CoulombCounter(data).result
-
-Which can be passed to any other Method or used in the :class:`~pyprobe.plot.Plot` 
-class.
+.. literalinclude:: ../../../pyprobe/analysis/differentiation.py
+    :language: python
+    :linenos:
+    :pyobject: Differentiation.differentiate_FD
 
 .. footbibliography::

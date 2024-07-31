@@ -11,6 +11,7 @@ from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
 
 
+# 1. Define the class as a Pydantic BaseModel.
 class Differentiation(BaseModel):
     """A class for differentiating experimental data.
 
@@ -18,10 +19,10 @@ class Differentiation(BaseModel):
         input_data (PyProBERawDataType): The raw data to analyse.
     """
 
+    # 2. Define the input_data attribute, giving it a type
     input_data: PyProBEDataType
-    required_columns: List[str] = []
 
-    def differentiate_FD(
+    def differentiate_FD(  # 1. Define the method
         self,
         x: str,
         y: str,
@@ -43,10 +44,17 @@ class Differentiation(BaseModel):
                 A result object containing the columns, `x`, `y` and the
                 calculated gradient.
         """
+        # 2. Validate the inputs to the method
         validator = AnalysisValidator(
-            input_data=self.input_data, required_columns=[x, y]
+            input_data=self.input_data,
+            required_columns=[x, y],
+            # required_type not neccessary here as type specified when declaring
+            # input_data attribute is strict enough
         )
+        # 3. Retrieve the validated columns as numpy arrays
         x_data, y_data = validator.variables
+
+        # 4. Perform the computation
         if gradient == "dydx":
             gradient_title = f"d({y})/d({x})"
             gradient_data = np.gradient(y_data, x_data)
@@ -56,14 +64,17 @@ class Differentiation(BaseModel):
         else:
             raise ValueError("Gradient must be either 'dydx' or 'dxdy'.")
 
+        # 5. Create a Result object to store the results
         gradient_result = self.input_data.clean_copy(
             {x: x_data, y: y_data, gradient_title: gradient_data}
         )
+        # 6. Define the column definitions for the Result object
         gradient_result.column_definitions = {
             x: self.input_data.column_definitions[x],
             y: self.input_data.column_definitions[y],
             gradient_title: "The calculated gradient.",
         }
+        # 7. Return the Result object
         return gradient_result
 
     def differentiate_LEAN(

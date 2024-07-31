@@ -13,6 +13,7 @@ from pyprobe.result import Result
 from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
 
+# 1. Define the class as a Pydantic BaseModel.
 class DMA(BaseModel):
     """A class for degradation mode analysis methods.
 
@@ -20,8 +21,10 @@ class DMA(BaseModel):
         input_data (RawData): The input data to the method.
     """
 
+    # 2. Define the input_data attribute, giving it a type
     input_data: PyProBEDataType
 
+    # 3. Define the attributes that will be populated by the methods.
     stoichiometry_limits: Optional[Result] = None
     fitted_OCV: Optional[Result] = None
     dma_result: Optional[Result] = None
