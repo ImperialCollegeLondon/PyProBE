@@ -11,7 +11,9 @@ from pyprobe.result import Result
 @pytest.fixture
 def input_data_fixture():
     """Return a Result instance."""
-    return Result(base_dataframe=pl.LazyFrame({"x": [1, 2, 3]}), info={})
+    return Result(
+        base_dataframe=pl.LazyFrame({"x": [1, 2, 3], "y": [4, 5, 6]}), info={}
+    )
 
 
 def test_assemble_array(input_data_fixture):
@@ -26,4 +28,13 @@ def test_base_analysis(input_data_fixture):
     assert analysis.check_required_columns() == analysis
 
     with pytest.raises(ValueError):
-        utils.BaseAnalysis(input_data=input_data_fixture, required_columns=["y"])
+        utils.BaseAnalysis(input_data=input_data_fixture, required_columns=["z"])
+
+    np.testing.assert_array_equal(analysis.variables, np.array([1, 2, 3]))
+
+    analysis = utils.BaseAnalysis(
+        input_data=input_data_fixture, required_columns=["x", "y"]
+    )
+    x, y = analysis.variables
+    np.testing.assert_array_equal(x, np.array([1, 2, 3]))
+    np.testing.assert_array_equal(y, np.array([4, 5, 6]))

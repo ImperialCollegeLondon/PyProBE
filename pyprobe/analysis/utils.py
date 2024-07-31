@@ -1,5 +1,5 @@
 """Module for utilities for analysis classes."""
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -44,3 +44,8 @@ class BaseAnalysis(BaseModel):
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
         return self
+
+    @property
+    def variables(self) -> Tuple[NDArray[np.float64], ...]:
+        """Return the required columns in the input data as NDArrays."""
+        return self.input_data.get(*tuple(self.required_columns))
