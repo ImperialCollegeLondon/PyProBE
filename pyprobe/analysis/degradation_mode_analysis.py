@@ -1,10 +1,10 @@
 """Module for degradation mode analysis methods."""
-from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from pydantic import BaseModel
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import utils
@@ -13,7 +13,7 @@ from pyprobe.result import Result
 from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
 
-class DMA(BaseAnalysis):
+class DMA(BaseModel):
     """A class for degradation mode analysis methods.
 
     Args:
@@ -21,47 +21,10 @@ class DMA(BaseAnalysis):
     """
 
     input_data: PyProBEDataType
-    required_columns: List[str] = ["Voltage [V]", "Capacity [Ah]"]
 
     stoichiometry_limits: Optional[Result] = None
     fitted_OCV: Optional[Result] = None
     dma_result: Optional[Result] = None
-
-    @property
-    def voltage(self) -> NDArray[np.float64]:
-        """Return the voltage data from the input data."""
-        return self.input_data.get_only("Voltage [V]")
-
-    @property
-    def capacity(self) -> NDArray[np.float64]:
-        """Return the capacity data from the input data."""
-        return self.input_data.get_only("Capacity [Ah]")
-
-    @property
-    def SOC(self) -> NDArray[np.float64]:
-        """Return the state of charge data from the input data."""
-        if "SOC" in self.input_data.column_list:
-            return self.input_data.get_only("SOC")
-        else:
-            return (self.capacity - self.capacity.min()) / self.cell_capacity
-
-    @property
-    def cell_capacity(self) -> float:
-        """Return the cell capacity from the input data."""
-        if "SOC" in self.input_data.column_list:
-            return np.abs(np.ptp(self.capacity)) / np.abs(np.ptp(self.SOC))
-        else:
-            return np.abs(np.ptp(self.capacity))
-
-    @property
-    def dSOCdV(self) -> NDArray[np.float64]:
-        """Return the dSOCdV data from the input data."""
-        return np.gradient(self.SOC, self.voltage)
-
-    @property
-    def dVdSOC(self) -> NDArray[np.float64]:
-        """Return the dVdSOC data from the input data."""
-        return np.gradient(self.voltage, self.SOC)
 
     def fit_ocv(
         self,
@@ -87,6 +50,25 @@ class DMA(BaseAnalysis):
                 - Result: The stoichiometry limits and electrode capacities.
                 - Result: The fitted OCV data.
         """
+        if "SOC" in self.input_data.column_list:
+            required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
+            validator = BaseAnalysis(
+                input_data=self.input_data, required_columns=required_columns
+            )
+            voltage, capacity, SOC = validator.variables
+            cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
+        else:
+            required_columns = ["Voltage [V]", "Capacity [Ah]"]
+            validator = BaseAnalysis(
+                input_data=self.input_data, required_columns=required_columns
+            )
+            voltage, capacity = validator.variables
+            cell_capacity = np.abs(np.ptp(capacity))
+            SOC = (capacity - capacity.min()) / cell_capacity
+
+        dVdSOC = np.gradient(voltage, SOC)
+        dSOCdV = np.gradient(SOC, voltage)
+
         if optimizer is None:
             if fitting_target == "OCV":
                 optimizer = "minimize"
@@ -94,13 +76,13 @@ class DMA(BaseAnalysis):
                 optimizer = "differential_evolution"
 
         fitting_target_data = {
-            "OCV": self.voltage,
-            "dQdV": self.dSOCdV,
-            "dVdQ": self.dVdSOC,
+            "OCV": voltage,
+            "dQdV": dSOCdV,
+            "dVdQ": dVdSOC,
         }[fitting_target]
 
         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = dma_functions.ocv_curve_fit(
-            self.SOC,
+            SOC,
             fitting_target_data,
             x_pe,
             ocp_pe,
@@ -116,7 +98,7 @@ class DMA(BaseAnalysis):
             ne_capacity,
             li_inventory,
         ) = dma_functions.calc_electrode_capacities(
-            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, self.cell_capacity
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
         )
 
         self.stoichiometry_limits = self.input_data.clean_copy(
@@ -125,7 +107,7 @@ class DMA(BaseAnalysis):
                 "x_pe high SOC": np.array([x_pe_hi]),
                 "x_ne low SOC": np.array([x_ne_lo]),
                 "x_ne high SOC": np.array([x_ne_hi]),
-                "Cell Capacity [Ah]": np.array([self.cell_capacity]),
+                "Cell Capacity [Ah]": np.array([cell_capacity]),
                 "Cathode Capacity [Ah]": np.array([pe_capacity]),
                 "Anode Capacity [Ah]": np.array([ne_capacity]),
                 "Li Inventory [Ah]": np.array([li_inventory]),
@@ -143,7 +125,7 @@ class DMA(BaseAnalysis):
         }
 
         fitted_voltage = dma_functions.calc_full_cell_OCV(
-            self.SOC,
+            SOC,
             x_pe_lo,
             x_pe_hi,
             x_ne_lo,
@@ -155,14 +137,14 @@ class DMA(BaseAnalysis):
         )
         self.fitted_OCV = self.input_data.clean_copy(
             {
-                "Capacity [Ah]": self.capacity,
-                "SOC": self.SOC,
-                "Input Voltage [V]": self.voltage,
+                "Capacity [Ah]": capacity,
+                "SOC": SOC,
+                "Input Voltage [V]": voltage,
                 "Fitted Voltage [V]": fitted_voltage,
-                "Input dSOCdV [1/V]": self.dSOCdV,
-                "Fitted dSOCdV [1/V]": np.gradient(self.SOC, fitted_voltage),
-                "Input dVdSOC [V]": self.dVdSOC,
-                "Fitted dVdSOC [V]": np.gradient(fitted_voltage, self.SOC),
+                "Input dSOCdV [1/V]": dSOCdV,
+                "Fitted dSOCdV [1/V]": np.gradient(SOC, fitted_voltage),
+                "Input dVdSOC [V]": dVdSOC,
+                "Fitted dVdSOC [V]": np.gradient(fitted_voltage, SOC),
             }
         )
         self.fitted_OCV.column_definitions = {
@@ -253,7 +235,11 @@ class DMA(BaseAnalysis):
             DMA: A DMA object containing the averaged OCV curve.
         """
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
-        BaseAnalysis(input_data=input_data, required_columns=required_columns)
+        BaseAnalysis(
+            input_data=input_data,
+            required_columns=required_columns,
+            required_type=FilterToCycleType,
+        )
 
         if discharge_filter is None:
             discharge_result = input_data.discharge()

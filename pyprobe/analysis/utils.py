@@ -32,7 +32,7 @@ class BaseAnalysis(BaseModel):
 
     input_data: PyProBEDataType
     required_columns: List[str]
-    required_type: Optional[type] = Field(default=None)
+    required_type: Optional[Any] = Field(default=None)
 
     @model_validator(mode="after")
     def validate_input_data_type(self) -> "BaseAnalysis":

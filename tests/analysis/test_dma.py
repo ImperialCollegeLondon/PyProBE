@@ -41,21 +41,6 @@ n_points = 1000
 z = np.linspace(0, 1, 1000)
 
 
-def test_init():
-    """Test the __init__ method."""
-    result = Result(
-        base_dataframe=pl.DataFrame(
-            {
-                "Time [s]": np.linspace(0, 1, n_points),
-                "Current [A]": np.linspace(0, 1, n_points),
-            }
-        ),
-        info={},
-    )
-    with pytest.raises(ValidationError):
-        DMA(input_data=result)
-
-
 def test_fit_ocv():
     """Test the fit_ocv method."""
     capacity = np.linspace(0, 1, n_points)
@@ -136,6 +121,20 @@ def test_fit_ocv():
         np.array(x_real),
         rtol=1e-4,
     )
+
+    result = Result(
+        base_dataframe=pl.DataFrame({"Voltage [V]": voltage, "Time [s]": capacity}),
+        info={},
+    )
+    dma = DMA(input_data=result)
+    with pytest.raises(ValidationError):
+        dma.fit_ocv(
+            x_ne=z,
+            x_pe=z,
+            ocp_ne=graphite_LGM50_ocp_Chen2020(z),
+            ocp_pe=nmc_LGM50_ocp_Chen2020(z),
+            x_guess=x_guess,
+        )
 
 
 def test_fit_ocv_discharge():
@@ -326,5 +325,5 @@ def test_average_ocvs(BreakinCycles_fixture):
         dma.input_data.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
     )
     # test invalid input
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         DMA.average_ocvs(input_data=break_in.charge(0))
