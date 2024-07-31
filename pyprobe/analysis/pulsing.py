@@ -5,14 +5,14 @@ from typing import Any, List, Optional
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
-class Pulsing(BaseAnalysis):
+class Pulsing(BaseModel):
     """A pulsing experiment in a battery procedure.
 
     Args:
@@ -20,7 +20,6 @@ class Pulsing(BaseAnalysis):
     """
 
     input_data: Experiment
-    required_columns: List[str] = ["Current [A]", "Voltage [V]", "Time [s]"]
     rests: List[Optional[Result]] = Field(default_factory=list)
     pulses: List[Optional[Result]] = Field(default_factory=list)
 
@@ -89,6 +88,9 @@ class Pulsing(BaseAnalysis):
         Returns:
             Result: A result object containing resistance values for each pulse.
         """
+        BaseAnalysis(
+            input_data=self.input_data, required_columns=["Current [A]", "Voltage [V]"]
+        )
         return Result(
             base_dataframe=pl.DataFrame(
                 {
