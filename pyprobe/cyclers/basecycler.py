@@ -77,12 +77,12 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the time column.
         """
-        return pl.col(self.column_dict["Time"]).alias("Time [s]")
+        return pl.col(self.column_dict["Time"]).cast(pl.Float64).alias("Time [s]")
 
     @property
     def step(self) -> pl.Expr:
         """Identify and format the step column."""
-        return pl.col(self.column_dict["Step"]).alias("Step")
+        return pl.col(self.column_dict["Step"]).cast(pl.Int64).alias("Step")
 
     @property
     def current(self) -> pl.Expr:
@@ -91,11 +91,15 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the current column.
         """
-        return self.search_columns(
-            self._dataframe_columns,
-            self.column_dict["Current"],
-            self.column_name_pattern,
-        ).to_default()
+        return (
+            self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Current"],
+                self.column_name_pattern,
+            )
+            .to_default()
+            .cast(pl.Float64)
+        )
 
     @property
     def voltage(self) -> pl.Expr:
@@ -104,11 +108,15 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the voltage column.
         """
-        return self.search_columns(
-            self._dataframe_columns,
-            self.column_dict["Voltage"],
-            self.column_name_pattern,
-        ).to_default()
+        return (
+            self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Voltage"],
+                self.column_name_pattern,
+            )
+            .to_default()
+            .cast(pl.Float64)
+        )
 
     @property
     def charge_capacity(self) -> pl.Expr:
@@ -117,11 +125,15 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the charge capacity column.
         """
-        return self.search_columns(
-            self._dataframe_columns,
-            self.column_dict["Charge Capacity"],
-            self.column_name_pattern,
-        ).to_default(keep_name=True)
+        return (
+            self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Charge Capacity"],
+                self.column_name_pattern,
+            )
+            .to_default(keep_name=True)
+            .cast(pl.Float64)
+        )
 
     @property
     def discharge_capacity(self) -> pl.Expr:
@@ -130,11 +142,15 @@ class BaseCycler(ABC):
         Returns:
             pl.Expr: A polars expression for the discharge capacity column.
         """
-        return self.search_columns(
-            self._dataframe_columns,
-            self.column_dict["Discharge Capacity"],
-            self.column_name_pattern,
-        ).to_default(keep_name=True)
+        return (
+            self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Discharge Capacity"],
+                self.column_name_pattern,
+            )
+            .to_default(keep_name=True)
+            .cast(pl.Float64)
+        )
 
     @property
     def capacity_from_ch_dch(self) -> pl.Expr:
@@ -165,11 +181,15 @@ class BaseCycler(ABC):
             pl.Expr: A polars expression for the capacity column.
         """
         if "Capacity" in self.column_dict:
-            return self.search_columns(
-                self._dataframe_columns,
-                self.column_dict["Capacity"],
-                self.column_name_pattern,
-            ).to_default()
+            return (
+                self.search_columns(
+                    self._dataframe_columns,
+                    self.column_dict["Capacity"],
+                    self.column_name_pattern,
+                )
+                .to_default()
+                .cast(pl.Float64)
+            )
         else:
             return self.capacity_from_ch_dch
 

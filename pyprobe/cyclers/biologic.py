@@ -101,7 +101,7 @@ class Biologic(BaseCycler):
     @property
     def step(self) -> pl.Expr:
         """Identify and format the step column."""
-        return (pl.col(self.column_dict["Step"]) + 1).alias("Step")
+        return (pl.col(self.column_dict["Step"]) + 1).cast(pl.Int64).alias("Step")
 
     @staticmethod
     def apply_step_correction(

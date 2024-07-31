@@ -53,7 +53,7 @@ class Neware(BaseCycler):
             case ".xlsx":
                 return pl.read_excel(filepath, engine="calamine")
             case ".csv":
-                return pl.scan_csv(filepath)
+                return pl.read_csv(filepath)
             case _:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
 
