@@ -5,6 +5,7 @@ import polars as pl
 import pytest
 
 import pyprobe.analysis.utils as utils
+from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
 
@@ -25,7 +26,8 @@ def test_assemble_array(input_data_fixture):
 def test_base_analysis(input_data_fixture):
     """Test the base analysis class."""
     analysis = utils.BaseAnalysis(input_data=input_data_fixture, required_columns=["x"])
-    assert analysis.check_required_columns() == analysis
+    assert analysis.validate_input_data_type() == analysis
+    assert analysis.validate_required_columns() == analysis
 
     with pytest.raises(ValueError):
         utils.BaseAnalysis(input_data=input_data_fixture, required_columns=["z"])
@@ -38,3 +40,10 @@ def test_base_analysis(input_data_fixture):
     x, y = analysis.variables
     np.testing.assert_array_equal(x, np.array([1, 2, 3]))
     np.testing.assert_array_equal(y, np.array([4, 5, 6]))
+
+    with pytest.raises(ValueError):
+        analysis = utils.BaseAnalysis(
+            input_data=input_data_fixture,
+            required_columns=["z"],
+            required_type=Experiment,
+        )

@@ -1,9 +1,9 @@
 """Module for utilities for analysis classes."""
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
@@ -32,9 +32,19 @@ class BaseAnalysis(BaseModel):
 
     input_data: PyProBEDataType
     required_columns: List[str]
+    required_type: Optional[type] = Field(default=None)
 
     @model_validator(mode="after")
-    def check_required_columns(self) -> "BaseAnalysis":
+    def validate_input_data_type(self) -> "BaseAnalysis":
+        """Check if the input_data is of the required type."""
+        if self.required_type is not None and not isinstance(
+            self.input_data, self.required_type
+        ):
+            raise ValueError(f"Input data is not of type {self.required_type}")
+        return self
+
+    @model_validator(mode="after")
+    def validate_required_columns(self) -> "BaseAnalysis":
         """Check if the required columns are present in the input_data."""
         missing_columns = [
             col
