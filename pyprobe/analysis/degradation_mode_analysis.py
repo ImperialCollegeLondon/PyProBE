@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import utils
-from pyprobe.analysis.utils import BaseAnalysis
+from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
 from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
@@ -52,14 +52,14 @@ class DMA(BaseModel):
         """
         if "SOC" in self.input_data.column_list:
             required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
-            validator = BaseAnalysis(
+            validator = AnalysisValidator(
                 input_data=self.input_data, required_columns=required_columns
             )
             voltage, capacity, SOC = validator.variables
             cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
         else:
             required_columns = ["Voltage [V]", "Capacity [Ah]"]
-            validator = BaseAnalysis(
+            validator = AnalysisValidator(
                 input_data=self.input_data, required_columns=required_columns
             )
             voltage, capacity = validator.variables
@@ -174,12 +174,12 @@ class DMA(BaseModel):
             "Anode Capacity [Ah]",
             "Li Inventory [Ah]",
         ]
-        BaseAnalysis(
+        AnalysisValidator(
             input_data=reference_stoichiometry_limits, required_columns=required_columns
         )
         if self.stoichiometry_limits is None:
             raise ValueError("No stoichiometry limits have been calculated.")
-        BaseAnalysis(
+        AnalysisValidator(
             input_data=self.stoichiometry_limits, required_columns=required_columns
         )
 
@@ -235,7 +235,7 @@ class DMA(BaseModel):
             DMA: A DMA object containing the averaged OCV curve.
         """
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
-        BaseAnalysis(
+        AnalysisValidator(
             input_data=input_data,
             required_columns=required_columns,
             required_type=FilterToCycleType,

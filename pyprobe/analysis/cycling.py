@@ -4,7 +4,7 @@
 import polars as pl
 from pydantic import BaseModel
 
-from pyprobe.analysis.utils import BaseAnalysis
+from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
@@ -42,7 +42,7 @@ class Cycling(BaseModel):
         Returns:
             Result: A result object for the capacity SOH of the cell.
         """
-        BaseAnalysis(
+        AnalysisValidator(
             input_data=self.input_data, required_columns=["Capacity [Ah]", "Time [s]"]
         )
 

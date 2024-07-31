@@ -7,7 +7,7 @@ import polars as pl
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field
 
-from pyprobe.analysis.utils import BaseAnalysis
+from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Experiment
 from pyprobe.result import Result
 
@@ -88,7 +88,7 @@ class Pulsing(BaseModel):
         Returns:
             Result: A result object containing resistance values for each pulse.
         """
-        BaseAnalysis(
+        AnalysisValidator(
             input_data=self.input_data, required_columns=["Current [A]", "Voltage [V]"]
         )
         return Result(

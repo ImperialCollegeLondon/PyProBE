@@ -22,7 +22,7 @@ def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
     return np.vstack([input.get_only(name) for input in input_data])
 
 
-class BaseAnalysis(BaseModel):
+class AnalysisValidator(BaseModel):
     """A base class for analysis classes."""
 
     class Config:
@@ -35,7 +35,7 @@ class BaseAnalysis(BaseModel):
     required_type: Optional[Any] = Field(default=None)
 
     @model_validator(mode="after")
-    def validate_input_data_type(self) -> "BaseAnalysis":
+    def validate_input_data_type(self) -> "AnalysisValidator":
         """Check if the input_data is of the required type."""
         if self.required_type is not None and not isinstance(
             self.input_data, self.required_type
@@ -44,7 +44,7 @@ class BaseAnalysis(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_required_columns(self) -> "BaseAnalysis":
+    def validate_required_columns(self) -> "AnalysisValidator":
         """Check if the required columns are present in the input_data."""
         missing_columns = [
             col

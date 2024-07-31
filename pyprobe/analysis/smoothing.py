@@ -6,7 +6,7 @@ import numpy as np
 from pydantic import BaseModel
 from scipy.interpolate import make_smoothing_spline
 
-from pyprobe.analysis.utils import BaseAnalysis
+from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
 
 
@@ -38,7 +38,9 @@ class Smoothing(BaseModel):
                 gradient of the smoothed `y` with respect to `x`.
         """
         # validate and identify variables
-        validator = BaseAnalysis(input_data=self.input_data, required_columns=[x, y])
+        validator = AnalysisValidator(
+            input_data=self.input_data, required_columns=[x, y]
+        )
         x_data, y_data = validator.variables
 
         data_flipped = False

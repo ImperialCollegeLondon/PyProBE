@@ -25,16 +25,18 @@ def test_assemble_array(input_data_fixture):
 
 def test_base_analysis(input_data_fixture):
     """Test the base analysis class."""
-    analysis = utils.BaseAnalysis(input_data=input_data_fixture, required_columns=["x"])
+    analysis = utils.AnalysisValidator(
+        input_data=input_data_fixture, required_columns=["x"]
+    )
     assert analysis.validate_input_data_type() == analysis
     assert analysis.validate_required_columns() == analysis
 
     with pytest.raises(ValueError):
-        utils.BaseAnalysis(input_data=input_data_fixture, required_columns=["z"])
+        utils.AnalysisValidator(input_data=input_data_fixture, required_columns=["z"])
 
     np.testing.assert_array_equal(analysis.variables, np.array([1, 2, 3]))
 
-    analysis = utils.BaseAnalysis(
+    analysis = utils.AnalysisValidator(
         input_data=input_data_fixture, required_columns=["x", "y"]
     )
     x, y = analysis.variables
@@ -42,7 +44,7 @@ def test_base_analysis(input_data_fixture):
     np.testing.assert_array_equal(y, np.array([4, 5, 6]))
 
     with pytest.raises(ValueError):
-        analysis = utils.BaseAnalysis(
+        analysis = utils.AnalysisValidator(
             input_data=input_data_fixture,
             required_columns=["z"],
             required_type=Experiment,
