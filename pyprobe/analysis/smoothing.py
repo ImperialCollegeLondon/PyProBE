@@ -3,13 +3,14 @@
 from typing import Optional
 
 import numpy as np
+from pydantic import BaseModel
 from scipy.interpolate import make_smoothing_spline
 
 from pyprobe.analysis.utils import BaseAnalysis
 from pyprobe.result import Result
 
 
-class Smoothing(BaseAnalysis):
+class Smoothing(BaseModel):
     """A class for smoothing noisy experimental data.
 
     Args:
@@ -17,7 +18,6 @@ class Smoothing(BaseAnalysis):
     """
 
     input_data: Result
-    required_columns: list[str] = []
 
     def spline_smoothing(
         self, x: str, y: str, smoothing_lambda: Optional[float] = None
@@ -37,9 +37,10 @@ class Smoothing(BaseAnalysis):
                 A result object containing the columns, `x`, the smoothed `y` and the
                 gradient of the smoothed `y` with respect to `x`.
         """
-        x_data = self.input_data.get_only(x)
-        y_data = self.input_data.get_only(y)
-        smoothing_lambda = smoothing_lambda
+        # validate and identify variables
+        validator = BaseAnalysis(input_data=self.input_data, required_columns=[x, y])
+        x_data, y_data = validator.variables
+
         data_flipped = False
         if x_data[0] > x_data[-1]:  # flip the data if it is not in ascending order
             x_data = np.flip(x_data)
