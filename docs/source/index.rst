@@ -11,6 +11,7 @@ PyProBE documentation
    :hidden:
 
    user_guide/user_guide
+   examples/examples
    developer_guide/developer_guide
    api/modules
 
@@ -41,7 +42,7 @@ PyProBE documentation
 
       +++
 
-      .. button-ref:: https://github.com/ImperialCollegeLondon/PyProBE/tree/main/examples
+      .. button-ref:: examples/examples
          :expand:
          :color: secondary
          :click-parent:

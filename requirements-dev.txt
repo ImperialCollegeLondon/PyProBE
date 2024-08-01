@@ -22,9 +22,13 @@ babel==2.14.0
     #   pydata-sphinx-theme
     #   sphinx
 beautifulsoup4==4.12.3
-    # via pydata-sphinx-theme
+    # via
+    #   nbconvert
+    #   pydata-sphinx-theme
 black==24.3.0
     # via PyProBE (pyproject.toml)
+bleach==6.1.0
+    # via nbconvert
 blinker==1.8.2
     # via streamlit
 build==1.2.1
@@ -48,12 +52,15 @@ coverage[toml]==7.4.4
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
+defusedxml==0.7.1
+    # via nbconvert
 distinctipy==1.3.4
     # via PyProBE (pyproject.toml)
 distlib==0.3.8
     # via virtualenv
 docutils==0.20.1
     # via
+    #   nbsphinx
     #   pybtex-docutils
     #   pydata-sphinx-theme
     #   sphinx
@@ -92,6 +99,8 @@ isort==5.13.2
 jinja2==3.1.4
     # via
     #   altair
+    #   nbconvert
+    #   nbsphinx
     #   pydeck
     #   sphinx
 joblib==1.4.0
@@ -102,8 +111,16 @@ jsonschema==4.22.0
     #   nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
+jupyter-client==8.6.2
+    # via nbclient
 jupyter-core==5.7.2
-    # via nbformat
+    # via
+    #   jupyter-client
+    #   nbclient
+    #   nbconvert
+    #   nbformat
+jupyterlab-pygments==0.3.0
+    # via nbconvert
 kiwisolver==1.4.5
     # via matplotlib
 latexcodec==3.0.0
@@ -111,13 +128,17 @@ latexcodec==3.0.0
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
-    # via jinja2
+    # via
+    #   jinja2
+    #   nbconvert
 matplotlib==3.8.4
     # via PyProBE (pyproject.toml)
 mccabe==0.7.0
     # via flake8
 mdurl==0.1.2
     # via markdown-it-py
+mistune==3.0.2
+    # via nbconvert
 mypy==1.9.0
     # via
     #   PyProBE (pyproject.toml)
@@ -126,7 +147,17 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
+nbclient==0.10.0
+    # via nbconvert
+nbconvert==7.16.4
+    # via nbsphinx
 nbformat==5.10.4
+    # via
+    #   PyProBE (pyproject.toml)
+    #   nbclient
+    #   nbconvert
+    #   nbsphinx
+nbsphinx==0.9.4
     # via PyProBE (pyproject.toml)
 nodeenv==1.8.0
     # via pre-commit
@@ -151,6 +182,7 @@ packaging==24.0
     #   black
     #   build
     #   matplotlib
+    #   nbconvert
     #   plotly
     #   pydata-sphinx-theme
     #   pytest
@@ -161,6 +193,8 @@ pandas==2.2.2
     #   PyProBE (pyproject.toml)
     #   altair
     #   streamlit
+pandocfilters==1.5.1
+    # via nbconvert
 pathspec==0.12.1
     # via black
 pillow==10.3.0
@@ -213,6 +247,7 @@ pyflakes==3.2.0
 pygments==2.17.2
     # via
     #   accessible-pygments
+    #   nbconvert
     #   pydata-sphinx-theme
     #   rich
     #   sphinx
@@ -240,6 +275,7 @@ pytest-mypy==0.10.3
     # via PyProBE (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
+    #   jupyter-client
     #   matplotlib
     #   pandas
 pytz==2024.1
@@ -249,6 +285,8 @@ pyyaml==6.0.1
     #   PyProBE (pyproject.toml)
     #   pre-commit
     #   pybtex
+pyzmq==26.0.3
+    # via jupyter-client
 referencing==0.35.1
     # via
     #   jsonschema
@@ -269,6 +307,7 @@ scipy==1.13.0
     # via scikit-learn
 six==1.16.0
     # via
+    #   bleach
     #   pybtex
     #   python-dateutil
 smmap==5.0.1
@@ -282,6 +321,7 @@ soupsieve==2.5
 sphinx==7.2.6
     # via
     #   PyProBE (pyproject.toml)
+    #   nbsphinx
     #   pydata-sphinx-theme
     #   sphinx-design
     #   sphinx-tabs
@@ -312,16 +352,24 @@ tenacity==8.2.3
     #   streamlit
 threadpoolctl==3.4.0
     # via scikit-learn
+tinycss2==1.3.0
+    # via nbconvert
 toml==0.10.2
     # via streamlit
 toolz==0.12.1
     # via altair
 tornado==6.4.1
-    # via streamlit
+    # via
+    #   jupyter-client
+    #   streamlit
 traitlets==5.14.3
     # via
+    #   jupyter-client
     #   jupyter-core
+    #   nbclient
+    #   nbconvert
     #   nbformat
+    #   nbsphinx
 types-pyyaml==6.0.12.20240311
     # via PyProBE (pyproject.toml)
 typing-extensions==4.11.0
@@ -337,6 +385,10 @@ urllib3==2.2.2
     # via requests
 virtualenv==20.25.1
     # via pre-commit
+webencodings==0.5.1
+    # via
+    #   bleach
+    #   tinycss2
 wheel==0.43.0
     # via pip-tools
 xlsx2csv==0.8.2

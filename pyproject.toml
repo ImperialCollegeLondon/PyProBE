@@ -48,6 +48,7 @@ dev = [
     "sphinxcontrib-bibtex",
     "sphinx-design",
     "pydata-sphinx-theme",
+    "nbsphinx"
 ]
 
 [tool.mypy]

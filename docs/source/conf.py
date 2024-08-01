@@ -24,6 +24,7 @@ extensions = [
     "sphinx_tabs.tabs",
     "sphinxcontrib.bibtex",
     "sphinx_design",
+    "nbsphinx",
 ]
 
 # -- Options for HTML output -------------------------------------------------
@@ -42,3 +43,8 @@ bibtex_style = "unsrt"
 bibtex_footbibliography_header = """.. rubric:: References"""
 bibtex_reference_style = "author_year"
 bibtex_tooltips = True
+
+# -- nbsphinx configuration --------------------------------------------------
+autosummary_generate = True
+nbsphinx_execute = "always"  # Always execute notebooks
+nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
