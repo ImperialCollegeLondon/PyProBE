@@ -1,5 +1,4 @@
 """A module for the filtering classes."""
-import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
     )
 
 
-def filter_numerical(
+def _filter_numerical(
     dataframe: pl.LazyFrame | pl.DataFrame,
     column: str,
     indices: Tuple[Union[int, range], ...],
@@ -51,7 +50,7 @@ def filter_numerical(
         return dataframe
 
 
-def step(
+def _step(
     filter: "FilterToCycleType",
     *step_numbers: Union[int, range],
     condition: Optional[pl.Expr] = None,
@@ -70,11 +69,11 @@ def step(
         Step: A step object.
     """
     if condition is not None:
-        base_dataframe = filter_numerical(
+        base_dataframe = _filter_numerical(
             filter.base_dataframe.filter(condition), "Event", step_numbers
         )
     else:
-        base_dataframe = filter_numerical(filter.base_dataframe, "Event", step_numbers)
+        base_dataframe = _filter_numerical(filter.base_dataframe, "Event", step_numbers)
     return Step(
         base_dataframe=base_dataframe,
         info=filter.info,
@@ -82,7 +81,7 @@ def step(
     )
 
 
-def cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
+def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
     """Return a cycle object. Filters on the Cycle column.
 
     Args:
@@ -93,7 +92,7 @@ def cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycl
     Returns:
         Cycle: A cycle object.
     """
-    lf_filtered = filter_numerical(filter.base_dataframe, "Cycle", cycle_numbers)
+    lf_filtered = _filter_numerical(filter.base_dataframe, "Cycle", cycle_numbers)
 
     return Cycle(
         base_dataframe=lf_filtered,
@@ -102,7 +101,7 @@ def cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycl
     )
 
 
-def charge(filter: "FilterToCycleType", *charge_numbers: Union[int, range]) -> "Step":
+def _charge(filter: "FilterToCycleType", *charge_numbers: Union[int, range]) -> "Step":
     """Return a charge step.
 
     Args:
@@ -117,7 +116,7 @@ def charge(filter: "FilterToCycleType", *charge_numbers: Union[int, range]) -> "
     return filter.step(*charge_numbers, condition=condition)
 
 
-def discharge(
+def _discharge(
     filter: "FilterToCycleType",
     *discharge_numbers: Union[int, range],
 ) -> "Step":
@@ -135,7 +134,7 @@ def discharge(
     return filter.step(*discharge_numbers, condition=condition)
 
 
-def chargeordischarge(
+def _chargeordischarge(
     filter: "FilterToCycleType",
     *chargeordischarge_numbers: Union[int, range],
 ) -> "Step":
@@ -154,7 +153,7 @@ def chargeordischarge(
     return filter.step(*chargeordischarge_numbers, condition=condition)
 
 
-def rest(filter: "FilterToCycleType", *rest_numbers: Union[int, range]) -> "Step":
+def _rest(filter: "FilterToCycleType", *rest_numbers: Union[int, range]) -> "Step":
     """Return a rest step object.
 
     Args:
@@ -169,7 +168,7 @@ def rest(filter: "FilterToCycleType", *rest_numbers: Union[int, range]) -> "Step
     return filter.step(*rest_numbers, condition=condition)
 
 
-def constant_current(
+def _constant_current(
     filter: "FilterToCycleType",
     *constant_current_numbers: Union[int, range],
 ) -> "Step":
@@ -197,7 +196,7 @@ def constant_current(
     return filter.step(*constant_current_numbers, condition=condition)
 
 
-def constant_voltage(
+def _constant_voltage(
     filter: "FilterToCycleType",
     *constant_voltage_numbers: Union[int, range],
 ) -> "Step":
@@ -232,31 +231,6 @@ class Procedure(RawData):
         titles (List[str]): A dict containing the titles of the experiments.
         steps_idx (List[List[int]]): A list of lists containing the step indices for
             each experiment.
-
-    Filtering attributes:
-        step (Callable[..., int]):
-            A method to return a step object from the procedure. See :func:`step`.
-        cycle (Callable[..., int]):
-            A method to return a cycle object from the procedure.
-            See :func:`cycle`.
-        charge (Callable[..., int]):
-            A method to return a charge step object from the procedure.
-            See :func:`charge`.
-        discharge (Callable[..., int]):
-            A method to return a discharge step object from the procedure.
-            See :func:`discharge`.
-        chargeordischarge (Callable[..., int]):
-            A method to return a charge or discharge step object from the procedure.
-            See :func:`chargeordischarge`.
-        rest (Callable[..., int]):
-            A method to return a rest step object from the procedure.
-            See :func:`rest`.
-        constant_current (Callable[..., int]):
-            A method to return a constant current step object from the procedure.
-            See :func:`constant_current`.
-        constant_voltage (Callable[..., int]):
-            A method to return a constant voltage step object from the procedure.
-            See :func:`constant_voltage`.
     """
 
     titles: List[str]
@@ -282,14 +256,14 @@ class Procedure(RawData):
             "The net charge passed since beginning of procedure.",
         )
 
-    step = step
-    cycle = cycle
-    charge = charge
-    discharge = discharge
-    chargeordischarge = chargeordischarge
-    rest = rest
-    constant_current = constant_current
-    constant_voltage = constant_voltage
+    step = _step
+    cycle = _cycle
+    charge = _charge
+    discharge = _discharge
+    chargeordischarge = _chargeordischarge
+    rest = _rest
+    constant_current = _constant_current
+    constant_voltage = _constant_voltage
 
     def experiment(self, *experiment_names: str) -> "Experiment":
         """Return an experiment object from the procedure.
@@ -307,7 +281,7 @@ class Procedure(RawData):
                 raise ValueError(f"{experiment_name} not in procedure.")
             experiment_number = self.titles.index(experiment_name)
             steps_idx.append(self.steps_idx[experiment_number])
-        flattened_steps = self.flatten(steps_idx)
+        flattened_steps = self._flatten(steps_idx)
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
@@ -327,22 +301,8 @@ class Procedure(RawData):
         """
         return list(self.titles)
 
-    def verify_yaml(self, readme_name: str) -> str:
-        """Verify that the readme has YAML extension.
-
-        Args:
-            readme_name (str): The name of the README file.
-        """
-        # Get the file extension of output_filename
-        _, ext = os.path.splitext(readme_name)
-
-        # If the file extension is not .yaml, replace it with .yaml
-        if ext != ".yaml":
-            readme_name = os.path.splitext(readme_name)[0] + ".yaml"
-        return readme_name
-
     @classmethod
-    def flatten(cls, lst: int | List[Any]) -> List[int]:
+    def _flatten(cls, lst: int | List[Any]) -> List[int]:
         """Flatten a list of lists into a single list.
 
         Args:
@@ -354,7 +314,7 @@ class Procedure(RawData):
         if not isinstance(lst, list):
             return [lst]
         else:
-            return [item for sublist in lst for item in cls.flatten(sublist)]
+            return [item for sublist in lst for item in cls._flatten(sublist)]
 
 
 class Experiment(RawData):
@@ -365,30 +325,6 @@ class Experiment(RawData):
         info (Dict[str, str | int | float]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
-
-    Filtering attributes:
-        step (Callable[..., int]):
-            A method to return a step object from the experiment. See :func:`step`.
-        cycle (Callable[..., int]):
-            A method to return a cycle object from the experiment. See :func:`cycle`.
-        charge (Callable[..., int]):
-            A method to return a charge step object from the experiment.
-            See :func:`charge`.
-        discharge (Callable[..., int]):
-            A method to return a discharge step object from the experiment.
-            See :func:`discharge`.
-        chargeordischarge (Callable[..., int]):
-            A method to return a charge or discharge step object from the experiment.
-            See :func:`chargeordischarge`.
-        rest (Callable[..., int]):
-            A method to return a rest step object from the experiment.
-            See :func:`rest`.
-        constant_current (Callable[..., int]):
-            A method to return a constant current step object.
-            See :func:`constant_current`.
-        constant_voltage (Callable[..., int]):
-            A method to return a constant voltage step object.
-            See :func:`constant_voltage`.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
@@ -411,14 +347,14 @@ class Experiment(RawData):
             "The net charge passed since beginning of experiment.",
         )
 
-    step = step
-    cycle = cycle
-    charge = charge
-    discharge = discharge
-    chargeordischarge = chargeordischarge
-    rest = rest
-    constant_current = constant_current
-    constant_voltage = constant_voltage
+    step = _step
+    cycle = _cycle
+    charge = _charge
+    discharge = _discharge
+    chargeordischarge = _chargeordischarge
+    rest = _rest
+    constant_current = _constant_current
+    constant_voltage = _constant_voltage
 
 
 class Cycle(RawData):
@@ -429,28 +365,6 @@ class Cycle(RawData):
         info (Dict[str, str | int | float]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
-
-    Filtering attributes:
-        step (Callable[..., int]):
-            A method to return a step object from the procedure. See :func:`step`.
-        charge (Callable[..., int]):
-            A method to return a charge step object from the procedure.
-            See :func:`charge`.
-        discharge (Callable[..., int]):
-            A method to return a discharge step object from the procedure.
-            See :func:`discharge`.
-        chargeordischarge (Callable[..., int]):
-            A method to return a charge or discharge step object from the procedure.
-            See :func:`chargeordischarge`.
-        rest (Callable[..., int]):
-            A method to return a rest step object from the procedure.
-            See :func:`rest`.
-        constant_current (Callable[..., int]):
-            A method to return a constant current step object.
-            See :func:`constant_current`.
-        constant_voltage (Callable[..., int]):
-            A method to return a constant voltage step object.
-            See :func:`constant_voltage`.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
@@ -473,13 +387,13 @@ class Cycle(RawData):
             "The net charge passed since beginning of cycle.",
         )
 
-    step = step
-    charge = charge
-    discharge = discharge
-    chargeordischarge = chargeordischarge
-    rest = rest
-    constant_current = constant_current
-    constant_voltage = constant_voltage
+    step = _step
+    charge = _charge
+    discharge = _discharge
+    chargeordischarge = _chargeordischarge
+    rest = _rest
+    constant_current = _constant_current
+    constant_voltage = _constant_voltage
 
 
 class Step(RawData):
@@ -490,14 +404,6 @@ class Step(RawData):
         info (Dict[str, str | int | float]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
-
-    Filtering attributes:
-        constant_current (Callable[..., int]):
-            A method to return a constant current step object.
-            See :func:`constant_current`.
-        constant_voltage (Callable[..., int]):
-            A method to return a constant voltage step object.
-            See :func:`constant_voltage`.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
@@ -520,6 +426,6 @@ class Step(RawData):
             "The net charge passed since beginning of step.",
         )
 
-    step = step
-    constant_current = constant_current
-    constant_voltage = constant_voltage
+    step = _step
+    constant_current = _constant_current
+    constant_voltage = _constant_voltage

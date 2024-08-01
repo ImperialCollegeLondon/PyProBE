@@ -28,18 +28,6 @@ def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark)
     assert experiment.data["Experiment Capacity [Ah]"][0] == 0
 
 
-def test_verify_yaml(procedure_fixture):
-    """Test the verify_yaml method."""
-    file = "readme"
-    assert procedure_fixture.verify_yaml(file) == "readme.yaml"
-
-    file = "readme.yaml"
-    assert procedure_fixture.verify_yaml(file) == "readme.yaml"
-
-    file = "readme.txt"
-    assert procedure_fixture.verify_yaml(file) == "readme.yaml"
-
-
 def test_experiment_names(procedure_fixture, titles_fixture):
     """Test the experiment_names method."""
     assert procedure_fixture.experiment_names == titles_fixture
@@ -48,7 +36,7 @@ def test_experiment_names(procedure_fixture, titles_fixture):
 def test_flatten(procedure_fixture):
     """Test flattening lists."""
     lst = [[1, 2, 3], [4, 5], 6]
-    flat_list = procedure_fixture.flatten(lst)
+    flat_list = procedure_fixture._flatten(lst)
     assert flat_list == [1, 2, 3, 4, 5, 6]
 
 
