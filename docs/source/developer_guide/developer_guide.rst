@@ -6,6 +6,7 @@ Developer Guide
    :maxdepth: 2
 
    developer_installation
+   dependency_guide
    contributing_to_the_analysis_module
 
 .. footbibliography::
