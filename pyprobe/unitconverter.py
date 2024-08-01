@@ -22,7 +22,7 @@ class UnitConverter:
     def __init__(
         self,
         column_name: str,
-        name_pattern: str = r"(\w+)\s*\[(\w+)\]",
+        name_pattern: str = r"([\w\s]+?)\s*\[(\w+)\]",
     ) -> None:
         """Initialize the UnitConverter object."""
         self.name = column_name
@@ -82,29 +82,31 @@ class UnitConverter:
         else:
             raise ValueError(f"Name {name} does not match pattern.")
 
-    @property
-    def default_name(self) -> str:
-        """Return the default column name."""
-        return f"{self.default_quantity} [{self.default_unit}]"
-
-    def from_default(self) -> pl.Expr:
+    def from_default_unit(self) -> pl.Expr:
         """Convert the column from the default unit.
 
         Returns:
             pl.Expr: The converted column expression.
         """
-        return (pl.col(self.default_name) / self.factor).alias(
-            f"{self.input_quantity} [{self.input_unit}]"
-        )
+        return (
+            pl.col(f"{self.input_quantity} [{self.default_unit}]") / self.factor
+        ).alias(f"{self.input_quantity} [{self.input_unit}]")
 
-    def to_default(self, keep_name: bool = False) -> pl.Expr:
-        """Convert the column to the default unit.
+    def to_default_name_and_unit(self) -> pl.Expr:
+        """Convert the column to the default unit and change to the default name.
 
         Returns:
             pl.Expr: The converted column expression.
         """
         conversion = pl.col(self.name) * self.factor
-        if keep_name:
-            return conversion.alias(f"{self.input_quantity} [{self.default_unit}]")
-        else:
-            return conversion.alias(self.default_name)
+        return conversion.alias(f"{self.default_quantity} [{self.default_unit}]")
+
+    def to_default_unit(self) -> pl.Expr:
+        """Convert the column to the default unit without changing the name.
+
+        Returns:
+            pl.Expr: The converted column expression.
+        """
+        return (pl.col(self.name) * self.factor).alias(
+            f"{self.input_quantity} [{self.default_unit}]"
+        )

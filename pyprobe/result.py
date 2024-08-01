@@ -163,7 +163,7 @@ class Result(BaseModel):
         if column_name not in self.base_dataframe.columns:
             converter_object = UnitConverter(column_name)
             if converter_object.input_quantity in self.quantities:
-                instruction = converter_object.from_default()
+                instruction = converter_object.from_default_unit()
                 self.base_dataframe = self.base_dataframe.with_columns(instruction)
                 self.define_column(
                     column_name,

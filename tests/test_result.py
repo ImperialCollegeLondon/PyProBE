@@ -119,6 +119,15 @@ def test_check_units(Result_fixture):
         == Result_fixture.column_definitions["Current [A]"]
     )
 
+    result = Result(
+        base_dataframe=pl.DataFrame({"Invented quantity [V]": [1, 2, 3]}),
+        info={},
+        column_definitions={"Invented quantity [V]": "Invented quantity definition"},
+    )
+    assert "Invented quantity [mV]" not in result.data.columns
+    result.check_units("Invented quantity [mV]")
+    assert "Invented quantity [mV]" in result.data.columns
+
 
 def test_print_definitions(Result_fixture, capsys):
     """Test the print_definitions method."""

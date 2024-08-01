@@ -97,7 +97,7 @@ class BaseCycler(ABC):
                 self.column_dict["Current"],
                 self.column_name_pattern,
             )
-            .to_default()
+            .to_default_name_and_unit()
             .cast(pl.Float64)
         )
 
@@ -114,7 +114,7 @@ class BaseCycler(ABC):
                 self.column_dict["Voltage"],
                 self.column_name_pattern,
             )
-            .to_default()
+            .to_default_name_and_unit()
             .cast(pl.Float64)
         )
 
@@ -131,7 +131,7 @@ class BaseCycler(ABC):
                 self.column_dict["Charge Capacity"],
                 self.column_name_pattern,
             )
-            .to_default(keep_name=True)
+            .to_default_unit()
             .cast(pl.Float64)
         )
 
@@ -148,7 +148,7 @@ class BaseCycler(ABC):
                 self.column_dict["Discharge Capacity"],
                 self.column_name_pattern,
             )
-            .to_default(keep_name=True)
+            .to_default_unit()
             .cast(pl.Float64)
         )
 
@@ -187,7 +187,7 @@ class BaseCycler(ABC):
                     self.column_dict["Capacity"],
                     self.column_name_pattern,
                 )
-                .to_default()
+                .to_default_name_and_unit()
                 .cast(pl.Float64)
             )
         else:

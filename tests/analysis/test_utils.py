@@ -13,7 +13,15 @@ from pyprobe.result import Result
 def input_data_fixture():
     """Return a Result instance."""
     return Result(
-        base_dataframe=pl.LazyFrame({"x": [1, 2, 3], "y": [4, 5, 6]}), info={}
+        base_dataframe=pl.LazyFrame(
+            {"x": [1, 2, 3], "y": [4, 5, 6], "Units [Ah]": [7, 8, 9]}
+        ),
+        info={},
+        column_definitions={
+            "x": "x definition",
+            "y": "y definition",
+            "Units [Ah]": "Units definition",
+        },
     )
 
 
@@ -49,3 +57,8 @@ def test_base_analysis(input_data_fixture):
             required_columns=["z"],
             required_type=Experiment,
         )
+
+    analysis = utils.AnalysisValidator(
+        input_data=input_data_fixture, required_columns=["Units [mAh]"]
+    )
+    np.testing.assert_array_equal(analysis.variables, np.array([7, 8, 9]) * 1000)

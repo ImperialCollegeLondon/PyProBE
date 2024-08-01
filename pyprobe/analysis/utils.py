@@ -46,11 +46,13 @@ class AnalysisValidator(BaseModel):
     @model_validator(mode="after")
     def validate_required_columns(self) -> "AnalysisValidator":
         """Check if the required columns are present in the input_data."""
-        missing_columns = [
-            col
-            for col in self.required_columns
-            if col not in self.input_data.column_list
-        ]
+        missing_columns = []
+        for col in self.required_columns:
+            if col not in self.input_data.column_list:
+                try:
+                    self.input_data.check_units(col)
+                except ValueError:
+                    missing_columns.append(col)
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
         return self

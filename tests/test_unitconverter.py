@@ -74,30 +74,25 @@ def test_init(
     assert current_quantity.default_quantity == "Current"
     assert current_quantity.default_unit == "A"
     assert current_quantity.prefix is None
-    assert current_quantity.default_name == "Current [A]"
 
     assert capacity_quantity.name == "Capacity [mAh]"
     assert capacity_quantity.default_unit == "Ah"
     assert capacity_quantity.prefix == "m"
-    assert capacity_quantity.default_name == "Capacity [Ah]"
 
     assert time_quantity.name == "Time [hr]"
     assert time_quantity.default_quantity == "Time"
     assert time_quantity.default_unit == "s"
     assert time_quantity.prefix is None
-    assert time_quantity.default_name == "Time [s]"
 
     assert current_from_cycler_quantity.name == "Current/A"
     assert current_from_cycler_quantity.default_quantity == "Current"
     assert current_from_cycler_quantity.default_unit == "A"
     assert current_from_cycler_quantity.prefix is None
-    assert current_from_cycler_quantity.default_name == "Current [A]"
 
     assert I_from_cycler_quantity.name == "I/mA"
     assert I_from_cycler_quantity.default_quantity == "Current"
     assert I_from_cycler_quantity.default_unit == "A"
     assert I_from_cycler_quantity.prefix == "m"
-    assert I_from_cycler_quantity.default_name == "Current [A]"
 
     with pytest.raises(ValueError):
         UnitConverter("Step")
@@ -105,9 +100,9 @@ def test_init(
         UnitConverter("Current/A")
 
 
-def test_from_default(current_quantity, capacity_quantity, time_quantity):
-    """Test the from_default method."""
-    instruction = current_quantity.from_default()
+def test_from_default_unit(current_quantity, capacity_quantity, time_quantity):
+    """Test the from_default_unit method."""
+    instruction = current_quantity.from_default_unit()
     original_frame = pl.DataFrame({"Current [A]": [1.0, 2.0, 3.0]})
     updated_frame = original_frame.with_columns(instruction)
     assert "Current [A]" in updated_frame.columns
@@ -115,7 +110,7 @@ def test_from_default(current_quantity, capacity_quantity, time_quantity):
         updated_frame["Current [A]"], original_frame["Current [A]"]
     )
 
-    instruction = capacity_quantity.from_default()
+    instruction = capacity_quantity.from_default_unit()
     original_frame = pl.DataFrame({"Capacity [Ah]": [1.0, 2.0, 3.0]})
     updated_frame = original_frame.with_columns(instruction)
     assert "Capacity [mAh]" in updated_frame.columns
@@ -125,7 +120,7 @@ def test_from_default(current_quantity, capacity_quantity, time_quantity):
         check_names=False,
     )
 
-    instruction = time_quantity.from_default()
+    instruction = time_quantity.from_default_unit()
     print(time_quantity.default_quantity)
     print(time_quantity.factor)
     original_frame = pl.DataFrame({"Time [s]": [1.0, 2.0, 3.0]})
@@ -136,20 +131,21 @@ def test_from_default(current_quantity, capacity_quantity, time_quantity):
     )
 
 
-def test_to_default(I_from_cycler_quantity):
-    """Test the to_default method."""
+def test_to_default_name_and_unit(I_from_cycler_quantity):
+    """Test the to_default_name_and_unit method."""
     original_frame = pl.DataFrame({"I/mA": [1.0, 2.0, 3.0]})
-    instruction = I_from_cycler_quantity.to_default()
+    instruction = I_from_cycler_quantity.to_default_name_and_unit()
     updated_frame = original_frame.with_columns(instruction)
     assert "Current [A]" in updated_frame.columns
     pl_testing.assert_series_equal(
         updated_frame["Current [A]"], original_frame["I/mA"] * 1e-3, check_names=False
     )
 
+
+def test_to_default_unit():
+    """Test the to_default_unit method."""
     original_frame = pl.DataFrame({"Chg. Cap.(Ah)": [1.0, 2.0, 3.0]})
-    instruction = UnitConverter("Chg. Cap.(Ah)", r"(.+)\((.+)\)").to_default(
-        keep_name=True
-    )
+    instruction = UnitConverter("Chg. Cap.(Ah)", r"(.+)\((.+)\)").to_default_unit()
     updated_frame = original_frame.with_columns(instruction)
     assert "Chg. Cap. [Ah]" in updated_frame.columns
     pl_testing.assert_series_equal(
