@@ -29,8 +29,8 @@ class UnitConverter:
         self.input_quantity, self.input_unit = self.get_quantity_and_unit(
             column_name, name_pattern
         )
-        self.prefix, self.default_unit = self.get_default_unit(self.input_unit)
-        self.default_quantity = self.get_default_quantity(self.default_unit)
+        self.prefix, self.default_unit = self._get_default_unit(self.input_unit)
+        self.default_quantity = self._get_default_quantity(self.default_unit)
         if self.default_quantity == "Time":
             self.factor = self.time_unit_dict[self.input_unit]
         else:
@@ -38,7 +38,7 @@ class UnitConverter:
                 self.prefix_dict[self.prefix] if self.prefix is not None else 1
             )
 
-    def get_default_unit(self, unit: str) -> Tuple[Optional[str], str]:
+    def _get_default_unit(self, unit: str) -> Tuple[Optional[str], str]:
         """Return the default unit and prefix of a given unit.
 
         Args:
@@ -54,7 +54,7 @@ class UnitConverter:
         else:
             return None, unit
 
-    def get_default_quantity(self, unit: str) -> str:
+    def _get_default_quantity(self, unit: str) -> str:
         """Return the default quantity of a given unit.
 
         Args:
