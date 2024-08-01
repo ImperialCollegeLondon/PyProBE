@@ -9,8 +9,8 @@ This document describes the standard format to be used for all PyProBE analysis 
 Constructing your method in this way ensures compatibility with the rest of the 
 PyProBE package, while keeping your code clean and easy to read.
 
-Analysis classes are based on :ref:`pydantic <https://docs.pydantic.dev/latest/>` 
-BaseModel to provide input validation. However, following the steps below should allow
+Analysis classes are based on `Pydantic BaseModel <https://docs.pydantic.dev/latest/api/base_model/>`_ 
+to provide input validation. However, following the steps below should allow
 you to write your own analysis class without any direct interaction with pydantic 
 itself. 
 
