@@ -79,4 +79,25 @@ The steps to write a method are as follows:
     :linenos:
     :pyobject: Differentiation.differentiate_FD
 
+Base
+----
+
+The :mod:`pyprobe.analysis.base` module exists as a repository for functions to work in
+the rest of the analysis module. Often with data analysis code, it is tempting to include
+data manipulation (forming arrays, dataframes etc. from your standard data format) 
+alongside calculations. By keeping the data manipulation inside the methods of classes
+in the :mod:`pyprobe.analysis` and calculations in the :mod:`~pyprobe.analysis.base`
+submodule, these functions remain more readable, testable and portable.
+
+:mod:`~pyprobe.analysis.base` module functions should be defined as simply as possible, 
+accepting and returning only arrays and floating-point numbers, with clearly defined
+variables. A good example is the
+:func:`~pyprobe.analysis.base.degradation_mode_analysis_functions.calc_electrode_capacities` function
+in the :mod:`~pyprobe.analysis.base.degradation_mode_analysis_functions` module:
+
+.. literalinclude:: ../../../pyprobe/analysis/base/degradation_mode_analysis_functions.py
+    :language: python
+    :linenos:
+    :pyobject: calc_electrode_capacities
+
 .. footbibliography::

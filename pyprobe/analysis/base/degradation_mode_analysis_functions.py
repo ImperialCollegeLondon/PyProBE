@@ -19,7 +19,22 @@ def ocv_curve_fit(
     optimizer: str,
     x_guess: NDArray[np.float64],
 ) -> NDArray[np.float64]:
-    """Fit half cell open circuit potential curves to full cell OCV data."""
+    """Fit half cell open circuit potential curves to full cell OCV data.
+
+    Args:
+        SOC (NDArray[np.float64]): The full cell SOC.
+        fitting_target_data (NDArray[np.float64]): The full cell OCV data.
+        x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+        ocp_pe (NDArray[np.float64]): The cathode OCP data.
+        x_ne (NDArray[np.float64]): The anode stoichiometry data.
+        ocp_ne (NDArray[np.float64]): The anode OCP data.
+        fitting_target (str): The target for the curve fitting.
+        optimizer (str): The optimization algorithm to use.
+        x_guess (NDArray[np.float64]): The initial guess for the fitting parameters.
+
+    Returns:
+        NDArray: The optimized fitting parameters.
+    """
 
     def cost_function(params: NDArray[np.float64]) -> NDArray[np.float64]:
         """Cost function for the curve fitting."""

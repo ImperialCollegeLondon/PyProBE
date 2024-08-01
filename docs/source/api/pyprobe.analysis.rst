@@ -6,6 +6,14 @@ pyprobe.analysis package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pyprobe.analysis.base
+
 Submodules
 ----------
 
