@@ -7,6 +7,8 @@ from pydantic import Field, field_validator
 # from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
+required_columns = ["Date", "Time [s]", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
+
 default_column_definitions = {
     "Date": "The timestamp of the data point. Type: datetime.",
     "Time [s]": "The time passed from the start of the procedure.",
@@ -14,8 +16,6 @@ default_column_definitions = {
     "Voltage [V]": "The terminal voltage.",
     "Capacity [Ah]": "The net charge passed since the start of the procedure.",
 }
-
-required_columns = ["Date", "Time [s]", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
 
 
 class RawData(Result):
@@ -39,7 +39,7 @@ class RawData(Result):
 
     @field_validator("base_dataframe")
     @classmethod
-    def check_required_columns(
+    def _check_required_columns(
         cls, dataframe: pl.LazyFrame | pl.DataFrame
     ) -> "RawData":
         """Check if the required columns are present in the input_data."""
