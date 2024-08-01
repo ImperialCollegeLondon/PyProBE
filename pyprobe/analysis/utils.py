@@ -50,7 +50,7 @@ class AnalysisValidator(BaseModel):
         for col in self.required_columns:
             if col not in self.input_data.column_list:
                 try:
-                    self.input_data.check_units(col)
+                    self.input_data._check_units(col)
                 except ValueError:
                     missing_columns.append(col)
         if missing_columns:

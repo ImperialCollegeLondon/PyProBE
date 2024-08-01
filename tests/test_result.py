@@ -109,9 +109,9 @@ def test_quantities(Result_fixture):
 
 
 def test_check_units(Result_fixture):
-    """Test the check_units method."""
+    """Test the _check_units method."""
     assert "Current [mA]" not in Result_fixture.data.columns
-    Result_fixture.check_units("Current [mA]")
+    Result_fixture._check_units("Current [mA]")
     assert "Current [mA]" in Result_fixture.data.columns
     assert "Current [mA]" in Result_fixture.column_definitions.keys()
     assert (
@@ -125,7 +125,7 @@ def test_check_units(Result_fixture):
         column_definitions={"Invented quantity [V]": "Invented quantity definition"},
     )
     assert "Invented quantity [mV]" not in result.data.columns
-    result.check_units("Invented quantity [mV]")
+    result._check_units("Invented quantity [mV]")
     assert "Invented quantity [mV]" in result.data.columns
 
 

@@ -54,7 +54,7 @@ class Result(BaseModel):
             stacklevel=2,
         )
 
-        self.check_units(column_name)
+        self._check_units(column_name)
         if column_name not in self.data.columns:
             raise ValueError(f"Column '{column_name}' not in data.")
         else:
@@ -71,7 +71,7 @@ class Result(BaseModel):
         """
         column_names = list(column_name)
         for col in column_names:
-            self.check_units(col)
+            self._check_units(col)
         if not all(col in self.data.columns for col in column_names):
             raise ValueError("One or more columns not in data.")
         else:
@@ -144,7 +144,7 @@ class Result(BaseModel):
         self, filtering_column_names: Tuple[str, ...]
     ) -> NDArray[np.float64]:
         for column_name in filtering_column_names:
-            self.check_units(column_name)
+            self._check_units(column_name)
             if column_name not in self.base_dataframe.columns:
                 raise ValueError(f"Column '{column_name}' not in data.")
         frame_to_return = self.base_dataframe.select(filtering_column_names)
@@ -152,7 +152,7 @@ class Result(BaseModel):
             frame_to_return = frame_to_return.collect()
         return frame_to_return.to_numpy()
 
-    def check_units(self, column_name: str) -> None:
+    def _check_units(self, column_name: str) -> None:
         """Check if a column exists and convert the units if it does not.
 
         Adds a new column to the dataframe with the desired unit.
