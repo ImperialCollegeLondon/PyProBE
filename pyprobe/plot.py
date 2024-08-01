@@ -136,6 +136,7 @@ class Plot:
         secondary_y: Optional[str] = None,
         color: Optional[str] = None,
         label: Optional[str] = None,
+        dash: Optional[str] = None,
         showlegend: bool = True,
     ) -> "Plot":
         """Add a line to the plot.
@@ -147,6 +148,7 @@ class Plot:
             secondary_y (str): The secondary y-axis dataframe column.
             color (str): The color of the line.
             label (str): The label of the line.
+            dash (str): The dash style of the line. E.g. "dash", "dot", "dashdot".
             showlegend (bool): Whether to show the legend.
         """
         if color is None:
@@ -169,7 +171,7 @@ class Plot:
                 x=result.get_only(x),
                 y=result.get_only(y),
                 mode="lines",
-                line=dict(color=color),
+                line=dict(color=color, dash=dash),
                 name=label,
                 showlegend=showlegend,
             )
