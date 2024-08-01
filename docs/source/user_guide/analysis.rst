@@ -5,20 +5,20 @@ Once filtered, the PyProBE :mod:`~pyprobe.analysis` exists to perform further co
 experimental data. You can see the currently available methods in this part of the API 
 documentation.
 
-An analysis class must be instantiated with a variant of a 
-:class:`~pyprobe.result.Result` object. This contains the data that you wish to perform
-the analysis on:
+An analysis class must be instantiated by providing a variant of a 
+:class:`~pyprobe.result.Result` object to the :code:`input_data` field. This contains the data 
+that you wish to perform the analysis on:
 
 .. code-block:: python
 
-   analysis_object = AnalysisClass(Result)
+   analysis_object = AnalysisClass(input_data = Result)
 
 for example, to perform :mod:`degradation mode analysis <pyprobe.analysis.degradation_mode_analysis>` on a discharge pseudo-ocv:
 
 .. code-block:: python
 
    discharge_pOCV = cell.procedure['Procedure Name'].experiment('pOCV').discharge(0)
-   dma_object = DMA(discharge_pOCV)
+   dma_object = DMA(input_data = discharge_pOCV)
 
 Analysis classes can be selective about the data that you provide to them. For example,
 the :class:`~pyprobe.analysis.cycling.Cycling` analysis class requires the `input_data`
