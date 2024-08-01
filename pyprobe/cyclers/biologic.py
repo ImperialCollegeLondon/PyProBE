@@ -2,6 +2,7 @@
 
 
 from datetime import datetime
+from typing import List
 
 import polars as pl
 
@@ -15,22 +16,18 @@ class Biologic(BaseCycler):
             input_data_path: The path to the input data.
     """
 
-    def __init__(self, input_data_path: str) -> None:
-        """Create a Biologic cycler object."""
-        super().__init__(
-            input_data_path,
-            common_suffix="_MB",
-            column_name_pattern=r"(.+)/(.+)",
-            column_dict={
-                "Date": "Date",
-                "Time": "time/s",
-                "Step": "Ns",
-                "Current": "I",
-                "Voltage": "Ecell",
-                "Charge Capacity": "Q charge",
-                "Discharge Capacity": "Q discharge",
-            },
-        )
+    input_data_path: str
+    common_suffix: str = "_MB"
+    column_name_pattern: str = r"(.+)/(.+)"
+    column_dict: dict[str, str] = {
+        "Date": "Date",
+        "Time": "time/s",
+        "Step": "Ns",
+        "Current": "I",
+        "Voltage": "Ecell",
+        "Charge Capacity": "Q charge",
+        "Discharge Capacity": "Q discharge",
+    }
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -80,8 +77,9 @@ class Biologic(BaseCycler):
         )
         return dataframe
 
-    @property
-    def imported_dataframe(self) -> pl.DataFrame | pl.LazyFrame:
+    def get_imported_dataframe(
+        self, dataframe_list: List[pl.DataFrame]
+    ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
@@ -91,17 +89,12 @@ class Biologic(BaseCycler):
             pl.DataFrame | pl.LazyFrame: The imported DataFrame.
         """
         df_list = []
-        for i, df in enumerate(self.dataframe_list):
+        for i, df in enumerate(dataframe_list):
             df = df.with_columns(pl.lit(i).alias("MB File"))
             df_list.append(df)
         complete_df = pl.concat(df_list, how="vertical")
         complete_df = self.apply_step_correction(complete_df)
         return complete_df
-
-    @property
-    def step(self) -> pl.Expr:
-        """Identify and format the step column."""
-        return (pl.col(self.column_dict["Step"]) + 1).cast(pl.Int64).alias("Step")
 
     @staticmethod
     def apply_step_correction(
@@ -132,3 +125,8 @@ class Biologic(BaseCycler):
         df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
         # add the max step number to the step number
         return df_with_max_step.with_columns(pl.col("Ns") + pl.col("Max_Step"))
+
+    @property
+    def step(self) -> pl.Expr:
+        """Identify and format the step column."""
+        return (pl.col(self.column_dict["Step"]) + 1).cast(pl.Int64).alias("Step")

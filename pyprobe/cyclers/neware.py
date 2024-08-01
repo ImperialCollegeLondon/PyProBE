@@ -15,27 +15,17 @@ class Neware(BaseCycler):
         input_data_path: The path to the input data.
     """
 
-    def __init__(self, input_data_path: str) -> None:
-        """Create a Biologic cycler object.
-
-        Args:
-            input_data_path: The path to the input data.
-        """
-        file_ext = os.path.splitext(input_data_path)[1]
-        column_dict = {
-            "Date": "Date",
-            "Step": "Step Index",
-            "Current": "Current",
-            "Voltage": "Voltage",
-            "Charge Capacity": "Chg. Cap.",
-            "Discharge Capacity": "DChg. Cap.",
-        }
-        super().__init__(
-            input_data_path,
-            common_suffix=file_ext,
-            column_name_pattern=r"(.+)\((.+)\)",
-            column_dict=column_dict,
-        )
+    input_data_path: str
+    common_suffix: str = ""
+    column_name_pattern: str = r"(.+)\((.+)\)"
+    column_dict: dict[str, str] = {
+        "Date": "Date",
+        "Step": "Step Index",
+        "Current": "Current",
+        "Voltage": "Voltage",
+        "Charge Capacity": "Chg. Cap.",
+        "Discharge Capacity": "DChg. Cap.",
+    }
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:

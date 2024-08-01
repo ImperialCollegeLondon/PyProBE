@@ -11,12 +11,14 @@ from pyprobe.cyclers.biologic import Biologic
 @pytest.fixture
 def biologic_cycler():
     """Create a Biologic cycler object."""
-    return Biologic("tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt")
+    return Biologic(
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
+    )
 
 
 def test_read_file(biologic_cycler):
     """Test the read_file method."""
-    unprocessed_dataframe = biologic_cycler.imported_dataframe
+    unprocessed_dataframe = biologic_cycler._imported_dataframe
     assert isinstance(unprocessed_dataframe, pl.LazyFrame)
     start_time = "2024-05-13 11:19:51.602000"
     print(unprocessed_dataframe.select(pl.col("Date")).collect().item(0, 0))
@@ -27,14 +29,14 @@ def test_read_file(biologic_cycler):
 
 
 def test_sort_files(biologic_cycler):
-    """Test the sort_files method."""
+    """Test the _sort_files method."""
     file_list = [
         "test_2_experiment_3_03_MB_file.xlsx",
         "test_2_experiment_3_01_MB_file.xlsx",
         "test_2_experiment_3_04_MB_file.xlsx",
         "test_2_experiment_3_02_MB_file.xlsx",
     ]
-    sorted_files = biologic_cycler.sort_files(file_list)
+    sorted_files = biologic_cycler._sort_files(file_list)
     assert sorted_files == [
         "test_2_experiment_3_01_MB_file.xlsx",
         "test_2_experiment_3_02_MB_file.xlsx",
@@ -80,34 +82,30 @@ def test_read_and_process(benchmark, biologic_cycler):
 
 def test_process_dataframe(monkeypatch):
     """Test the Biologic method."""
-
-    def mock_dataframe(self):
-        return pl.DataFrame(
-            {
-                "Date": [
-                    datetime(2022, 2, 2, 2, 2, 0),
-                    datetime(2022, 2, 2, 2, 2, 1),
-                    datetime(2022, 2, 2, 2, 2, 2),
-                    datetime(2022, 2, 2, 2, 2, 3),
-                    datetime(2022, 2, 2, 2, 2, 4),
-                    datetime(2022, 2, 2, 2, 2, 5),
-                    datetime(2022, 2, 2, 2, 2, 6),
-                ],
-                "time/s": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-                "Ns": [0, 0, 1, 1, 1, 0, 0],
-                "I/mA": [1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0],
-                "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
-                "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
-            }
-        )
-
-    monkeypatch.setattr(
-        "pyprobe.cyclers.biologic.Biologic.imported_dataframe", property(mock_dataframe)
+    mock_dataframe = pl.DataFrame(
+        {
+            "Date": [
+                datetime(2022, 2, 2, 2, 2, 0),
+                datetime(2022, 2, 2, 2, 2, 1),
+                datetime(2022, 2, 2, 2, 2, 2),
+                datetime(2022, 2, 2, 2, 2, 3),
+                datetime(2022, 2, 2, 2, 2, 4),
+                datetime(2022, 2, 2, 2, 2, 5),
+                datetime(2022, 2, 2, 2, 2, 6),
+            ],
+            "time/s": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "Ns": [0, 0, 1, 1, 1, 0, 0],
+            "I/mA": [1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0],
+            "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
+            "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
+        }
     )
+
     biologic_cycler = Biologic(
-        "tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
     )
+    biologic_cycler._imported_dataframe = mock_dataframe
     pyprobe_dataframe = biologic_cycler.pyprobe_dataframe.select(
         ["Time [s]", "Step", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
     )

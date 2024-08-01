@@ -134,7 +134,7 @@ class Cell(BaseModel):
             raise ValueError("* characters are not allowed for a complete data path.")
         cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
         t1 = time.time()
-        importer = cycler_dict[cycler](input_data_path)
+        importer = cycler_dict[cycler](input_data_path=input_data_path)
         dataframe = importer.pyprobe_dataframe
         if isinstance(dataframe, pl.LazyFrame):
             dataframe = dataframe.collect()
