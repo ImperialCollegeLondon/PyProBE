@@ -67,7 +67,7 @@ class UnitConverter:
 
     @staticmethod
     def get_quantity_and_unit(
-        name: str, name_pattern: str = r"(\w+)\s*\[(\w+)\]"
+        name: str, name_pattern: str = r"([\w\s]+?)\s*\[(\w+)\]"
     ) -> Tuple[str | Any, ...]:
         """Return the quantity and unit of a column name.
 

@@ -41,15 +41,19 @@ def I_from_cycler_quantity():
 def test_get_quantity_and_unit():
     """Test the get_quantity_and_unit method."""
     name = "Capacity [Ah]"
-    pattern = r"(\w+)\s*\[(\w+)\]"
-    quantity, unit = UnitConverter.get_quantity_and_unit(name, pattern)
+    quantity, unit = UnitConverter.get_quantity_and_unit(name)
     assert quantity == "Capacity"
+    assert unit == "Ah"
+
+    name = "Two names [Ah]"
+    quantity, unit = UnitConverter.get_quantity_and_unit(name)
+    assert quantity == "Two names"
     assert unit == "Ah"
 
     name = "Step"
     pattern = r"(\w+)\s*\[(\w+)\]"
     with pytest.raises(ValueError):
-        quantity, unit = UnitConverter.get_quantity_and_unit(name, pattern)
+        quantity, unit = UnitConverter.get_quantity_and_unit(name)
 
     name = "Current/mA"
     pattern = r"(\w+)/(\w+)"
