@@ -9,10 +9,10 @@ from pyprobe.result import Result
 
 default_column_definitions = {
     "Date": "The timestamp of the data point. Type: datetime.",
-    "Time": "The time passed from the start of the procedure.",
-    "Current": "The current through the cell.",
-    "Voltage": "The terminal voltage.",
-    "Capacity": "The net charge passed since the start of the procedure.",
+    "Time [s]": "The time passed from the start of the procedure.",
+    "Current [A]": "The current through the cell.",
+    "Voltage [V]": "The terminal voltage.",
+    "Capacity [Ah]": "The net charge passed since the start of the procedure.",
 }
 
 required_columns = ["Date", "Time [s]", "Current [A]", "Voltage [V]", "Capacity [Ah]"]

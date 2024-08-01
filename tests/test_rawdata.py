@@ -102,9 +102,9 @@ def test_definitions(lazyframe_fixture, info_fixture):
     assert set(definition_keys) == set(
         [
             "Date",
-            "Time",
-            "Current",
-            "Voltage",
-            "Capacity",
+            "Time [s]",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
         ]
     )
