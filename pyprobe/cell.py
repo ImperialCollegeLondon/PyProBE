@@ -20,15 +20,23 @@ class Cell(BaseModel):
     """A class for a cell in a battery experiment.
 
     Args:
-        info (dict): Rig and setup information on the cell
-            e.g. cycler number, thermocouple channel.
+        info (dict): Dictionary containing information about the cell.
+            The dictionary must contain a 'Name' field, other information may include
+            channel number or other rig information.
+        procedure (dict, optional): Dictionary containing the procedures that have been
+            run on the cell. Defaults to an empty dictionary.
     """
 
     info: Dict[str, str | int | float]
+    """Dictionary containing information about the cell.
+    The dictionary must contain a 'Name' field, other information may include
+    channel number or other rig information.
+    """
     procedure: Dict[str, Procedure] = Field(default_factory=dict)
+    """Dictionary containing the procedures that have been run on the cell."""
 
     @field_validator("info")
-    def check_and_set_name(
+    def _check_and_set_name(
         cls, info: Dict[str, str | int | float]
     ) -> Dict[str, str | int | float]:
         """Validate the `info` field.
@@ -85,7 +93,7 @@ class Cell(BaseModel):
         return cell_list
 
     @staticmethod
-    def verify_parquet(filename: str) -> str:
+    def _verify_parquet(filename: str) -> str:
         """Function to verify the filename is in the correct format.
 
         Args:
@@ -114,22 +122,27 @@ class Cell(BaseModel):
         """Convert cycler file into PyProBE format.
 
         Args:
-            cycler (str): The cycler used to produce the data.
-            folder_path (str): The path to the folder containing the data file.
-            input_filename (str | function): A filename string or a function to
-                generate the file name for cycler data.
-            output_filename (str | function): A filename string or a function to
-                generate the file name for PyProBE data.
-            filename_args (list): The list of inputs to filename_function.
+            cycler (str):
+                The cycler used to produce the data. E.g. 'neware' or 'biologic'.
+            folder_path (str):
+                The path to the folder containing the data file.
+            input_filename (str | function):
+                A filename string or a function to generate the file name for cycler
+                data.
+            output_filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_args (list):
+                The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
         """
-        input_data_path = self.get_data_paths(
+        input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_args
         )
-        output_data_path = self.get_data_paths(
+        output_data_path = self._get_data_paths(
             folder_path, output_filename, filename_args
         )
-        output_data_path = self.verify_parquet(output_data_path)
+        output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
         cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
@@ -148,35 +161,37 @@ class Cell(BaseModel):
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
-        custom_readme_name: Optional[str] = None,
+        readme_name: str = "README.yaml",
     ) -> None:
-        """Function to add data to the cell object.
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
 
         Args:
-            procedure_name (str): A name to give the procedure. This will be used
-                when calling cell.procedure[procedure_name].
-            folder_path (str): The path to the folder containing the data file.
-            filename (str | function): A filename string or a function to generate
-                the file name for PyProBE data.
-            filename_inputs (Optional[list]): The list of inputs to filename_function.
-                These must be keys of the cell info.
-            custom_readme_name (str, optional): The name of the custom README file.
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE d
+                ata.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+            readme_name (str, optional):
+                The name of the readme file. Defaults to "README.yaml".
         """
-        output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self.verify_parquet(output_data_path)
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
 
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
-        if custom_readme_name:
-            readme_path = os.path.join(data_folder, f"{custom_readme_name}.yaml")
-        else:
-            readme_path = os.path.join(data_folder, "README.yaml")
+        readme_path = os.path.join(data_folder, readme_name)
         (
             titles,
             steps_idx,
-        ) = self.process_readme(readme_path)
+        ) = self._process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
             titles=titles,
@@ -186,7 +201,7 @@ class Cell(BaseModel):
         )
 
     @staticmethod
-    def get_filename(
+    def _get_filename(
         info: Dict[str, str | int | float],
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
@@ -206,7 +221,7 @@ class Cell(BaseModel):
             *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs)))
         )
 
-    def get_data_paths(
+    def _get_data_paths(
         self,
         folder_path: str,
         filename: str | Callable[[str], str],
@@ -231,7 +246,7 @@ class Cell(BaseModel):
                 raise ValueError(
                     "filename_inputs must be provided when filename is a function."
                 )
-            filename_str = self.get_filename(self.info, filename, filename_inputs)
+            filename_str = self._get_filename(self.info, filename, filename_inputs)
 
         data_path = os.path.join(folder_path, filename_str)
         return data_path
@@ -308,7 +323,7 @@ class Cell(BaseModel):
             )
 
     @staticmethod
-    def process_readme(
+    def _process_readme(
         readme_path: str,
     ) -> tuple[List[str], List[List[int]]]:
         """Function to process the README.yaml file.
