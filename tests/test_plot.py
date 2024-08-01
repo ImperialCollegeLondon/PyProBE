@@ -25,11 +25,11 @@ def test_init(Plot_fixture):
 
 
 def test_check_limits(Plot_fixture):
-    """Test the check_limits method."""
+    """Test the _check_limits method."""
     data = pl.DataFrame({"x": [5, 6, 7, 8], "y": [1, 2, 3, 4]})
     x = data["x"]
     y = data["y"]
-    Plot_fixture.check_limits(x, y)
+    Plot_fixture._check_limits(x, y)
     assert Plot_fixture.x_max == 8
     assert Plot_fixture.x_min == 5
     assert Plot_fixture.y_max == 4
@@ -39,13 +39,13 @@ def test_check_limits(Plot_fixture):
     x = data["x"]
     y = data["y"]
 
-    Plot_fixture.check_limits(x, y)
+    Plot_fixture._check_limits(x, y)
     assert Plot_fixture.x_max == 14
     assert Plot_fixture.x_min == -4
     assert Plot_fixture.y_max == 4
     assert Plot_fixture.y_min == 1
 
-    Plot_fixture.check_limits(x, y, secondary_y=True)
+    Plot_fixture._check_limits(x, y, secondary_y=True)
     assert Plot_fixture.y2_max == 3
     assert Plot_fixture.y2_min == 2
 
@@ -100,7 +100,15 @@ def test_add_line(Plot_fixture, plot_result_fixture):
     label = None
     showlegend = True
 
-    Plot_fixture.add_line(result, x, y, secondary_y, color, label, showlegend)
+    Plot_fixture.add_line(
+        result,
+        x,
+        y,
+        secondary_y=secondary_y,
+        color=color,
+        label=label,
+        showlegend=showlegend,
+    )
 
     assert Plot_fixture.xaxis_title == x
     assert Plot_fixture.yaxis_title == y
@@ -109,7 +117,7 @@ def test_add_line(Plot_fixture, plot_result_fixture):
         x=result.data[x],
         y=result.data[y],
         mode="lines",
-        line=dict(color=result.info["color"]),
+        line=dict(color=result.info["color"], dash="solid"),
         name=result.info["Name"],
         showlegend=showlegend,
     )
@@ -128,7 +136,15 @@ def test_add_line_with_secondary_y(Plot_fixture, plot_result_fixture):
     label = None
     showlegend = True
 
-    Plot_fixture.add_line(result, x, y, secondary_y, color, label, showlegend)
+    Plot_fixture.add_line(
+        result,
+        x,
+        y,
+        secondary_y=secondary_y,
+        color=color,
+        label=label,
+        showlegend=showlegend,
+    )
 
     assert Plot_fixture.secondary_y == secondary_y
 
@@ -136,7 +152,7 @@ def test_add_line_with_secondary_y(Plot_fixture, plot_result_fixture):
         x=result.data[x],
         y=result.data[y],
         mode="lines",
-        line=dict(color=result.info["color"]),
+        line=dict(color=result.info["color"], dash="solid"),
         name=result.info["Name"],
         showlegend=showlegend,
     )
@@ -209,9 +225,9 @@ def test_add_colorbar(Plot_fixture, plot_result_fixture):
 
 
 def test_add_secondary_y_legend(Plot_fixture):
-    """Test the add_secondary_y_legend method."""
+    """Test the _add_secondary_y_legend method."""
     Plot_fixture.secondary_y = "secondary_y"
-    Plot_fixture.add_secondary_y_legend("secondary_y")
+    Plot_fixture._add_secondary_y_legend("secondary_y")
 
     expected_trace = go.Scatter(
         x=[None],
@@ -228,7 +244,13 @@ def test_fig(Plot_fixture, plot_result_fixture):
     """Test the fig method."""
     assert isinstance(Plot_fixture.fig, go.Figure)
     Plot_fixture.add_line(
-        plot_result_fixture, "x", "y", "secondary_y", "blue", "Line 1", True
+        plot_result_fixture,
+        "x",
+        "y",
+        "secondary_y",
+        color="blue",
+        label="Line 1",
+        showlegend=True,
     )
     Plot_fixture.x_min = -4
     Plot_fixture.x_max = 14
