@@ -6,7 +6,7 @@ from typing import Any, Optional, Tuple
 import polars as pl
 
 
-class UnitConverter:
+class Units:
     """A class to store unit conversion information about columns."""
 
     prefix_dict = {"m": 1e-3, "µ": 1e-6, "n": 1e-9, "p": 1e-12, "k": 1e3, "M": 1e6}
@@ -24,7 +24,7 @@ class UnitConverter:
         column_name: str,
         name_pattern: str = r"([\w\s]+?)\s*\[(\w+)\]",
     ) -> None:
-        """Initialize the UnitConverter object."""
+        """Initialize the Units object."""
         self.name = column_name
         self.input_quantity, self.input_unit = self.get_quantity_and_unit(
             column_name, name_pattern

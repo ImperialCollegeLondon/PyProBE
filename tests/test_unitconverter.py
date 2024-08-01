@@ -1,63 +1,63 @@
-"""Test the UnitConverter class."""
+"""Test the Units class."""
 import polars as pl
 import polars.testing as pl_testing
 import pytest
 
-from pyprobe.unitconverter import UnitConverter
+from pyprobe.units import Units
 
 
 @pytest.fixture
 def current_quantity():
-    """Return a UnitConverter instance for current."""
-    return UnitConverter("Current [A]")
+    """Return a Units instance for current."""
+    return Units("Current [A]")
 
 
 @pytest.fixture
 def capacity_quantity():
-    """Return a UnitConverter instance for capacity."""
-    return UnitConverter("Capacity [mAh]")
+    """Return a Units instance for capacity."""
+    return Units("Capacity [mAh]")
 
 
 @pytest.fixture
 def time_quantity():
-    """Return a UnitConverter instance for time."""
-    return UnitConverter("Time [hr]")
+    """Return a Units instance for time."""
+    return Units("Time [hr]")
 
 
 @pytest.fixture
 def current_from_cycler_quantity():
-    """Return a UnitConverter instance for current from a cycler."""
+    """Return a Units instance for current from a cycler."""
     pattern = r"(\w+)/(\w+)"
-    return UnitConverter("Current/A", pattern)
+    return Units("Current/A", pattern)
 
 
 @pytest.fixture
 def I_from_cycler_quantity():
-    """Return a UnitConverter instance for I from a cycler."""
+    """Return a Units instance for I from a cycler."""
     pattern = r"(\w+)/(\w+)"
-    return UnitConverter("I/mA", pattern)
+    return Units("I/mA", pattern)
 
 
 def test_get_quantity_and_unit():
     """Test the get_quantity_and_unit method."""
     name = "Capacity [Ah]"
-    quantity, unit = UnitConverter.get_quantity_and_unit(name)
+    quantity, unit = Units.get_quantity_and_unit(name)
     assert quantity == "Capacity"
     assert unit == "Ah"
 
     name = "Two names [Ah]"
-    quantity, unit = UnitConverter.get_quantity_and_unit(name)
+    quantity, unit = Units.get_quantity_and_unit(name)
     assert quantity == "Two names"
     assert unit == "Ah"
 
     name = "Step"
     pattern = r"(\w+)\s*\[(\w+)\]"
     with pytest.raises(ValueError):
-        quantity, unit = UnitConverter.get_quantity_and_unit(name)
+        quantity, unit = Units.get_quantity_and_unit(name)
 
     name = "Current/mA"
     pattern = r"(\w+)/(\w+)"
-    quantity, unit = UnitConverter.get_quantity_and_unit(name, pattern)
+    quantity, unit = Units.get_quantity_and_unit(name, pattern)
     assert quantity == "Current"
     assert unit == "mA"
 
@@ -95,9 +95,9 @@ def test_init(
     assert I_from_cycler_quantity.prefix == "m"
 
     with pytest.raises(ValueError):
-        UnitConverter("Step")
+        Units("Step")
     with pytest.raises(ValueError):
-        UnitConverter("Current/A")
+        Units("Current/A")
 
 
 def test_from_default_unit(current_quantity, capacity_quantity, time_quantity):
@@ -145,7 +145,7 @@ def test_to_default_name_and_unit(I_from_cycler_quantity):
 def test_to_default_unit():
     """Test the to_default_unit method."""
     original_frame = pl.DataFrame({"Chg. Cap.(Ah)": [1.0, 2.0, 3.0]})
-    instruction = UnitConverter("Chg. Cap.(Ah)", r"(.+)\((.+)\)").to_default_unit()
+    instruction = Units("Chg. Cap.(Ah)", r"(.+)\((.+)\)").to_default_unit()
     updated_frame = original_frame.with_columns(instruction)
     assert "Chg. Cap. [Ah]" in updated_frame.columns
     pl_testing.assert_series_equal(

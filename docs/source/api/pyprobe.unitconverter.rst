@@ -1,7 +1,7 @@
-pyprobe.unitconverter module
+pyprobe.units module
 ============================
 
-.. automodule:: pyprobe.unitconverter
+.. automodule:: pyprobe.units
    :members:
    :undoc-members:
    :show-inheritance:

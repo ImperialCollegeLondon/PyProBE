@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 import polars as pl
 from pydantic import BaseModel, Field
 
-from pyprobe.unitconverter import UnitConverter
+from pyprobe.units import Units
 
 
 class BaseCycler(BaseModel):
@@ -350,7 +350,7 @@ class BaseCycler(BaseModel):
         columns: List[str],
         search_quantity: str,
         name_pattern: str,
-    ) -> "UnitConverter":
+    ) -> "Units":
         """Search for a quantity in the columns of the DataFrame.
 
         Args:
@@ -361,14 +361,12 @@ class BaseCycler(BaseModel):
         """
         for column_name in columns:
             try:
-                quantity, _ = UnitConverter.get_quantity_and_unit(
-                    column_name, name_pattern
-                )
+                quantity, _ = Units.get_quantity_and_unit(column_name, name_pattern)
             except ValueError:
                 continue
 
             if quantity == search_quantity:
-                return UnitConverter(
+                return Units(
                     column_name=column_name,
                     name_pattern=name_pattern,
                 )

@@ -28,7 +28,7 @@ Submodules
    pyprobe.rawdata
    pyprobe.result
    pyprobe.typing
-   pyprobe.unitconverter
+   pyprobe.units
 
 
 .. footbibliography::

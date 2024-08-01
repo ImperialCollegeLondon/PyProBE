@@ -8,7 +8,7 @@ import polars as pl
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field
 
-from pyprobe.unitconverter import UnitConverter
+from pyprobe.units import Units
 
 
 class Result(BaseModel):
@@ -161,7 +161,7 @@ class Result(BaseModel):
             column_name (str): The column name to convert to.
         """
         if column_name not in self.base_dataframe.columns:
-            converter_object = UnitConverter(column_name)
+            converter_object = Units(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default_unit()
                 self.base_dataframe = self.base_dataframe.with_columns(instruction)
@@ -184,7 +184,7 @@ class Result(BaseModel):
         _quantities = []
         for _, column in enumerate(self.column_list):
             try:
-                quantity, _ = UnitConverter.get_quantity_and_unit(column)
+                quantity, _ = Units.get_quantity_and_unit(column)
                 _quantities.append(quantity)
             except ValueError:
                 continue
