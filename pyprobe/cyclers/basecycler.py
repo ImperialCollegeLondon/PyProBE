@@ -4,7 +4,8 @@ import glob
 import os
 import re
 import warnings
-from abc import ABC, abstractmethod
+
+# from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 import polars as pl
@@ -13,7 +14,7 @@ from pydantic import BaseModel, Field
 from pyprobe.unitconverter import UnitConverter
 
 
-class BaseCycler(ABC, BaseModel):
+class BaseCycler(BaseModel):
     """A class to load and process battery cycler data.
 
     Args:
@@ -39,7 +40,6 @@ class BaseCycler(ABC, BaseModel):
         self._dataframe_columns = self._imported_dataframe.columns
 
     @staticmethod
-    @abstractmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
@@ -49,7 +49,15 @@ class BaseCycler(ABC, BaseModel):
         Returns:
             pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
-        pass
+        file = os.path.basename(filepath)
+        file_ext = os.path.splitext(file)[1]
+        match file_ext:
+            case ".xlsx":
+                return pl.read_excel(filepath, engine="calamine")
+            case ".csv":
+                return pl.read_csv(filepath)
+            case _:
+                raise ValueError(f"Unsupported file extension: {file_ext}")
 
     def get_dataframe_list(
         self, input_data_path: str
