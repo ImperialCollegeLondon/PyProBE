@@ -121,6 +121,8 @@ jupyter-core==5.7.2
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
+kaleido==0.2.1
+    # via PyProBE (pyproject.toml)
 kiwisolver==1.4.5
     # via matplotlib
 latexcodec==3.0.0

@@ -26,6 +26,7 @@ dependencies = [
     "nbformat", 
     "ordered-set",
     "pydantic",
+    "kaleido",
 ]
 
 [project.optional-dependencies]
