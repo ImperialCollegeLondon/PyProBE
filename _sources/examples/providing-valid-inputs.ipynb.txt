@@ -238,7 +238,8 @@
     "fig = pyprobe.Plot()\n",
     "fig.add_line(pOCV_cycle.discharge(0).constant_current(0), x='SOC', y='Voltage [V]', label='Discharge', color='blue')\n",
     "fig.add_line(pOCV_cycle.charge(0).constant_current(0), x='SOC', y='Voltage [V]', label='Charge', color='purple')\n",
-    "fig.show()"
+    "fig.show_image()\n",
+    "# fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation"
    ]
   },
   {
@@ -257,7 +258,8 @@
     "averaged_ocv_dma = DMA.average_ocvs(input_data = pOCV_cycle, charge_filter=\"charge(0).constant_current(0)\", discharge_filter=\"discharge(0).constant_current(0)\")\n",
     "\n",
     "fig.add_line(averaged_ocv_dma.input_data, x='SOC', y='Voltage [V]', label='Average', color='red')\n",
-    "fig.show()"
+    "fig.show_image()\n",
+    "# fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation"
    ]
   }
  ],

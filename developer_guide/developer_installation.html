@@ -403,19 +403,19 @@ conda<span class="w"> </span>activate<span class="w"> </span>pyprobe
 </div></div>
 </div></blockquote>
 <ol class="arabic" start="3">
-<li><p>Install PyProBE as a package into your virtual environment:</p>
+<li><p>Install the developer dependencies:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/your/directory/PyProBE
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+</pre></div>
+</div>
+</li>
+<li><p>Install PyProBE as a package into your virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
 <p>The <code class="code docutils literal notranslate"><span class="pre">-e</span></code> flag installs in “editable” mode, which means changes that you
 make to the code will be automatically reflected in the package inside your
 virtual environment.</p>
-</li>
-<li><p>Install the developer dependencies:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
-</pre></div>
-</div>
 </li>
 <li><p>Install the pre-commit hooks:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>install

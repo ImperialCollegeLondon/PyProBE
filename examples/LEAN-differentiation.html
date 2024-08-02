@@ -374,9 +374,9 @@ document.write(`
                   
   <section id="Differentiating-with-the-LEAN-algorithm">
 <h1>Differentiating with the LEAN algorithm<a class="headerlink" href="#Differentiating-with-the-LEAN-algorithm" title="Link to this heading">#</a></h1>
-<p>This example shows how to differentiate cycler data using the LEAN algorithm developed by</p>
+<p>This example shows how to differentiate cycler data using the LEAN algorithm developed in: Feng X, Merla Y, Weng C, Ouyang M, He X, Liaw BY, et al. A reliable approach of differentiating discrete sampled-data for battery diagnosis. eTransportation. 2020;3: 100051. <a class="reference external" href="https://doi.org/10.1016/j.etran.2020.100051">https://doi.org/10.1016/j.etran.2020.100051</a>.</p>
 <p>First import the package and dataset:</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
@@ -397,25 +397,6 @@ document.write(`
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[1], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pyprobe</span>
-<span class="ansi-green-intense-fg ansi-bold">      2</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">numpy</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> <span class="ansi-bold" style="color: rgb(0,0,255)">np</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> info_dictionary <span style="color: rgb(98,98,98)">=</span> {<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Name</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample cell</span><span style="color: rgb(175,0,0)">&#39;</span>,
-<span class="ansi-green-intense-fg ansi-bold">      4</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Chemistry</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">NMC622</span><span style="color: rgb(175,0,0)">&#39;</span>,
-<span class="ansi-green-intense-fg ansi-bold">      5</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Nominal Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">0.04</span>,
-<span class="ansi-green-intense-fg ansi-bold">      6</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Cycler number</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">1</span>,
-<span class="ansi-green-intense-fg ansi-bold">      7</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Channel number</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">1</span>,}
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named &#39;pyprobe&#39;
-</pre></div></div>
-</div>
 <p>The break-in cycles of this dataset are at C/10, so can be analysed as pseudo-OCV curves. We’re going to look at the last cycle:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -424,7 +405,8 @@ Cell <span class="ansi-green-fg">In[1], line 1</span>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">final_cycle</span><span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">final_cycle</span><span class="p">,</span> <span class="s1">&#39;Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
 </div>
@@ -432,19 +414,11 @@ Cell <span class="ansi-green-fg">In[1], line 1</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[2], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> final_cycle<span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">cell</span><span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">1</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig<span style="color: rgb(98,98,98)">.</span>add_line(final_cycle, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Time [hr]</span><span style="color: rgb(175,0,0)">&#39;</span>, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>)
-
-<span class="ansi-red-fg">NameError</span>: name &#39;cell&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_LEAN-differentiation_4_0.png" src="../_images/examples_LEAN-differentiation_4_0.png" />
+</div>
 </div>
 <p>We start the analysis by first creating the analysis objects:</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
@@ -455,21 +429,6 @@ Cell <span class="ansi-green-fg">In[2], line 1</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[3], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pyprobe</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">analysis</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">differentiation</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> Differentiation
-<span class="ansi-green-intense-fg ansi-bold">      3</span> discharge_differentiation <span style="color: rgb(98,98,98)">=</span> Differentiation(input_data <span style="color: rgb(98,98,98)">=</span> final_cycle<span style="color: rgb(98,98,98)">.</span>discharge(<span style="color: rgb(98,98,98)">0</span>))
-<span class="ansi-green-intense-fg ansi-bold">      4</span> charge_differentiation <span style="color: rgb(98,98,98)">=</span> Differentiation(input_data <span style="color: rgb(98,98,98)">=</span> final_cycle<span style="color: rgb(98,98,98)">.</span>charge(<span style="color: rgb(98,98,98)">0</span>)<span style="color: rgb(98,98,98)">.</span>constant_current())
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named &#39;pyprobe&#39;
-</pre></div></div>
-</div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -479,7 +438,8 @@ Cell <span class="ansi-green-fg">In[3], line 1</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">discharge_dQdV</span><span class="p">,</span> <span class="s1">&#39;Capacity [Ah]&#39;</span><span class="p">,</span> <span class="s1">&#39;d(Capacity [Ah])/d(Voltage [V])&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Discharge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">charge_dQdV</span><span class="p">,</span> <span class="s1">&#39;Capacity [Ah]&#39;</span><span class="p">,</span> <span class="s1">&#39;d(Capacity [Ah])/d(Voltage [V])&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Charge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
 </div>
@@ -487,16 +447,8 @@ Cell <span class="ansi-green-fg">In[3], line 1</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[4], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> discharge_dQdV <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">discharge_differentiation</span><span style="color: rgb(98,98,98)">.</span>differentiate_LEAN(x <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, k <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>, gradient <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> charge_dQdV <span style="color: rgb(98,98,98)">=</span> charge_differentiation<span style="color: rgb(98,98,98)">.</span>differentiate_LEAN(x <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, k <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>, gradient <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-
-<span class="ansi-red-fg">NameError</span>: name &#39;discharge_differentiation&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_LEAN-differentiation_7_0.png" src="../_images/examples_LEAN-differentiation_7_0.png" />
+</div>
 </div>
 <p>On-the-fly unit conversion allows this to be computed in whichever unit you choose:</p>
 <div class="nbinput docutils container">
@@ -508,7 +460,8 @@ Cell <span class="ansi-green-fg">In[4], line 1</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">discharge_dQdV</span><span class="p">,</span> <span class="s1">&#39;Capacity [mAh]&#39;</span><span class="p">,</span> <span class="s1">&#39;d(Capacity [mAh])/d(Voltage [V])&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Discharge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">charge_dQdV</span><span class="p">,</span> <span class="s1">&#39;Capacity [mAh]&#39;</span><span class="p">,</span> <span class="s1">&#39;d(Capacity [mAh])/d(Voltage [V])&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Charge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
 </div>
@@ -516,16 +469,8 @@ Cell <span class="ansi-green-fg">In[4], line 1</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[5], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> discharge_dQdV <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">discharge_differentiation</span><span style="color: rgb(98,98,98)">.</span>differentiate_LEAN(x <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Capacity [mAh]</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, k <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>, gradient <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> charge_dQdV <span style="color: rgb(98,98,98)">=</span> charge_differentiation<span style="color: rgb(98,98,98)">.</span>differentiate_LEAN(x <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Capacity [mAh]</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, k <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>, gradient <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-
-<span class="ansi-red-fg">NameError</span>: name &#39;discharge_differentiation&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_LEAN-differentiation_9_0.png" src="../_images/examples_LEAN-differentiation_9_0.png" />
+</div>
 </div>
 <p>To align the curves, we can instead plot <code class="docutils literal notranslate"><span class="pre">Cycle</span> <span class="pre">Capacity</span> <span class="pre">[Ah]</span></code> which is set to zero at the beginning of the filtered cycle.</p>
 <div class="nbinput docutils container">
@@ -537,7 +482,8 @@ Cell <span class="ansi-green-fg">In[5], line 1</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">discharge_dQdV</span><span class="p">,</span> <span class="s1">&#39;Cycle Capacity [Ah]&#39;</span><span class="p">,</span> <span class="s1">&#39;d(Cycle Capacity [Ah])/d(Voltage [V])&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Discharge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">charge_dQdV</span><span class="p">,</span> <span class="s1">&#39;Cycle Capacity [Ah]&#39;</span><span class="p">,</span> <span class="s1">&#39;d(Cycle Capacity [Ah])/d(Voltage [V])&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Charge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
 </div>
@@ -545,16 +491,8 @@ Cell <span class="ansi-green-fg">In[5], line 1</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[6], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> discharge_dQdV <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">discharge_differentiation</span><span style="color: rgb(98,98,98)">.</span>differentiate_LEAN(x <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Cycle Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, k <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>, gradient <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> charge_dQdV <span style="color: rgb(98,98,98)">=</span> charge_differentiation<span style="color: rgb(98,98,98)">.</span>differentiate_LEAN(x <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Cycle Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, k <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>, gradient <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-
-<span class="ansi-red-fg">NameError</span>: name &#39;discharge_differentiation&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_LEAN-differentiation_11_0.png" src="../_images/examples_LEAN-differentiation_11_0.png" />
+</div>
 </div>
 <p>The LEAN method is only applicable when the <code class="docutils literal notranslate"><span class="pre">x</span></code> data is uniformly spaced. The example above uses the default method behaviour of differentiating only the longest uniformly spaced period. If your <code class="docutils literal notranslate"><span class="pre">x</span></code> data has multiple uniformly spaced periods, however, you can use this method with the <code class="docutils literal notranslate"><span class="pre">section</span> <span class="pre">=</span> <span class="pre">'all'</span></code> option.</p>
 <p>The pulse below has two sampling periods:</p>
@@ -567,24 +505,25 @@ Cell <span class="ansi-green-fg">In[6], line 1</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_rest</span><span class="p">,</span> <span class="s1">&#39;Time [s]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+dt =  [0.1 0.1 0.1 ... 1.  1.  1. ]
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[7], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> pulse_rest <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">cell</span><span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Discharge Pulses</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>rest(<span style="color: rgb(98,98,98)">7</span>,<span style="color: rgb(98,98,98)">8</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> <span style="color: rgb(0,135,0)">print</span>(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dt = </span><span style="color: rgb(175,0,0)">&#39;</span>, np<span style="color: rgb(98,98,98)">.</span>diff(pulse_rest<span style="color: rgb(98,98,98)">.</span>get(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Time [s]</span><span style="color: rgb(175,0,0)">&#39;</span>)))
-<span class="ansi-green-intense-fg ansi-bold">      4</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-
-<span class="ansi-red-fg">NameError</span>: name &#39;cell&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_LEAN-differentiation_13_1.png" src="../_images/examples_LEAN-differentiation_13_1.png" />
+</div>
 </div>
 </section>
 

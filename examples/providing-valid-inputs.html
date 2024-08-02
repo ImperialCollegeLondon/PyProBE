@@ -408,18 +408,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[1], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pyprobe</span>
-<span class="ansi-green-intense-fg ansi-bold">      2</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">polars</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pl</span>
-<span class="ansi-green-intense-fg ansi-bold">      4</span> info_dictionary <span style="color: rgb(98,98,98)">=</span> {<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Name</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample cell</span><span style="color: rgb(175,0,0)">&#39;</span>,
-<span class="ansi-green-intense-fg ansi-bold">      5</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Chemistry</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">NMC622</span><span style="color: rgb(175,0,0)">&#39;</span>,
-<span class="ansi-green-intense-fg ansi-bold">      6</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Nominal Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">0.04</span>,
-<span class="ansi-green-intense-fg ansi-bold">      7</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Cycler number</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">1</span>,
-<span class="ansi-green-intense-fg ansi-bold">      8</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Channel number</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">1</span>,}
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named &#39;pyprobe&#39;
+&lt;class &#39;pyprobe.filters.Procedure&#39;&gt;
 </pre></div></div>
 </div>
 <p>The Procedure class inherits from RawData, which has a defined set of required columns (the PyProBE standard format):</p>
@@ -436,12 +425,7 @@ Cell <span class="ansi-green-fg">In[1], line 1</span>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[2], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-bg">pyprobe</span><span style="color: rgb(98,98,98)">.</span>rawdata<span style="color: rgb(98,98,98)">.</span>required_columns)
-
-<span class="ansi-red-fg">NameError</span>: name &#39;pyprobe&#39; is not defined
+[&#39;Date&#39;, &#39;Time [s]&#39;, &#39;Current [A]&#39;, &#39;Voltage [V]&#39;, &#39;Capacity [Ah]&#39;]
 </pre></div></div>
 </div>
 <p>Whenever a RawData class (or any of the filters module classes, that inherit from it) are created, the dataframe is checked against these required columns. We will create an example dataframe that is missing columns, which will be identified by the error that is returned.</p>
@@ -464,16 +448,25 @@ Cell <span class="ansi-green-fg">In[2], line 1</span>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[3], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> incorrect_dataframe <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">pl</span><span style="color: rgb(98,98,98)">.</span>DataFrame({<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Time [s]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">1</span>, <span style="color: rgb(98,98,98)">2</span>, <span style="color: rgb(98,98,98)">3</span>],
+<span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[3], line 5</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> incorrect_dataframe <span style="color: rgb(98,98,98)">=</span> pl<span style="color: rgb(98,98,98)">.</span>DataFrame({<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Time [s]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">1</span>, <span style="color: rgb(98,98,98)">2</span>, <span style="color: rgb(98,98,98)">3</span>],
 <span class="ansi-green-intense-fg ansi-bold">      2</span>                                     <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">3.5</span>, <span style="color: rgb(98,98,98)">3.6</span>, <span style="color: rgb(98,98,98)">3.7</span>],
 <span class="ansi-green-intense-fg ansi-bold">      3</span>                                     <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Current [A]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">0.1</span>, <span style="color: rgb(98,98,98)">0.2</span>, <span style="color: rgb(98,98,98)">0.3</span>],
 <span class="ansi-green-intense-fg ansi-bold">      4</span>                                     })
-<span class="ansi-green-intense-fg ansi-bold">      5</span> pyprobe<span style="color: rgb(98,98,98)">.</span>rawdata<span style="color: rgb(98,98,98)">.</span>RawData(base_dataframe<span style="color: rgb(98,98,98)">=</span>incorrect_dataframe,
-<span class="ansi-green-intense-fg ansi-bold">      6</span>                         info <span style="color: rgb(98,98,98)">=</span> {})
+<span class="ansi-green-fg">----&gt; 5</span> <span class="ansi-yellow-bg">pyprobe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">rawdata</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">RawData</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">base_dataframe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">incorrect_dataframe</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-yellow-bg">                        </span><span class="ansi-yellow-bg">info</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">{</span><span class="ansi-yellow-bg">}</span><span class="ansi-yellow-bg">)</span>
 
-<span class="ansi-red-fg">NameError</span>: name &#39;pl&#39; is not defined
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+
+<span class="ansi-red-fg">ValidationError</span>: 1 validation error for RawData
+base_dataframe
+  Value error, Missing required columns: [&#39;Date&#39;, &#39;Capacity [Ah]&#39;] [type=value_error, input_value=shape: (3, 3)
+┌──...───────┘, input_type=DataFrame]
+    For further information visit https://errors.pydantic.dev/2.8/v/value_error
 </pre></div></div>
 </div>
 <p>You will also see a validation error if you try to create one of these classes with a data object that is not a Polars DataFrame or LazyFrame:</p>
@@ -496,16 +489,27 @@ Cell <span class="ansi-green-fg">In[3], line 1</span>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
 Cell <span class="ansi-green-fg">In[4], line 5</span>
 <span class="ansi-green-intense-fg ansi-bold">      1</span> incorrect_data_dict <span style="color: rgb(98,98,98)">=</span> {<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Time [s]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">1</span>, <span style="color: rgb(98,98,98)">2</span>, <span style="color: rgb(98,98,98)">3</span>],
 <span class="ansi-green-intense-fg ansi-bold">      2</span>                                     <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">3.5</span>, <span style="color: rgb(98,98,98)">3.6</span>, <span style="color: rgb(98,98,98)">3.7</span>],
 <span class="ansi-green-intense-fg ansi-bold">      3</span>                                     <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Current [A]</span><span style="color: rgb(175,0,0)">&#39;</span>: [<span style="color: rgb(98,98,98)">0.1</span>, <span style="color: rgb(98,98,98)">0.2</span>, <span style="color: rgb(98,98,98)">0.3</span>],
 <span class="ansi-green-intense-fg ansi-bold">      4</span>                                     }
-<span class="ansi-green-fg">----&gt; 5</span> <span class="ansi-yellow-bg">pyprobe</span><span style="color: rgb(98,98,98)">.</span>rawdata<span style="color: rgb(98,98,98)">.</span>RawData(base_dataframe<span style="color: rgb(98,98,98)">=</span>incorrect_data_dict,
-<span class="ansi-green-intense-fg ansi-bold">      6</span>                         info <span style="color: rgb(98,98,98)">=</span> {})
+<span class="ansi-green-fg">----&gt; 5</span> <span class="ansi-yellow-bg">pyprobe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">rawdata</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">RawData</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">base_dataframe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">incorrect_data_dict</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-yellow-bg">                        </span><span class="ansi-yellow-bg">info</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">{</span><span class="ansi-yellow-bg">}</span><span class="ansi-yellow-bg">)</span>
 
-<span class="ansi-red-fg">NameError</span>: name &#39;pyprobe&#39; is not defined
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+
+<span class="ansi-red-fg">ValidationError</span>: 2 validation errors for RawData
+base_dataframe.is-instance[LazyFrame]
+  Input should be an instance of LazyFrame [type=is_instance_of, input_value={&#39;Time [s]&#39;: [1, 2, 3], &#39;...t [A]&#39;: [0.1, 0.2, 0.3]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.8/v/is_instance_of
+base_dataframe.is-instance[DataFrame]
+  Input should be an instance of DataFrame [type=is_instance_of, input_value={&#39;Time [s]&#39;: [1, 2, 3], &#39;...t [A]&#39;: [0.1, 0.2, 0.3]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.8/v/is_instance_of
 </pre></div></div>
 </div>
 </section>
@@ -527,17 +531,11 @@ Cell <span class="ansi-green-fg">In[4], line 5</span>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[5], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> experiment_object <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">cell</span><span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> <span style="color: rgb(0,135,0)">print</span>(<span style="color: rgb(0,135,0)">type</span>(experiment_object))
-
-<span class="ansi-red-fg">NameError</span>: name &#39;cell&#39; is not defined
+&lt;class &#39;pyprobe.filters.Experiment&#39;&gt;
 </pre></div></div>
 </div>
 <p>The experiment object should return no errors:</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
@@ -545,20 +543,6 @@ Cell <span class="ansi-green-fg">In[5], line 1</span>
 <span class="n">cycling</span> <span class="o">=</span> <span class="n">Cycling</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">experiment_object</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[6], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pyprobe</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">analysis</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">cycling</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> Cycling
-<span class="ansi-green-intense-fg ansi-bold">      2</span> cycling <span style="color: rgb(98,98,98)">=</span> Cycling(input_data <span style="color: rgb(98,98,98)">=</span> experiment_object)
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named &#39;pyprobe&#39;
-</pre></div></div>
 </div>
 <p>However, if I were to filter the object further, I would get an error:</p>
 <div class="nbinput docutils container">
@@ -575,15 +559,23 @@ Cell <span class="ansi-green-fg">In[6], line 1</span>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
 Cell <span class="ansi-green-fg">In[7], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> cycling <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">Cycling</span>(input_data <span style="color: rgb(98,98,98)">=</span> experiment_object<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">1</span>))
+<span class="ansi-green-fg">----&gt; 1</span> cycling <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">Cycling</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">experiment_object</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">cycle</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
 
-<span class="ansi-red-fg">NameError</span>: name &#39;Cycling&#39; is not defined
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+
+<span class="ansi-red-fg">ValidationError</span>: 1 validation error for Cycling
+input_data
+  Input should be a valid dictionary or instance of Experiment [type=model_type, input_value=Cycle(base_dataframe=&lt;Laz...e beginning of cycle.&#39;}), input_type=Cycle]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
 </pre></div></div>
 </div>
 <p>Types and columns are also validated in the methods of analysis classes. You can create a DMA object on any pyprobe data type:</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
@@ -592,20 +584,6 @@ Cell <span class="ansi-green-fg">In[7], line 1</span>
 <span class="kn">from</span> <span class="nn">pyprobe.analysis.degradation_mode_analysis</span> <span class="kn">import</span> <span class="n">DMA</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[8], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> pOCV <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">cell</span><span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">1</span>)<span style="color: rgb(98,98,98)">.</span>discharge(<span style="color: rgb(98,98,98)">0</span>)
-<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pyprobe</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">analysis</span><span class="ansi-bold" style="color: rgb(0,0,255)">.</span><span class="ansi-bold" style="color: rgb(0,0,255)">degradation_mode_analysis</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> DMA
-
-<span class="ansi-red-fg">NameError</span>: name &#39;cell&#39; is not defined
-</pre></div></div>
 </div>
 <p>But the average_ocvs() method is stricter. It must be provided with a filter no deeper than Cycle as it requires both a charge and a discharge curve to work on.</p>
 <div class="nbinput docutils container">
@@ -622,11 +600,34 @@ Cell <span class="ansi-green-fg">In[8], line 1</span>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
 Cell <span class="ansi-green-fg">In[9], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">DMA</span><span style="color: rgb(98,98,98)">.</span>average_ocvs(input_data <span style="color: rgb(98,98,98)">=</span> pOCV)
+<span class="ansi-green-fg">----&gt; 1</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">DMA</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">average_ocvs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">pOCV</span><span class="ansi-yellow-bg">)</span>
 
-<span class="ansi-red-fg">NameError</span>: name &#39;DMA&#39; is not defined
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pyprobe/analysis/degradation_mode_analysis.py:241</span>, in <span class="ansi-cyan-fg">DMA.average_ocvs</span><span class="ansi-blue-fg">(input_data, discharge_filter, charge_filter)</span>
+<span class="ansi-green-intense-fg ansi-bold">    231</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Average the charge and discharge OCV curves.</span>
+<span class="ansi-green-intense-fg ansi-bold">    232</span>
+<span class="ansi-green-intense-fg ansi-bold">    233</span> <span style="color: rgb(175,0,0)">Args:</span>
+<span class="ansi-green-fg">   (...)</span>
+<span class="ansi-green-intense-fg ansi-bold">    238</span> <span style="color: rgb(175,0,0)">    DMA: A DMA object containing the averaged OCV curve.</span>
+<span class="ansi-green-intense-fg ansi-bold">    239</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    240</span> required_columns <span style="color: rgb(98,98,98)">=</span> [<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">SOC</span><span style="color: rgb(175,0,0)">&#34;</span>]
+<span class="ansi-green-fg">--&gt; 241</span> <span class="ansi-yellow-bg">AnalysisValidator</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">    242</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">    243</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">    244</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_type</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">FilterToCycleType</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">    245</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    247</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> discharge_filter <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-intense-fg ansi-bold">    248</span>     discharge_result <span style="color: rgb(98,98,98)">=</span> input_data<span style="color: rgb(98,98,98)">.</span>discharge()
+
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+
+<span class="ansi-red-fg">ValidationError</span>: 1 validation error for AnalysisValidator
+  Value error, Input data is not of type typing.Union[pyprobe.filters.Procedure, pyprobe.filters.Experiment, pyprobe.filters.Cycle] [type=value_error, input_value={&#39;input_data&#39;: Step(base_... pyprobe.filters.Cycle]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.8/v/value_error
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -644,12 +645,35 @@ Cell <span class="ansi-green-fg">In[9], line 1</span>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[10], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> pOCV_cycle <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">cell</span><span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">1</span>)
-<span class="ansi-green-intense-fg ansi-bold">      2</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> DMA<span style="color: rgb(98,98,98)">.</span>average_ocvs(input_data <span style="color: rgb(98,98,98)">=</span> pOCV_cycle)
+<span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[10], line 2</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> pOCV_cycle <span style="color: rgb(98,98,98)">=</span> cell<span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">1</span>)
+<span class="ansi-green-fg">----&gt; 2</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">DMA</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">average_ocvs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">pOCV_cycle</span><span class="ansi-yellow-bg">)</span>
 
-<span class="ansi-red-fg">NameError</span>: name &#39;cell&#39; is not defined
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pyprobe/analysis/degradation_mode_analysis.py:241</span>, in <span class="ansi-cyan-fg">DMA.average_ocvs</span><span class="ansi-blue-fg">(input_data, discharge_filter, charge_filter)</span>
+<span class="ansi-green-intense-fg ansi-bold">    231</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Average the charge and discharge OCV curves.</span>
+<span class="ansi-green-intense-fg ansi-bold">    232</span>
+<span class="ansi-green-intense-fg ansi-bold">    233</span> <span style="color: rgb(175,0,0)">Args:</span>
+<span class="ansi-green-fg">   (...)</span>
+<span class="ansi-green-intense-fg ansi-bold">    238</span> <span style="color: rgb(175,0,0)">    DMA: A DMA object containing the averaged OCV curve.</span>
+<span class="ansi-green-intense-fg ansi-bold">    239</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    240</span> required_columns <span style="color: rgb(98,98,98)">=</span> [<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">SOC</span><span style="color: rgb(175,0,0)">&#34;</span>]
+<span class="ansi-green-fg">--&gt; 241</span> <span class="ansi-yellow-bg">AnalysisValidator</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">    242</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">    243</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">    244</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_type</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">FilterToCycleType</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">    245</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    247</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> discharge_filter <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
+<span class="ansi-green-intense-fg ansi-bold">    248</span>     discharge_result <span style="color: rgb(98,98,98)">=</span> input_data<span style="color: rgb(98,98,98)">.</span>discharge()
+
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+
+<span class="ansi-red-fg">ValidationError</span>: 1 validation error for AnalysisValidator
+  Value error, Missing required columns: [&#39;SOC&#39;] [type=value_error, input_value={&#39;input_data&#39;: Cycle(base... pyprobe.filters.Cycle]}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.8/v/value_error
 </pre></div></div>
 </div>
 <p>We are now told that we are missing an SOC column. This is encouraged to be calculated outside the module so it is clearer to the user how the curves will align. We can create an SOC column with the set_SOC() method:</p>
@@ -661,7 +685,8 @@ Cell <span class="ansi-green-fg">In[10], line 1</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pOCV_cycle</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">constant_current</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Discharge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pOCV_cycle</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">constant_current</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Charge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
 </div>
@@ -669,16 +694,8 @@ Cell <span class="ansi-green-fg">In[10], line 1</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[11], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-yellow-bg">pOCV_cycle</span><span style="color: rgb(98,98,98)">.</span>set_SOC()
-<span class="ansi-green-intense-fg ansi-bold">      2</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig<span style="color: rgb(98,98,98)">.</span>add_line(pOCV_cycle<span style="color: rgb(98,98,98)">.</span>discharge(<span style="color: rgb(98,98,98)">0</span>)<span style="color: rgb(98,98,98)">.</span>constant_current(<span style="color: rgb(98,98,98)">0</span>), x<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">SOC</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, label<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Discharge</span><span style="color: rgb(175,0,0)">&#39;</span>, color<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">blue</span><span style="color: rgb(175,0,0)">&#39;</span>)
-
-<span class="ansi-red-fg">NameError</span>: name &#39;pOCV_cycle&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_providing-valid-inputs_21_0.png" src="../_images/examples_providing-valid-inputs_21_0.png" />
+</div>
 </div>
 <p>We can then provide this updated result object to the method:</p>
 <div class="nbinput docutils container">
@@ -688,7 +705,8 @@ Cell <span class="ansi-green-fg">In[11], line 1</span>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">averaged_ocv_dma</span> <span class="o">=</span> <span class="n">DMA</span><span class="o">.</span><span class="n">average_ocvs</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">pOCV_cycle</span><span class="p">,</span> <span class="n">charge_filter</span><span class="o">=</span><span class="s2">&quot;charge(0).constant_current(0)&quot;</span><span class="p">,</span> <span class="n">discharge_filter</span><span class="o">=</span><span class="s2">&quot;discharge(0).constant_current(0)&quot;</span><span class="p">)</span>
 
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">averaged_ocv_dma</span><span class="o">.</span><span class="n">input_data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Average&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
 </pre></div>
 </div>
 </div>
@@ -696,16 +714,8 @@ Cell <span class="ansi-green-fg">In[11], line 1</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[12], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">DMA</span><span style="color: rgb(98,98,98)">.</span>average_ocvs(input_data <span style="color: rgb(98,98,98)">=</span> pOCV_cycle, charge_filter<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">charge(0).constant_current(0)</span><span style="color: rgb(175,0,0)">&#34;</span>, discharge_filter<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">discharge(0).constant_current(0)</span><span style="color: rgb(175,0,0)">&#34;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig<span style="color: rgb(98,98,98)">.</span>add_line(averaged_ocv_dma<span style="color: rgb(98,98,98)">.</span>input_data, x<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">SOC</span><span style="color: rgb(175,0,0)">&#39;</span>, y<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, label<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Average</span><span style="color: rgb(175,0,0)">&#39;</span>, color<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">red</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      4</span> fig<span style="color: rgb(98,98,98)">.</span>show()
-
-<span class="ansi-red-fg">NameError</span>: name &#39;DMA&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_providing-valid-inputs_23_0.png" src="../_images/examples_providing-valid-inputs_23_0.png" />
+</div>
 </div>
 </section>
 </section>
