@@ -1,0 +1,619 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pyprobe.analysis package &#8212; PyProBE  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.analysis';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pyprobe.analysis.base package" href="pyprobe.analysis.base.html" />
+    <link rel="prev" title="pyprobe package" href="pyprobe.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyProBE  documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer_guide/developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer_guide/developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="pyprobe.html">pyprobe package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">pyprobe.analysis package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.base.html">pyprobe.analysis.base package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.cycling.html">pyprobe.analysis.cycling module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html">pyprobe.analysis.degradation_mode_analysis module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html">pyprobe.analysis.differentiation module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html">pyprobe.analysis.pulsing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html">pyprobe.analysis.smoothing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html">pyprobe.analysis.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.html">pyprobe.cyclers package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.cell.html">pyprobe.cell module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.dashboard.html">pyprobe.dashboard module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.filters.html">pyprobe.filters module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.plot.html">pyprobe.plot module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.rawdata.html">pyprobe.rawdata module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.result.html">pyprobe.result module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html">pyprobe.typing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="modules.html" class="nav-link">pyprobe</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="pyprobe.html" class="nav-link">pyprobe package</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">pyprobe.anal...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-pyprobe.analysis">
+<span id="pyprobe-analysis-package"></span><h1>pyprobe.analysis package<a class="headerlink" href="#module-pyprobe.analysis" title="Link to this heading">#</a></h1>
+<p>A module for methods.</p>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.base.html">pyprobe.analysis.base package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.base.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html">pyprobe.analysis.base.degradation_mode_analysis_functions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.ocv_curve_fit"><code class="docutils literal notranslate"><span class="pre">ocv_curve_fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_electrode_capacities"><code class="docutils literal notranslate"><span class="pre">calc_electrode_capacities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_full_cell_OCV"><code class="docutils literal notranslate"><span class="pre">calc_full_cell_OCV()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calculate_dma_parameters"><code class="docutils literal notranslate"><span class="pre">calculate_dma_parameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.average_OCV_curves"><code class="docutils literal notranslate"><span class="pre">average_OCV_curves()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html">pyprobe.analysis.base.differentiation_functions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.get_x_sections"><code class="docutils literal notranslate"><span class="pre">get_x_sections()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.get_dx"><code class="docutils literal notranslate"><span class="pre">get_dx()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.get_dy_and_counts"><code class="docutils literal notranslate"><span class="pre">get_dy_and_counts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.y_sampling_interval"><code class="docutils literal notranslate"><span class="pre">y_sampling_interval()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.calc_gradient_with_LEAN"><code class="docutils literal notranslate"><span class="pre">calc_gradient_with_LEAN()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.smooth_gradient"><code class="docutils literal notranslate"><span class="pre">smooth_gradient()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.cycling.html">pyprobe.analysis.cycling module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling"><code class="docutils literal notranslate"><span class="pre">Cycling</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling.input_data"><code class="docutils literal notranslate"><span class="pre">Cycling.input_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling.summary"><code class="docutils literal notranslate"><span class="pre">Cycling.summary()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html">pyprobe.analysis.degradation_mode_analysis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA"><code class="docutils literal notranslate"><span class="pre">DMA</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.input_data"><code class="docutils literal notranslate"><span class="pre">DMA.input_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.stoichiometry_limits"><code class="docutils literal notranslate"><span class="pre">DMA.stoichiometry_limits</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fitted_OCV"><code class="docutils literal notranslate"><span class="pre">DMA.fitted_OCV</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.dma_result"><code class="docutils literal notranslate"><span class="pre">DMA.dma_result</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv"><code class="docutils literal notranslate"><span class="pre">DMA.fit_ocv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes"><code class="docutils literal notranslate"><span class="pre">DMA.quantify_degradation_modes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.average_ocvs"><code class="docutils literal notranslate"><span class="pre">DMA.average_ocvs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.differentiation.html">pyprobe.analysis.differentiation module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation"><code class="docutils literal notranslate"><span class="pre">Differentiation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.input_data"><code class="docutils literal notranslate"><span class="pre">Differentiation.input_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_FD"><code class="docutils literal notranslate"><span class="pre">Differentiation.differentiate_FD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_LEAN"><code class="docutils literal notranslate"><span class="pre">Differentiation.differentiate_LEAN()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.pulsing.html">pyprobe.analysis.pulsing module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing"><code class="docutils literal notranslate"><span class="pre">Pulsing</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.input_data"><code class="docutils literal notranslate"><span class="pre">Pulsing.input_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.rests"><code class="docutils literal notranslate"><span class="pre">Pulsing.rests</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulses"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulses</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.model_post_init"><code class="docutils literal notranslate"><span class="pre">Pulsing.model_post_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse_starts"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse_starts</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.V0"><code class="docutils literal notranslate"><span class="pre">Pulsing.V0</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.V1"><code class="docutils literal notranslate"><span class="pre">Pulsing.V1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.I1"><code class="docutils literal notranslate"><span class="pre">Pulsing.I1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.R0"><code class="docutils literal notranslate"><span class="pre">Pulsing.R0</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse_summary"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse_summary</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.Rt"><code class="docutils literal notranslate"><span class="pre">Pulsing.Rt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse_rest"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse_rest()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.smoothing.html">pyprobe.analysis.smoothing module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing"><code class="docutils literal notranslate"><span class="pre">Smoothing</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.input_data"><code class="docutils literal notranslate"><span class="pre">Smoothing.input_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.spline_smoothing"><code class="docutils literal notranslate"><span class="pre">Smoothing.spline_smoothing()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.utils.html">pyprobe.analysis.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.assemble_array"><code class="docutils literal notranslate"><span class="pre">assemble_array()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.input_data"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.input_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.required_columns"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.required_columns</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.required_type"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.required_type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.validate_input_data_type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.validate_required_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.variables"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.variables</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pyprobe.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pyprobe package</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pyprobe.analysis.base.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pyprobe.analysis.base package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subpackages">Subpackages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/api/pyprobe.analysis.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

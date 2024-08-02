@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Comparing PyProBE Performance &#8212; PyProBE  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/comparing-pyprobe-performance';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Providing Valid Inputs" href="providing-valid-inputs.html" />
+    <link rel="prev" title="OCV Fitting" href="ocv-fitting.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyProBE  documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer_guide/developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer_guide/developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with PyProBE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering-data.html">Filtering data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LEAN-differentiation.html">Differentiating with the LEAN algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ocv-fitting.html">OCV Fitting</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Comparing PyProBE Performance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="providing-valid-inputs.html">Providing Valid Inputs</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Comparing...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Comparing-PyProBE-Performance">
+<h1>Comparing PyProBE Performance<a class="headerlink" href="#Comparing-PyProBE-Performance" title="Link to this heading">#</a></h1>
+<p>This example will demonstrate the performance benefits of PyProBE against Pandas, a popular library for dataframes.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyprobe</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">timeit</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[1], line 1</span>
+<span class="ansi-green-fg">----&gt; 1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pyprobe</span>
+<span class="ansi-green-intense-fg ansi-bold">      2</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pandas</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> <span class="ansi-bold" style="color: rgb(0,0,255)">pd</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">timeit</span>
+
+<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named &#39;pyprobe&#39;
+</pre></div></div>
+</div>
+<p>Setting up data analysis in PyProBE requires conversion into the PyProBE format. This is normally the most time-intensive process, but only needs to be performed once.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">info_dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sample cell&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Chemistry&#39;</span><span class="p">:</span> <span class="s1">&#39;NMC622&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Nominal Capacity [Ah]&#39;</span><span class="p">:</span> <span class="mf">0.04</span><span class="p">,</span>
+                   <span class="s1">&#39;Cycler number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                   <span class="s1">&#39;Channel number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,}</span>
+
+<span class="n">cell</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">info</span> <span class="o">=</span><span class="n">info_dictionary</span><span class="p">)</span>
+<span class="n">data_directory</span> <span class="o">=</span> <span class="s1">&#39;../../../tests/sample_data/neware&#39;</span>
+<span class="c1"># cell.process_cycler_file(cycler=&#39;neware&#39;,</span>
+<span class="c1">#                         folder_path=data_directory,</span>
+<span class="c1">#                         input_filename=&#39;sample_data_neware.xlsx&#39;,</span>
+<span class="c1">#                         output_filename=&#39;sample_data_neware.parquet&#39;)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[2], line 7</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> info_dictionary <span style="color: rgb(98,98,98)">=</span> {<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Name</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample cell</span><span style="color: rgb(175,0,0)">&#39;</span>,
+<span class="ansi-green-intense-fg ansi-bold">      2</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Chemistry</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">NMC622</span><span style="color: rgb(175,0,0)">&#39;</span>,
+<span class="ansi-green-intense-fg ansi-bold">      3</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Nominal Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">0.04</span>,
+<span class="ansi-green-intense-fg ansi-bold">      4</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Cycler number</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">1</span>,
+<span class="ansi-green-intense-fg ansi-bold">      5</span>                    <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Channel number</span><span style="color: rgb(175,0,0)">&#39;</span>: <span style="color: rgb(98,98,98)">1</span>,}
+<span class="ansi-green-fg">----&gt; 7</span> cell <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">pyprobe</span><span style="color: rgb(98,98,98)">.</span>Cell(info <span style="color: rgb(98,98,98)">=</span>info_dictionary)
+<span class="ansi-green-intense-fg ansi-bold">      8</span> data_directory <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">../../../tests/sample_data/neware</span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-intense-fg ansi-bold">      9</span> <span style="color: rgb(95,135,135)"># cell.process_cycler_file(cycler=&#39;neware&#39;,</span>
+<span class="ansi-green-intense-fg ansi-bold">     10</span> <span style="color: rgb(95,135,135)">#                         folder_path=data_directory,</span>
+<span class="ansi-green-intense-fg ansi-bold">     11</span> <span style="color: rgb(95,135,135)">#                         input_filename=&#39;sample_data_neware.xlsx&#39;,</span>
+<span class="ansi-green-intense-fg ansi-bold">     12</span> <span style="color: rgb(95,135,135)">#                         output_filename=&#39;sample_data_neware.parquet&#39;)</span>
+
+<span class="ansi-red-fg">NameError</span>: name &#39;pyprobe&#39; is not defined
+</pre></div></div>
+</div>
+<p>We will measure the time for PyProBE and Pandas to read from a parquet file and filter the data a few times. With PyProBE we can call the built-in filtering methods, whereas Pandas must perform the filtering manually.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">cumulative_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">steps</span><span class="p">,</span><span class="n">repeats</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">repeat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeats</span><span class="p">):</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
+        <span class="n">cell</span><span class="o">.</span><span class="n">add_procedure</span><span class="p">(</span><span class="n">procedure_name</span><span class="o">=</span><span class="s1">&#39;Sample&#39;</span><span class="p">,</span>
+                   <span class="n">folder_path</span> <span class="o">=</span> <span class="n">data_directory</span><span class="p">,</span>
+                   <span class="n">filename</span> <span class="o">=</span> <span class="n">file</span><span class="p">)</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">experiment</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">cycle</span> <span class="o">=</span> <span class="n">experiment</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">step</span> <span class="o">=</span> <span class="n">cycle</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">voltage</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+    <span class="k">return</span> <span class="n">cumulative_time</span><span class="p">,</span> <span class="n">voltage</span>
+
+
+<span class="k">def</span> <span class="nf">measure_pandas</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">cumulative_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">steps</span><span class="p">,</span><span class="n">repeats</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">repeat</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeats</span><span class="p">):</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">file</span><span class="p">)</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">experiment</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Step&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">])]</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">unique_cycles</span> <span class="o">=</span> <span class="n">experiment</span><span class="p">[</span><span class="s1">&#39;Cycle&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+
+        <span class="n">cycle</span> <span class="o">=</span> <span class="n">experiment</span><span class="p">[</span><span class="n">experiment</span><span class="p">[</span><span class="s1">&#39;Cycle&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">unique_cycles</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">step</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">[</span><span class="n">cycle</span><span class="p">[</span><span class="s1">&#39;Current [A]&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">unique_events</span> <span class="o">=</span> <span class="n">step</span><span class="p">[</span><span class="s1">&#39;Event&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="n">step</span><span class="p">[</span><span class="n">step</span><span class="p">[</span><span class="s1">&#39;Event&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">unique_events</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">voltage</span> <span class="o">=</span> <span class="n">step</span><span class="p">[</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+    <span class="k">return</span> <span class="n">cumulative_time</span><span class="p">,</span> <span class="n">voltage</span>
+
+<span class="k">def</span> <span class="nf">make_boxplots</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">):</span>
+    <span class="n">data_polars</span> <span class="o">=</span> <span class="p">[</span><span class="n">total_time_polars</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">total_time_polars</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+    <span class="n">data_pandas</span> <span class="o">=</span> <span class="p">[</span><span class="n">total_time_pandas</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">total_time_pandas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+
+    <span class="c1"># Create labels for the boxplots</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Read file&quot;</span><span class="p">,</span> <span class="s2">&quot;Select experiment&quot;</span><span class="p">,</span> <span class="s2">&quot;Select cycle&quot;</span><span class="p">,</span> <span class="s2">&quot;Select step&quot;</span><span class="p">,</span> <span class="s2">&quot;Select voltage&quot;</span><span class="p">]</span>
+    <span class="c1"># Create the subplots</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Boxplot for Polars</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">data_polars</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">vert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;PyProBE Execution Time&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Time (seconds)&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Boxplot for Pandas</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">data_pandas</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">vert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Pandas Execution Time&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Remove y-axis on the right-hand subplot</span>
+
+    <span class="c1"># Adjust layout</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<p>Running the tests shows the initial overhead for PyProBE to read and filter the data is zero. This is because of the Lazy implementation where all the computation is delayed until the final request for data is made. Overall, it is faster than Pandas as the polars backend is able to optimize the filtering process, instead of requiring filters to be performed one-by-one.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">repeats</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">total_time_polars</span><span class="p">,</span> <span class="n">voltage_pyprobe</span> <span class="o">=</span> <span class="n">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware.parquet&#39;</span><span class="p">)</span>
+<span class="n">total_time_pandas</span><span class="p">,</span> <span class="n">voltage_pandas</span> <span class="o">=</span> <span class="n">measure_pandas</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware.parquet&#39;</span><span class="p">)</span>
+<span class="n">make_boxplots</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">voltage_pyprobe</span><span class="p">,</span> <span class="n">voltage_pandas</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[4], line 2</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> repeats <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">10</span>
+<span class="ansi-green-fg">----&gt; 2</span> total_time_polars, voltage_pyprobe <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">measure_pyprobe</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">repeats</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">sample_data_neware.parquet</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> total_time_pandas, voltage_pandas <span style="color: rgb(98,98,98)">=</span> measure_pandas(repeats, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">sample_data_neware.parquet</span><span style="color: rgb(175,0,0)">&#39;</span>)
+<span class="ansi-green-intense-fg ansi-bold">      4</span> make_boxplots(total_time_polars, total_time_pandas)
+
+Cell <span class="ansi-green-fg">In[3], line 3</span>, in <span class="ansi-cyan-fg">measure_pyprobe</span><span class="ansi-blue-fg">(repeats, file)</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">measure_pyprobe</span>(repeats, file):
+<span class="ansi-green-intense-fg ansi-bold">      2</span>     steps <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">5</span>
+<span class="ansi-green-fg">----&gt; 3</span>     cumulative_time <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">np</span><span style="color: rgb(98,98,98)">.</span>zeros((steps,repeats))
+<span class="ansi-green-intense-fg ansi-bold">      4</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> repeat <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">range</span>(repeats):
+<span class="ansi-green-intense-fg ansi-bold">      5</span>         start_time <span style="color: rgb(98,98,98)">=</span> timeit<span style="color: rgb(98,98,98)">.</span>default_timer()
+
+<span class="ansi-red-fg">NameError</span>: name &#39;np&#39; is not defined
+</pre></div></div>
+</div>
+<p>We will now extend the input data, to demonstrate how much more scalable the Polars approach is.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="s1">&#39;/sample_data_neware.parquet&#39;</span><span class="p">)</span>
+<span class="n">extended_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">]</span> <span class="o">*</span> <span class="mi">25</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">extended_df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="s1">&#39;/sample_data_neware_extended.parquet&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">extended_df</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[5], line 1</span>
+<span class="ansi-green-fg">----&gt; 1</span> df <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">pd</span><span style="color: rgb(98,98,98)">.</span>read_parquet(data_directory <span style="color: rgb(98,98,98)">+</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">/sample_data_neware.parquet</span><span style="color: rgb(175,0,0)">&#39;</span>)
+<span class="ansi-green-intense-fg ansi-bold">      2</span> extended_df <span style="color: rgb(98,98,98)">=</span> pd<span style="color: rgb(98,98,98)">.</span>concat([df] <span style="color: rgb(98,98,98)">*</span> <span style="color: rgb(98,98,98)">25</span>, ignore_index<span style="color: rgb(98,98,98)">=</span><span class="ansi-bold" style="color: rgb(0,135,0)">True</span>)
+<span class="ansi-green-intense-fg ansi-bold">      3</span> extended_df<span style="color: rgb(98,98,98)">.</span>to_parquet(data_directory <span style="color: rgb(98,98,98)">+</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">/sample_data_neware_extended.parquet</span><span style="color: rgb(175,0,0)">&#39;</span>)
+
+<span class="ansi-red-fg">NameError</span>: name &#39;pd&#39; is not defined
+</pre></div></div>
+</div>
+<p>With 25x more data points, the PyProBE implementation is almost 3x faster than manual filtering in Pandas.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">total_time_polars</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware_extended.parquet&#39;</span><span class="p">)</span>
+<span class="n">total_time_pandas</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">measure_pandas</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware_extended.parquet&#39;</span><span class="p">)</span>
+<span class="n">make_boxplots</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[6], line 1</span>
+<span class="ansi-green-fg">----&gt; 1</span> total_time_polars, _ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">measure_pyprobe</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">repeats</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">sample_data_neware_extended.parquet</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">      2</span> total_time_pandas, _ <span style="color: rgb(98,98,98)">=</span> measure_pandas(repeats, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">sample_data_neware_extended.parquet</span><span style="color: rgb(175,0,0)">&#39;</span>)
+<span class="ansi-green-intense-fg ansi-bold">      3</span> make_boxplots(total_time_polars, total_time_pandas)
+
+Cell <span class="ansi-green-fg">In[3], line 3</span>, in <span class="ansi-cyan-fg">measure_pyprobe</span><span class="ansi-blue-fg">(repeats, file)</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">measure_pyprobe</span>(repeats, file):
+<span class="ansi-green-intense-fg ansi-bold">      2</span>     steps <span style="color: rgb(98,98,98)">=</span> <span style="color: rgb(98,98,98)">5</span>
+<span class="ansi-green-fg">----&gt; 3</span>     cumulative_time <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">np</span><span style="color: rgb(98,98,98)">.</span>zeros((steps,repeats))
+<span class="ansi-green-intense-fg ansi-bold">      4</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> repeat <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">range</span>(repeats):
+<span class="ansi-green-intense-fg ansi-bold">      5</span>         start_time <span style="color: rgb(98,98,98)">=</span> timeit<span style="color: rgb(98,98,98)">.</span>default_timer()
+
+<span class="ansi-red-fg">NameError</span>: name &#39;np&#39; is not defined
+</pre></div></div>
+</div>
+<p>The Polars Lazy approach is best demonstrated by plotting the optimized graph:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lazyframe</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">base_dataframe</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lazyframe</span><span class="o">.</span><span class="n">explain</span><span class="p">(</span><span class="n">tree_format</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[7], line 1</span>
+<span class="ansi-green-fg">----&gt; 1</span> lazyframe <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">cell</span><span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">1</span>)<span style="color: rgb(98,98,98)">.</span>discharge(<span style="color: rgb(98,98,98)">0</span>)<span style="color: rgb(98,98,98)">.</span>base_dataframe
+<span class="ansi-green-intense-fg ansi-bold">      2</span> <span style="color: rgb(0,135,0)">print</span>(lazyframe<span style="color: rgb(98,98,98)">.</span>explain(tree_format<span style="color: rgb(98,98,98)">=</span><span class="ansi-bold" style="color: rgb(0,135,0)">True</span>))
+
+<span class="ansi-red-fg">NameError</span>: name &#39;cell&#39; is not defined
+</pre></div></div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="ocv-fitting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">OCV Fitting</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="providing-valid-inputs.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Providing Valid Inputs</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/examples/comparing-pyprobe-performance.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

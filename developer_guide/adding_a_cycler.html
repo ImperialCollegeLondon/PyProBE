@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Adding a Cycler &#8212; PyProBE  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'developer_guide/adding_a_cycler';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pyprobe" href="../api/modules.html" />
+    <link rel="prev" title="Contributing to the Analysis Module" href="contributing_to_the_analysis_module.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyProBE  documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples/examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="developer_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dependency_guide.html">Dependency Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing_to_the_analysis_module.html">Contributing to the Analysis Module</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Adding a Cycler</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="developer_guide.html" class="nav-link">Developer Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Adding a Cycler</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="adding-a-cycler">
+<h1>Adding a Cycler<a class="headerlink" href="#adding-a-cycler" title="Link to this heading">#</a></h1>
+<p>Once parsed into the standard format, PyProBE is agnostic to the source of the data.
+However, there is a processing step that is required for data from all cycler to be
+converted into this format. This is done from within the <a class="reference internal" href="../api/pyprobe.cyclers.html#module-pyprobe.cyclers" title="pyprobe.cyclers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.cyclers</span></code></a>
+module.</p>
+<p>Most of the work is done by the <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a> class.
+The cycler-specific modules exist to modify settings, and sometimes override functions
+of this class. This guide will go through the steps of making a cycler module to
+allow PyProBE to work with your data.</p>
+<ol class="arabic">
+<li><p>Set up the class.</p>
+<p>The class should inherit from <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a>
+which is a <a class="reference external" href="https://docs.pydantic.dev/latest/api/base_model/">Pydantic BaseModel</a>.
+You should then declare the following variables:</p>
+<ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">input_data_path</span></code> as an unset string</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">common_suffix</span></code> if all of the files from a cycler have the same ending (excluding file extensions). If they do not, leave as <code class="code docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">column_name_pattern</span></code> the regular expression that describes the pattern of the column names. This is to distinguish <cite>Current [A]</cite> from <cite>Current (A)</cite>, for example.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">column_dict</span></code> a dictionary of quantities per the PyProBE convention and their
+counterparts in the data file from the cycler e.g. <code class="code docutils literal notranslate"><span class="pre">{...&quot;Current&quot;:</span> <span class="pre">&quot;I&quot;,...}</span></code>.
+You only need to include the quantity names, PyProBE will deal with the unit conversion.</p></li>
+</ul>
+<p>Below is an example from the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">class</span> <span class="nc">Biologic</span><span class="p">(</span><span class="n">BaseCycler</span><span class="p">):</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to load and process Biologic battery cycler data.</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span><span class="sd">    Args:</span>
+<span class="linenos"> 5</span><span class="sd">            input_data_path: The path to the input data.</span>
+<span class="linenos"> 6</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>    <span class="n">input_data_path</span><span class="p">:</span> <span class="nb">str</span>
+<span class="linenos"> 9</span>    <span class="n">common_suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;_MB&quot;</span>
+<span class="linenos">10</span>    <span class="n">column_name_pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(.+)/(.+)&quot;</span>
+<span class="linenos">11</span>    <span class="n">column_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="linenos">12</span>        <span class="s2">&quot;Date&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+<span class="linenos">13</span>        <span class="s2">&quot;Time&quot;</span><span class="p">:</span> <span class="s2">&quot;time/s&quot;</span><span class="p">,</span>
+<span class="linenos">14</span>        <span class="s2">&quot;Step&quot;</span><span class="p">:</span> <span class="s2">&quot;Ns&quot;</span><span class="p">,</span>
+<span class="linenos">15</span>        <span class="s2">&quot;Current&quot;</span><span class="p">:</span> <span class="s2">&quot;I&quot;</span><span class="p">,</span>
+<span class="linenos">16</span>        <span class="s2">&quot;Voltage&quot;</span><span class="p">:</span> <span class="s2">&quot;Ecell&quot;</span><span class="p">,</span>
+<span class="linenos">17</span>        <span class="s2">&quot;Charge Capacity&quot;</span><span class="p">:</span> <span class="s2">&quot;Q charge&quot;</span><span class="p">,</span>
+<span class="linenos">18</span>        <span class="s2">&quot;Discharge Capacity&quot;</span><span class="p">:</span> <span class="s2">&quot;Q discharge&quot;</span><span class="p">,</span>
+<span class="linenos">19</span>    <span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p>Add a method to read a file into a dataframe.</p>
+<p>The <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.read_file" title="pyprobe.cyclers.basecycler.BaseCycler.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_file()</span></code></a> method works for the simplest
+example, where the file contents are only the data under column headings. This may work
+for you, or may just require adding to its list of recognized file extensions.</p>
+<p>However, some cyclers, like the Biologic, have large headers which may have data you
+need to extract. The Biologic class’ <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.read_file" title="pyprobe.cyclers.biologic.Biologic.read_file"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_file()</span></code></a>
+method extracts the start time from the header and uses it to form a date column.
+If you need to do the same, simply define your own copy of the <cite>read_file</cite> method in
+the class of your cycler.</p>
+</li>
+<li><p>Add a method to form the complete imported dataframe.</p>
+<p>It is very likely that the base <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe" title="pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_imported_dataframe()</span></code></a>
+will work for you, in which case you will not need this function. In the
+<a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class, this method is used when there
+are multiple <cite>ModuloBat</cite> files being read, to concatenate the dataframes while
+ensuring that the step number does not reduce to zero when the start of one file ends
+and another begins.</p>
+</li>
+<li><p>Add column property overrides as needed.</p>
+<p>The <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a>
+includes properties for reading each column of the data. If any of these need adjusting,
+re-define them in your new cycler class. For example, the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class
+overrides the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.step" title="pyprobe.cyclers.biologic.Biologic.step"><code class="xref py py-attr docutils literal notranslate"><span class="pre">step</span></code></a> property, to add one
+to the step number to change from 0-indexing to 1-indexing.</p>
+</li>
+</ol>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="contributing_to_the_analysis_module.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Contributing to the Analysis Module</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api/modules.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pyprobe</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/developer_guide/adding_a_cycler.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

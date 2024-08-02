@@ -10,9 +10,10 @@ PyProBE documentation
    :maxdepth: 1
    :hidden:
 
-   user_guide
-   developer_guide
-   modules
+   user_guide/user_guide
+   examples/examples
+   developer_guide/developer_guide
+   api/modules
 
 .. grid:: 2
 
@@ -24,7 +25,7 @@ PyProBE documentation
       Get an introduction to PyProBE's capabilities and how to make use of them.
       +++
 
-      .. button-ref:: user_guide
+      .. button-ref:: user_guide/user_guide
          :expand:
          :color: secondary
          :click-parent:
@@ -41,7 +42,7 @@ PyProBE documentation
 
       +++
 
-      .. button-ref:: https://github.com/ImperialCollegeLondon/PyProBE/tree/main/examples
+      .. button-ref:: examples/examples
          :expand:
          :color: secondary
          :click-parent:
@@ -57,7 +58,7 @@ PyProBE documentation
 
       +++
 
-      .. button-ref:: modules
+      .. button-ref:: api/modules
          :expand:
          :color: secondary
          :click-parent:
@@ -73,11 +74,11 @@ PyProBE documentation
 
       +++
 
-      .. button-link:: developer_guide
+      .. button-link:: developer_guide/developer_guide
          :expand:
          :color: secondary
          :click-parent:
 
-         To the developers's guide
+         To the developer's guide
 
 .. footbibliography::
