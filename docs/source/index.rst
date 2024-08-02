@@ -79,6 +79,6 @@ PyProBE documentation
          :color: secondary
          :click-parent:
 
-         To the developers's guide
+         To the developer's guide
 
 .. footbibliography::

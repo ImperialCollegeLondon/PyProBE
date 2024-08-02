@@ -42,7 +42,7 @@ See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for
 - [Accessing data](https://congenial-adventure-mz797n5.pages.github.io/user_guide/accessing_data.html)
 - [Plotting](https://congenial-adventure-mz797n5.pages.github.io/user_guide/plotting.html)
 
-You can find example notebooks in the [examples folder](examples/).
+You can find example notebooks in the [examples folder](docs/source/examples/).
 
 ## Input data guidelines
 PyProBE works with numerous cyclers. For guidance on how to export your data to work with PyProBE see the [Input Data Guidance](https://congenial-adventure-mz797n5.pages.github.io/user_guide/input_data_guidance.html).
