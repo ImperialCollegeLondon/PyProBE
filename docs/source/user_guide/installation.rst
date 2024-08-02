@@ -73,14 +73,20 @@ The steps to install PyProBE are as follows:
             conda create -n pyprobe python=3.12
             conda activate pyprobe
 
-3. Install PyProBE as a package into your virtual environment:
+3. Install PyProBE's dependencies:
+   
+      .. code-block:: bash
+
+      cd /path/to/your/directory/PyProBE
+      pip install -r requirements.txt
+
+4. Install PyProBE as a package into your virtual environment:
    
    .. code-block:: bash
 
-      cd /path/to/your/directory/PyProBE
       pip install .
 
-4. In your working directory you can create a new python script or jupyter notebook to 
+5. In your working directory you can create a new python script or jupyter notebook to 
    process your data. You can import PyProBE into your script as follows:
 
    .. code-block:: python
