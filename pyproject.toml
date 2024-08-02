@@ -23,9 +23,10 @@ dependencies = [
     "distinctipy", 
     "streamlit", 
     "PyYAML", 
-    "nbformat", 
     "ordered-set",
     "pydantic",
+    "kaleido",
+    "IPython"
 ]
 
 [project.optional-dependencies]

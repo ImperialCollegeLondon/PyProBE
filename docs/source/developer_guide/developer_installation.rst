@@ -41,22 +41,22 @@ The steps to install PyProBE wih developer settings are as follows:
             conda create -n pyprobe python=3.12
             conda activate pyprobe
 
-3. Install PyProBE as a package into your virtual environment:
+3. Install the developer dependencies:
    
    .. code-block:: bash
 
       cd /path/to/your/directory/PyProBE
+      pip install -r requirements-dev.txt
+
+4. Install PyProBE as a package into your virtual environment:
+   
+   .. code-block:: bash
+
       pip install -e .
 
    The :code:`-e` flag installs in "editable" mode, which means changes that you 
    make to the code will be automatically reflected in the package inside your
    virtual environment.
-
-4. Install the developer dependencies:
-   
-   .. code-block:: bash
-
-      pip install -r requirements-dev.txt
 
 5. Install the pre-commit hooks:
 

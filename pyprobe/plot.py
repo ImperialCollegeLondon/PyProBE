@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 import numpy as np
 import plotly.graph_objects as go
 import polars as pl
+from IPython.display import Image, display
 from numpy.typing import NDArray
 from plotly.express.colors import sample_colorscale
 from plotly.subplots import make_subplots
@@ -56,6 +57,11 @@ class Plot:
     def show(self) -> None:
         """Show the plot."""
         self.fig.show()
+
+    def show_image(self) -> None:
+        """Show the plot as an image."""
+        img_bytes = self.fig.to_image(format="png")
+        display(Image(img_bytes))
 
     def add_line(
         self,
