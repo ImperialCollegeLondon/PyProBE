@@ -109,11 +109,13 @@ class Differentiation(BaseModel):
                 The coefficients of the smoothing matrix.
 
                 Examples provided by :footcite:t:`Feng2020` include:
+
                     - [0.25, 0.5, 0.25] for a 3-point smoothing filter.
                     - [0.0668, 0.2417, 0.3830, 0.2417, 0.0668] (default) for a 5-point
-                    smoothing filter.
+                      smoothing filter.
                     - [0.1059, 0.121, 0.1745, 0.1972, 0.1745, 0.121, 0.1059] for a
-                    7-point smoothing filter.
+                      7-point smoothing filter.
+
             section (str, optional):
                 The section of the data with constant sample rate in x to be considered.
                 Default is 'longest', which just returns the longest unifomly sampled

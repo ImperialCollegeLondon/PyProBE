@@ -62,3 +62,5 @@ allow PyProBE to work with your data.
    re-define them in your new cycler class. For example, the :class:`~pyprobe.cyclers.biologic.Biologic` class
    overrides the :attr:`~pyprobe.cyclers.biologic.Biologic.step` property, to add one
    to the step number to change from 0-indexing to 1-indexing.
+
+.. footbibliography::

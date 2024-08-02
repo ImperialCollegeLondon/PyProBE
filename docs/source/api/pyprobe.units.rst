@@ -1,5 +1,5 @@
 pyprobe.units module
-============================
+====================
 
 .. automodule:: pyprobe.units
    :members:
