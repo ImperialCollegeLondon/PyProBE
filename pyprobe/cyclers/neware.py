@@ -1,62 +1,38 @@
 """A module to load and process Neware battery cycler data."""
 
 
-import os
-
 import polars as pl
 
 from pyprobe.cyclers.basecycler import BaseCycler
 
 
 class Neware(BaseCycler):
-    """A class to load and process Neware battery cycler data."""
+    """A class to load and process Neware battery cycler data.
 
-    def __init__(self, input_data_path: str) -> None:
-        """Create a Biologic cycler object.
+    Args:
+        input_data_path: The path to the input data.
+    """
 
-        Args:
-            input_data_path: The path to the input data.
-        """
-        file_ext = os.path.splitext(input_data_path)[1]
-        column_dict = {
-            "Date": "Date",
-            "Step": "Step Index",
-            "Current": "Current",
-            "Voltage": "Voltage",
-            "Charge Capacity": "Chg. Cap.",
-            "Discharge Capacity": "DChg. Cap.",
-        }
-        super().__init__(
-            input_data_path,
-            common_suffix=file_ext,
-            column_name_pattern=r"(.+)\((.+)\)",
-            column_dict=column_dict,
-        )
-
-    @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame:
-        """Read a battery cycler file into a DataFrame.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            pl.DataFrame: The DataFrame.
-        """
-        file = os.path.basename(filepath)
-        file_ext = os.path.splitext(file)[1]
-        match file_ext:
-            case ".xlsx":
-                return pl.read_excel(filepath, engine="calamine")
-            case ".csv":
-                return pl.read_csv(filepath)
-            case _:
-                raise ValueError(f"Unsupported file extension: {file_ext}")
+    input_data_path: str
+    common_suffix: str = ""
+    column_name_pattern: str = r"(.+)\((.+)\)"
+    column_dict: dict[str, str] = {
+        "Date": "Date",
+        "Step": "Step Index",
+        "Current": "Current",
+        "Voltage": "Voltage",
+        "Charge Capacity": "Chg. Cap.",
+        "Discharge Capacity": "DChg. Cap.",
+    }
 
     @property
-    def time(self) -> pl.DataFrame:
-        """Make a time column."""
-        time = (
+    def time(self) -> pl.Expr:
+        """Identify and format the time column.
+
+        Returns:
+            pl.Expr: A polars expression for the time column.
+        """
+        return (
             (
                 pl.col(self.column_dict["Date"])
                 .diff()
@@ -67,4 +43,3 @@ class Neware(BaseCycler):
             .fill_null(strategy="zero")
             .alias("Time [s]")
         )
-        return self.imported_dataframe.select(time)

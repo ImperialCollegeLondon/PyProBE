@@ -6,6 +6,8 @@
 #
 altair==5.3.0
     # via streamlit
+annotated-types==0.7.0
+    # via pydantic
 attrs==23.2.0
     # via
     #   jsonschema
@@ -106,6 +108,10 @@ pyarrow==15.0.2
     # via
     #   fastexcel
     #   streamlit
+pydantic==2.8.2
+    # via PyProBE (pyproject.toml)
+pydantic-core==2.20.1
+    # via pydantic
 pydeck==0.8.1b0
     # via streamlit
 pygments==2.17.2
@@ -159,7 +165,10 @@ traitlets==5.14.3
     #   jupyter-core
     #   nbformat
 typing-extensions==4.11.0
-    # via streamlit
+    # via
+    #   pydantic
+    #   pydantic-core
+    #   streamlit
 tzdata==2024.1
     # via pandas
 urllib3==2.2.2

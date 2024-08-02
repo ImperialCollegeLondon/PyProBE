@@ -147,3 +147,17 @@ def test_all_steps(BreakinCycles_fixture, benchmark):
     data = benchmark(all_steps)
     assert (data["Cycle"] == 0).all()
     assert (data["Step"].unique() == [4, 5, 6, 7]).all()
+
+
+def test_zeroed_columns(BreakinCycles_fixture):
+    """Test the zeroed_columns method."""
+    exp_filtered_data = BreakinCycles_fixture
+    cycle_filtered_data = BreakinCycles_fixture.cycle(0)
+    step_filtered_data = BreakinCycles_fixture.cycle(0).step(0)
+
+    assert exp_filtered_data.get_only("Experiment Time [s]")[0] == 0
+    assert exp_filtered_data.get_only("Experiment Capacity [Ah]")[0] == 0
+    assert cycle_filtered_data.get_only("Cycle Time [s]")[0] == 0
+    assert cycle_filtered_data.get_only("Cycle Capacity [Ah]")[0] == 0
+    assert step_filtered_data.get_only("Step Time [s]")[0] == 0
+    assert step_filtered_data.get_only("Step Capacity [Ah]")[0] == 0

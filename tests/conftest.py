@@ -2,7 +2,7 @@
 import polars as pl
 import pytest
 
-from pyprobe.procedure import Procedure
+from pyprobe.cell import Cell
 
 
 @pytest.fixture(scope="module")
@@ -20,11 +20,11 @@ def lazyframe_fixture():
 @pytest.fixture(scope="module")
 def titles_fixture():
     """Pytest fixture for example data titles."""
-    return {
-        "Initial Charge": "SOC Reset",
-        "Break-in Cycles": "Cycling",
-        "Discharge Pulses": "Pulsing",
-    }
+    return [
+        "Initial Charge",
+        "Break-in Cycles",
+        "Discharge Pulses",
+    ]
 
 
 @pytest.fixture(scope="module")
@@ -62,18 +62,14 @@ def step_names_fixture():
 @pytest.fixture(scope="module")
 def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
-    return Procedure(
-        "tests/sample_data/neware/sample_data_neware.parquet", info_fixture
+    cell = Cell(info=info_fixture)
+    cell.add_procedure(
+        "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
     )
+    return cell.procedure["Sample"]
 
 
 @pytest.fixture(scope="module")
 def BreakinCycles_fixture(procedure_fixture):
     """Pytest fixture for example cycling experiment."""
     return procedure_fixture.experiment("Break-in Cycles")
-
-
-@pytest.fixture(scope="module")
-def Pulsing_fixture(procedure_fixture):
-    """Pytest fixture for example pulsing experiment."""
-    return procedure_fixture.experiment("Discharge Pulses")

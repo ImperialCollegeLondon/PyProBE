@@ -99,11 +99,15 @@ if __name__ == "__main__":
 
     graph_placeholder = st.empty()
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     # Create select boxes for the x and y axes
-    x_axis = col1.selectbox("x axis", x_options, index=0)
-    y_axis = col2.selectbox("y axis", y_options, index=1)
-    secondary_y_axis = col3.selectbox("Secondary y axis", ["None"] + y_options, index=0)
+    filter_stage = col1.selectbox(
+        "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
+    )
+    x_axis = col2.selectbox("x axis", x_options, index=0)
+    x_axis = f"{filter_stage} {x_axis}".strip()
+    y_axis = col3.selectbox("y axis", y_options, index=1)
+    secondary_y_axis = col4.selectbox("Secondary y axis", ["None"] + y_options, index=0)
 
     # Select plot theme
 

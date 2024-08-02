@@ -24,12 +24,18 @@ extensions = [
     "sphinx_tabs.tabs",
     "sphinxcontrib.bibtex",
     "sphinx_design",
+    "nbsphinx",
 ]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+autodoc_default_options = {
+    "exclude-members": "model_computed_fields, model_config, model_fields, Config",
+}
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
 bibtex_bibfiles = ["../../CITATIONS.bib"]
@@ -37,3 +43,8 @@ bibtex_style = "unsrt"
 bibtex_footbibliography_header = """.. rubric:: References"""
 bibtex_reference_style = "author_year"
 bibtex_tooltips = True
+
+# -- nbsphinx configuration --------------------------------------------------
+autosummary_generate = True
+nbsphinx_execute = "always"  # Always execute notebooks
+nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors

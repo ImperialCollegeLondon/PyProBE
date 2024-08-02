@@ -4,49 +4,67 @@ import pickle
 import platform
 import subprocess
 import time
+import warnings
 from typing import Any, Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
+import yaml
+from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import biologic, neware
-from pyprobe.procedure import Procedure
+from pyprobe.filters import Procedure
 
 
-class Cell:
+class Cell(BaseModel):
     """A class for a cell in a battery experiment.
 
-    Attributes:
-        info (dict): Rig and setup information on the cell
-            e.g. cycler number, thermocouple channel.
-        procedure (dict): The raw data from each procedure conducted on the cell.
-        processed_data (dict): A place to store processed data for each procedure
-            for use later.
+    Args:
+        info (dict): Dictionary containing information about the cell.
+            The dictionary must contain a 'Name' field, other information may include
+            channel number or other rig information.
+        procedure (dict, optional): Dictionary containing the procedures that have been
+            run on the cell. Defaults to an empty dictionary.
     """
 
-    def __init__(
-        self,
-        info: Dict[str, str | int | float],
-    ):
-        """Create a cell object.
+    info: Dict[str, str | int | float]
+    """Dictionary containing information about the cell.
+    The dictionary must contain a 'Name' field, other information may include
+    channel number or other rig information.
+    """
+    procedure: Dict[str, Procedure] = Field(default_factory=dict)
+    """Dictionary containing the procedures that have been run on the cell."""
 
-        Args:
-            info (dict): Rig and setup information on the cell
-                e.g. cycler number, thermocouple channel.
+    @field_validator("info")
+    def _check_and_set_name(
+        cls, info: Dict[str, str | int | float]
+    ) -> Dict[str, str | int | float]:
+        """Validate the `info` field.
+
+        Checks that a `Name` field is present in the `info` dictionary, if not it is
+        set to 'Default Name'. If the `color` field is not present, a color is
+        generated.
         """
-        self.info = info
-        self.info["color"] = distinctipy.get_hex(
-            distinctipy.get_colors(
-                1,
-                exclude_colors=[
-                    (0, 0, 0),
-                    (1, 1, 1),
-                    (1, 1, 0),
-                ],
-            )[0]
-        )
-        self.procedure: Dict[str, Procedure] = {}
-        self.processed_data: Dict[str, pl.DataFrame] = {}
+        if "Name" not in info.keys():
+            info["Name"] = "Default Name"
+            warnings.warn(
+                "The 'Name' field was not in info. It has been set to 'Default Name'."
+            )
+
+        if "color" not in info.keys():
+            info["color"] = distinctipy.get_hex(
+                distinctipy.get_colors(
+                    1,
+                    rng=1,  # Set the random seed
+                    exclude_colors=[
+                        (0, 0, 0),
+                        (1, 1, 1),
+                        (1, 1, 0),
+                    ],
+                )[0]
+            )
+        values = info
+        return values
 
     @classmethod
     def make_cell_list(
@@ -59,6 +77,9 @@ class Cell:
         Args:
             record_filepath (str): The path to the experiment record .xlsx file.
             worksheet_name (str): The worksheet name to read from the record.
+
+        Returns:
+            list: The list of cell objects
         """
         record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
 
@@ -66,12 +87,13 @@ class Cell:
         cell_list = []
         colors = cls.set_color_scheme(n_cells, scheme="distinctipy")
         for i in range(n_cells):
-            cell_list.append(cls(record.row(i, named=True)))
-            cell_list[i].info["color"] = colors[i]
+            info = record.row(i, named=True)
+            info["color"] = colors[i]
+            cell_list.append(cls(info=info))
         return cell_list
 
     @staticmethod
-    def verify_parquet(filename: str) -> str:
+    def _verify_parquet(filename: str) -> str:
         """Function to verify the filename is in the correct format.
 
         Args:
@@ -88,6 +110,7 @@ class Cell:
             filename = os.path.splitext(filename)[0] + ".parquet"
         return filename
 
+    @validate_call
     def process_cycler_file(
         self,
         cycler: str,
@@ -99,62 +122,86 @@ class Cell:
         """Convert cycler file into PyProBE format.
 
         Args:
-            cycler (str): The cycler used to produce the data.
-            folder_path (str): The path to the folder containing the data file.
-            input_filename (str | function): A filename string or a function to
-                generate the file name for cycler data.
-            output_filename (str | function): A filename string or a function to
-                generate the file name for PyProBE data.
-            filename_args (list): The list of inputs to filename_function.
+            cycler (str):
+                The cycler used to produce the data. E.g. 'neware' or 'biologic'.
+            folder_path (str):
+                The path to the folder containing the data file.
+            input_filename (str | function):
+                A filename string or a function to generate the file name for cycler
+                data.
+            output_filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_args (list):
+                The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
         """
-        input_data_path = self.get_data_paths(
+        input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_args
         )
-        output_data_path = self.get_data_paths(
+        output_data_path = self._get_data_paths(
             folder_path, output_filename, filename_args
         )
-        output_data_path = self.verify_parquet(output_data_path)
+        output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
         cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
         t1 = time.time()
-        importer = cycler_dict[cycler](input_data_path)
+        importer = cycler_dict[cycler](input_data_path=input_data_path)
         dataframe = importer.pyprobe_dataframe
+        if isinstance(dataframe, pl.LazyFrame):
+            dataframe = dataframe.collect()
         dataframe.write_parquet(output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
+    @validate_call
     def add_procedure(
         self,
         procedure_name: str,
         folder_path: str,
         filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
-        custom_readme_name: Optional[str] = None,
+        readme_name: str = "README.yaml",
     ) -> None:
-        """Function to add data to the cell object.
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
 
         Args:
-            procedure_name (str): A name to give the procedure. This will be used
-                when calling cell.procedure[procedure_name].
-            folder_path (str): The path to the folder containing the data file.
-            filename (str | function): A filename string or a function to generate
-                the file name for PyProBE data.
-            filename_inputs (Optional[list]): The list of inputs to filename_function.
-                These must be keys of the cell info.
-            custom_readme_name (str, optional): The name of the custom README file.
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE d
+                ata.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+            readme_name (str, optional):
+                The name of the readme file. Defaults to "README.yaml".
         """
-        output_data_path = self.get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self.verify_parquet(output_data_path)
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
+
+        base_dataframe = pl.scan_parquet(output_data_path)
+        data_folder = os.path.dirname(output_data_path)
+        readme_path = os.path.join(data_folder, readme_name)
+        (
+            titles,
+            steps_idx,
+        ) = self._process_readme(readme_path)
+
         self.procedure[procedure_name] = Procedure(
-            output_data_path, self.info, custom_readme_name=custom_readme_name
+            titles=titles,
+            steps_idx=steps_idx,
+            base_dataframe=base_dataframe,
+            info=self.info,
         )
-        self.processed_data[procedure_name] = {}
 
     @staticmethod
-    def get_filename(
+    def _get_filename(
         info: Dict[str, str | int | float],
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
@@ -174,7 +221,7 @@ class Cell:
             *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs)))
         )
 
-    def get_data_paths(
+    def _get_data_paths(
         self,
         folder_path: str,
         filename: str | Callable[[str], str],
@@ -199,7 +246,7 @@ class Cell:
                 raise ValueError(
                     "filename_inputs must be provided when filename is a function."
                 )
-            filename_str = self.get_filename(self.info, filename, filename_inputs)
+            filename_str = self._get_filename(self.info, filename, filename_inputs)
 
         data_path = os.path.join(folder_path, filename_str)
         return data_path
@@ -274,3 +321,40 @@ class Cell:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT,
             )
+
+    @staticmethod
+    def _process_readme(
+        readme_path: str,
+    ) -> tuple[List[str], List[List[int]]]:
+        """Function to process the README.yaml file.
+
+        Args:
+            readme_path (str): The path to the README.yaml file.
+
+        Returns:
+            Tuple[List[str], List[int], List[int]]:
+                - dict: The titles of the experiments inside a procedure.
+                    Format {title: experiment type}.
+                - list: The cycle indices inside the procedure.
+                - list: The step indices inside the procedure.
+        """
+        with open(readme_path, "r") as file:
+            readme_dict = yaml.safe_load(file)
+
+        titles = list(readme_dict.keys())
+
+        max_step = 0
+        steps: List[List[int]] = []
+        for experiment in readme_dict:
+            if "Step Numbers" in readme_dict[experiment]:
+                step_list = readme_dict[experiment]["Step Numbers"]
+            elif "Total Steps" in readme_dict[experiment]:
+                step_list = list(range(readme_dict[experiment]["Total Steps"]))
+                step_list = [x + max_step + 1 for x in step_list]
+            else:
+                step_list = list(range(len(readme_dict[experiment]["Steps"])))
+                step_list = [x + max_step + 1 for x in step_list]
+            max_step = step_list[-1]
+            steps.append(step_list)
+
+        return titles, steps

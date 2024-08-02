@@ -11,14 +11,21 @@ from pyprobe.cell import Cell
 @pytest.fixture
 def cell_instance(info_fixture):
     """Return a Cell instance."""
-    return Cell(info_fixture)
+    return Cell(info=info_fixture)
 
 
 def test_init(cell_instance, info_fixture):
     """Test the __init__ method."""
-    assert cell_instance.info == info_fixture
+    expected_info = copy.copy(info_fixture)
+    expected_info["color"] = "#ff00ff"
+    assert cell_instance.info == expected_info
     assert cell_instance.procedure == {}
-    assert cell_instance.processed_data == {}
+
+    info = {"not name": "test"}
+    Cell(info=info)
+    with pytest.warns(UserWarning):
+        cell = Cell(info=info)
+        assert cell.info["Name"] == "Default Name"
 
 
 def test_make_cell_list(info_fixture):
@@ -32,26 +39,26 @@ def test_make_cell_list(info_fixture):
 
 
 def test_get_filename(info_fixture):
-    """Test the get_filename method."""
+    """Test the _get_filename method."""
     filename_inputs = ["Name"]
 
     def filename(name):
         return f"Cell_named_{name}.xlsx"
 
-    file = Cell.get_filename(info_fixture, filename, filename_inputs)
+    file = Cell._get_filename(info_fixture, filename, filename_inputs)
     assert file == "Cell_named_Test_Cell.xlsx"
 
 
 def test_verify_filename():
-    """Test the verify_parquet method."""
+    """Test the _verify_parquet method."""
     file = "path/to/sample_data_neware"
-    assert Cell.verify_parquet(file) == "path/to/sample_data_neware.parquet"
+    assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
 
     file = "path/to/sample_data_neware.parquet"
-    assert Cell.verify_parquet(file) == "path/to/sample_data_neware.parquet"
+    assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
 
     file = "path/to/sample_data_neware.csv"
-    assert Cell.verify_parquet(file) == "path/to/sample_data_neware.parquet"
+    assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
 
 
 def test_process_cycler_file(cell_instance, lazyframe_fixture):
@@ -78,7 +85,7 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     assert_frame_equal(cell_instance.procedure[title].data, procedure_fixture.data)
 
     cell_instance.add_procedure(
-        "Test_custom", input_path, file_name, custom_readme_name="README_total_steps"
+        "Test_custom", input_path, file_name, readme_name="README_total_steps.yaml"
     )
     assert_frame_equal(
         cell_instance.procedure["Test_custom"].data, procedure_fixture.data
@@ -93,4 +100,31 @@ def test_set_color_scheme(cell_instance):
         "#00db21",
         "#f03504",
         "#a09988",
+    ]
+
+
+def test_process_readme(cell_instance, titles_fixture, benchmark):
+    """Test processing a readme file in yaml format."""
+    expected_steps = [
+        [1, 2, 3],
+        [4, 5, 6, 7, 8],
+        [9, 10, 11, 12, 13],
+    ]
+
+    def _process_readme():
+        return cell_instance._process_readme("tests/sample_data/neware/README.yaml")
+
+    titles, steps = benchmark(_process_readme)
+    assert titles == titles_fixture
+    assert steps == expected_steps
+
+    # Test with total steps
+    titles, steps = cell_instance._process_readme(
+        "tests/sample_data/neware/README_total_steps.yaml"
+    )
+    assert titles == titles_fixture
+    assert steps == [
+        [1, 2, 3],
+        [4, 5, 6, 7],
+        [8, 9, 10, 11],
     ]

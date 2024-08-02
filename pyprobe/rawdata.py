@@ -1,89 +1,76 @@
 """A module for the RawData class."""
-from typing import Any, Dict, Optional
+from typing import Dict, Optional, Union
 
 import polars as pl
+from pydantic import Field, field_validator
 
-from pyprobe.methods import differentiation
+# from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
+
+required_columns = ["Date", "Time [s]", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
+
+default_column_definitions = {
+    "Date": "The timestamp of the data point. Type: datetime.",
+    "Time [s]": "The time passed from the start of the procedure.",
+    "Current [A]": "The current through the cell.",
+    "Voltage [V]": "The terminal voltage.",
+    "Capacity [Ah]": "The net charge passed since the start of the procedure.",
+}
 
 
 class RawData(Result):
     """A RawData object for returning data.
 
-    Attributes:
-        _data (pl.LazyFrame | pl.DataFrame): The filtered _data with the following
-            columns:
-
-            - 'Date' (pl.Datetime): the timestamp of the measurement
-            - 'Time [s]' (pl.Float64): the measurement time from the start of the
-              filtered section in seconds
-            - 'Step' (pl.Int64): the unique step number corresponding to a single
-              instruction in the cycling program
-            - 'Cycle' (pl.Int64): the cycle number, automatically identified when Step
-              decreases
-            - 'Event' (pl.Int64): the event number, automatically identified when Step
-              changes
-            - 'Current [A]' (pl.Float64): the current in Amperes
-            - 'Voltage [V]' (pl.Float64): the voltage in Volts
-            - 'Capacity [Ah]' (pl.Float64): the capacity relative to the start of the
-              filtered section in Ampere-hours. Its value increases when charge
-              current is passed and decreases when discharge current is passed.
-
-        info (Dict[str, str | int | float]): A dictionary containing test info.
+    Args:
+        base_dataframe (Union[pl.LazyFrame, pl.DataFrame]):
+            The data as a polars DataFrame or LazyFrame.
+        info (Dict[str, Union[str, int, float]]):
+            A dictionary containing test info.
+        column_definitions (Dict[str, str], optional):
+            A dictionary containing the definitions of the columns in the data.
     """
 
-    def __init__(
-        self,
-        _data: pl.LazyFrame | pl.DataFrame,
-        info: Dict[str, str | int | float],
-    ) -> None:
-        """Initialize the RawData object."""
-        super().__init__(_data, info)
-        self.data_property_called = False
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Union[str, int, float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
+    """A dictionary containing the definitions of the columns in the data."""
 
-        self.define_column("Date", "The timestamp of the data point. Type: datetime.")
-        self.define_column(
-            "Time [s]",
-            "The time in seconds passed from the start of the current filter.",
-        )
-        self.define_column("Current [A]", "The current in Amperes.")
-        self.define_column("Voltage [V]", "The terminal voltage in Volts.")
-        self.define_column(
-            "Capacity [Ah]",
-            "The net charge passed since the start of the current filter.",
-        )
-
-    @property
-    def data(self) -> pl.DataFrame:
-        """Return the data as a polars DataFrame.
-
-        Returns:
-            pl.DataFrame: The data as a polars DataFrame.
-        """
-        instruction_list = []
-        zero_reference_list = ["Capacity [Ah]", "Time [s]"]
-        for column in zero_reference_list:
-            instruction_list.extend([pl.col(column) - pl.col(column).first()])
-        self._data = self._data.with_columns(instruction_list)
-        if isinstance(self._data, pl.LazyFrame):
-            self._data = self._data.collect()
-        if self._data.shape[0] == 0:
-            raise ValueError("No data exists for this filter.")
-        return self._data
+    @field_validator("base_dataframe")
+    @classmethod
+    def _check_required_columns(
+        cls, dataframe: pl.LazyFrame | pl.DataFrame
+    ) -> "RawData":
+        """Check if the required columns are present in the input_data."""
+        missing_columns = [
+            col for col in required_columns if col not in dataframe.columns
+        ]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {missing_columns}")
+        return dataframe
 
     def zero_column(
-        self, column: str, new_column_name: str, new_column_definition: Optional[str]
+        self,
+        column: str,
+        new_column_name: str,
+        new_column_definition: Optional[str] = None,
     ) -> None:
-        """Add a new column to the dataframe, zeroed to the first value.
+        """Add a new column to a dataframe or lazyframe, zeroed to the first value.
 
         Args:
             column (str): The column to zero.
             new_column_name (str): The new column name.
             new_column_definition (Optional[str]): The new column definition.
+
+        Returns:
+            pl.DataFrame | pl.LazyFrame: The dataframe or lazyframe with the new column.
         """
-        self._data = self._data.with_columns(
+        self.base_dataframe = self.base_dataframe.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
+        if new_column_definition is not None:
+            self.define_column(new_column_name, new_column_definition)
 
     @property
     def capacity(self) -> float:
@@ -120,7 +107,7 @@ class RawData(Result):
             )
         if reference_charge is None:
             # capacity_reference = pl.select(pl.col("Capacity [Ah]").max())
-            self._data = self._data.with_columns(
+            self.base_dataframe = self.base_dataframe.with_columns(
                 (
                     (
                         pl.col("Capacity [Ah]")
@@ -136,11 +123,13 @@ class RawData(Result):
                 pl.col("Date").max()
             )[0][0]
             capacity_reference = (
-                self._data.filter(pl.col("Date") == fully_charged_reference_point)
+                self.base_dataframe.filter(
+                    pl.col("Date") == fully_charged_reference_point
+                )
                 .select("Capacity [Ah]")
                 .head(1)
             )
-            self._data = self._data.with_columns(
+            self.base_dataframe = self.base_dataframe.with_columns(
                 (
                     (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
                     / reference_capacity
@@ -166,7 +155,7 @@ class RawData(Result):
             reference_capacity = (
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
-        self._data = self._data.with_columns(
+        self.base_dataframe = self.base_dataframe.with_columns(
             (
                 pl.col("Capacity [Ah]")
                 - pl.col("Capacity [Ah]").max()
@@ -174,19 +163,25 @@ class RawData(Result):
             ).alias("Capacity - Referenced [Ah]")
         )
 
-    def gradient(
-        self, method: str, x: str, y: str, *args: Any, **kwargs: Any
-    ) -> Result:
-        """Calculate the gradient of the data from a variety of methods.
+    # def gradient(
+    #     self, x: str, y: str, method: str, *args: Any, **kwargs: Any
+    # ) -> Result:
+    #     """Calculate the gradient of the data from a variety of methods.
 
-        Args:
-            method (str): The differentiation method.
-            x (str): The x data column.
-            y (str): The y data column.
-            *args: Additional arguments.
-            **kwargs: Additional keyword arguments.
+    #     Args:
+    #         method (str): The differentiation method.
+    #         x (str): The x data column.
+    #         y (str): The y data column.
+    #         *args: Additional arguments.
+    #         **kwargs: Additional keyword arguments.
 
-        Returns:
-            Result: The result object from the gradient method.
-        """
-        return differentiation.gradient(method, self, x, y, *args, **kwargs)
+    #     Returns:
+    #         Result: The result object from the gradient method.
+    #     """
+    #     differentiation = Differentiation(rawdata=self)
+    #     if method == "LEAN":
+    #         return differentiation.differentiate_LEAN(x, y, *args, **kwargs)
+    #     elif method == "Finite Difference":
+    #         return differentiation.differentiate_FD(x, y, *args, **kwargs)
+    #     else:
+    #         raise ValueError("Invalid differentiation method.")

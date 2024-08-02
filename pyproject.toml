@@ -25,6 +25,7 @@ dependencies = [
     "PyYAML", 
     "nbformat", 
     "ordered-set",
+    "pydantic",
 ]
 
 [project.optional-dependencies]
@@ -47,6 +48,7 @@ dev = [
     "sphinxcontrib-bibtex",
     "sphinx-design",
     "pydata-sphinx-theme",
+    "nbsphinx"
 ]
 
 [tool.mypy]
