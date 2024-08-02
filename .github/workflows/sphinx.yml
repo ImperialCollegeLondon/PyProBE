@@ -23,6 +23,7 @@ jobs:
         pip install -U pip
         pip install -r requirements-dev.txt
         pip install ipykernel
+        sudo apt-get install pandoc
     
     - name: Run sphinx-apidoc
       run: |
