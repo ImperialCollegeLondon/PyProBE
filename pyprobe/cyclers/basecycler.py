@@ -151,6 +151,16 @@ class BaseCycler(BaseModel):
             "Current [A]": self.current,
             "Voltage [V]": self.voltage,
             "Capacity [Ah]": self.capacity,
+        }
+
+    @property
+    def optional_columns(self) -> Dict[str, pl.Expr]:
+        """The optional columns for the cycler data.
+
+        Returns:
+            Dict[str, pl.Expr]: A dictionary of the optional columns.
+        """
+        return {
             "Temperature [C]": self.temperature,
         }
 
@@ -161,7 +171,23 @@ class BaseCycler(BaseModel):
         Returns:
             pl.DataFrame: The DataFrame.
         """
-        return self._imported_dataframe.select(list(self.required_columns.values()))
+        all_columns_df = self._imported_dataframe.select(
+            list(self.required_columns.values())
+        )
+
+        optional_columns_dfs: List[pl.LazyFrame | pl.DataFrame] = []
+        for column in self.optional_columns.keys():
+            try:
+                all_columns_df = pl.concat(
+                    [
+                        all_columns_df,
+                        self._imported_dataframe.select(self.optional_columns[column]),
+                    ],
+                    how="horizontal",
+                )
+            except pl.exceptions.ColumnNotFoundError:
+                all_columns_df = all_columns_df.with_columns(pl.lit(None).alias(column))
+        return pl.concat([all_columns_df] + optional_columns_dfs, how="horizontal")
 
     @property
     def date(self) -> pl.Expr:
