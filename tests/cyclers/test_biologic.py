@@ -62,6 +62,7 @@ def test_read_and_process(benchmark, biologic_cycler):
         "Current [A]",
         "Voltage [V]",
         "Capacity [Ah]",
+        "Temperature [C]",
     ]
     assert set(pyprobe_dataframe.columns) == set(expected_columns)
     pyprobe_dataframe = pyprobe_dataframe.with_columns(
@@ -99,6 +100,7 @@ def test_process_dataframe(monkeypatch):
             "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
             "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
+            "Temperature/�C": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
         }
     )
 

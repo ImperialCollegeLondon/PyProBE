@@ -17,6 +17,7 @@ class Units:
         "Ah": "Capacity",
         "A.h": "Capacity",
         "s": "Time",
+        "C": "Temperature",
     }
 
     def __init__(
@@ -47,6 +48,7 @@ class Units:
         Returns:
             Tuple[Optional[str], str]: The prefix and default unit.
         """
+        unit = re.sub(r"[^a-zA-Z]", "", unit)  # Remove non-alphabetic characters
         if unit in self.time_unit_dict.keys():
             return None, "s"
         if unit[0] in self.prefix_dict:

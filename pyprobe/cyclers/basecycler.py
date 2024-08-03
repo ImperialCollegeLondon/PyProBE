@@ -151,6 +151,7 @@ class BaseCycler(BaseModel):
             "Current [A]": self.current,
             "Voltage [V]": self.voltage,
             "Capacity [Ah]": self.capacity,
+            "Temperature [C]": self.temperature,
         }
 
     @property
@@ -301,6 +302,23 @@ class BaseCycler(BaseModel):
             )
         else:
             return self.capacity_from_ch_dch
+
+    @property
+    def temperature(self) -> pl.Expr:
+        """Identify and format the temperature column.
+
+        Returns:
+            pl.Expr: A polars expression for the temperature column.
+        """
+        return (
+            self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Temperature"],
+                self.column_name_pattern,
+            )
+            .to_default_name_and_unit()
+            .cast(pl.Float64)
+        )
 
     @property
     def cycle(self) -> pl.Expr:
