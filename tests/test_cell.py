@@ -128,3 +128,14 @@ def test_process_readme(cell_instance, titles_fixture, benchmark):
         [4, 5, 6, 7],
         [8, 9, 10, 11],
     ]
+
+    # Test with defined step numbers
+    titles, steps = cell_instance._process_readme(
+        "tests/sample_data/neware/README_step_numbers.yaml"
+    )
+    assert titles == titles_fixture
+    assert steps == [
+        [1, 2, 3],
+        [4, 5, 6, 7],
+        [9, 10, 11, 12],
+    ]

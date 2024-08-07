@@ -351,6 +351,8 @@ class Cell(BaseModel):
             elif "Total Steps" in readme_dict[experiment]:
                 step_list = list(range(readme_dict[experiment]["Total Steps"]))
                 step_list = [x + max_step + 1 for x in step_list]
+            elif isinstance(readme_dict[experiment]["Steps"], dict):
+                step_list = list(readme_dict[experiment]["Steps"].keys())
             else:
                 step_list = list(range(len(readme_dict[experiment]["Steps"])))
                 step_list = [x + max_step + 1 for x in step_list]
