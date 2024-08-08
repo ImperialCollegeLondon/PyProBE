@@ -210,7 +210,6 @@ def test_readme_model():
         },
     }
     model = ReadmeModel(readme_dict=exp_dict)
-    model.get_all()
 
     assert model.readme_type == ["explicit", "implicit", "total"]
     assert model.step_numbers == [

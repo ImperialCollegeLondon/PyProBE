@@ -345,7 +345,6 @@ class Cell(BaseModel):
 
         titles = list(readme_dict.keys())
         readme = ReadmeModel(readme_dict=readme_dict)
-        readme.get_all()
         steps = readme.step_numbers
         pybamm_experiment = readme.pybamm_experiment
         return titles, steps, pybamm_experiment
@@ -371,16 +370,16 @@ class ReadmeModel(BaseModel):
 
         arbitrary_types_allowed = True
 
-    @model_validator(mode="after")
-    def _check_readme_dict(self) -> "ReadmeModel":
-        """Validate the `readme_dict` field and perform additional computations.
-
-        Checks that the `readme_dict` field is a dictionary with the correct structure.
-        """
-        self.number_of_experiments = len(self.readme_dict)
-        for experiment in self.readme_dict:
-            if "Steps" in self.readme_dict[experiment]:
-                steps = self.readme_dict[experiment]["Steps"]
+    @model_validator(mode="before")
+    @classmethod
+    def _check_readme_dict(cls, data: Any) -> "ReadmeModel":
+        """Validate the structure of the README.yaml file."""
+        readme_dict = data["readme_dict"]
+        data["readme_type"] = []
+        cls.number_of_experiments = len(readme_dict)
+        for experiment in readme_dict:
+            if "Steps" in readme_dict[experiment]:
+                steps = readme_dict[experiment]["Steps"]
                 if isinstance(steps, dict):
                     if not all(
                         isinstance(k, int) and isinstance(v, str)
@@ -392,11 +391,11 @@ class ReadmeModel(BaseModel):
                         )
                     cycle_keys = [
                         key
-                        for key in self.readme_dict[experiment].keys()
+                        for key in readme_dict[experiment].keys()
                         if "cycle" in key.lower()
                     ]
                     for cycle in cycle_keys:
-                        cycle_dict = self.readme_dict[experiment][cycle]
+                        cycle_dict = readme_dict[experiment][cycle]
                         if not all(
                             isinstance(k, str) and isinstance(v, int)
                             for k, v in cycle_dict.items()
@@ -405,16 +404,16 @@ class ReadmeModel(BaseModel):
                                 f"{cycle} must be a dictionary with keys of type str"
                                 " and values of type int"
                             )
-                    self.readme_type.append("explicit")
+                    data["readme_type"].append("explicit")
                 elif isinstance(steps, list):
                     if not all(isinstance(step, str) for step in steps):
                         raise TypeError("The 'Steps' field must be a list of strings")
-                    self.readme_type.append("implicit")
-            elif "Total Steps" in self.readme_dict[experiment]:
-                self.readme_type.append("total")
-        return self
+                    data["readme_type"].append("implicit")
+            elif "Total Steps" in readme_dict[experiment]:
+                data["readme_type"].append("total")
+        return data
 
-    def get_all(self) -> None:
+    def model_post_init(self, __context: Any) -> None:
         """Get all the attributes of the class."""
         self.step_numbers = self.get_step_numbers()
         self.step_indices = self.get_step_indices()
