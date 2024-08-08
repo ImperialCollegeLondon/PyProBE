@@ -2,6 +2,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
+from pybamm import Experiment as PybammExperiment
 from pydantic import Field
 
 from pyprobe.rawdata import RawData, default_column_definitions
@@ -235,6 +236,7 @@ class Procedure(RawData):
 
     titles: List[str]
     steps_idx: List[List[int]]
+    pybamm_experiment: Optional[PybammExperiment]
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Union[str, int, float]]

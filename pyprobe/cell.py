@@ -5,12 +5,13 @@ import platform
 import subprocess
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import distinctipy
 import polars as pl
+import pybamm
 import yaml
-from pydantic import BaseModel, Field, field_validator, validate_call
+from pydantic import BaseModel, Field, field_validator, model_validator, validate_call
 
 from pyprobe.cyclers import biologic, neware
 from pyprobe.filters import Procedure
@@ -191,6 +192,7 @@ class Cell(BaseModel):
         (
             titles,
             steps_idx,
+            pybamm_experiment,
         ) = self._process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
@@ -198,6 +200,7 @@ class Cell(BaseModel):
             steps_idx=steps_idx,
             base_dataframe=base_dataframe,
             info=self.info,
+            pybamm_experiment=pybamm_experiment,
         )
 
     @staticmethod
@@ -322,41 +325,252 @@ class Cell(BaseModel):
                 stderr=subprocess.STDOUT,
             )
 
-    @staticmethod
     def _process_readme(
+        cls,
         readme_path: str,
-    ) -> tuple[List[str], List[List[int]]]:
+    ) -> Tuple[List[str], List[List[int]], Optional[pybamm.Experiment]]:
         """Function to process the README.yaml file.
 
         Args:
             readme_path (str): The path to the README.yaml file.
 
         Returns:
-            Tuple[List[str], List[int], List[int]]:
-                - dict: The titles of the experiments inside a procedure.
-                    Format {title: experiment type}.
-                - list: The cycle indices inside the procedure.
-                - list: The step indices inside the procedure.
+            Tuple[List[str], List[List[int]], Optional[pybamm.Experiment]]
+                - List[str]: The list of titles from the README.yaml file.
+                - List[List[int]]: The list of steps from the README.yaml file.
+                - Optional[pybamm.Experiment]: The PyBaMM experiment object.
         """
         with open(readme_path, "r") as file:
             readme_dict = yaml.safe_load(file)
 
         titles = list(readme_dict.keys())
+        readme = ReadmeModel(readme_dict=readme_dict)
+        readme.get_all()
+        steps = readme.step_numbers
+        pybamm_experiment = readme.pybamm_experiment
+        return titles, steps, pybamm_experiment
 
+
+class ReadmeModel(BaseModel):
+    """A class for processing the README.yaml file."""
+
+    readme_dict: Dict[str, Any]
+    readme_type: List[str] = Field(default_factory=list)
+    number_of_experiments: int = Field(default_factory=int)
+
+    step_numbers: List[List[int]] = Field(default_factory=list)
+    step_indices: List[List[int]] = Field(default_factory=list)
+    step_descriptions: List[List[str]] = Field(default_factory=list)
+    cycle_details: List[List[Tuple[int, int, int]]] = Field(default_factory=list)
+    pybamm_experiment_descriptions: List[Tuple[str, ...]] = Field(default_factory=list)
+    pybamm_experiment_list: List[pybamm.Experiment] = Field(default_factory=list)
+    pybamm_experiment: Optional[pybamm.Experiment] = Field(default=None)
+
+    class Config:
+        """Pydantic configuration settings."""
+
+        arbitrary_types_allowed = True
+
+    @model_validator(mode="after")
+    def _check_readme_dict(self) -> "ReadmeModel":
+        """Validate the `readme_dict` field and perform additional computations.
+
+        Checks that the `readme_dict` field is a dictionary with the correct structure.
+        """
+        self.number_of_experiments = len(self.readme_dict)
+        for experiment in self.readme_dict:
+            if "Steps" in self.readme_dict[experiment]:
+                steps = self.readme_dict[experiment]["Steps"]
+                if isinstance(steps, dict):
+                    if not all(
+                        isinstance(k, int) and isinstance(v, str)
+                        for k, v in steps.items()
+                    ):
+                        raise TypeError(
+                            "The 'Steps' field must be a dictionary with keys of type"
+                            " int and values of type str"
+                        )
+                    cycle_keys = [
+                        key
+                        for key in self.readme_dict[experiment].keys()
+                        if "cycle" in key.lower()
+                    ]
+                    for cycle in cycle_keys:
+                        cycle_dict = self.readme_dict[experiment][cycle]
+                        if not all(
+                            isinstance(k, str) and isinstance(v, int)
+                            for k, v in cycle_dict.items()
+                        ):
+                            raise TypeError(
+                                f"{cycle} must be a dictionary with keys of type str"
+                                " and values of type int"
+                            )
+                    self.readme_type.append("explicit")
+                elif isinstance(steps, list):
+                    if not all(isinstance(step, str) for step in steps):
+                        raise TypeError("The 'Steps' field must be a list of strings")
+                    self.readme_type.append("implicit")
+            elif "Total Steps" in self.readme_dict[experiment]:
+                self.readme_type.append("total")
+        return self
+
+    def get_all(self) -> None:
+        """Get all the attributes of the class."""
+        self.step_numbers = self.get_step_numbers()
+        self.step_indices = self.get_step_indices()
+        self.step_descriptions = self.get_step_descriptions()
+        self.cycle_details = self.get_cycle_details()
+        self.pybamm_experiment_descriptions = self.get_pybamm_experiment_descriptions()
+        self.pybamm_experiment_list = self.get_pybamm_experiment_list()
+        self.pybamm_experiment = self.get_pybamm_experiment()
+
+    def get_step_numbers(self) -> List[List[int]]:
+        """Get the step numbers from the README.yaml file."""
         max_step = 0
-        steps: List[List[int]] = []
-        for experiment in readme_dict:
-            if "Step Numbers" in readme_dict[experiment]:
-                step_list = readme_dict[experiment]["Step Numbers"]
-            elif "Total Steps" in readme_dict[experiment]:
-                step_list = list(range(readme_dict[experiment]["Total Steps"]))
-                step_list = [x + max_step + 1 for x in step_list]
-            elif isinstance(readme_dict[experiment]["Steps"], dict):
-                step_list = list(readme_dict[experiment]["Steps"].keys())
+        all_steps = []
+        for experiment, readme_format in zip(self.readme_dict, self.readme_type):
+            if readme_format == "explicit":
+                exp_steps = list(self.readme_dict[experiment]["Steps"].keys())
+            elif readme_format == "total":
+                exp_steps = list(range(self.readme_dict[experiment]["Total Steps"]))
+                exp_steps = [x + max_step + 1 for x in exp_steps]
             else:
-                step_list = list(range(len(readme_dict[experiment]["Steps"])))
-                step_list = [x + max_step + 1 for x in step_list]
-            max_step = step_list[-1]
-            steps.append(step_list)
+                exp_steps = list(range(len(self.readme_dict[experiment]["Steps"])))
+                exp_steps = [x + max_step + 1 for x in exp_steps]
+            max_step = exp_steps[-1]
+            all_steps.append(exp_steps)
+        return all_steps
 
-        return titles, steps
+    def get_step_indices(self) -> List[List[int]]:
+        """Get the step indices from the README.yaml file."""
+        step_indices = []
+        for exp_step_numbers in self.step_numbers:
+            step_indices.append(list(range(len(exp_step_numbers))))
+        return step_indices
+
+    def get_step_descriptions(self) -> List[List[str]]:
+        """Get the step descriptions from the README.yaml file."""
+        all_descriptions = []
+        for experiment, readme_format in zip(self.readme_dict, self.readme_type):
+            if readme_format == "explicit":
+                exp_step_descriptions = list(
+                    self.readme_dict[experiment]["Steps"].values()
+                )
+            elif readme_format == "implicit":
+                exp_step_descriptions = self.readme_dict[experiment]["Steps"]
+            else:
+                exp_step_descriptions = []
+            all_descriptions.append(exp_step_descriptions)
+        return all_descriptions
+
+    def get_cycle_details(self) -> List[List[Tuple[int, int, int]]]:
+        """Get the cycle details from the README.yaml file."""
+        cycles = []
+        for experiment, readme_format, step_numbers in zip(
+            self.readme_dict, self.readme_type, self.step_numbers
+        ):
+            exp_cycles = []
+            if readme_format == "explicit":
+                cycle_keys = [
+                    key
+                    for key in self.readme_dict[experiment].keys()
+                    if "cycle" in key.lower()
+                ]
+                for cycle in cycle_keys:
+                    cycle_dict = self.readme_dict[experiment][cycle]
+                    start = cycle_dict["Start"]
+                    end = cycle_dict["End"]
+                    count = cycle_dict["Count"]
+                    exp_cycles.append(
+                        (step_numbers.index(start), step_numbers.index(end), count)
+                    )
+            cycles.append(exp_cycles)
+        return cycles
+
+    def get_pybamm_experiment_descriptions(self) -> List[Tuple[str, ...]]:
+        """Get the PyBaMM experiment objects from the README.yaml file."""
+        all_descriptions = []
+        for step_descriptions, step_indices, step_numbers, cycle_details in zip(
+            self.step_descriptions,
+            self.step_indices,
+            self.step_numbers,
+            self.cycle_details,
+        ):
+            final_descriptions = []
+            if len(step_descriptions) > 0:
+                expanded_indices = self._expand_cycles(step_indices, cycle_details)
+                expanded_descriptions = [step_descriptions[i] for i in expanded_indices]
+                # split any descriptions seperated by commas
+                for desciption in expanded_descriptions:
+                    line = desciption.split(",")
+                    for item in line:
+                        final_descriptions.append(item.strip())
+            all_descriptions.append(tuple(final_descriptions))
+        return all_descriptions
+
+    def get_pybamm_experiment_list(self) -> List[pybamm.Experiment]:
+        """Get the PyBaMM experiment objects from the README.yaml file."""
+        pybamm_experiments = []
+        for experiment, descriptions in zip(
+            self.readme_dict, self.pybamm_experiment_descriptions
+        ):
+            if len(descriptions) > 0:
+                try:
+                    pybamm_experiments.append(pybamm.Experiment(descriptions))
+                except Exception as e:
+                    warnings.warn(
+                        f"PyBaMM experiment could not be created for experiment:"
+                        f" {experiment}. {e}"
+                    )
+                    pybamm_experiments.append(None)
+            else:
+                pybamm_experiments.append(None)
+                warnings.warn(
+                    f"No valid step descriptions found in README.yaml for experiment:"
+                    f" {experiment}"
+                )
+        return pybamm_experiments
+
+    def get_pybamm_experiment(self) -> Optional[pybamm.Experiment]:
+        """Get the PyBaMM experiment object from the README.yaml file."""
+        if any(exp is None for exp in self.pybamm_experiment_list):
+            warnings.warn(
+                "Some experiments do not have valid step descriptions."
+                " Unable to create PyBaMM experiment."
+            )
+            return None
+        else:
+            all_descriptions = [exp for exp in self.pybamm_experiment_descriptions]
+            return pybamm.Experiment(all_descriptions)
+
+    @staticmethod
+    def _expand_cycles(
+        indices: List[int], cycles: List[Tuple[int, int, int]]
+    ) -> List[int]:
+        if len(cycles) == 0:
+            return indices
+        repeated_list = indices
+        for cycle in cycles:
+            # cycle = (start, end, repeats)
+            start = cycle[0]
+            end = cycle[1] + 1
+            repeats = cycle[2]
+
+            # get sublist
+            sublist = indices[start:end]
+
+            # repeat sublist
+            repeated_sublist = sublist * repeats
+
+            # insert repeated sublist into repeated_list
+            result: List[int] = []
+            i = 0
+            while i < len(repeated_list):
+                if repeated_list[i : i + len(sublist)] == sublist:
+                    result.extend(repeated_sublist)
+                    i += len(sublist)
+                else:
+                    result.append(repeated_list[i])
+                    i += 1
+            repeated_list = result
+        return result
