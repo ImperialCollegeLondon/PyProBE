@@ -28,7 +28,7 @@ class Cell(BaseModel):
             run on the cell. Defaults to an empty dictionary.
     """
 
-    info: Dict[str, str | int | float]
+    info: Dict[str, Optional[str | int | float]]
     """Dictionary containing information about the cell.
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
@@ -38,8 +38,8 @@ class Cell(BaseModel):
 
     @field_validator("info")
     def _check_and_set_name(
-        cls, info: Dict[str, str | int | float]
-    ) -> Dict[str, str | int | float]:
+        cls, info: Dict[str, Optional[str | int | float]]
+    ) -> Dict[str, Optional[str | int | float]]:
         """Validate the `info` field.
 
         Checks that a `Name` field is present in the `info` dictionary, if not it is
@@ -118,7 +118,7 @@ class Cell(BaseModel):
         folder_path: str,
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
-        filename_args: Optional[List[str]] = None,
+        filename_inputs: Optional[List[str]] = None,
     ) -> None:
         """Convert cycler file into PyProBE format.
 
@@ -133,15 +133,15 @@ class Cell(BaseModel):
             output_filename (str | function):
                 A filename string or a function to generate the file name for PyProBE
                 data.
-            filename_args (list):
+            filename_inputs (list):
                 The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
         """
         input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_args
+            folder_path, input_filename, filename_inputs
         )
         output_data_path = self._get_data_paths(
-            folder_path, output_filename, filename_args
+            folder_path, output_filename, filename_inputs
         )
         output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
@@ -202,7 +202,7 @@ class Cell(BaseModel):
 
     @staticmethod
     def _get_filename(
-        info: Dict[str, str | int | float],
+        info: Dict[str, Optional[str | int | float]],
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
     ) -> str:
