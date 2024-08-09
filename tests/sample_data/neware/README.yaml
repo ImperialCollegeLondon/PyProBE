@@ -1,7 +1,8 @@
-Initial Charge:
-  Steps: 
-    1: Rest for 4 hours
-    2: Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A
+Initial Charge: # Experiment title
+  Steps: # Steps list, descriptions are PyBaMM experiment strings
+    1: Rest for 4 hours # Start with index 1
+    # CC-CV charge provided as two seperate PyBaMM experiment strings
+    2: Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A 
     3: Rest for 2 hours
 Break-in Cycles:
   Steps: 
@@ -9,12 +10,14 @@ Break-in Cycles:
     5: Rest for 2 hours
     6: Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A
     7: Rest for 2 hours
-  Cycle:
-    Start: 4
-    End: 7
+  Cycle: # Cycle instruction, contains start, end and count
+    Start: 4 # loop starts with step 4 (inclusive)
+    End: 7 # loop ends with step 7 (inclusive)
     Count: 5
 Discharge Pulses:
   Steps: 
+    # Neware considers cycling (in previous experiment) to be its own step,
+    # so Step 8 is skipped
     9: Rest for 10 seconds
     10: Discharge at 20 mA for 0.2 hours or until 3 V
     11: Rest for 30 minutes
