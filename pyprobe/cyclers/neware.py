@@ -32,14 +32,18 @@ class Neware(BaseCycler):
         Returns:
             pl.Expr: A polars expression for the time column.
         """
+        if (
+            self._imported_dataframe.dtypes[
+                self._imported_dataframe.columns.index("Date")
+            ]
+            != pl.Datetime
+        ):
+            date = pl.col("Date").str.to_datetime().alias("Date")
+        else:
+            date = pl.col("Date")
+
         return (
-            (
-                pl.col(self.column_dict["Date"])
-                .diff()
-                .dt.total_microseconds()
-                .cum_sum()
-                / 1e6
-            )
+            (date.diff().dt.total_microseconds().cum_sum() / 1e6)
             .fill_null(strategy="zero")
             .alias("Time [s]")
         )

@@ -1,5 +1,5 @@
 """A module for the RawData class."""
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import polars as pl
 from pydantic import Field, field_validator
@@ -31,7 +31,7 @@ class RawData(Result):
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Union[str, int, float]]
+    info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )

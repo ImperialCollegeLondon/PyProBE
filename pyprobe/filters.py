@@ -2,6 +2,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
+from pybamm import Experiment as PybammExperiment
 from pydantic import Field
 
 from pyprobe.rawdata import RawData, default_column_definitions
@@ -225,7 +226,7 @@ class Procedure(RawData):
 
     Args:
         base_dataframe (pl.LazyFrame | pl.DataFrame): The data for the procedure.
-        info (Dict[str, str | int | float]): A dict containing test info.
+        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
         titles (List[str]): A dict containing the titles of the experiments.
@@ -235,9 +236,11 @@ class Procedure(RawData):
 
     titles: List[str]
     steps_idx: List[List[int]]
+    pybamm_experiment: Optional[PybammExperiment]
+    pybamm_experiment_list: List[Optional[PybammExperiment]]
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Union[str, int, float]]
+    info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
@@ -322,13 +325,13 @@ class Experiment(RawData):
 
     Args:
         dataframe (pl.LazyFrame | pl.DataFrame): The data for the experiment.
-        info (Dict[str, str | int | float]): A dict containing test info.
+        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Union[str, int, float]]
+    info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
@@ -362,13 +365,13 @@ class Cycle(RawData):
 
     Args:
         dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
-        info (Dict[str, str | int | float]): A dict containing test info.
+        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Union[str, int, float]]
+    info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
@@ -401,13 +404,13 @@ class Step(RawData):
 
     Args:
         dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
-        info (Dict[str, str | int | float]): A dict containing test info.
+        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
         column_definitions (Dict[str, str], optional):
             A dict containing column definitions. Defaults to None.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Union[str, int, float]]
+    info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )

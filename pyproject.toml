@@ -26,7 +26,8 @@ dependencies = [
     "ordered-set",
     "pydantic",
     "kaleido",
-    "IPython"
+    "IPython",
+    "pybamm"
 ]
 
 [project.optional-dependencies]

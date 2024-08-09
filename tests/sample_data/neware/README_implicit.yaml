@@ -1,0 +1,17 @@
+Initial Charge:
+  Steps: 
+    - "Rest for 4 hours"
+    - "Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A"
+    - "Rest for 2 hours"
+Break-in Cycles:
+  Steps: 
+    - "Discharge at constant current of 4mA until voltage reaches 3V"
+    - "Rest for 2 hours"
+    - "Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A"
+    - "Rest for 2 hours"
+Discharge Pulses:
+  Steps: 
+    - "Rest for 10 seconds"
+    - "Discharge at constant current of 20mA until 4mAh has passed or voltage reaches 3V"
+    - "Rest for 30 minutes"
+    - "Rest for 1.5 hours"

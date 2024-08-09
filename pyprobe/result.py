@@ -30,7 +30,7 @@ class Result(BaseModel):
 
     base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
     """The data as a polars DataFrame or LazyFrame."""
-    info: Dict[str, Union[str, int, float]]
+    info: Dict[str, Optional[str | int | float]]
     """A dictionary containing test info."""
     column_definitions: Dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
@@ -243,7 +243,7 @@ class Result(BaseModel):
                 | Dict[str, NDArray[np.float64] | List[float]]
             ]
         ],
-        info: Dict[str, str | int | float],
+        info: Dict[str, Optional[str | int | float]],
     ) -> "Result":
         """Build a Result object from a list of dataframes.
 
@@ -252,7 +252,7 @@ class Result(BaseModel):
                 The data to include in the new result object.
                 The first index indicates the cycle and the second index indicates the
                 step.
-            info (Dict[str, str | int | float]): A dict containing test info.
+            info (Dict[str, Optional[str | int | float]]): A dict containing test info.
 
         Returns:
             Result: A new result object with the specified data.

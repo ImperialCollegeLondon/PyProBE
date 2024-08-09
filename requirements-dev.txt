@@ -12,6 +12,8 @@ altair==5.3.0
     # via streamlit
 annotated-types==0.7.0
     # via pydantic
+anytree==2.12.1
+    # via pybamm
 asttokens==2.4.1
     # via stack-data
 attrs==23.2.0
@@ -37,6 +39,8 @@ build==1.2.1
     # via pip-tools
 cachetools==5.3.3
     # via streamlit
+casadi==3.6.6
+    # via pybamm
 certifi==2024.2.2
     # via requests
 cfgv==3.4.0
@@ -153,6 +157,8 @@ mdurl==0.1.2
     # via markdown-it-py
 mistune==3.0.2
     # via nbconvert
+mpmath==1.3.0
+    # via sympy
 mypy==1.9.0
     # via
     #   PyProBE (pyproject.toml)
@@ -178,15 +184,18 @@ numpy==1.26.4
     # via
     #   PyProBE (pyproject.toml)
     #   altair
+    #   casadi
     #   contourpy
     #   distinctipy
     #   matplotlib
     #   pandas
     #   pyarrow
+    #   pybamm
     #   pydeck
     #   scikit-learn
     #   scipy
     #   streamlit
+    #   xarray
 ordered-set==4.1.0
     # via PyProBE (pyproject.toml)
 packaging==24.0
@@ -197,15 +206,19 @@ packaging==24.0
     #   matplotlib
     #   nbconvert
     #   plotly
+    #   pooch
     #   pydata-sphinx-theme
     #   pytest
     #   sphinx
     #   streamlit
+    #   xarray
 pandas==2.2.2
     # via
     #   PyProBE (pyproject.toml)
     #   altair
+    #   pybamm
     #   streamlit
+    #   xarray
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
@@ -224,6 +237,7 @@ platformdirs==4.2.0
     # via
     #   black
     #   jupyter-core
+    #   pooch
     #   virtualenv
 plotly==5.20.0
     # via PyProBE (pyproject.toml)
@@ -231,6 +245,8 @@ pluggy==1.4.0
     # via pytest
 polars==0.20.19
     # via PyProBE (pyproject.toml)
+pooch==1.8.2
+    # via pybamm
 pre-commit==3.7.0
     # via PyProBE (pyproject.toml)
 prompt-toolkit==3.0.47
@@ -247,6 +263,8 @@ pyarrow==15.0.2
     # via
     #   fastexcel
     #   streamlit
+pybamm==24.5
+    # via PyProBE (pyproject.toml)
 pybtex==0.24.0
     # via
     #   pybtex-docutils
@@ -317,6 +335,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.0
     # via
+    #   pooch
     #   sphinx
     #   streamlit
 rich==13.7.1
@@ -328,9 +347,12 @@ rpds-py==0.18.1
 scikit-learn==1.5.0
     # via PyProBE (pyproject.toml)
 scipy==1.13.0
-    # via scikit-learn
+    # via
+    #   pybamm
+    #   scikit-learn
 six==1.16.0
     # via
+    #   anytree
     #   asttokens
     #   bleach
     #   pybtex
@@ -373,6 +395,8 @@ stack-data==0.6.3
     # via ipython
 streamlit==1.34.0
     # via PyProBE (pyproject.toml)
+sympy==1.13.1
+    # via pybamm
 tenacity==8.2.3
     # via
     #   plotly
@@ -404,6 +428,7 @@ types-pyyaml==6.0.12.20240311
 typing-extensions==4.11.0
     # via
     #   mypy
+    #   pybamm
     #   pydantic
     #   pydantic-core
     #   pydata-sphinx-theme
@@ -422,6 +447,8 @@ webencodings==0.5.1
     #   tinycss2
 wheel==0.43.0
     # via pip-tools
+xarray==2024.7.0
+    # via pybamm
 xlsx2csv==0.8.2
     # via PyProBE (pyproject.toml)
 
