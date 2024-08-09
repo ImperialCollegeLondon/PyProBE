@@ -19,40 +19,34 @@ The :code:`README.yaml` contains the following information:
 * Steps
    This is a list of strings that describe the each step of the experiment. The strings
    should follow `PyBaMM's Experiment string <https://docs.pybamm.org/en/stable/source/api/experiment/experiment_steps.html#pybamm.step.string>`_ 
-   syntax.
-* Repeat
-   This is the number of times the experiment is repeated. This is useful for cycling
-   experiments, where the same steps are repeated multiple times.
-   Repeat information should be included in the Steps list if the cycler considers
-   the repeat instruction as a seperate step. For example, in the Neware procedure shown
-   below, the cycle instruction is step 8.
+   syntax. There are some instances when two PyBaMM experiment strings must be included
+   in the same step. An example is a CC-CV hold, if the cycler allows you to define
+   this in a single step. In this instance the step description can be written as two
+   PyBaMM Experiment strings separated by a comma, one for the CC part and one for the
+   CV part.
+
+   Each step should be given a step number. For a single README file, this should count
+   upwards from 1. These numbers should increase in line with the real step numbers 
+   defined by the cycler, i.e. Neware cyclers treat a repeat instruction as its own
+   step. Therefore, where there is a repeat instruction in the cycler procedure, the 
+   corresponding step number should be skipped.
+
+* Cycle*:
+   This is a section that provides details on repeats of the provided steps. PyProBE 
+   looks for any title containing the string `"cycle"`, so you can choose any name that 
+   includes this or add multiple cycles with different names.
+
+   Cycle details must include the keywords "Start", "End" and "Count". These identify
+   the first and last steps of the cycle (inclusive) and the number of times it is 
+   repeated.
+
+   Within a single experiment there is no limit on the number of cycles you can define.
+   If cycles are nested, the outer cycle must be listed *before* the inner cycle.
    
 The following is an example of a :code:`README.yaml` file:
 
-.. code-block:: yaml
-
-   # This is the name of the experiment
-   Initial Charge:
-      # The step numbers in the experiment
-      Steps: 
-         # Description of each step, using PyBaMM Experiment syntax
-         - Rest for 4 hours
-         - Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A
-         - Rest for 2 hours
-   Break-in Cycles:
-      Steps: 
-         - Discharge at constant current of 4mA until voltage reaches 3V
-         - Rest for 2 hours
-         - Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A
-         - Rest for 2 hours
-         - Repeat: 5 # the number of times the experiment is repeated
-   Discharge Pulses:
-      Steps: 
-         - Rest for 10 seconds
-         - Discharge at constant current of 20mA until 4mAh has passed or voltage reaches 3V
-         - Rest for 30 minutes
-         - Rest for 1.5 hours
-         - Repeat: 10
+.. literalinclude:: ../../../tests/sample_data/neware/README.yaml
+    :language: yaml
 
 Which corresponds to the following Neware procedure file:
 
@@ -72,8 +66,11 @@ just a single number for the total number of steps in the experiment:
 .. code-block:: yaml
 
    # This is the name of the experiment
-   Initial Charge:
+   Break-in Cycles:
       # The total number of steps in the experiment
-      Total Steps: 3
+      Total Steps: 5
+
+The total steps must include any cycle instruction steps. This is why 5 is provided in 
+the example above, as `Break-in Cycles` contains 4 listed steps and a cycling step.
 
 .. footbibliography::

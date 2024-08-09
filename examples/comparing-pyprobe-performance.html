@@ -518,7 +518,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Pandas is on average 1.81 times slower than PyProBE at completion of the full query.
+Pandas is on average 1.76 times slower than PyProBE at completion of the full query.
 </pre></div></div>
 </div>
 <p>Much of the performance behind PyProBE is careful selection of the data file format. PyProBE uses the .parquet file format due to its exceptional speed. The results above show pandas reading from the parquet format. The below plot illustrates its performance benefit:</p>
@@ -548,7 +548,7 @@ Pandas is on average 1.81 times slower than PyProBE at completion of the full qu
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Reading from .parquet is on average 9.69 times faster than reading from .csv
+Reading from .parquet is on average 9.46 times faster than reading from .csv
 </pre></div></div>
 </div>
 <p>The Polars Lazy approach is best demonstrated by plotting the optimized graph:</p>

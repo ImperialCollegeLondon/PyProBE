@@ -387,46 +387,64 @@ procedure into experiments that can be analysed separately.</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
+<li><dl>
 <dt>Steps</dt><dd><p>This is a list of strings that describe the each step of the experiment. The strings
 should follow <a class="reference external" href="https://docs.pybamm.org/en/stable/source/api/experiment/experiment_steps.html#pybamm.step.string">PyBaMM’s Experiment string</a>
-syntax.</p>
+syntax. There are some instances when two PyBaMM experiment strings must be included
+in the same step. An example is a CC-CV hold, if the cycler allows you to define
+this in a single step. In this instance the step description can be written as two
+PyBaMM Experiment strings separated by a comma, one for the CC part and one for the
+CV part.</p>
+<p>Each step should be given a step number. For a single README file, this should count
+upwards from 1. These numbers should increase in line with the real step numbers
+defined by the cycler, i.e. Neware cyclers treat a repeat instruction as its own
+step. Therefore, where there is a repeat instruction in the cycler procedure, the
+corresponding step number should be skipped.</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt>Repeat</dt><dd><p>This is the number of times the experiment is repeated. This is useful for cycling
-experiments, where the same steps are repeated multiple times.
-Repeat information should be included in the Steps list if the cycler considers
-the repeat instruction as a seperate step. For example, in the Neware procedure shown
-below, the cycle instruction is step 8.</p>
+<li><dl>
+<dt>Cycle*:</dt><dd><p>This is a section that provides details on repeats of the provided steps. PyProBE
+looks for any title containing the string <cite>“cycle”</cite>, so you can choose any name that
+includes this or add multiple cycles with different names.</p>
+<p>Cycle details must include the keywords “Start”, “End” and “Count”. These identify
+the first and last steps of the cycle (inclusive) and the number of times it is
+repeated.</p>
+<p>Within a single experiment there is no limit on the number of cycles you can define.
+If cycles are nested, the outer cycle must be listed <em>before</em> the inner cycle.</p>
 </dd>
 </dl>
 </li>
 </ul>
 <p>The following is an example of a <code class="code docutils literal notranslate"><span class="pre">README.yaml</span></code> file:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is the name of the experiment</span>
-<span class="nt">Initial Charge</span><span class="p">:</span>
-<span class="w">   </span><span class="c1"># The step numbers in the experiment</span>
-<span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
-<span class="w">      </span><span class="c1"># Description of each step, using PyBaMM Experiment syntax</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 4 hours</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Initial Charge</span><span class="p">:</span><span class="w"> </span><span class="c1"># Experiment title</span>
+<span class="w">  </span><span class="nt">Steps</span><span class="p">:</span><span class="w"> </span><span class="c1"># Steps list, descriptions are PyBaMM experiment strings</span>
+<span class="w">    </span><span class="nt">1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 4 hours</span><span class="w"> </span><span class="c1"># Start with index 1</span>
+<span class="w">    </span><span class="c1"># CC-CV charge provided as two seperate PyBaMM experiment strings</span>
+<span class="w">    </span><span class="nt">2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">3</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
 <span class="nt">Break-in Cycles</span><span class="p">:</span>
-<span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at constant current of 4mA until voltage reaches 3V</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at constant current of 4mA and constant voltage of 4.2V until current drops to 0.04A</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"> </span><span class="c1"># the number of times the experiment is repeated</span>
+<span class="w">  </span><span class="nt">Steps</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">4</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at 4 mA until 3 V</span>
+<span class="w">    </span><span class="nt">5</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
+<span class="w">    </span><span class="nt">6</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A</span>
+<span class="w">    </span><span class="nt">7</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 2 hours</span>
+<span class="w">  </span><span class="nt">Cycle</span><span class="p">:</span><span class="w"> </span><span class="c1"># Cycle instruction, contains start, end and count</span>
+<span class="w">    </span><span class="nt">Start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w"> </span><span class="c1"># loop starts with step 4 (inclusive)</span>
+<span class="w">    </span><span class="nt">End</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span><span class="w"> </span><span class="c1"># loop ends with step 7 (inclusive)</span>
+<span class="w">    </span><span class="nt">Count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
 <span class="nt">Discharge Pulses</span><span class="p">:</span>
-<span class="w">   </span><span class="nt">Steps</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 10 seconds</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at constant current of 20mA until 4mAh has passed or voltage reaches 3V</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 30 minutes</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 1.5 hours</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Repeat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">  </span><span class="nt">Steps</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="c1"># Neware considers cycling (in previous experiment) to be its own step,</span>
+<span class="w">    </span><span class="c1"># so Step 8 is skipped</span>
+<span class="w">    </span><span class="nt">9</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 10 seconds</span>
+<span class="w">    </span><span class="nt">10</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Discharge at 20 mA for 0.2 hours or until 3 V</span>
+<span class="w">    </span><span class="nt">11</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 30 minutes</span>
+<span class="w">    </span><span class="nt">12</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Rest for 1.5 hours</span>
+<span class="w">  </span><span class="nt">Cycle</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">Start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">9</span>
+<span class="w">    </span><span class="nt">End</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span>
+<span class="w">    </span><span class="nt">Count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
 </pre></div>
 </div>
 <p>Which corresponds to the following Neware procedure file:</p>
@@ -441,11 +459,13 @@ your data in a human readable format.</p>
 can instead the <code class="code docutils literal notranslate"><span class="pre">Steps</span></code> list with <code class="code docutils literal notranslate"><span class="pre">Total</span> <span class="pre">Steps</span></code>, allowing you to provide
 just a single number for the total number of steps in the experiment:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is the name of the experiment</span>
-<span class="nt">Initial Charge</span><span class="p">:</span>
+<span class="nt">Break-in Cycles</span><span class="p">:</span>
 <span class="w">   </span><span class="c1"># The total number of steps in the experiment</span>
-<span class="w">   </span><span class="nt">Total Steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">   </span><span class="nt">Total Steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
 </pre></div>
 </div>
+<p>The total steps must include any cycle instruction steps. This is why 5 is provided in
+the example above, as <cite>Break-in Cycles</cite> contains 4 listed steps and a cycling step.</p>
 </section>
 </section>
 

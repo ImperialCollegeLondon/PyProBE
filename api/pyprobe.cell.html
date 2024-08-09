@@ -400,7 +400,7 @@ run on the cell. Defaults to an empty dictionary.</p></li>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.info">
-<span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.Cell.info" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.Cell.info" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing information about the cell.
 The dictionary must contain a ‘Name’ field, other information may include
 channel number or other rig information.</p>
@@ -434,7 +434,7 @@ channel number or other rig information.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.process_cycler_file">
-<span class="sig-name descname"><span class="pre">process_cycler_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cycler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_cycler_file" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_cycler_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cycler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_cycler_file" title="Link to this definition">#</a></dt>
 <dd><p>Convert cycler file into PyProBE format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -445,7 +445,7 @@ channel number or other rig information.</p>
 data.</p></li>
 <li><p><strong>output_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
 data.</p></li>
-<li><p><strong>filename_args</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
+<li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
 These must be keys of the cell info.</p></li>
 </ul>
 </dd>
@@ -515,6 +515,176 @@ info.</p></li>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cell.</span></span><span class="sig-name descname"><span class="pre">ReadmeModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_experiments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_numbers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_details</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>A class for processing the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>readme_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – </p></li>
+<li><p><strong>readme_type</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>number_of_experiments</strong> (<em>int</em>) – </p></li>
+<li><p><strong>titles</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>step_numbers</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>step_indices</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>step_descriptions</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>cycle_details</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>pybamm_experiment_descriptions</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>...</em><em>]</em><em>]</em>) – </p></li>
+<li><p><strong>pybamm_experiment_list</strong> (<em>List</em><em>[</em><em>Experiment</em><em>]</em>) – </p></li>
+<li><p><strong>pybamm_experiment</strong> (<em>Experiment</em><em> | </em><em>None</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.readme_dict">
+<span class="sig-name descname"><span class="pre">readme_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.readme_dict" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.readme_type">
+<span class="sig-name descname"><span class="pre">readme_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.readme_type" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.number_of_experiments">
+<span class="sig-name descname"><span class="pre">number_of_experiments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.number_of_experiments" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.titles">
+<span class="sig-name descname"><span class="pre">titles</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.titles" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.step_numbers">
+<span class="sig-name descname"><span class="pre">step_numbers</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.step_numbers" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.step_indices">
+<span class="sig-name descname"><span class="pre">step_indices</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.step_indices" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.step_descriptions">
+<span class="sig-name descname"><span class="pre">step_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.step_descriptions" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.cycle_details">
+<span class="sig-name descname"><span class="pre">cycle_details</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.cycle_details" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.pybamm_experiment_descriptions">
+<span class="sig-name descname"><span class="pre">pybamm_experiment_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.pybamm_experiment_descriptions" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.pybamm_experiment_list">
+<span class="sig-name descname"><span class="pre">pybamm_experiment_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Experiment</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.pybamm_experiment_list" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.pybamm_experiment">
+<span class="sig-name descname"><span class="pre">pybamm_experiment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Experiment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.cell.ReadmeModel.pybamm_experiment" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.model_post_init">
+<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_ReadmeModel__context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.model_post_init" title="Link to this definition">#</a></dt>
+<dd><p>Get all the attributes of the class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>_ReadmeModel__context</strong> (<em>Any</em>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_step_numbers">
+<span class="sig-name descname"><span class="pre">get_step_numbers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_step_numbers" title="Link to this definition">#</a></dt>
+<dd><p>Get the step numbers from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<em>List</em>[int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_step_indices">
+<span class="sig-name descname"><span class="pre">get_step_indices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_step_indices" title="Link to this definition">#</a></dt>
+<dd><p>Get the step indices from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<em>List</em>[int]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_step_descriptions">
+<span class="sig-name descname"><span class="pre">get_step_descriptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_step_descriptions" title="Link to this definition">#</a></dt>
+<dd><p>Get the step descriptions from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<em>List</em>[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_cycle_details">
+<span class="sig-name descname"><span class="pre">get_cycle_details</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_cycle_details" title="Link to this definition">#</a></dt>
+<dd><p>Get the cycle details from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<em>List</em>[<em>Tuple</em>[int, int, int]]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_pybamm_experiment_descriptions">
+<span class="sig-name descname"><span class="pre">get_pybamm_experiment_descriptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_pybamm_experiment_descriptions" title="Link to this definition">#</a></dt>
+<dd><p>Get the PyBaMM experiment objects from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<em>Tuple</em>[str, …]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_pybamm_experiment_list">
+<span class="sig-name descname"><span class="pre">get_pybamm_experiment_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_pybamm_experiment_list" title="Link to this definition">#</a></dt>
+<dd><p>Get the PyBaMM experiment objects from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>List</em>[<em>Experiment</em>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.ReadmeModel.get_pybamm_experiment">
+<span class="sig-name descname"><span class="pre">get_pybamm_experiment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.ReadmeModel.get_pybamm_experiment" title="Link to this definition">#</a></dt>
+<dd><p>Get the PyBaMM experiment object from the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Experiment</em> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -571,6 +741,28 @@ info.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.set_color_scheme"><code class="docutils literal notranslate"><span class="pre">Cell.set_color_scheme()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.launch_dashboard"><code class="docutils literal notranslate"><span class="pre">Cell.launch_dashboard()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel"><code class="docutils literal notranslate"><span class="pre">ReadmeModel</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.readme_dict"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.readme_dict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.readme_type"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.readme_type</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.number_of_experiments"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.number_of_experiments</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.titles"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.titles</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.step_numbers"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.step_numbers</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.step_indices"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.step_indices</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.step_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.step_descriptions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.cycle_details"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.cycle_details</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.pybamm_experiment_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment_descriptions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.pybamm_experiment_list"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment_list</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.model_post_init"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.model_post_init()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_step_numbers"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_step_numbers()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_step_indices"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_step_indices()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_step_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_step_descriptions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_cycle_details"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_cycle_details()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_pybamm_experiment_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_pybamm_experiment_descriptions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_pybamm_experiment_list"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_pybamm_experiment_list()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.ReadmeModel.get_pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.get_pybamm_experiment()</span></code></a></li>
 </ul>
 </li>
 </ul>
