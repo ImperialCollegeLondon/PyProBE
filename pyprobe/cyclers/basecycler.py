@@ -37,7 +37,6 @@ class BaseCycler(BaseModel):
         """Post initialization method for the BaseModel."""
         dataframe_list = self.get_dataframe_list(self.input_data_path)
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
-        self._dataframe_columns = self._imported_dataframe.columns
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -151,18 +150,17 @@ class BaseCycler(BaseModel):
             "Current [A]": self.current,
             "Voltage [V]": self.voltage,
             "Capacity [Ah]": self.capacity,
+            "Temperature [C]": self.temperature,
         }
 
     @property
-    def optional_columns(self) -> Dict[str, pl.Expr]:
-        """The optional columns for the cycler data.
+    def _dataframe_columns(self) -> List[str]:
+        """The columns of the DataFrame.
 
         Returns:
-            Dict[str, pl.Expr]: A dictionary of the optional columns.
+            List[str]: The columns.
         """
-        return {
-            "Temperature [C]": self.temperature,
-        }
+        return self._imported_dataframe.columns
 
     @property
     def pyprobe_dataframe(self) -> pl.DataFrame:
@@ -171,23 +169,7 @@ class BaseCycler(BaseModel):
         Returns:
             pl.DataFrame: The DataFrame.
         """
-        all_columns_df = self._imported_dataframe.select(
-            list(self.required_columns.values())
-        )
-
-        optional_columns_dfs: List[pl.LazyFrame | pl.DataFrame] = []
-        for column in self.optional_columns.keys():
-            try:
-                all_columns_df = pl.concat(
-                    [
-                        all_columns_df,
-                        self._imported_dataframe.select(self.optional_columns[column]),
-                    ],
-                    how="horizontal",
-                )
-            except pl.exceptions.ColumnNotFoundError:
-                all_columns_df = all_columns_df.with_columns(pl.lit(None).alias(column))
-        return pl.concat([all_columns_df] + optional_columns_dfs, how="horizontal")
+        return self._imported_dataframe.select(list(self.required_columns.values()))
 
     @property
     def date(self) -> pl.Expr:
@@ -333,18 +315,23 @@ class BaseCycler(BaseModel):
     def temperature(self) -> pl.Expr:
         """Identify and format the temperature column.
 
+        An optional column, if not found, a column of None values is returned.
+
         Returns:
             pl.Expr: A polars expression for the temperature column.
         """
-        return (
-            self.search_columns(
-                self._dataframe_columns,
-                self.column_dict["Temperature"],
-                self.column_name_pattern,
+        try:
+            return (
+                self.search_columns(
+                    self._dataframe_columns,
+                    self.column_dict["Temperature"],
+                    self.column_name_pattern,
+                )
+                .to_default_name_and_unit()
+                .cast(pl.Float64)
             )
-            .to_default_name_and_unit()
-            .cast(pl.Float64)
-        )
+        except ValueError:
+            return pl.lit(None).alias("Temperature [C]")
 
     @property
     def cycle(self) -> pl.Expr:
