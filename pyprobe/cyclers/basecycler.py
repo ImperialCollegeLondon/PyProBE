@@ -55,7 +55,7 @@ class BaseCycler(BaseModel):
             case ".xlsx":
                 return pl.read_excel(filepath, engine="calamine")
             case ".csv":
-                return pl.read_csv(filepath)
+                return pl.scan_csv(filepath)
             case _:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
 
