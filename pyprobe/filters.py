@@ -237,6 +237,7 @@ class Procedure(RawData):
     titles: List[str]
     steps_idx: List[List[int]]
     pybamm_experiment: Optional[PybammExperiment]
+    pybamm_experiment_list: List[Optional[PybammExperiment]]
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Union[str, int, float]]

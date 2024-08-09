@@ -189,18 +189,15 @@ class Cell(BaseModel):
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
         readme_path = os.path.join(data_folder, readme_name)
-        (
-            titles,
-            steps_idx,
-            pybamm_experiment,
-        ) = self._process_readme(readme_path)
+        readme = self._process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
-            titles=titles,
-            steps_idx=steps_idx,
+            titles=readme.titles,
+            steps_idx=readme.step_numbers,
             base_dataframe=base_dataframe,
             info=self.info,
-            pybamm_experiment=pybamm_experiment,
+            pybamm_experiment=readme.pybamm_experiment,
+            pybamm_experiment_list=readme.pybamm_experiment_list,
         )
 
     @staticmethod
@@ -328,7 +325,7 @@ class Cell(BaseModel):
     def _process_readme(
         cls,
         readme_path: str,
-    ) -> Tuple[List[str], List[List[int]], Optional[pybamm.Experiment]]:
+    ) -> "ReadmeModel":
         """Function to process the README.yaml file.
 
         Args:
@@ -342,12 +339,7 @@ class Cell(BaseModel):
         """
         with open(readme_path, "r") as file:
             readme_dict = yaml.safe_load(file)
-
-        titles = list(readme_dict.keys())
-        readme = ReadmeModel(readme_dict=readme_dict)
-        steps = readme.step_numbers
-        pybamm_experiment = readme.pybamm_experiment
-        return titles, steps, pybamm_experiment
+        return ReadmeModel(readme_dict=readme_dict)
 
 
 class ReadmeModel(BaseModel):
@@ -356,6 +348,7 @@ class ReadmeModel(BaseModel):
     readme_dict: Dict[str, Any]
     readme_type: List[str] = Field(default_factory=list)
     number_of_experiments: int = Field(default_factory=int)
+    titles: List[str] = Field(default_factory=list)
 
     step_numbers: List[List[int]] = Field(default_factory=list)
     step_indices: List[List[int]] = Field(default_factory=list)
@@ -415,6 +408,7 @@ class ReadmeModel(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         """Get all the attributes of the class."""
+        self.titles = list(self.readme_dict.keys())
         self.step_numbers = self.get_step_numbers()
         self.step_indices = self.get_step_indices()
         self.step_descriptions = self.get_step_descriptions()
@@ -525,8 +519,8 @@ class ReadmeModel(BaseModel):
             else:
                 pybamm_experiments.append(None)
                 warnings.warn(
-                    f"No valid step descriptions found in README.yaml for experiment:"
-                    f" {experiment}"
+                    f"PyBaMM experiment could not be created for experiment:"
+                    f" {experiment} as there are no step descriptions."
                 )
         return pybamm_experiments
 

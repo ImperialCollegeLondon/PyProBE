@@ -117,35 +117,35 @@ def test_process_readme(cell_instance, titles_fixture, benchmark):
             "tests/sample_data/neware/README_implicit.yaml"
         )
 
-    titles, steps, exp = benchmark(_process_readme)
-    assert titles == titles_fixture
-    assert steps == expected_steps
-    assert exp is None
+    readme = benchmark(_process_readme)
+    assert readme.titles == titles_fixture
+    assert readme.step_numbers == expected_steps
+    assert readme.pybamm_experiment is None
 
     # Test with total steps
-    titles, steps, exp = cell_instance._process_readme(
+    readme = cell_instance._process_readme(
         "tests/sample_data/neware/README_total_steps.yaml"
     )
-    assert titles == titles_fixture
-    assert steps == [
+    assert readme.titles == titles_fixture
+    assert readme.step_numbers == [
         [1, 2, 3],
         [4, 5, 6, 7],
         [8, 9, 10, 11],
     ]
-    assert exp is None
+    assert readme.pybamm_experiment is None
 
     # Test with defined step numbers
-    titles, steps, exp = cell_instance._process_readme(
-        "tests/sample_data/neware/README.yaml"
-    )
-    assert titles == titles_fixture
-    assert steps == [
+    readme = cell_instance._process_readme("tests/sample_data/neware/README.yaml")
+    assert readme.titles == titles_fixture
+    assert readme.step_numbers == [
         [1, 2, 3],
         [4, 5, 6, 7],
         [9, 10, 11, 12],
     ]
-    print(exp)
-    assert isinstance(exp, pybamm.Experiment)
+    assert all(
+        isinstance(item, pybamm.Experiment) for item in readme.pybamm_experiment_list
+    )
+    assert isinstance(readme.pybamm_experiment, pybamm.Experiment)
 
 
 def test_expand_cycles():
