@@ -62,7 +62,7 @@ class Biologic(BaseCycler):
         )
 
         dataframe = dataframe.with_columns(
-            (pl.col("time/s") * 1000000 + pl.lit(start_time))
+            (pl.col("time/s").cast(pl.Duration) + pl.lit(start_time))
             .cast(pl.Datetime)
             .alias("Date")
         )
