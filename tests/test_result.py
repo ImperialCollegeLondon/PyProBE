@@ -202,7 +202,9 @@ def test_add_new_data_columns():
                 timedelta(seconds=1),
                 time_unit="ms",
                 eager=True,
-            ).alias("datetime"),
+            )
+            .dt.cast_time_unit("us")
+            .alias("datetime"),
             "Data": [2, 4, 6, 8, 10, 12],
             "Data 1": [None, None, None, 3.0, 5.0, 7.0],
             "Data 2": [None, None, None, 6.0, 10.0, 14.0],
