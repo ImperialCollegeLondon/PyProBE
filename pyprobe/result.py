@@ -243,8 +243,27 @@ class Result(BaseModel):
             date_column_name (str):
                 The name of the column in the new data containing the date.
         """
+        # get the columns of the new data
         new_data_cols = new_data.columns
         new_data_cols.remove(date_column_name)
+        # check if the new data is lazyframe or not
+        is_new_data_lazy = isinstance(new_data, pl.LazyFrame)
+        is_base_dataframe_lazy = isinstance(self.base_dataframe, pl.LazyFrame)
+        if is_new_data_lazy and not is_base_dataframe_lazy:
+            new_data = new_data.collect()
+        elif is_base_dataframe_lazy and not is_new_data_lazy:
+            new_data = new_data.lazy()
+        if new_data.dtypes[new_data.columns.index(date_column_name)] != pl.Datetime:
+            new_data = new_data.with_columns(pl.col(date_column_name).str.to_datetime())
+
+        # Ensure both DataFrames have DateTime columns in the same unit
+        new_data = new_data.with_columns(
+            pl.col(date_column_name).dt.cast_time_unit("us")
+        )
+        self.base_dataframe = self.base_dataframe.with_columns(
+            pl.col("Date").dt.cast_time_unit("us")
+        )
+
         new_data = self.base_dataframe.join(
             new_data,
             left_on="Date",
@@ -255,6 +274,7 @@ class Result(BaseModel):
         new_data = new_data.with_columns(
             pl.col(new_data_cols).interpolate_by("Date")
         ).select(pl.col(["Date"] + new_data_cols))
+
         self.base_dataframe = self.base_dataframe.join(
             new_data, on="Date", how="left", coalesce=True
         )
