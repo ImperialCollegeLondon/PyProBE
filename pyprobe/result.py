@@ -230,6 +230,35 @@ class Result(BaseModel):
             column_definitions=column_definitions,
         )
 
+    def add_new_data_columns(
+        self, new_data: pl.DataFrame | pl.LazyFrame, date_column_name: str
+    ) -> None:
+        """Add new data columns to the result object.
+
+        The data must be time series data with a date column.
+
+        Args:
+            new_data (pl.DataFrame | pl.LazyFrame):
+                The new data to add to the result object.
+            date_column_name (str):
+                The name of the column in the new data containing the date.
+        """
+        new_data_cols = new_data.columns
+        new_data_cols.remove(date_column_name)
+        new_data = self.base_dataframe.join(
+            new_data,
+            left_on="Date",
+            right_on=date_column_name,
+            how="full",
+            coalesce=True,
+        )
+        new_data = new_data.with_columns(
+            pl.col(new_data_cols).interpolate_by("Date")
+        ).select(pl.col(["Date"] + new_data_cols))
+        self.base_dataframe = self.base_dataframe.join(
+            new_data, on="Date", how="left", coalesce=True
+        )
+
     @classmethod
     def build(
         cls,
