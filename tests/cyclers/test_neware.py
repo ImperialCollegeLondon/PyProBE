@@ -69,14 +69,18 @@ def test_process_dataframe(monkeypatch):
                 0,
             ],
             "DChg. Cap.(mAh)": [0, 0, 10, 20, 20, 20],
+            "Temperature(C)": [25, 25, 25, 25, 25, 25],
         }
     )
 
     neware_cycler = Neware(
         input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
     )
-    neware_cycler._imported_dataframe = mock_dataframe
+    # neware_cycler._imported_dataframe = mock_dataframe
+    monkeypatch.setattr(neware_cycler, "_imported_dataframe", mock_dataframe)
+    print(neware_cycler._imported_dataframe)
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
+
     pyprobe_dataframe = pyprobe_dataframe.select(
         [
             "Time [s]",
@@ -84,6 +88,7 @@ def test_process_dataframe(monkeypatch):
             "Current [A]",
             "Voltage [V]",
             "Capacity [Ah]",
+            "Temperature [C]",
         ]
     )
     expected_dataframe = pl.DataFrame(
@@ -93,6 +98,7 @@ def test_process_dataframe(monkeypatch):
             "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0],
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
             "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
+            "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
         }
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
@@ -115,6 +121,7 @@ def test_read_and_process(benchmark, neware_cycler):
         "Current [A]",
         "Voltage [V]",
         "Capacity [Ah]",
+        "Temperature [C]",
     ]
     assert isinstance(pyprobe_dataframe, pl.DataFrame)
     assert set(pyprobe_dataframe.columns) == set(expected_columns)

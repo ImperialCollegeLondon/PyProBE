@@ -70,6 +70,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     cell_instance.process_cycler_file("neware", folder_path, file_name, output_name)
     expected_dataframe = lazyframe_fixture.collect()
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
+    saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
     assert_frame_equal(expected_dataframe, saved_dataframe)
 
 

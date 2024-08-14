@@ -4,7 +4,7 @@ Installation
 To install PyProBE you must be running Python 3.11 or later. It is recommended to use a 
 virtual environment to install PyProBE, for example venv or conda.
 
-The steps to install PyProBE wih developer settings are as follows:
+The steps to install PyProBE with developer settings are as follows:
 
 1. Enter a directory in which you wish to install PyProBE:
    

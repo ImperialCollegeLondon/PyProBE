@@ -1,5 +1,7 @@
 """Tests for the result module."""
 
+from datetime import datetime, timedelta
+
 import numpy.testing as np_testing
 import polars as pl
 import polars.testing as pl_testing
@@ -161,3 +163,51 @@ def test_build():
     pl_testing.assert_frame_equal(
         result.data, expected_data, check_column_order=False, check_dtype=False
     )
+
+
+def test_add_new_data_columns():
+    """Test the add_new_data_columns method."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(1985, 1, 1, 0, 0, 0),
+                datetime(1985, 1, 1, 0, 0, 5),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ).alias("datetime"),
+            "Data": [2, 4, 6, 8, 10, 12],
+        }
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": pl.datetime_range(
+                datetime(1985, 1, 1, 0, 0, 2, 500000),
+                datetime(1985, 1, 1, 0, 0, 7, 500000),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ).alias("datetime"),
+            "Data 1": [2, 4, 6, 8, 10, 12],
+            "Data 2": [4, 8, 12, 16, 20, 24],
+        }
+    )
+    result_object = Result(base_dataframe=existing_data, info={})
+    result_object.add_new_data_columns(new_data, date_column_name="DateTime")
+    expected_data = pl.DataFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(1985, 1, 1, 0, 0, 0),
+                datetime(1985, 1, 1, 0, 0, 5),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            )
+            .dt.cast_time_unit("us")
+            .alias("datetime"),
+            "Data": [2, 4, 6, 8, 10, 12],
+            "Data 1": [None, None, None, 3.0, 5.0, 7.0],
+            "Data 2": [None, None, None, 6.0, 10.0, 14.0],
+        }
+    )
+    pl_testing.assert_frame_equal(result_object.data, expected_data)

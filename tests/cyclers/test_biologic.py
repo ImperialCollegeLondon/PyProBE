@@ -62,6 +62,7 @@ def test_read_and_process(benchmark, biologic_cycler):
         "Current [A]",
         "Voltage [V]",
         "Capacity [Ah]",
+        "Temperature [C]",
     ]
     assert set(pyprobe_dataframe.columns) == set(expected_columns)
     pyprobe_dataframe = pyprobe_dataframe.with_columns(
@@ -99,6 +100,7 @@ def test_process_dataframe(monkeypatch):
             "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
             "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
+            "Temperature/�C": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
         }
     )
 
@@ -107,7 +109,14 @@ def test_process_dataframe(monkeypatch):
     )
     biologic_cycler._imported_dataframe = mock_dataframe
     pyprobe_dataframe = biologic_cycler.pyprobe_dataframe.select(
-        ["Time [s]", "Step", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
+        [
+            "Time [s]",
+            "Step",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+            "Temperature [C]",
+        ]
     )
     expected_dataframe = pl.DataFrame(
         {
@@ -116,6 +125,51 @@ def test_process_dataframe(monkeypatch):
             "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0, 0],
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
             "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],
+            "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
+        }
+    )
+    pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
+
+    # test without temperature
+    mock_dataframe = pl.DataFrame(
+        {
+            "Date": [
+                datetime(2022, 2, 2, 2, 2, 0),
+                datetime(2022, 2, 2, 2, 2, 1),
+                datetime(2022, 2, 2, 2, 2, 2),
+                datetime(2022, 2, 2, 2, 2, 3),
+                datetime(2022, 2, 2, 2, 2, 4),
+                datetime(2022, 2, 2, 2, 2, 5),
+                datetime(2022, 2, 2, 2, 2, 6),
+            ],
+            "time/s": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "Ns": [0, 0, 1, 1, 1, 0, 0],
+            "I/mA": [1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0],
+            "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
+            "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
+        }
+    )
+    biologic_cycler._imported_dataframe = mock_dataframe
+
+    pyprobe_dataframe = biologic_cycler.pyprobe_dataframe.select(
+        [
+            "Time [s]",
+            "Step",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+            "Temperature [C]",
+        ]
+    )
+    expected_dataframe = pl.DataFrame(
+        {
+            "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "Step": [1, 1, 2, 2, 2, 1, 1],
+            "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0, 0],
+            "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
+            "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],
+            "Temperature [C]": [None, None, None, None, None, None, None],
         }
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)

@@ -47,22 +47,22 @@ class Cycling(BaseModel):
         )
 
         self._create_capacity_throughput()
-        lf_capacity_throughput = self.input_data.base_dataframe.groupby(
+        lf_capacity_throughput = self.input_data.base_dataframe.group_by(
             "Cycle", maintain_order=True
         ).agg(pl.col("Capacity Throughput [Ah]").first())
-        lf_time = self.input_data.base_dataframe.groupby(
+        lf_time = self.input_data.base_dataframe.group_by(
             "Cycle", maintain_order=True
         ).agg(pl.col("Time [s]").first())
 
         lf_charge = (
             self.input_data.charge()
-            .base_dataframe.groupby("Cycle", maintain_order=True)
+            .base_dataframe.group_by("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
         )
         lf_discharge = (
             self.input_data.discharge()
-            .base_dataframe.groupby("Cycle", maintain_order=True)
+            .base_dataframe.group_by("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
         )

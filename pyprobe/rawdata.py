@@ -44,7 +44,9 @@ class RawData(Result):
     ) -> "RawData":
         """Check if the required columns are present in the input_data."""
         missing_columns = [
-            col for col in required_columns if col not in dataframe.columns
+            col
+            for col in required_columns
+            if col not in dataframe.collect_schema().names()
         ]
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")

@@ -1,4 +1,6 @@
 """A module for the filtering classes."""
+import os
+import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
@@ -303,6 +305,60 @@ class Procedure(RawData):
             List[str]: The names of the experiments in the procedure.
         """
         return list(self.titles)
+
+    def add_external_data(
+        self,
+        filepath: str,
+        importing_columns: List[str] | Dict[str, str],
+        date_column_name: str = "Date",
+    ) -> None:
+        """Add data from another source to the procedure.
+
+        The data must be timestamped, with a column that can be interpreted in
+        DateTime format. The data will be interpolated to the procedure's time.
+
+        Args:
+            filepath (str): The path to the external file.
+            importing_columns (List[str] | Dict[str, str]):
+                The columns to import from the external file. If a list, the columns
+                will be imported as is. If a dict, the keys are the columns in the data
+                you want to import and the values are the columns you want to rename
+                them to.
+            date_column_name (str, optional):
+                The name of the date column in the external data. Defaults to "Date".
+        """
+        external_data = self.load_external_file(filepath)
+        if isinstance(importing_columns, dict):
+            external_data = external_data.select(
+                [date_column_name] + list(importing_columns.keys())
+            )
+            external_data = external_data.rename(importing_columns)
+        elif isinstance(importing_columns, list):
+            external_data = external_data.select([date_column_name] + importing_columns)
+        self.add_new_data_columns(external_data, date_column_name)
+
+    def load_external_file(self, filepath: str) -> pl.LazyFrame:
+        """Load an external file into a LazyFrame.
+
+        Supported file types are CSV, Parquet, and Excel. For maximum performance,
+        consider using Parquet files. If you have an Excel file, consider converting
+        it to CSV before loading.
+
+        Args:
+            filepath (str): The path to the external file.
+        """
+        file = os.path.basename(filepath)
+        file_ext = os.path.splitext(file)[1]
+        match file_ext:
+            case ".csv":
+                return pl.scan_csv(filepath)
+            case ".parquet":
+                return pl.scan_parquet(filepath)
+            case ".xlsx":
+                warnings.warn("Excel reading is slow. Consider converting to CSV.")
+                return pl.read_excel(filepath)
+            case _:
+                raise ValueError(f"Unsupported file type: {file_ext}")
 
     @classmethod
     def _flatten(cls, lst: int | List[Any]) -> List[int]:

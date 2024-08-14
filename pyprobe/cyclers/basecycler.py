@@ -37,7 +37,6 @@ class BaseCycler(BaseModel):
         """Post initialization method for the BaseModel."""
         dataframe_list = self.get_dataframe_list(self.input_data_path)
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
-        self._dataframe_columns = self._imported_dataframe.columns
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -73,10 +72,10 @@ class BaseCycler(BaseModel):
         files = glob.glob(input_data_path)
         files = self._sort_files(files)
         list = [self.read_file(file) for file in files]
-        all_columns = set([col for df in list for col in df.columns])
+        all_columns = set([col for df in list for col in df.collect_schema().names()])
         indices_to_remove = []
         for i in range(len(list)):
-            if len(list[i].columns) < len(all_columns):
+            if len(list[i].collect_schema().names()) < len(all_columns):
                 indices_to_remove.append(i)
                 warnings.warn(
                     f"File {os.path.basename(files[i])} has missing columns, "
@@ -151,7 +150,17 @@ class BaseCycler(BaseModel):
             "Current [A]": self.current,
             "Voltage [V]": self.voltage,
             "Capacity [Ah]": self.capacity,
+            "Temperature [C]": self.temperature,
         }
+
+    @property
+    def _dataframe_columns(self) -> List[str]:
+        """The columns of the DataFrame.
+
+        Returns:
+            List[str]: The columns.
+        """
+        return self._imported_dataframe.collect_schema().names()
 
     @property
     def pyprobe_dataframe(self) -> pl.DataFrame:
@@ -171,7 +180,7 @@ class BaseCycler(BaseModel):
         """
         if (
             self._imported_dataframe.dtypes[
-                self._imported_dataframe.columns.index("Date")
+                self._imported_dataframe.collect_schema().names().index("Date")
             ]
             != pl.Datetime
         ):
@@ -301,6 +310,28 @@ class BaseCycler(BaseModel):
             )
         else:
             return self.capacity_from_ch_dch
+
+    @property
+    def temperature(self) -> pl.Expr:
+        """Identify and format the temperature column.
+
+        An optional column, if not found, a column of None values is returned.
+
+        Returns:
+            pl.Expr: A polars expression for the temperature column.
+        """
+        try:
+            return (
+                self.search_columns(
+                    self._dataframe_columns,
+                    self.column_dict["Temperature"],
+                    self.column_name_pattern,
+                )
+                .to_default_name_and_unit()
+                .cast(pl.Float64)
+            )
+        except ValueError:
+            return pl.lit(None).alias("Temperature [C]")
 
     @property
     def cycle(self) -> pl.Expr:

@@ -23,6 +23,7 @@ class Neware(BaseCycler):
         "Voltage": "Voltage",
         "Charge Capacity": "Chg. Cap.",
         "Discharge Capacity": "DChg. Cap.",
+        "Temperature": "Temperature",
     }
 
     @property

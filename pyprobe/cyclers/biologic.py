@@ -27,6 +27,7 @@ class Biologic(BaseCycler):
         "Voltage": "Ecell",
         "Charge Capacity": "Q charge",
         "Discharge Capacity": "Q discharge",
+        "Temperature": "Temperature",
     }
 
     @staticmethod
@@ -54,16 +55,6 @@ class Biologic(BaseCycler):
         _, value = start_time_line.split(" : ")
         start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
 
-        columns_to_read = ["time/", "Ns", "I/", "Ecell/", "Q charge/", "Q discharge/"]
-
-        all_columns = pl.scan_csv(
-            filepath, skip_rows=n_header_lines - 1, separator="\t"
-        ).columns
-        selected_columns = []
-        for substring in columns_to_read:
-            found_columns = [col for col in all_columns if substring in col]
-            selected_columns.extend(found_columns)
-
         dataframe = pl.scan_csv(
             filepath,
             skip_rows=n_header_lines - 1,
@@ -71,7 +62,7 @@ class Biologic(BaseCycler):
         )
 
         dataframe = dataframe.with_columns(
-            (pl.col("time/s") * 1000000 + pl.lit(start_time))
+            (pl.col("time/s").cast(pl.Duration) + pl.lit(start_time))
             .cast(pl.Datetime)
             .alias("Date")
         )

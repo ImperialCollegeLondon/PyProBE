@@ -38,7 +38,7 @@ if __name__ == "__main__":
             df_with_selections,
             hide_index=True,  # Keep the index visible
             column_config={"Select": st.column_config.CheckboxColumn(required=True)},
-            disabled=df.columns,
+            disabled=df.collect_schema().names(),
         )
 
         # Filter the dataframe using the temporary column, then drop the column
