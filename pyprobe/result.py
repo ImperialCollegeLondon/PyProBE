@@ -55,7 +55,7 @@ class Result(BaseModel):
         )
 
         self._check_units(column_name)
-        if column_name not in self.data.columns:
+        if column_name not in self.data.collect_schema().names():
             raise ValueError(f"Column '{column_name}' not in data.")
         else:
             return self.data[column_name].to_numpy()
@@ -72,7 +72,7 @@ class Result(BaseModel):
         column_names = list(column_name)
         for col in column_names:
             self._check_units(col)
-        if not all(col in self.data.columns for col in column_names):
+        if not all(col in self.data.collect_schema().names() for col in column_names):
             raise ValueError("One or more columns not in data.")
         else:
             return Result(base_dataframe=self.data.select(column_names), info=self.info)
@@ -145,7 +145,7 @@ class Result(BaseModel):
     ) -> NDArray[np.float64]:
         for column_name in filtering_column_names:
             self._check_units(column_name)
-            if column_name not in self.base_dataframe.columns:
+            if column_name not in self.base_dataframe.collect_schema().names():
                 raise ValueError(f"Column '{column_name}' not in data.")
         frame_to_return = self.base_dataframe.select(filtering_column_names)
         if isinstance(frame_to_return, pl.LazyFrame):
@@ -160,7 +160,7 @@ class Result(BaseModel):
         Args:
             column_name (str): The column name to convert to.
         """
-        if column_name not in self.base_dataframe.columns:
+        if column_name not in self.base_dataframe.collect_schema().names():
             converter_object = Units(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default_unit()
@@ -193,7 +193,7 @@ class Result(BaseModel):
     @property
     def column_list(self) -> List[str]:
         """Return a list of the columns in the data."""
-        return self.base_dataframe.columns
+        return self.base_dataframe.collect_schema().names()
 
     def define_column(self, column_name: str, definition: str) -> None:
         """Define a new column when it is added to the dataframe.
@@ -244,7 +244,7 @@ class Result(BaseModel):
                 The name of the column in the new data containing the date.
         """
         # get the columns of the new data
-        new_data_cols = new_data.columns
+        new_data_cols = new_data.collect_schema().names()
         new_data_cols.remove(date_column_name)
         # check if the new data is lazyframe or not
         is_new_data_lazy = isinstance(new_data, pl.LazyFrame)
@@ -253,7 +253,10 @@ class Result(BaseModel):
             new_data = new_data.collect()
         elif is_base_dataframe_lazy and not is_new_data_lazy:
             new_data = new_data.lazy()
-        if new_data.dtypes[new_data.columns.index(date_column_name)] != pl.Datetime:
+        if (
+            new_data.dtypes[new_data.collect_schema().names().index(date_column_name)]
+            != pl.Datetime
+        ):
             new_data = new_data.with_columns(pl.col(date_column_name).str.to_datetime())
 
         # Ensure both DataFrames have DateTime columns in the same unit

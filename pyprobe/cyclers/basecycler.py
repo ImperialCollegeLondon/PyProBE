@@ -72,10 +72,10 @@ class BaseCycler(BaseModel):
         files = glob.glob(input_data_path)
         files = self._sort_files(files)
         list = [self.read_file(file) for file in files]
-        all_columns = set([col for df in list for col in df.columns])
+        all_columns = set([col for df in list for col in df.collect_schema().names()])
         indices_to_remove = []
         for i in range(len(list)):
-            if len(list[i].columns) < len(all_columns):
+            if len(list[i].collect_schema().names()) < len(all_columns):
                 indices_to_remove.append(i)
                 warnings.warn(
                     f"File {os.path.basename(files[i])} has missing columns, "
@@ -160,7 +160,7 @@ class BaseCycler(BaseModel):
         Returns:
             List[str]: The columns.
         """
-        return self._imported_dataframe.columns
+        return self._imported_dataframe.collect_schema().names()
 
     @property
     def pyprobe_dataframe(self) -> pl.DataFrame:
@@ -180,7 +180,7 @@ class BaseCycler(BaseModel):
         """
         if (
             self._imported_dataframe.dtypes[
-                self._imported_dataframe.columns.index("Date")
+                self._imported_dataframe.collect_schema().names().index("Date")
             ]
             != pl.Datetime
         ):
