@@ -1,5 +1,6 @@
 """A module for the filtering classes."""
 import os
+import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
@@ -339,6 +340,10 @@ class Procedure(RawData):
     def load_external_file(self, filepath: str) -> pl.LazyFrame:
         """Load an external file into a LazyFrame.
 
+        Supported file types are CSV, Parquet, and Excel. For maximum performance,
+        consider using Parquet files. If you have an Excel file, consider converting
+        it to CSV before loading.
+
         Args:
             filepath (str): The path to the external file.
         """
@@ -347,6 +352,13 @@ class Procedure(RawData):
         match file_ext:
             case ".csv":
                 return pl.scan_csv(filepath)
+            case ".parquet":
+                return pl.scan_parquet(filepath)
+            case ".xlsx":
+                warnings.warn("Excel reading is slow. Consider converting to CSV.")
+                return pl.read_excel(filepath)
+            case _:
+                raise ValueError(f"Unsupported file type: {file_ext}")
 
     @classmethod
     def _flatten(cls, lst: int | List[Any]) -> List[int]:
