@@ -174,6 +174,17 @@ parametrically. The steps are as follows:
                           filename = output_name_generator,
                           filename_inputs = ["Cycler", "Channel"])
 
+Adding data not from a cycler
+-----------------------------
+In your battery experiment, it is likely that you will be collecting data from sources
+additional to your battery cycler. This can be added to your `~pyprobe.filters.Procedure`
+object after it has been created with its :func:`~pyprobe.filters.Procedure.add_external_data`
+method.
+
+The data that you provide must be timeseries, with a column that can be interpreted in
+DateTime format. This is usually a string that may appear like: `"2024-02-29 09:19:58.554"`.
+PyProBE will interpolate your data into the time series of the cycling data already there,
+so it will be filtered as normal.
 
 
 .. footbibliography::
