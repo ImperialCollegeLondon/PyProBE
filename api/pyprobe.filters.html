@@ -30,7 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -38,7 +38,7 @@
   <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -396,8 +396,8 @@ document.write(`
 <li><p><strong>titles</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A dict containing the titles of the experiments.</p></li>
 <li><p><strong>steps_idx</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>) – A list of lists containing the step indices for
 each experiment.</p></li>
-<li><p><strong>pybamm_experiment</strong> (<em>Experiment</em><em> | </em><em>None</em>) – </p></li>
-<li><p><strong>pybamm_experiment_list</strong> (<em>List</em><em>[</em><em>Experiment</em><em> | </em><em>None</em><em>]</em>) – </p></li>
+<li><p><strong>pybamm_experiment</strong> (<em>Experiment</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>pybamm_experiment_list</strong> (<em>List</em><em>[</em><em>Experiment</em><em> | </em><em>None</em><em>]</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -445,7 +445,7 @@ each experiment.</p></li>
 <dd><p>Create a procedure class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_Procedure__context</strong> (<em>Any</em>) – </p>
+<dd class="field-odd"><p><strong>_Procedure__context</strong> (<em>Any</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -605,7 +605,7 @@ object.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filter</strong> (<em>FilterToCycleType</em>) – A filter object that this method is called on.</p></li>
 <li><p><strong>constant_current_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – Variable-length argument list of constant voltage indices or a range object.</p></li>
-<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – </p></li>
+<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -649,6 +649,46 @@ experiment names.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.filters.Procedure.add_external_data">
+<span class="sig-name descname"><span class="pre">add_external_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">importing_columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Date'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Procedure.add_external_data" title="Link to this definition">#</a></dt>
+<dd><p>Add data from another source to the procedure.</p>
+<p>The data must be timestamped, with a column that can be interpreted in
+DateTime format. The data will be interpolated to the procedure’s time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<em>str</em>) – The path to the external file.</p></li>
+<li><p><strong>importing_columns</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – The columns to import from the external file. If a list, the columns
+will be imported as is. If a dict, the keys are the columns in the data
+you want to import and the values are the columns you want to rename
+them to.</p></li>
+<li><p><strong>date_column_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the date column in the external data. Defaults to “Date”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.filters.Procedure.load_external_file">
+<span class="sig-name descname"><span class="pre">load_external_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Procedure.load_external_file" title="Link to this definition">#</a></dt>
+<dd><p>Load an external file into a LazyFrame.</p>
+<p>Supported file types are CSV, Parquet, and Excel. For maximum performance,
+consider using Parquet files. If you have an Excel file, consider converting
+it to CSV before loading.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – The path to the external file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>LazyFrame</em></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -662,7 +702,7 @@ experiment names.</p>
 <li><p><strong>dataframe</strong> (<em>pl.LazyFrame</em><em> | </em><em>pl.DataFrame</em>) – The data for the experiment.</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em>]</em><em>]</em>) – A dict containing test info.</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A dict containing column definitions. Defaults to None.</p></li>
-<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>) – </p></li>
+<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -690,7 +730,7 @@ experiment names.</p>
 <dd><p>Create an experiment class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_Experiment__context</strong> (<em>Any</em>) – </p>
+<dd class="field-odd"><p><strong>_Experiment__context</strong> (<em>Any</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -850,7 +890,7 @@ object.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filter</strong> (<em>FilterToCycleType</em>) – A filter object that this method is called on.</p></li>
 <li><p><strong>constant_current_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – Variable-length argument list of constant voltage indices or a range object.</p></li>
-<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – </p></li>
+<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -875,7 +915,7 @@ object.</p></li>
 <li><p><strong>dataframe</strong> (<em>pl.LazyFrame</em><em> | </em><em>pl.DataFrame</em>) – The data for the cycle.</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em>]</em><em>]</em>) – A dict containing test info.</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A dict containing column definitions. Defaults to None.</p></li>
-<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>) – </p></li>
+<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -903,7 +943,7 @@ object.</p></li>
 <dd><p>Create a cycle class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_Cycle__context</strong> (<em>Any</em>) – </p>
+<dd class="field-odd"><p><strong>_Cycle__context</strong> (<em>Any</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -1043,7 +1083,7 @@ object.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filter</strong> (<em>FilterToCycleType</em>) – A filter object that this method is called on.</p></li>
 <li><p><strong>constant_current_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – Variable-length argument list of constant voltage indices or a range object.</p></li>
-<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – </p></li>
+<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1068,7 +1108,7 @@ object.</p></li>
 <li><p><strong>dataframe</strong> (<em>pl.LazyFrame</em><em> | </em><em>pl.DataFrame</em>) – The data for the cycle.</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Optional</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em>]</em><em>]</em>) – A dict containing test info.</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A dict containing column definitions. Defaults to None.</p></li>
-<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>) – </p></li>
+<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1096,7 +1136,7 @@ object.</p></li>
 <dd><p>Create a step class.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_Step__context</strong> (<em>Any</em>) – </p>
+<dd class="field-odd"><p><strong>_Step__context</strong> (<em>Any</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -1155,7 +1195,7 @@ Defaults to None.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filter</strong> (<em>FilterToCycleType</em>) – A filter object that this method is called on.</p></li>
 <li><p><strong>constant_current_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – Variable-length argument list of constant voltage indices or a range object.</p></li>
-<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>) – </p></li>
+<li><p><strong>constant_voltage_numbers</strong> (<em>int</em><em> | </em><em>range</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1236,6 +1276,8 @@ Defaults to None.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.constant_voltage"><code class="docutils literal notranslate"><span class="pre">Procedure.constant_voltage()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.experiment_names"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment_names</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.add_external_data"><code class="docutils literal notranslate"><span class="pre">Procedure.add_external_data()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.load_external_file"><code class="docutils literal notranslate"><span class="pre">Procedure.load_external_file()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a><ul class="nav section-nav flex-column">
@@ -1323,7 +1365,7 @@ Defaults to None.</p></li>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
     <br/>
   </p>
 </div>

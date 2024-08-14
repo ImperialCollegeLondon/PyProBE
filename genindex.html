@@ -29,7 +29,7 @@
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -37,7 +37,7 @@
   <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/tabs.js?v=3030b3cb"></script>
     <script src="_static/design-tabs.js?v=f930bc37"></script>
@@ -354,14 +354,18 @@ document.write(`
 </li>
       <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.add_colorscaled_line">add_colorscaled_line() (pyprobe.plot.Plot method)</a>
 </li>
+      <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure.add_external_data">add_external_data() (pyprobe.filters.Procedure method)</a>
+</li>
       <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.add_line">add_line() (pyprobe.plot.Plot method)</a>
+</li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.add_new_data_columns">add_new_data_columns() (pyprobe.result.Result method)</a>
 </li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.add_procedure">add_procedure() (pyprobe.cell.Cell method)</a>
 </li>
-      <li><a href="api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator">AnalysisValidator (class in pyprobe.analysis.utils)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator">AnalysisValidator (class in pyprobe.analysis.utils)</a>
+</li>
       <li><a href="api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.apply_step_correction">apply_step_correction() (pyprobe.cyclers.biologic.Biologic static method)</a>
 </li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.array">array() (pyprobe.result.Result method)</a>
@@ -697,6 +701,10 @@ document.write(`
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.launch_dashboard">launch_dashboard() (pyprobe.cell.Cell static method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure.load_external_file">load_external_file() (pyprobe.filters.Procedure method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1128,6 +1136,8 @@ document.write(`
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.temperature">temperature (pyprobe.cyclers.basecycler.BaseCycler property)</a>
+</li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.time">time (pyprobe.cyclers.basecycler.BaseCycler property)</a>
 
       <ul>
@@ -1136,10 +1146,10 @@ document.write(`
       </ul></li>
       <li><a href="api/pyprobe.units.html#pyprobe.units.Units.time_unit_dict">time_unit_dict (pyprobe.units.Units attribute)</a>
 </li>
-      <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.title_font_size">title_font_size (pyprobe.plot.Plot attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.title_font_size">title_font_size (pyprobe.plot.Plot attribute)</a>
+</li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.ReadmeModel.titles">titles (pyprobe.cell.ReadmeModel attribute)</a>
 
       <ul>
@@ -1265,7 +1275,7 @@ document.write(`
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
     <br/>
   </p>
 </div>

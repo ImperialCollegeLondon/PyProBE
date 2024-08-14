@@ -30,7 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -38,7 +38,7 @@
   <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -405,9 +405,9 @@ document.write(`
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a>) – The input data to the method.</p></li>
-<li><p><strong>stoichiometry_limits</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>None</em>) – </p></li>
-<li><p><strong>fitted_OCV</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>None</em>) – </p></li>
-<li><p><strong>dma_result</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>None</em>) – </p></li>
+<li><p><strong>stoichiometry_limits</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>fitted_OCV</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>dma_result</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -443,8 +443,8 @@ document.write(`
 <li><p><strong>ocp_ne</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode OCP data.</p></li>
 <li><p><strong>ocp_pe</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode OCP data.</p></li>
 <li><p><strong>x_guess</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The initial guess for the fit.</p></li>
-<li><p><strong>fitting_target</strong> (<em>str</em>) – </p></li>
-<li><p><strong>optimizer</strong> (<em>str</em><em> | </em><em>None</em>) – </p></li>
+<li><p><strong>fitting_target</strong> (<em>str</em>)</p></li>
+<li><p><strong>optimizer</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -487,9 +487,9 @@ the provided OCV fits.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>discharge_result</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The discharge OCV data.</p></li>
 <li><p><strong>charge_result</strong> (<a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The charge OCV data.</p></li>
-<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a>) – </p></li>
-<li><p><strong>discharge_filter</strong> (<em>str</em><em> | </em><em>None</em>) – </p></li>
-<li><p><strong>charge_filter</strong> (<em>str</em><em> | </em><em>None</em>) – </p></li>
+<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a>)</p></li>
+<li><p><strong>discharge_filter</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>charge_filter</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -607,7 +607,7 @@ the provided OCV fits.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
     <br/>
   </p>
 </div>

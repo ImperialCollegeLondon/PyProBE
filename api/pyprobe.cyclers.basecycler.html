@@ -30,7 +30,7 @@
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
@@ -38,7 +38,7 @@
   <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -407,7 +407,7 @@ when a single procedure is split into multiple files.</p></li>
 column names.</p></li>
 <li><p><strong>column_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – A dictionary mapping the expected columns to
 the actual column names in the data.</p></li>
-<li><p><strong>common_prefix</strong> (<em>str</em>) – </p></li>
+<li><p><strong>common_prefix</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -442,7 +442,7 @@ the actual column names in the data.</p></li>
 <dd><p>Post initialization method for the BaseModel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_BaseCycler__context</strong> (<em>Any</em>) – </p>
+<dd class="field-odd"><p><strong>_BaseCycler__context</strong> (<em>Any</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -648,6 +648,21 @@ the actual column names in the data.</p></li>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.temperature">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature" title="Link to this definition">#</a></dt>
+<dd><p>Identify and format the temperature column.</p>
+<p>An optional column, if not found, a column of None values is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A polars expression for the temperature column.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pl.Expr</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.cycle">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cycle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.cycle" title="Link to this definition">#</a></dt>
 <dd><p>Identify the cycle number.</p>
@@ -768,6 +783,7 @@ in the step number.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.discharge_capacity"><code class="docutils literal notranslate"><span class="pre">BaseCycler.discharge_capacity</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.capacity_from_ch_dch"><code class="docutils literal notranslate"><span class="pre">BaseCycler.capacity_from_ch_dch</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.capacity"><code class="docutils literal notranslate"><span class="pre">BaseCycler.capacity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature"><code class="docutils literal notranslate"><span class="pre">BaseCycler.temperature</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.cycle"><code class="docutils literal notranslate"><span class="pre">BaseCycler.cycle</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.event"><code class="docutils literal notranslate"><span class="pre">BaseCycler.event</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.search_columns"><code class="docutils literal notranslate"><span class="pre">BaseCycler.search_columns()</span></code></a></li>
@@ -819,7 +835,7 @@ in the step number.</p>
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
     <br/>
   </p>
 </div>
