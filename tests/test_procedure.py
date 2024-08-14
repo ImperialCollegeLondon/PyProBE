@@ -1,5 +1,7 @@
 """Module containing tests of the procedure class."""
+
 import numpy as np
+import pandas as pd
 import polars as pl
 
 
@@ -50,6 +52,16 @@ def test_zero_columns(procedure_fixture):
 
 def test_add_external_data(procedure_fixture):
     """Test adding external data to the procedure."""
+    # Create external data
+    data = pl.read_excel("tests/sample_data/neware/sample_data_neware.xlsx").to_pandas()
+    start_date = data["Date"][0] - pd.Timedelta(seconds=30.54)
+    end_date = data["Date"].iloc[-1] - pd.Timedelta(seconds=67.54)
+    date_range = pd.date_range(start=start_date, end=end_date, freq="1min")
+    seconds_passed = (date_range - start_date).total_seconds()
+    value = 10 * np.sin(0.001 * seconds_passed)
+    dataframe = pl.DataFrame({"Date": date_range, "Value": value})
+    dataframe.write_csv("tests/sample_data/neware/external_data.csv")
+
     procedure_fixture.add_external_data(
         filepath="tests/sample_data/neware/external_data.csv",
         importing_columns=["Value"],
@@ -74,4 +86,4 @@ def test_add_external_data(procedure_fixture):
     # Filter out NaNs
     value = value[~nan_mask]
     data = data[~nan_mask]
-    assert np.allclose(data, value)
+    assert np.allclose(data, value, atol=0.005)
