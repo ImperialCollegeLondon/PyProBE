@@ -93,4 +93,11 @@ The steps to install PyProBE are as follows:
 
       import pyprobe
 
+6. Before being able to launch the dashboard you will need to initialise streamlit.
+   Do this by running the streamlit Hello app from your command line:
+
+   .. code-block:: bash
+
+      streamlit hello
+
 .. footbibliography::
