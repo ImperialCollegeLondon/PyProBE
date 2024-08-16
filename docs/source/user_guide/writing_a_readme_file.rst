@@ -2,6 +2,10 @@
 
 Writing a README file
 =====================
+
+The PyProBE README format
+-------------------------
+
 README files are important to store alongside your experimental data. The PyProBE
 README format is a :code:`.yaml` file that contains details about the instructions 
 provided to the battery cycler used to generate the data. It is then used filter the 
@@ -12,7 +16,7 @@ The :code:`README.yaml` contains the following information:
 * The name of the experiment
    This enables filtering by :code:`'Experiment Name'` with the 
    
-   :code:`cell.procedure['Procedure Name'].experiment['Experiment Name']` 
+   :code:`cell.procedure['Procedure Name'].experiment('Experiment Name')` 
    
    syntax.
 
@@ -51,6 +55,12 @@ The following is an example of a :code:`README.yaml` file:
 Which corresponds to the following Neware procedure file:
 
 .. image:: images/Neware_procedure.png
+
+The YAML format
+---------------
+The `YAML` format is a readable, structured format for data serialization. To identify
+formatting errors, the `YAML VSCode extension <https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml>`
+is highly recommended.
 
 Shortcuts
 ---------
