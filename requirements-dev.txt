@@ -327,7 +327,7 @@ pyyaml==6.0.2
     #   PyProBE (pyproject.toml)
     #   pre-commit
     #   pybtex
-pyzmq==26.1.0
+pyzmq==26.1.1
     # via jupyter-client
 referencing==0.35.1
     # via
