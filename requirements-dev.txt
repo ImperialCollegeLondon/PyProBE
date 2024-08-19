@@ -243,7 +243,7 @@ plotly==5.23.0
     # via PyProBE (pyproject.toml)
 pluggy==1.5.0
     # via pytest
-polars==1.4.1
+polars==1.5.0
     # via PyProBE (pyproject.toml)
 pooch==1.8.2
     # via pybamm
