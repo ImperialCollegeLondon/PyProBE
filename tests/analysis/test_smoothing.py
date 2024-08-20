@@ -1,6 +1,7 @@
 """Tests for the smoothing analysis module."""
 import numpy as np
 import polars as pl
+import polars.testing as pl_testing
 import pytest
 
 from pyprobe.analysis.smoothing import Smoothing
@@ -33,10 +34,14 @@ def noisy_data_reversed():
     )
 
 
-def test_spline_smoothing(noisy_data, noisy_data_reversed):
+def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     """Test the spline smoothing method with noisy data."""
     smoothing = Smoothing(input_data=noisy_data)
-    result = smoothing.spline_smoothing("x", "y")
+
+    def smooth():
+        return smoothing.spline_smoothing("x", "y")
+
+    result = benchmark(smooth)
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
     np.testing.assert_allclose(result.get_only("y"), expected_y, atol=0.1)
@@ -50,3 +55,21 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed):
     result = smoothing.spline_smoothing("x", "y")
     flipped_expected_y = flipped_x**2
     np.testing.assert_allclose(result.get_only("y"), flipped_expected_y, atol=0.1)
+
+
+def test_level_smoothing(noisy_data, benchmark):
+    """Test the level smoothing method with noisy data."""
+    smoothing = Smoothing(input_data=noisy_data)
+
+    def smooth():
+        return smoothing.level_smoothing(target_column="y", interval=0.5)
+
+    result = benchmark(smooth)
+    assert (
+        result.data.select(pl.col("y").diff().min().alias("min_diff")).item(0, 0) > 0.5
+    )
+    all_data = result.data.join(noisy_data.data, on="y")
+    assert len(all_data) == len(result.data)
+    pl_testing.assert_frame_equal(
+        all_data.select("x"), all_data.select(pl.col("x_right").alias("x"))
+    )
