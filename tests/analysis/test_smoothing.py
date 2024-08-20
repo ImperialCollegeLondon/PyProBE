@@ -57,7 +57,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     np.testing.assert_allclose(result.get_only("y"), flipped_expected_y, atol=0.1)
 
 
-def test_level_smoothing(noisy_data, benchmark):
+def test_level_smoothing(noisy_data, noisy_data_reversed, benchmark):
     """Test the level smoothing method with noisy data."""
     smoothing = Smoothing(input_data=noisy_data)
 
@@ -69,6 +69,19 @@ def test_level_smoothing(noisy_data, benchmark):
         result.data.select(pl.col("y").diff().min().alias("min_diff")).item(0, 0) > 0.5
     )
     all_data = result.data.join(noisy_data.data, on="y")
+    assert len(all_data) == len(result.data)
+    pl_testing.assert_frame_equal(
+        all_data.select("x"), all_data.select(pl.col("x_right").alias("x"))
+    )
+
+    # reverse the data
+    smoothing = Smoothing(input_data=noisy_data_reversed)
+    result = smoothing.level_smoothing(target_column="y", interval=0.5)
+    assert (
+        result.data.select(pl.col("y").diff().abs().min().alias("min_diff")).item(0, 0)
+        > 0.5
+    )
+    all_data = result.data.join(noisy_data_reversed.data, on="y")
     assert len(all_data) == len(result.data)
     pl_testing.assert_frame_equal(
         all_data.select("x"), all_data.select(pl.col("x_right").alias("x"))

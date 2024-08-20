@@ -101,7 +101,7 @@ class Smoothing(BaseModel):
         i = 1
         while i < len(x):
             # Find the next index where the difference meets the interval condition
-            next_indices = np.where(x[i:] - last_x >= interval)[0]
+            next_indices = np.where(abs(x[i:] - last_x) >= interval)[0]
             if len(next_indices) == 0:
                 break
             next_index = next_indices[0] + i
