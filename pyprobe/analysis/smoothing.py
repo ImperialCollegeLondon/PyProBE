@@ -74,6 +74,7 @@ class Smoothing(BaseModel):
         self,
         target_column: str,
         interval: float,
+        monotonic: Optional[bool] = False,
     ) -> Result:
         """Smooth noisy data by resampling to a specified interval.
 
@@ -82,6 +83,8 @@ class Smoothing(BaseModel):
                 The name of the target variable to smooth.
             interval (float):
                 The desired minimum interval between points.
+            monotonic (bool, optional):
+                If True, the target_column is assumed to be monotonic. Default is False.
 
         Returns:
             Result:
@@ -94,6 +97,10 @@ class Smoothing(BaseModel):
         )
         x = validator.variables
 
+        if monotonic:
+            if x[0] > x[-1]:
+                x = np.flip(x)
+
         last_x = x[0]  # Start with the first point
         x_resampled = [last_x]  # Add the first point to the resampled list
 
@@ -101,7 +108,11 @@ class Smoothing(BaseModel):
         i = 1
         while i < len(x):
             # Find the next index where the difference meets the interval condition
-            next_indices = np.where(abs(x[i:] - last_x) >= interval)[0]
+            if monotonic:
+                comparison = x[i:] - last_x
+            else:
+                comparison = abs(x[i:] - last_x)
+            next_indices = np.where(comparison >= interval)[0]
             if len(next_indices) == 0:
                 break
             next_index = next_indices[0] + i
