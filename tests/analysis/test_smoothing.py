@@ -11,6 +11,16 @@ np.random.seed(42)
 x = np.arange(1, 6, 0.01)
 y = x**2 + np.random.normal(0, 0.1, size=x.size)  # y = x^2 with noise
 
+# duplicate some data points
+indices_to_duplicate = np.random.choice(range(len(x)), size=10)
+y = np.append(y, y[indices_to_duplicate])
+x = np.append(
+    x,
+    x[indices_to_duplicate] + np.random.normal(0, 0.01, size=len(indices_to_duplicate)),
+)
+x = np.sort(x)
+y = y[np.argsort(x)]
+
 
 @pytest.fixture
 def noisy_data():
