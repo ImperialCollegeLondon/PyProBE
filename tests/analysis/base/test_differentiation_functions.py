@@ -30,6 +30,12 @@ def test_differentiate_LEAN():
     x_pts, _, dydx = diff_functions.calc_gradient_with_LEAN(x, y, 1, "dydx")
     assert np.isclose(np.median(dydx), average_gradient, rtol=0.1)
 
+    # flip the data
+    y = np.flip(y)
+    x = np.flip(x)
+    x_pts, _, dxdy = diff_functions.calc_gradient_with_LEAN(x, y, 1, "dxdy")
+    assert np.isclose(np.median(dxdy), 1 / average_gradient, rtol=0.1)
+
 
 def test_x_sections():
     """Test the LEAN get_x_sections method."""
