@@ -108,10 +108,11 @@ class Smoothing(BaseModel):
         i = 1
         while i < len(x):
             # Find the next index where the difference meets the interval condition
-            if monotonic:
+            if monotonic:  # if monotinic, only consider positive differences
                 comparison = x[i:] - last_x
-            else:
+            else:  # if not monotonic, consider all differences
                 comparison = abs(x[i:] - last_x)
+
             next_indices = np.where(comparison >= interval)[0]
             if len(next_indices) == 0:
                 break
@@ -122,7 +123,10 @@ class Smoothing(BaseModel):
 
         # Filter the dataframe to only include the resampled points
         dataframe = self.input_data.base_dataframe.filter(
-            pl.col(target_column).is_in(x_resampled)
+            [
+                pl.col(target_column).is_in(x_resampled),
+                pl.col(target_column).is_first_distinct(),
+            ]
         )
 
         # Create a new result object with the resampled data
