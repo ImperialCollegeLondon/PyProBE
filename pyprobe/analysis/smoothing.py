@@ -16,6 +16,9 @@ from pyprobe.result import Result
 class Smoothing(BaseModel):
     """A class for smoothing noisy experimental data.
 
+    Smoothing methods return result objects containing the same columns as the input
+    data, but with the target column smoothed using the specified method.
+
     Args:
         input_data (Result): The raw data to analyse.
     """
@@ -23,26 +26,31 @@ class Smoothing(BaseModel):
     input_data: Result
 
     def spline_smoothing(
-        self, x: str, y: str, smoothing_lambda: Optional[float] = None
+        self,
+        target_column: str,
+        smoothing_lambda: Optional[float] = None,
+        x: str = "Time [s]",
     ) -> Result:
         """A method for smoothing noisy data using a spline.
 
         Args:
-            x (str):
-                The name of the x variable.
-            y (str):
-                The name of the y variable.
+            target_column (str):
+                The name of the target variable to smooth.
             smoothing_lambda (float, optional):
                 The smoothing parameter. Default is None.
+            x (str, optional):
+                The name of the x variable for the spline curve fit.
+                Default is "Time [s]".
 
         Returns:
             Result:
-                A result object containing the columns, `x`, the smoothed `y` and the
-                gradient of the smoothed `y` with respect to `x`.
+                A result object containing the data from input data with the target
+                column smoothed using a spline, and the gradient of the smoothed data
+                with respect to the x variable.
         """
         # validate and identify variables
         validator = AnalysisValidator(
-            input_data=self.input_data, required_columns=[x, y]
+            input_data=self.input_data, required_columns=[x, target_column]
         )
         x_data, y_data = validator.variables
 
@@ -62,15 +70,20 @@ class Smoothing(BaseModel):
         derivative = y_spline.derivative()
         smoothed_dydx = derivative(x_data)
 
-        smoothing_result = self.input_data.clean_copy(
-            {x: x_data, y: smoothed_y, f"d({y})/d({x})": smoothed_dydx}
+        result = copy.deepcopy(self.input_data)
+        smoothed_data_column = pl.Series(target_column, smoothed_y)
+        column_index = result.base_dataframe.get_column_index(target_column)
+        result.base_dataframe = result.base_dataframe.replace_column(
+            column_index, smoothed_data_column
         )
-        smoothing_result.column_definitions = {
-            x: self.input_data.column_definitions[x],
-            y: self.input_data.column_definitions[y],
-            f"d({y})/d({x})": "The gradient of the smoothed data.",
-        }
-        return smoothing_result
+
+        dydx_column = pl.Series(f"d({target_column})/d({x})", smoothed_dydx)
+        result.base_dataframe = result.base_dataframe.hstack([dydx_column])
+        result.define_column(
+            f"d({target_column})/d({x})",
+            "The gradient of the smoothed data.",
+        )
+        return result
 
     def level_smoothing(
         self,

@@ -42,13 +42,17 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     smoothing = Smoothing(input_data=noisy_data)
 
     def smooth():
-        return smoothing.spline_smoothing("x", "y")
+        return smoothing.spline_smoothing(x="x", target_column="y")
 
     result = benchmark(smooth)
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
 
     np.testing.assert_allclose(result.get_only("y"), expected_y, rtol=0.2)
+
+    input_data_columns = set(noisy_data.column_list + ["d(y)/d(x)"])
+    result_columns = set(result.column_list)
+    assert input_data_columns == result_columns
 
     expected_dydx = 2 * x
 
@@ -57,7 +61,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     # reverse the data
     smoothing = Smoothing(input_data=noisy_data_reversed)
     flipped_x = np.flip(x)
-    result = smoothing.spline_smoothing("x", "y")
+    result = smoothing.spline_smoothing(x="x", target_column="y")
     flipped_expected_y = flipped_x**2
     np.testing.assert_allclose(result.get_only("y"), flipped_expected_y, rtol=0.2)
 
@@ -77,6 +81,7 @@ def test_level_smoothing(noisy_data, noisy_data_reversed, benchmark):
     pl_testing.assert_frame_equal(
         all_data.select("x"), all_data.select(pl.col("x_right").alias("x"))
     )
+    assert set(result.column_list) == set(noisy_data.column_list)
 
     # reverse the data
     smoothing = Smoothing(input_data=noisy_data_reversed)
@@ -106,3 +111,4 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
     expected_y = x**2
 
     np.testing.assert_allclose(result.get_only("y"), expected_y, rtol=0.2)
+    assert set(result.column_list) == set(noisy_data.column_list)
