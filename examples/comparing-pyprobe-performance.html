@@ -511,9 +511,9 @@ document.write(`
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/tmp/ipykernel_1998/3741776162.py:63: MatplotlibDeprecationWarning: The &#39;labels&#39; parameter of boxplot() has been renamed &#39;tick_labels&#39; since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+/tmp/ipykernel_2007/3741776162.py:63: MatplotlibDeprecationWarning: The &#39;labels&#39; parameter of boxplot() has been renamed &#39;tick_labels&#39; since Matplotlib 3.9; support for the old name will be dropped in 3.11.
   ax1.boxplot(total_time_polars.T, labels=labels, vert=True, patch_artist=True, showfliers=False)
-/tmp/ipykernel_1998/3741776162.py:68: MatplotlibDeprecationWarning: The &#39;labels&#39; parameter of boxplot() has been renamed &#39;tick_labels&#39; since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+/tmp/ipykernel_2007/3741776162.py:68: MatplotlibDeprecationWarning: The &#39;labels&#39; parameter of boxplot() has been renamed &#39;tick_labels&#39; since Matplotlib 3.9; support for the old name will be dropped in 3.11.
   ax2.boxplot(total_time_pandas.T, labels=labels, vert=True, patch_artist=True, showfliers=False)
 </pre></div></div>
 </div>
@@ -529,7 +529,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Pandas is on average 3.73 times slower than PyProBE at completion of the full query.
+Pandas is on average 3.71 times slower than PyProBE at completion of the full query.
 </pre></div></div>
 </div>
 <p>Much of the performance behind PyProBE is careful selection of the data file format. PyProBE uses the .parquet file format due to its exceptional speed. The results above show pandas reading from the parquet format. The below plot illustrates its performance benefit:</p>
@@ -552,7 +552,7 @@ Pandas is on average 3.73 times slower than PyProBE at completion of the full qu
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/tmp/ipykernel_1998/3863093695.py:2: MatplotlibDeprecationWarning: The &#39;labels&#39; parameter of boxplot() has been renamed &#39;tick_labels&#39; since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+/tmp/ipykernel_2007/3863093695.py:2: MatplotlibDeprecationWarning: The &#39;labels&#39; parameter of boxplot() has been renamed &#39;tick_labels&#39; since Matplotlib 3.9; support for the old name will be dropped in 3.11.
   plt.boxplot(total_time_pandas[[0, 1],:].T, labels=[&#39;Read from .csv&#39;, &#39;Read from .parquet&#39;], vert=True, patch_artist=True, showfliers=False)
 </pre></div></div>
 </div>
@@ -568,7 +568,7 @@ Pandas is on average 3.73 times slower than PyProBE at completion of the full qu
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Reading from .parquet is on average 9.30 times faster than reading from .csv
+Reading from .parquet is on average 9.60 times faster than reading from .csv
 </pre></div></div>
 </div>
 <p>The Polars Lazy approach is best demonstrated by plotting the optimized graph:</p>
@@ -676,7 +676,7 @@ Reading from .parquet is on average 9.30 times faster than reading from .csv
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/tmp/ipykernel_1998/938073181.py:2: DeprecationWarning: The `tree_format` parameter for `LazyFrame.explain` is deprecated Use the `format` parameter instead.
+/tmp/ipykernel_2007/938073181.py:2: DeprecationWarning: The `tree_format` parameter for `LazyFrame.explain` is deprecated Use the `format` parameter instead.
   print(lazyframe.explain(tree_format=True))
 </pre></div></div>
 </div>
