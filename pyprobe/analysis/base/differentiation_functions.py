@@ -72,7 +72,11 @@ def get_dy_and_counts(
     """
     y_range = y.max() - y.min()
     y_bins = np.linspace(y.min(), y.max(), int(np.ceil(y_range / dy)))
-    dy = y_bins[1] - y_bins[0]
+    # ensure sign of dy matches direction of input data
+    if y[0] < y[-1]:
+        dy = y_bins[1] - y_bins[0]
+    else:
+        dy = -y_bins[1] + y_bins[0]
     N, _ = np.histogram(y, bins=y_bins)
     y_midpoints = y_bins[:-1] + np.diff(y_bins) / 2
     return dy, y_midpoints, N
