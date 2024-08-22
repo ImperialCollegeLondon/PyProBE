@@ -1,11 +1,13 @@
 """Module containing methods for smoothing noisy experimental data."""
 
+import copy
 from typing import Optional
 
 import numpy as np
 import polars as pl
 from pydantic import BaseModel
 from scipy.interpolate import make_smoothing_spline
+from scipy.signal import savgol_filter
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
@@ -132,4 +134,45 @@ class Smoothing(BaseModel):
         # Create a new result object with the resampled data
         result = self.input_data
         result.base_dataframe = dataframe
+        return result
+
+    def savgol_smoothing(
+        self,
+        target_column: str,
+        window_length: int,
+        polyorder: int,
+        derivative: int = 0,
+    ) -> Result:
+        """Smooth noisy data using a Savitzky-Golay filter.
+
+        Args:
+            target_column (str):
+                The name of the target variable to smooth.
+            window_length (int):
+                The length of the filter window. Must be a positive odd integer.
+            polynomial_order (int):
+                The order of the polynomial used to fit the samples.
+            derivative (int, optional):
+                The order of the derivative to compute. Default is 0.
+
+        Returns:
+            Result:
+                A result object containing all of the columns of input_data smoothed
+                using the Savitzky-Golay filter.
+        """
+        # validate and identify variables
+        validator = AnalysisValidator(
+            input_data=self.input_data, required_columns=[target_column]
+        )
+        x = validator.variables
+        smoothed_y = savgol_filter(
+            x=x, window_length=window_length, polyorder=polyorder, deriv=derivative
+        )
+
+        smoothed_data_column = pl.Series(target_column, smoothed_y)
+        result = copy.deepcopy(self.input_data)
+        column_index = result.base_dataframe.get_column_index(target_column)
+        result.base_dataframe = result.base_dataframe.replace_column(
+            column_index, smoothed_data_column
+        )
         return result
