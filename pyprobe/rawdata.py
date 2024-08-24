@@ -123,7 +123,7 @@ class RawData(Result):
             self.data
             fully_charged_reference_point = reference_charge.data.select(
                 pl.col("Date").max()
-            )[0][0]
+            )
             capacity_reference = (
                 self.base_dataframe.filter(
                     pl.col("Date") == fully_charged_reference_point
@@ -131,12 +131,14 @@ class RawData(Result):
                 .select("Capacity [Ah]")
                 .head(1)
             )
+
             self.base_dataframe = self.base_dataframe.with_columns(
                 (
                     (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
                     / reference_capacity
                 ).alias("SOC")
             )
+        self.define_column("SOC", "The full cell State-of-Charge.")
 
     def set_reference_capacity(
         self, reference_capacity: Optional[float] = None

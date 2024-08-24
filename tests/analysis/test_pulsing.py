@@ -10,6 +10,9 @@ from pyprobe.result import Result
 @pytest.fixture
 def Pulsing_fixture(procedure_fixture):
     """Pytest fixture for example pulsing experiment."""
+    procedure_fixture.set_SOC(
+        reference_charge=procedure_fixture.experiment("Break-in Cycles").charge(-1)
+    )
     return Pulsing(input_data=procedure_fixture.experiment("Discharge Pulses"))
 
 
@@ -20,36 +23,13 @@ def test_pulse(Pulsing_fixture):
     assert (pulse.data["Cycle"] == 4).all()
 
 
-def test_V0(Pulsing_fixture):
-    """Test the V0 attribute."""
-    assert Pulsing_fixture.V0[0] == 4.1919
-    assert len(Pulsing_fixture.V0) == 10
-
-
-def test_V1(Pulsing_fixture):
-    """Test the V1 attribute."""
-    assert Pulsing_fixture.V1[0] == 4.1558
-    assert len(Pulsing_fixture.V1) == 10
-
-
-def test_I1(Pulsing_fixture):
-    """Test the I1 attribute."""
-    assert Pulsing_fixture.I1[0] == -0.0199936
-    assert len(Pulsing_fixture.I1) == 10
-
-
-def test_R0(Pulsing_fixture):
-    """Test the R0 attribute."""
-    assert np.isclose(Pulsing_fixture.R0[0], (4.1558 - 4.1919) / -0.0199936)
-    assert len(Pulsing_fixture.R0) == 10
-
-
-def test_Rt(Pulsing_fixture):
-    """Test the Rt method."""
-    assert np.isclose(Pulsing_fixture.Rt(10)[0], (4.1337 - 4.1919) / -0.0199936)
-    assert len(Pulsing_fixture.Rt(10)) == 10
-
-
 def test_pulse_summary(Pulsing_fixture):
     """Test the pulse_summary method."""
-    assert isinstance(Pulsing_fixture.pulse_summary, Result)
+    pulse_summary = Pulsing_fixture.pulse_summary([10])
+    assert isinstance(Pulsing_fixture.pulse_summary(), Result)
+    assert isinstance(pulse_summary, Result)
+    assert pulse_summary.get("OCV [V]")[0] == 4.1919
+    assert np.isclose(pulse_summary.get("R0 [Ohms]")[0], (4.1558 - 4.1919) / -0.0199936)
+    assert np.isclose(
+        pulse_summary.get("R_10s [Ohms]")[0], (4.1337 - 4.1919) / -0.0199936
+    )
