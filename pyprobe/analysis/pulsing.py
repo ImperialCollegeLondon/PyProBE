@@ -1,12 +1,12 @@
 """A module for the Pulsing class."""
 
-from typing import List, Optional
+from typing import List
 
 import polars as pl
 from pydantic import BaseModel
 
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.filters import Experiment
+from pyprobe.filters import Experiment, Step
 from pyprobe.result import Result
 
 
@@ -19,25 +19,25 @@ class Pulsing(BaseModel):
 
     input_data: Experiment
 
-    def pulse(self, pulse_number: int) -> Optional[Result]:
+    def pulse(self, pulse_number: int) -> Step:
         """Return a step object for a pulse in the pulsing experiment.
 
         Args:
             pulse_number (int): The pulse number to return.
 
         Returns:
-            Result: A step object for a pulse in the pulsing experiment.
+            Step: A step object for a pulse in the pulsing experiment.
         """
         return self.input_data.cycle(pulse_number).chargeordischarge(0)
 
-    def pulse_rest(self, rest_number: int) -> Optional[Result]:
+    def pulse_rest(self, rest_number: int) -> Step:
         """Return a step object for a rest in the pulsing experiment.
 
         Args:
             rest_number (int): The rest number to return.
 
         Returns:
-            Result: A step object for a rest in the pulsing experiment.
+            Step: A step object for a rest in the pulsing experiment.
         """
         return self.input_data.cycle(rest_number).rest(0)
 
