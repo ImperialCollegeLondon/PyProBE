@@ -3,6 +3,7 @@
 from typing import Optional, Tuple
 
 import numpy as np
+import polars as pl
 from numpy.typing import NDArray
 from pydantic import BaseModel
 
@@ -105,16 +106,18 @@ class DMA(BaseModel):
         )
 
         self.stoichiometry_limits = self.input_data.clean_copy(
-            {
-                "x_pe low SOC": np.array([x_pe_lo]),
-                "x_pe high SOC": np.array([x_pe_hi]),
-                "x_ne low SOC": np.array([x_ne_lo]),
-                "x_ne high SOC": np.array([x_ne_hi]),
-                "Cell Capacity [Ah]": np.array([cell_capacity]),
-                "Cathode Capacity [Ah]": np.array([pe_capacity]),
-                "Anode Capacity [Ah]": np.array([ne_capacity]),
-                "Li Inventory [Ah]": np.array([li_inventory]),
-            }
+            pl.DataFrame(
+                {
+                    "x_pe low SOC": np.array([x_pe_lo]),
+                    "x_pe high SOC": np.array([x_pe_hi]),
+                    "x_ne low SOC": np.array([x_ne_lo]),
+                    "x_ne high SOC": np.array([x_ne_hi]),
+                    "Cell Capacity [Ah]": np.array([cell_capacity]),
+                    "Cathode Capacity [Ah]": np.array([pe_capacity]),
+                    "Anode Capacity [Ah]": np.array([ne_capacity]),
+                    "Li Inventory [Ah]": np.array([li_inventory]),
+                }
+            )
         )
         self.stoichiometry_limits.column_definitions = {
             "x_pe low SOC": "Positive electrode stoichiometry at lowest SOC point.",
@@ -139,16 +142,18 @@ class DMA(BaseModel):
             ocp_ne,
         )
         self.fitted_OCV = self.input_data.clean_copy(
-            {
-                "Capacity [Ah]": capacity,
-                "SOC": SOC,
-                "Input Voltage [V]": voltage,
-                "Fitted Voltage [V]": fitted_voltage,
-                "Input dSOCdV [1/V]": dSOCdV,
-                "Fitted dSOCdV [1/V]": np.gradient(SOC, fitted_voltage),
-                "Input dVdSOC [V]": dVdSOC,
-                "Fitted dVdSOC [V]": np.gradient(fitted_voltage, SOC),
-            }
+            pl.DataFrame(
+                {
+                    "Capacity [Ah]": capacity,
+                    "SOC": SOC,
+                    "Input Voltage [V]": voltage,
+                    "Fitted Voltage [V]": fitted_voltage,
+                    "Input dSOCdV [1/V]": dSOCdV,
+                    "Fitted dSOCdV [1/V]": np.gradient(SOC, fitted_voltage),
+                    "Input dVdSOC [V]": dVdSOC,
+                    "Fitted dVdSOC [V]": np.gradient(fitted_voltage, SOC),
+                }
+            )
         )
         self.fitted_OCV.column_definitions = {
             "SOC": "Cell state of charge.",
@@ -207,12 +212,14 @@ class DMA(BaseModel):
         )
 
         self.dma_result = electrode_capacity_results[0].clean_copy(
-            {
-                "SOH": SOH,
-                "LAM_pe": LAM_pe,
-                "LAM_ne": LAM_ne,
-                "LLI": LLI,
-            }
+            pl.DataFrame(
+                {
+                    "SOH": SOH,
+                    "LAM_pe": LAM_pe,
+                    "LAM_ne": LAM_ne,
+                    "LLI": LLI,
+                }
+            )
         )
         self.dma_result.column_definitions = {
             "SOH": "Cell capacity normalized to initial capacity.",
@@ -269,10 +276,12 @@ class DMA(BaseModel):
         )
 
         average_result = charge_result.clean_copy(
-            {
-                "Voltage [V]": average_OCV,
-                "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
-                "SOC": charge_SOC,
-            }
+            pl.DataFrame(
+                {
+                    "Voltage [V]": average_OCV,
+                    "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
+                    "SOC": charge_SOC,
+                }
+            )
         )
         return DMA(input_data=average_result)
