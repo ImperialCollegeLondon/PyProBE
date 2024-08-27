@@ -18,6 +18,7 @@ class Units:
         "A.h": "Capacity",
         "s": "Time",
         "C": "Temperature",
+        "Ohms": "Resistance",
     }
 
     def __init__(

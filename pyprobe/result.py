@@ -90,6 +90,15 @@ class Result(BaseModel):
             raise ValueError("No data exists for this filter.")
         return self.base_dataframe
 
+    @property
+    def contains_lazyframe(self) -> bool:
+        """Return whether the data is a LazyFrame.
+
+        Returns:
+            bool: True if the data is a LazyFrame, False otherwise.
+        """
+        return isinstance(self.base_dataframe, pl.LazyFrame)
+
     def get(
         self, *column_names: str
     ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
@@ -210,14 +219,14 @@ class Result(BaseModel):
 
     def clean_copy(
         self,
-        dataframe: Optional[Dict[str, NDArray[np.float64]]] = {},
+        dataframe: Optional[Union[pl.DataFrame, pl.LazyFrame]] = pl.DataFrame({}),
         column_definitions: Dict[str, str] = {},
     ) -> "Result":
         """Create a copy of the result object with info dictionary but without data.
 
         Args:
-            dataframe (Optional[Dict[str, NDArray[np.float64]]):
-                The data to include in the new result object.
+            dataframe (Optional[Union[pl.DataFrame, pl.LazyFrame]):
+                The data to include in the new Result object.
             column_definitions (Optional[Dict[str, str]]):
                 The definitions of the columns in the new result object.
 
@@ -225,7 +234,7 @@ class Result(BaseModel):
             Result: A new result object with the specified data.
         """
         return Result(
-            base_dataframe=pl.DataFrame(dataframe),
+            base_dataframe=dataframe,
             info=self.info,
             column_definitions=column_definitions,
         )

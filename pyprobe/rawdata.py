@@ -101,14 +101,14 @@ class RawData(Result):
 
         Args:
             reference_capacity (Optional[float]): The reference capacity value.
-            reference_charge (Optional[RawData]): The reference charge data.
+            reference_charge (Optional[RawData]): A rawdata object containing a charge
+                cycle to use as a reference.
         """
         if reference_capacity is None:
             reference_capacity = (
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
         if reference_charge is None:
-            # capacity_reference = pl.select(pl.col("Capacity [Ah]").max())
             self.base_dataframe = self.base_dataframe.with_columns(
                 (
                     (
@@ -120,23 +120,39 @@ class RawData(Result):
                 ).alias("SOC")
             )
         else:
-            self.data
-            fully_charged_reference_point = reference_charge.data.select(
-                pl.col("Date").max()
-            )[0][0]
-            capacity_reference = (
-                self.base_dataframe.filter(
-                    pl.col("Date") == fully_charged_reference_point
+            if self.contains_lazyframe:
+                reference_charge_data = reference_charge.base_dataframe.select(
+                    "Time [s]", "Capacity [Ah]"
                 )
-                .select("Capacity [Ah]")
-                .head(1)
-            )
+                self.base_dataframe = self.base_dataframe.join(
+                    reference_charge_data, on="Time [s]", how="left"
+                )
+                self.base_dataframe = self.base_dataframe.with_columns(
+                    pl.col("Capacity [Ah]_right")
+                    .max()
+                    .alias("Full charge reference capacity"),
+                ).drop("Capacity [Ah]_right")
+            else:
+                full_charge_reference_capacity = (
+                    reference_charge.data.select("Capacity [Ah]").max().item()
+                )
+                self.base_dataframe = self.base_dataframe.with_columns(
+                    pl.lit(full_charge_reference_capacity).alias(
+                        "Full charge reference capacity"
+                    ),
+                )
+
             self.base_dataframe = self.base_dataframe.with_columns(
                 (
-                    (pl.col("Capacity [Ah]") - capacity_reference + reference_capacity)
+                    (
+                        pl.col("Capacity [Ah]")
+                        - pl.col("Full charge reference capacity")
+                        + reference_capacity
+                    )
                     / reference_capacity
                 ).alias("SOC")
             )
+        self.define_column("SOC", "The full cell State-of-Charge.")
 
     def set_reference_capacity(
         self, reference_capacity: Optional[float] = None

@@ -3,6 +3,7 @@
 from typing import List
 
 import numpy as np
+import polars as pl
 from pydantic import BaseModel
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
@@ -66,7 +67,7 @@ class Differentiation(BaseModel):
 
         # 5. Create a Result object to store the results
         gradient_result = self.input_data.clean_copy(
-            {x: x_data, y: y_data, gradient_title: gradient_data}
+            pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data})
         )
         # 6. Define the column definitions for the Result object
         gradient_result.column_definitions = {
@@ -159,7 +160,7 @@ class Differentiation(BaseModel):
         # output the results
         gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
         gradient_result = self.input_data.clean_copy(
-            {x: x_all, y: y_all, gradient_title: smoothed_gradient}
+            pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient})
         )
         gradient_result.column_definitions = {
             x: self.input_data.column_definitions[x],

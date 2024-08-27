@@ -1,14 +1,12 @@
 """A module for the Pulsing class."""
 
-from typing import Any, List, Optional
+from typing import List
 
-import numpy as np
 import polars as pl
-from numpy.typing import NDArray
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.filters import Experiment
+from pyprobe.filters import Experiment, Step
 from pyprobe.result import Result
 
 
@@ -20,131 +18,165 @@ class Pulsing(BaseModel):
     """
 
     input_data: Experiment
-    rests: List[Optional[Result]] = Field(default_factory=list)
-    pulses: List[Optional[Result]] = Field(default_factory=list)
 
-    def model_post_init(self, __context: Any) -> None:
-        """Create a pulsing experiment."""
-        self.rests: List[Optional[Result]] = [None] * self.input_data.data.select(
-            "Cycle"
-        ).n_unique("Cycle")
-        self.pulses: List[Optional[Result]] = [None] * self.input_data.data.select(
-            "Cycle"
-        ).n_unique("Cycle")
-
-    @property
-    def pulse_starts(self) -> pl.DataFrame:
-        """Find the start of the pulses in the pulsing experiment.
-
-        Returns:
-            pl.DataFrame: A dataframe with rows for the start of each pulse.
-        """
-        df = self.input_data.data.with_columns(
-            pl.col("Current [A]").shift().alias("Prev Current")
-        )
-        df = df.with_columns(pl.col("Voltage [V]").shift().alias("Prev Voltage"))
-        return df.filter((df["Current [A]"].shift() == 0) & (df["Current [A]"] != 0))
-
-    @property
-    def V0(self) -> NDArray[np.float64]:
-        """Find the voltage values immediately before each pulse.
-
-        Returns:
-            numpy.ndarray: The voltage values immediately before each pulse.
-        """
-        return self.pulse_starts["Prev Voltage"].to_numpy()
-
-    @property
-    def V1(self) -> NDArray[np.float64]:
-        """Find the voltage values immediately after each pulse.
-
-        Returns:
-            numpy.ndarray: The voltage values immediately after each pulse.
-        """
-        return self.pulse_starts["Voltage [V]"].to_numpy()
-
-    @property
-    def I1(self) -> NDArray[np.float64]:
-        """Find the current values immediately after each pulse.
-
-        Returns:
-            numpy.ndarray: The current values immediately after each pulse.
-        """
-        return self.pulse_starts["Current [A]"].to_numpy()
-
-    @property
-    def R0(self) -> NDArray[np.float64]:
-        """Find the ohmic resistance for each pulse.
-
-        Returns:
-            numpy.ndarray: The ohmic resistance for each pulse.
-        """
-        return (self.V1 - self.V0) / self.I1
-
-    @property
-    def pulse_summary(self) -> Result:
-        """Find the resistance values for each pulse.
-
-        Returns:
-            Result: A result object containing resistance values for each pulse.
-        """
-        AnalysisValidator(
-            input_data=self.input_data, required_columns=["Current [A]", "Voltage [V]"]
-        )
-        return Result(
-            base_dataframe=pl.DataFrame(
-                {
-                    "Pulse number": list(range(len(self.R0))),
-                    "R0 [Ohm]": self.R0,
-                    "V0 [V]": self.V0,
-                }
-            ),
-            info=self.input_data.info,
-            column_definitions={
-                "Pulse number": "The pulse number.",
-                "R0 [Ohm]": "The ohmic resistance for each pulse.",
-                "V0 [V]": "The voltage values immediately before each pulse.",
-            },
-        )
-
-    def Rt(self, t: float) -> NDArray[np.float64]:
-        """Find the cell resistance at a given time after each pulse.
-
-        Returns:
-            numpy.ndarray: The cell resistance at a given time after each pulse.
-        """
-        t_point = self.pulse_starts["Time [s]"] + t
-        Vt = np.zeros(len(t_point))
-        for i in range(len(Vt)):
-            condition = self.input_data.data["Time [s]"] >= t_point[i]
-            first_row = self.input_data.data.filter(condition).sort("Time [s]").head(1)
-            Vt[i] = first_row["Voltage [V]"].to_numpy()[0]
-        return (Vt - self.V0) / self.I1
-
-    def pulse(self, pulse_number: int) -> Optional[Result]:
+    def pulse(self, pulse_number: int) -> Step:
         """Return a step object for a pulse in the pulsing experiment.
 
         Args:
             pulse_number (int): The pulse number to return.
 
         Returns:
-            Result: A step object for a pulse in the pulsing experiment.
+            Step: A step object for a pulse in the pulsing experiment.
         """
-        if self.pulses[pulse_number] is None:
-            self.pulses[pulse_number] = self.input_data.cycle(
-                pulse_number
-            ).chargeordischarge(0)
-        return self.pulses[pulse_number]
+        return self.input_data.cycle(pulse_number).chargeordischarge(0)
 
-    def pulse_rest(self, rest_number: int) -> Optional[Result]:
+    def pulse_rest(self, rest_number: int) -> Step:
         """Return a step object for a rest in the pulsing experiment.
 
         Args:
             rest_number (int): The rest number to return.
 
         Returns:
-            Result: A step object for a rest in the pulsing experiment.
+            Step: A step object for a rest in the pulsing experiment.
         """
-        if self.rests[rest_number] is None:
-            self.rests[rest_number] = self.input_data.cycle(rest_number).rest(0)
-        return self.rests[rest_number]
+        return self.input_data.cycle(rest_number).rest(0)
+
+    def pulse_summary(self, r_times: List[float] = []) -> Result:
+        """Returns a result object summarising the pulsing experiment.
+
+        Args:
+            r_times:
+                A list of times (in seconds) after each pulse at which to evaluate
+                the cell resistance.
+
+        Returns:
+            Result:
+                A result object containing key summary statistics for a pulsing
+                experiment. Includes:
+                - Experiment Capacity [Ah]
+                - SOC
+                - OCV [V]
+                - R0 [Ohms]
+                - Resistance calculated at each time provided in seconds in the r_times
+                argument
+        """
+        AnalysisValidator(
+            input_data=self.input_data,
+            required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event", "SOC"],
+        )
+
+        all_data_df = self.input_data.data.with_columns(
+            [
+                pl.col("Voltage [V]").shift().alias("Prev Voltage"),
+                pl.col("Voltage [V]").shift(-1).alias("Next Voltage"),
+            ]
+        )
+
+        starts = (pl.col("Current [A]").shift() == 0) & (pl.col("Current [A]") != 0)
+        pulse_df = all_data_df.filter(starts)
+        pulse_df = pulse_df.rename({"Prev Voltage": "OCV [V]"})
+
+        R0 = (
+            (pl.col("Voltage [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")
+        ).alias("R0 [Ohms]")
+        pulse_df = pulse_df.with_columns(R0)
+
+        r_t_col_names = [f"R_{time}s [Ohms]" for time in r_times]
+        if r_t_col_names != []:
+            # add columns for the timestamps requested after each pulse
+            t_after_pulse_df = pulse_df.with_columns(
+                [
+                    (pl.col("Time [s]") + time).alias(r_t_col_names[idx])
+                    for idx, time in enumerate(r_times)
+                ]
+            )
+
+            # reformat df into two rows, r_time and the corresponding timestamp
+            t_after_pulse_df = t_after_pulse_df.unpivot(r_t_col_names).rename(
+                {"variable": "r_time", "value": "Time [s]"}
+            )
+
+            # merge this dataframe into the full dataframe and sort
+            t_after_pulse_df = all_data_df.join(
+                t_after_pulse_df, on="Time [s]", how="full", coalesce=True
+            ).sort("Time [s]")
+
+            # after merging, where the requested time doesn't match with an existing
+            # timestamp, null values will be inserted in the Voltage and Event columns.
+            # Use linear interpolation for voltage and just look backward for the event
+            # number
+            t_after_pulse_df = t_after_pulse_df.with_columns(
+                [
+                    pl.col("Voltage [V]").interpolate(),
+                    pl.col("Event").fill_null(strategy="backward"),
+                ]
+            )
+
+            # filter the array to return only the inserted rows
+            t_after_pulse_df = t_after_pulse_df.filter(
+                pl.col("r_time").is_not_null()
+            ).select("Voltage [V]", "Event", "r_time")
+
+            # pivot the dataframe to obtain seperate rows for the requested time points
+            # against Event
+            t_after_pulse_df = t_after_pulse_df.pivot("r_time", values="Voltage [V]")
+
+            # merge back into the main pulse dataframe on Event
+            pulse_df = pulse_df.join(t_after_pulse_df, on="Event")
+
+            # calculate the resistance
+            pulse_df = pulse_df.with_columns(
+                [
+                    (pl.col(r_time_column) - pl.col("OCV [V]")) / pl.col("Current [A]")
+                    for r_time_column in r_t_col_names
+                ]
+            )
+
+            pulse_df = pulse_df.with_columns(
+                pl.col("Event").rank(method="dense").alias("Pulse number")
+            )
+            # filter the dataframe to the final selection
+            pulse_df = pulse_df.select(
+                [
+                    "Pulse number",
+                    "Experiment Capacity [Ah]",
+                    "SOC",
+                    "OCV [V]",
+                    "R0 [Ohms]",
+                ]
+                + r_t_col_names
+            )
+        else:
+            pulse_df = pulse_df.with_columns(
+                pl.col("Event").rank(method="dense").alias("Pulse number")
+            )
+            pulse_df = pulse_df.select(
+                [
+                    "Pulse number",
+                    "Experiment Capacity [Ah]",
+                    "SOC",
+                    "OCV [V]",
+                    "R0 [Ohms]",
+                ]
+            )
+
+        column_definitions = {
+            "Pulse number": "An index for each pulse.",
+            "Experiment Capacity [Ah]": self.input_data.column_definitions[
+                "Experiment Capacity [Ah]"
+            ],
+            "SOC": self.input_data.column_definitions["SOC"],
+            "OCV [V]": "The voltage value at the final data point in the rest before a "
+            "pulse.",
+            "R0 [Ohms]": "The instantaneous resistance measured between the final rest "
+            "point and the first data point in the pulse.",
+        }
+        result = self.input_data.clean_copy(pulse_df, column_definitions)
+        for r_t in r_t_col_names:
+            time = r_t.split("_")[1][-9]
+            result.define_column(
+                r_t,
+                f"The resistance measured between the OCV and the voltage t = {time}s "
+                f"after the pulse.",
+            )
+        return result
