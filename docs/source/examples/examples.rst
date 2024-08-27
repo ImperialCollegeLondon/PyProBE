@@ -6,6 +6,7 @@ Examples
 
    getting-started
    filtering-data
+   analysing-GITT-data
    LEAN-differentiation
    ocv-fitting
    comparing-pyprobe-performance
