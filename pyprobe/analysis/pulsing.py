@@ -146,6 +146,19 @@ class Pulsing(BaseModel):
                 ]
                 + r_t_col_names
             )
+        else:
+            pulse_df = pulse_df.with_columns(
+                pl.col("Event").rank(method="dense").alias("Pulse number")
+            )
+            pulse_df = pulse_df.select(
+                [
+                    "Pulse number",
+                    "Experiment Capacity [Ah]",
+                    "SOC",
+                    "OCV [V]",
+                    "R0 [Ohms]",
+                ]
+            )
 
         column_definitions = {
             "Pulse number": "An index for each pulse.",
