@@ -90,6 +90,15 @@ class Result(BaseModel):
             raise ValueError("No data exists for this filter.")
         return self.base_dataframe
 
+    @property
+    def contains_lazyframe(self) -> bool:
+        """Return whether the data is a LazyFrame.
+
+        Returns:
+            bool: True if the data is a LazyFrame, False otherwise.
+        """
+        return isinstance(self.base_dataframe, pl.LazyFrame)
+
     def get(
         self, *column_names: str
     ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
