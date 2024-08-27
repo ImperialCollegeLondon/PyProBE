@@ -387,15 +387,15 @@ module has type aliases that may be helpful here. This type should be the most
 lenient type that the methods of your analysis class require.</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>
-<span class="linenos"> 2</span><span class="c1"># 1. Define the class as a Pydantic BaseModel.</span>
-<span class="linenos"> 3</span><span class="k">class</span> <span class="nc">Differentiation</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="linenos"> 4</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for differentiating experimental data.</span>
-<span class="linenos"> 5</span>
-<span class="linenos"> 6</span><span class="sd">    Args:</span>
-<span class="linenos"> 7</span><span class="sd">        input_data (PyProBERawDataType): The raw data to analyse.</span>
-<span class="linenos"> 8</span><span class="sd">    &quot;&quot;&quot;</span>
-<span class="linenos"> 9</span>
-<span class="linenos">10</span>    <span class="c1"># 2. Define the input_data attribute, giving it a type</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="c1"># 1. Define the class as a Pydantic BaseModel.</span>
+<span class="linenos"> 4</span><span class="k">class</span> <span class="nc">Differentiation</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="linenos"> 5</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for differentiating experimental data.</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="sd">    Args:</span>
+<span class="linenos"> 8</span><span class="sd">        input_data (PyProBERawDataType): The raw data to analyse.</span>
+<span class="linenos"> 9</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">10</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
@@ -409,20 +409,20 @@ for use later. If they are required, these attributes must also be defined at th
 top of the class.</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>
-<span class="linenos"> 2</span><span class="c1"># 1. Define the class as a Pydantic BaseModel.</span>
-<span class="linenos"> 3</span><span class="k">class</span> <span class="nc">DMA</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="linenos"> 4</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for degradation mode analysis methods.</span>
-<span class="linenos"> 5</span>
-<span class="linenos"> 6</span><span class="sd">    Args:</span>
-<span class="linenos"> 7</span><span class="sd">        input_data (RawData): The input data to the method.</span>
-<span class="linenos"> 8</span><span class="sd">    &quot;&quot;&quot;</span>
-<span class="linenos"> 9</span>
-<span class="linenos">10</span>    <span class="c1"># 2. Define the input_data attribute, giving it a type</span>
-<span class="linenos">11</span>    <span class="n">input_data</span><span class="p">:</span> <span class="n">PyProBEDataType</span>
-<span class="linenos">12</span>
-<span class="linenos">13</span>    <span class="c1"># 3. Define the attributes that will be populated by the methods.</span>
-<span class="linenos">14</span>    <span class="n">stoichiometry_limits</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Result</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="linenos">15</span>    <span class="n">fitted_OCV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Result</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="c1"># 1. Define the class as a Pydantic BaseModel.</span>
+<span class="linenos"> 4</span><span class="k">class</span> <span class="nc">DMA</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="linenos"> 5</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for degradation mode analysis methods.</span>
+<span class="linenos"> 6</span>
+<span class="linenos"> 7</span><span class="sd">    Args:</span>
+<span class="linenos"> 8</span><span class="sd">        input_data (RawData): The input data to the method.</span>
+<span class="linenos"> 9</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">10</span>
+<span class="linenos">11</span>    <span class="c1"># 2. Define the input_data attribute, giving it a type</span>
+<span class="linenos">12</span>    <span class="n">input_data</span><span class="p">:</span> <span class="n">PyProBEDataType</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span>    <span class="c1"># 3. Define the attributes that will be populated by the methods.</span>
+<span class="linenos">15</span>    <span class="n">stoichiometry_limits</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Result</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </pre></div>
 </div>
 <p>Then you can add any additional methods to perform your calculations.</p>
@@ -500,7 +500,7 @@ replacing the data stored with a dataframe created from the provided dictionary.
 <span class="linenos">42</span>
 <span class="linenos">43</span>        <span class="c1"># 5. Create a Result object to store the results</span>
 <span class="linenos">44</span>        <span class="n">gradient_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_data</span><span class="o">.</span><span class="n">clean_copy</span><span class="p">(</span>
-<span class="linenos">45</span>            <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">y_data</span><span class="p">,</span> <span class="n">gradient_title</span><span class="p">:</span> <span class="n">gradient_data</span><span class="p">}</span>
+<span class="linenos">45</span>            <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="p">:</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">y_data</span><span class="p">,</span> <span class="n">gradient_title</span><span class="p">:</span> <span class="n">gradient_data</span><span class="p">})</span>
 <span class="linenos">46</span>        <span class="p">)</span>
 <span class="linenos">47</span>        <span class="c1"># 6. Define the column definitions for the Result object</span>
 <span class="linenos">48</span>        <span class="n">gradient_result</span><span class="o">.</span><span class="n">column_definitions</span> <span class="o">=</span> <span class="p">{</span>

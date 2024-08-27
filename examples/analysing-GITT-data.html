@@ -1,0 +1,654 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Analysing GITT data &#8212; PyProBE  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/analysing-GITT-data';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">PyProBE  documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer_guide/developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/user_guide.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../developer_guide/developer_guide.html">
+    Developer Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/modules.html">
+    pyprobe
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Analysing GITT data</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Analysing-GITT-data">
+<h1>Analysing GITT data<a class="headerlink" href="#Analysing-GITT-data" title="Link to this heading">#</a></h1>
+<p>PyProBE includes built-in analysis methods for pulsing experiments, which this example will demonstrate.</p>
+<p>First import the required libraries and data:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyprobe</span>
+
+<span class="n">info_dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sample cell&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Chemistry&#39;</span><span class="p">:</span> <span class="s1">&#39;NMC622&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Nominal Capacity [Ah]&#39;</span><span class="p">:</span> <span class="mf">0.04</span><span class="p">,</span>
+                   <span class="s1">&#39;Cycler number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                   <span class="s1">&#39;Channel number&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,}</span>
+<span class="n">data_directory</span> <span class="o">=</span> <span class="s1">&#39;../../../tests/sample_data/neware&#39;</span>
+
+<span class="c1"># Create a cell object</span>
+<span class="n">cell</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="n">info</span><span class="o">=</span><span class="n">info_dictionary</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">add_procedure</span><span class="p">(</span><span class="n">procedure_name</span><span class="o">=</span><span class="s1">&#39;Sample&#39;</span><span class="p">,</span>
+                   <span class="n">folder_path</span> <span class="o">=</span> <span class="n">data_directory</span><span class="p">,</span>
+                   <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;sample_data_neware.parquet&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment_names</span><span class="p">)</span>
+<br/><br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Initial Charge&#39;, &#39;Break-in Cycles&#39;, &#39;Discharge Pulses&#39;]
+</pre></div></div>
+</div>
+<p>We will plot the Break-in Cycles and Discharge Pulses:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">),</span> <span class="s1">&#39;Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Discharge Pulses&#39;</span><span class="p">),</span> <span class="s1">&#39;Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Discharge Pulses&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_analysing-GITT-data_3_0.png" src="../_images/examples_analysing-GITT-data_3_0.png" />
+</div>
+</div>
+<p>State-of-charge is a useful metric when working with battery data, however it must be carefully defined. PyProBE doesn’t automatically calculate a value for cell SOC until instructed to by the user for this reason.</p>
+<p>To add an SOC column to the data, we call <code class="docutils literal notranslate"><span class="pre">set_SOC()</span></code> on the procedure. We are going to provide an argument to <code class="docutils literal notranslate"><span class="pre">reference_charge</span></code>. This will be the final charge of the break-in cycles. This argument instructs PyProBE that the final data point of this charge is our 100% SOC reference.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reference_charge</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_SOC</span><span class="p">(</span><span class="n">reference_charge</span><span class="o">=</span><span class="n">reference_charge</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">),</span> <span class="s1">&#39;Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Discharge Pulses&#39;</span><span class="p">),</span> <span class="s1">&#39;Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Discharge Pulses&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_analysing-GITT-data_5_0.png" src="../_images/examples_analysing-GITT-data_5_0.png" />
+</div>
+</div>
+<p>Then we’ll filter to only the pulsing experiment:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pulsing_experiment</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Discharge Pulses&#39;</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulsing_experiment</span><span class="p">,</span> <span class="s1">&#39;Experiment Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_analysing-GITT-data_7_0.png" src="../_images/examples_analysing-GITT-data_7_0.png" />
+</div>
+</div>
+<p>And then create our pulsing analysis object.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.analysis.pulsing</span> <span class="kn">import</span> <span class="n">Pulsing</span>
+<span class="n">pulse_object</span> <span class="o">=</span> <span class="n">Pulsing</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">pulsing_experiment</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>With the pulsing object we can separate out individual pulses:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_object</span><span class="o">.</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;Experiment Time [hr]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Full Experiment&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_object</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="s2">&quot;Experiment Time [hr]&quot;</span><span class="p">,</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Pulse 5&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_analysing-GITT-data_11_0.png" src="../_images/examples_analysing-GITT-data_11_0.png" />
+</div>
+</div>
+<p>We can also extract key parameters from the pulsing experiment, with the <code class="docutils literal notranslate"><span class="pre">pulse_summary()</span></code> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">pulse_object</span><span class="o">.</span><span class="n">pulse_summary</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+shape: (10, 5)
+┌──────────────┬──────────────────────────┬──────────┬─────────┬───────────┐
+│ Pulse number ┆ Experiment Capacity [Ah] ┆ SOC      ┆ OCV [V] ┆ R0 [Ohms] │
+│ ---          ┆ ---                      ┆ ---      ┆ ---     ┆ ---       │
+│ u32          ┆ f64                      ┆ f64      ┆ f64     ┆ f64       │
+╞══════════════╪══════════════════════════╪══════════╪═════════╪═══════════╡
+│ 1            ┆ 0.0                      ┆ 1.0      ┆ 4.1919  ┆ 1.805578  │
+│ 2            ┆ -0.004                   ┆ 0.903497 ┆ 4.0949  ┆ 1.835632  │
+│ 3            ┆ -0.008001                ┆ 0.806994 ┆ 3.9934  ┆ 1.775612  │
+│ 4            ┆ -0.012001                ┆ 0.710493 ┆ 3.8987  ┆ 1.750596  │
+│ 5            ┆ -0.016001                ┆ 0.613991 ┆ 3.8022  ┆ 1.725532  │
+│ 6            ┆ -0.020002                ┆ 0.517489 ┆ 3.7114  ┆ 1.705558  │
+│ 7            ┆ -0.024002                ┆ 0.420988 ┆ 3.665   ┆ 1.705622  │
+│ 8            ┆ -0.028002                ┆ 0.324487 ┆ 3.6334  ┆ 1.735555  │
+│ 9            ┆ -0.032002                ┆ 0.227986 ┆ 3.5866  ┆ 1.795638  │
+│ 10           ┆ -0.036003                ┆ 0.131485 ┆ 3.5164  ┆ 1.900663  │
+└──────────────┴──────────────────────────┴──────────┴─────────┴───────────┘
+</pre></div></div>
+</div>
+<p>The pulse summary can take an argument of a list of times at which to evaluate the resistance after the pulse, for instance at 10s after the pulse:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pulse_summary</span> <span class="o">=</span> <span class="n">pulse_object</span><span class="o">.</span><span class="n">pulse_summary</span><span class="p">(</span><span class="n">r_times</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pulse_summary</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+shape: (10, 6)
+┌──────────────┬──────────────────────────┬──────────┬─────────┬───────────┬──────────────┐
+│ Pulse number ┆ Experiment Capacity [Ah] ┆ SOC      ┆ OCV [V] ┆ R0 [Ohms] ┆ R_10s [Ohms] │
+│ ---          ┆ ---                      ┆ ---      ┆ ---     ┆ ---       ┆ ---          │
+│ u32          ┆ f64                      ┆ f64      ┆ f64     ┆ f64       ┆ f64          │
+╞══════════════╪══════════════════════════╪══════════╪═════════╪═══════════╪══════════════╡
+│ 1            ┆ 0.0                      ┆ 1.0      ┆ 4.1919  ┆ 1.805578  ┆ 2.910931     │
+│ 2            ┆ -0.004                   ┆ 0.903497 ┆ 4.0949  ┆ 1.835632  ┆ 2.805967     │
+│ 3            ┆ -0.008001                ┆ 0.806994 ┆ 3.9934  ┆ 1.775612  ┆ 2.735943     │
+│ 4            ┆ -0.012001                ┆ 0.710493 ┆ 3.8987  ┆ 1.750596  ┆ 2.685915     │
+│ 5            ┆ -0.016001                ┆ 0.613991 ┆ 3.8022  ┆ 1.725532  ┆ 2.640815     │
+│ 6            ┆ -0.020002                ┆ 0.517489 ┆ 3.7114  ┆ 1.705558  ┆ 2.400785     │
+│ 7            ┆ -0.024002                ┆ 0.420988 ┆ 3.665   ┆ 1.705622  ┆ 2.345855     │
+│ 8            ┆ -0.028002                ┆ 0.324487 ┆ 3.6334  ┆ 1.735555  ┆ 2.390765     │
+│ 9            ┆ -0.032002                ┆ 0.227986 ┆ 3.5866  ┆ 1.795638  ┆ 2.565912     │
+│ 10           ┆ -0.036003                ┆ 0.131485 ┆ 3.5164  ┆ 1.900663  ┆ 3.026056     │
+└──────────────┴──────────────────────────┴──────────┴─────────┴───────────┴──────────────┘
+</pre></div></div>
+</div>
+<p>As a result object, the pulse summary can also be plotted:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_summary</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="s1">&#39;R0 [Ohms]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R0&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_summary</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="s1">&#39;R_10s [Ohms]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R_10s&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">yaxis_title</span> <span class="o">=</span> <span class="s1">&#39;Resistance [Ohms]&#39;</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_analysing-GITT-data_17_0.png" src="../_images/examples_analysing-GITT-data_17_0.png" />
+</div>
+</div>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/examples/analysing-GITT-data.ipynb.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, Thomas Holland, Electrochemical Science and Engineering Group, Imperial College London.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
