@@ -131,7 +131,7 @@ class RawData(Result):
                     pl.col("Capacity [Ah]_right")
                     .max()
                     .alias("Full charge reference capacity"),
-                )
+                ).drop("Capacity [Ah]_right")
             else:
                 full_charge_reference_capacity = (
                     reference_charge.data.select("Capacity [Ah]").max().item()

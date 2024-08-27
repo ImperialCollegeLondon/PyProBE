@@ -46,15 +46,13 @@ def test_capacity(BreakinCycles_fixture):
     assert np.isclose(capacity, 41.08565 / 1000)
 
 
-def test_set_SOC(BreakinCycles_fixture, benchmark):
+def test_set_SOC(BreakinCycles_fixture):
     """Test the set_SOC method."""
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)
-
-    def set_SOC():
-        with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-        return with_charge_specified.data["SOC"]
-
-    with_charge_specified = benchmark(set_SOC)
+    with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
+    assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
+    assert "Capacity [Ah]_right" not in with_charge_specified.data.columns
+    with_charge_specified = with_charge_specified.data["SOC"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     without_charge_specified.set_SOC(0.04)
