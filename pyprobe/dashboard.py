@@ -38,7 +38,7 @@ if __name__ == "__main__":
             df_with_selections,
             hide_index=True,  # Keep the index visible
             column_config={"Select": st.column_config.CheckboxColumn(required=True)},
-            disabled=df.collect_schema().names(),
+            disabled=df.columns.tolist(),
         )
 
         # Filter the dataframe using the temporary column, then drop the column
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         procedure_names = procedure_names_sets[0]
         for s in procedure_names_sets[1:]:
             procedure_names = [x for x in procedure_names if x in s]
-
+    procedure_names = list(procedure_names)
     selected_raw_data = st.sidebar.selectbox("Select a procedure", procedure_names)
 
     # Select an experiment
