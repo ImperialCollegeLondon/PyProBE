@@ -72,13 +72,15 @@ class Smoothing(BaseModel):
 
         result = copy.deepcopy(self.input_data)
         smoothed_data_column = pl.Series(target_column, smoothed_y)
-        column_index = result.base_dataframe.get_column_index(target_column)
-        result.base_dataframe = result.base_dataframe.replace_column(
-            column_index, smoothed_data_column
+        result.base_dataframe = result.base_dataframe.with_columns(
+            smoothed_data_column.alias(target_column)
         )
 
-        dydx_column = pl.Series(f"d({target_column})/d({x})", smoothed_dydx)
-        result.base_dataframe = result.base_dataframe.hstack([dydx_column])
+        gradient_column_name = f"d({target_column})/d({x})"
+        dydx_column = pl.Series(gradient_column_name, smoothed_dydx)
+        result.base_dataframe = result.base_dataframe.with_columns(
+            dydx_column.alias(gradient_column_name)
+        )
         result.define_column(
             f"d({target_column})/d({x})",
             "The gradient of the smoothed data.",
@@ -184,8 +186,7 @@ class Smoothing(BaseModel):
 
         smoothed_data_column = pl.Series(target_column, smoothed_y)
         result = copy.deepcopy(self.input_data)
-        column_index = result.base_dataframe.get_column_index(target_column)
-        result.base_dataframe = result.base_dataframe.replace_column(
-            column_index, smoothed_data_column
+        result.base_dataframe = result.base_dataframe.with_columns(
+            smoothed_data_column.alias(target_column)
         )
         return result
