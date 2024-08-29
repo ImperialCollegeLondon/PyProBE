@@ -17,7 +17,7 @@ class Biologic(BaseCycler):
     """
 
     input_data_path: str
-    common_suffix: str = "_MB"
+    common_suffix: str = ""
     column_name_pattern: str = r"(.+)/(.+)"
     column_dict: dict[str, str] = {
         "Date": "Date",
@@ -68,6 +68,33 @@ class Biologic(BaseCycler):
         )
         return dataframe
 
+    @property
+    def step(self) -> pl.Expr:
+        """Identify and format the step column."""
+        return (pl.col(self.column_dict["Step"]) + 1).cast(pl.Int64).alias("Step")
+
+
+class BiologicMB(Biologic):
+    """A class to load and process Biologic battery cycler data.
+
+    Args:
+            input_data_path: The path to the input data.
+    """
+
+    input_data_path: str
+    common_suffix: str = "_MB"
+    column_name_pattern: str = r"(.+)/(.+)"
+    column_dict: dict[str, str] = {
+        "Date": "Date",
+        "Time": "time/s",
+        "Step": "Ns",
+        "Current": "I",
+        "Voltage": "Ecell",
+        "Charge Capacity": "Q charge",
+        "Discharge Capacity": "Q discharge",
+        "Temperature": "Temperature",
+    }
+
     def get_imported_dataframe(
         self, dataframe_list: List[pl.DataFrame]
     ) -> pl.DataFrame | pl.LazyFrame:
@@ -116,8 +143,3 @@ class Biologic(BaseCycler):
         df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
         # add the max step number to the step number
         return df_with_max_step.with_columns(pl.col("Ns") + pl.col("Max_Step"))
-
-    @property
-    def step(self) -> pl.Expr:
-        """Identify and format the step column."""
-        return (pl.col(self.column_dict["Step"]) + 1).cast(pl.Int64).alias("Step")
