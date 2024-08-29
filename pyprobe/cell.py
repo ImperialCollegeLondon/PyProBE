@@ -146,7 +146,11 @@ class Cell(BaseModel):
         output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
-        cycler_dict = {"neware": neware.Neware, "biologic": biologic.Biologic}
+        cycler_dict = {
+            "neware": neware.Neware,
+            "biologic": biologic.Biologic,
+            "biologic_MB": biologic.BiologicMB,
+        }
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
         dataframe = importer.pyprobe_dataframe
