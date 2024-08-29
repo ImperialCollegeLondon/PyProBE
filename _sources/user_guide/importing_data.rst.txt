@@ -76,10 +76,11 @@ For BioLogic Modulo Bat data:
 
 .. code-block:: python
 
-   cell.process_cycler_file(cycler = 'biologic',
+   cell.process_cycler_file(cycler = 'biologic_MB',
                             folder_path = 'path/to/root_folder/experiment_folder',
                             input_filename = 'cycler_file_*_MB.mpt',
                             output_filename = 'processed_cycler_file.parquet')
+
 
 .. _adding_data_to_cell:
 
