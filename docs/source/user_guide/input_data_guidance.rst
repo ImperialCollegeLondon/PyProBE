@@ -6,11 +6,11 @@ Supported cyclers and formats
 -----------------------------
 PyProBE is able to import data from the following cyclers:
 
-* Neware
+* Neware: `'neware'`
   
   - .csv
   - .xlsx
-* BioLogic
+* BioLogic: `'biologic'` or for Modulo Bat files `'biologic_MB'`
 
   - .mpt
   - .txt
