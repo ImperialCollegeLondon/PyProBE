@@ -75,7 +75,7 @@ class Biologic(BaseCycler):
 
 
 class BiologicMB(Biologic):
-    """A class to load and process Biologic battery cycler data.
+    """A class to load and process Biologic Modulo Bat  battery cycler data.
 
     Args:
             input_data_path: The path to the input data.
