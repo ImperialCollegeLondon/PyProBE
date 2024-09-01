@@ -167,7 +167,7 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-narwhals==1.4.1
+narwhals==1.6.0
     # via altair
 nbclient==0.10.0
     # via nbconvert
