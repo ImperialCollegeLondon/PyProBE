@@ -69,9 +69,59 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     output_name = "sample_data_neware.parquet"
     cell_instance.process_cycler_file("neware", folder_path, file_name, output_name)
     expected_dataframe = lazyframe_fixture.collect()
+    expected_dataframe = expected_dataframe.with_columns(
+        pl.col("Date").dt.cast_time_unit("us")
+    )
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
     saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
     assert_frame_equal(expected_dataframe, saved_dataframe)
+
+
+def test_process_generic_file(cell_instance):
+    """Test the process_generic_file method."""
+    folder_path = "tests/sample_data/neware/"
+    df = pl.DataFrame(
+        {
+            "T [s]": [1.0, 2.0, 3.0],
+            "V [V]": [4.0, 5.0, 6.0],
+            "I [A]": [7.0, 8.0, 9.0],
+            "Q [Ah]": [10.0, 11.0, 12.0],
+            "Count": [1, 2, 3],
+        }
+    )
+
+    df.write_csv(f"{folder_path}/test_generic_file.csv")
+    column_dict = {
+        "Date": "Date",
+        "Time": "T",
+        "Voltage": "V",
+        "Current": "I",
+        "Capacity": "Q",
+        "Step": "Count",
+        "Temperature": "fka",
+    }
+    cell_instance.process_generic_file(
+        folder_path=folder_path,
+        input_filename="test_generic_file.csv",
+        output_filename="test_generic_file.parquet",
+        column_dict=column_dict,
+        column_name_pattern=r"([\w\s]+?)\s*\[(\w+)\]",
+    )
+    expected_df = pl.DataFrame(
+        {
+            "Date": [None, None, None],
+            "Time [s]": [1.0, 2.0, 3.0],
+            "Cycle": [0, 0, 0],
+            "Step": [1, 2, 3],
+            "Event": [0, 1, 2],
+            "Current [A]": [7.0, 8.0, 9.0],
+            "Voltage [V]": [4.0, 5.0, 6.0],
+            "Capacity [Ah]": [10.0, 11.0, 12.0],
+            "Temperature [C]": [None, None, None],
+        }
+    )
+    saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
+    assert_frame_equal(expected_df, saved_df, check_column_order=False)
 
 
 def test_add_procedure(cell_instance, procedure_fixture, benchmark):

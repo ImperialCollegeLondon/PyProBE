@@ -182,7 +182,7 @@ class BaseCycler(BaseModel):
             return (
                 pl.col(self.column_dict["Date"])
                 .cast(str)
-                .str.to_datetime()
+                .str.to_datetime(time_unit="us")
                 .alias("Date")
             )
         else:
