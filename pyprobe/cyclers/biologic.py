@@ -21,7 +21,7 @@ class Biologic(BaseCycler):
     column_name_pattern: str = r"(.+)/(.+)"
     column_dict: dict[str, str] = {
         "Date": "Date",
-        "Time": "time/s",
+        "Time": "time",
         "Step": "Ns",
         "Current": "I",
         "Voltage": "Ecell",
@@ -56,14 +56,12 @@ class Biologic(BaseCycler):
         start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
 
         dataframe = pl.scan_csv(
-            filepath,
-            skip_rows=n_header_lines - 1,
-            separator="\t",
+            filepath, skip_rows=n_header_lines - 1, separator="\t", infer_schema=False
         )
 
         dataframe = dataframe.with_columns(
-            (pl.col("time/s").cast(pl.Duration) + pl.lit(start_time))
-            .cast(pl.Datetime)
+            (pl.col("time/s").cast(pl.Float64).cast(pl.Duration) + pl.lit(start_time))
+            .cast(str)
             .alias("Date")
         )
         return dataframe
@@ -71,7 +69,7 @@ class Biologic(BaseCycler):
     @property
     def step(self) -> pl.Expr:
         """Identify and format the step column."""
-        return (pl.col(self.column_dict["Step"]) + 1).cast(pl.Int64).alias("Step")
+        return (pl.col(self.column_dict["Step"]).cast(pl.Int64) + 1).alias("Step")
 
 
 class BiologicMB(Biologic):
@@ -80,20 +78,6 @@ class BiologicMB(Biologic):
     Args:
             input_data_path: The path to the input data.
     """
-
-    input_data_path: str
-    common_suffix: str = "_MB"
-    column_name_pattern: str = r"(.+)/(.+)"
-    column_dict: dict[str, str] = {
-        "Date": "Date",
-        "Time": "time/s",
-        "Step": "Ns",
-        "Current": "I",
-        "Voltage": "Ecell",
-        "Charge Capacity": "Q charge",
-        "Discharge Capacity": "Q discharge",
-        "Temperature": "Temperature",
-    }
 
     def get_imported_dataframe(
         self, dataframe_list: List[pl.DataFrame]
@@ -131,7 +115,7 @@ class BiologicMB(Biologic):
         """
         # get the max step number for each MB file and add 1
         max_steps = df.group_by("MB File").agg(
-            (pl.col("Ns").max() + 1).alias("Max_Step")
+            (pl.col("Ns").cast(pl.Int64).max() + 1).alias("Max_Step")
         )
         # sort the max steps by MB file
         max_steps = max_steps.sort("MB File")
@@ -142,4 +126,6 @@ class BiologicMB(Biologic):
         # join the max step number to the original dataframe and fill nulls with 0
         df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
         # add the max step number to the step number
-        return df_with_max_step.with_columns(pl.col("Ns") + pl.col("Max_Step"))
+        return df_with_max_step.with_columns(
+            pl.col("Ns").cast(pl.Int64) + pl.col("Max_Step")
+        )

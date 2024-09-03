@@ -28,9 +28,9 @@ class BaseCycler(BaseModel):
     """
 
     input_data_path: str
-    common_suffix: str
     column_name_pattern: str
     column_dict: Dict[str, str]
+    common_suffix: str = Field(default="")
     common_prefix: str = Field(default="")
 
     def model_post_init(self, __context: Any) -> None:
@@ -52,9 +52,9 @@ class BaseCycler(BaseModel):
         file_ext = os.path.splitext(file)[1]
         match file_ext:
             case ".xlsx":
-                return pl.read_excel(filepath, engine="calamine")
+                return pl.read_excel(filepath, engine="calamine", infer_schema_length=0)
             case ".csv":
-                return pl.scan_csv(filepath)
+                return pl.scan_csv(filepath, infer_schema=False)
             case _:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
 
@@ -178,15 +178,15 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the date column.
         """
-        if (
-            self._imported_dataframe.dtypes[
-                self._imported_dataframe.collect_schema().names().index("Date")
-            ]
-            != pl.Datetime
-        ):
-            return pl.col("Date").str.to_datetime().alias("Date")
+        if self.column_dict["Date"] in self._dataframe_columns:
+            return (
+                pl.col(self.column_dict["Date"])
+                .cast(str)
+                .str.to_datetime()
+                .alias("Date")
+            )
         else:
-            return pl.col("Date")
+            return pl.lit(None).alias("Date")
 
     @property
     def time(self) -> pl.Expr:
@@ -195,7 +195,12 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the time column.
         """
-        return pl.col(self.column_dict["Time"]).cast(pl.Float64).alias("Time [s]")
+        unit = self.search_columns(
+            self._dataframe_columns,
+            self.column_dict["Time"],
+            self.column_name_pattern,
+        )
+        return pl.col(unit.name).cast(pl.Float64).alias("Time [s]")
 
     @property
     def step(self) -> pl.Expr:
@@ -209,15 +214,11 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the current column.
         """
-        return (
-            self.search_columns(
-                self._dataframe_columns,
-                self.column_dict["Current"],
-                self.column_name_pattern,
-            )
-            .to_default_name_and_unit()
-            .cast(pl.Float64)
-        )
+        return self.search_columns(
+            self._dataframe_columns,
+            self.column_dict["Current"],
+            self.column_name_pattern,
+        ).to_default_name_and_unit()
 
     @property
     def voltage(self) -> pl.Expr:
@@ -226,15 +227,11 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the voltage column.
         """
-        return (
-            self.search_columns(
-                self._dataframe_columns,
-                self.column_dict["Voltage"],
-                self.column_name_pattern,
-            )
-            .to_default_name_and_unit()
-            .cast(pl.Float64)
-        )
+        return self.search_columns(
+            self._dataframe_columns,
+            self.column_dict["Voltage"],
+            self.column_name_pattern,
+        ).to_default_name_and_unit()
 
     @property
     def charge_capacity(self) -> pl.Expr:
@@ -243,15 +240,11 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the charge capacity column.
         """
-        return (
-            self.search_columns(
-                self._dataframe_columns,
-                self.column_dict["Charge Capacity"],
-                self.column_name_pattern,
-            )
-            .to_default_unit()
-            .cast(pl.Float64)
-        )
+        return self.search_columns(
+            self._dataframe_columns,
+            self.column_dict["Charge Capacity"],
+            self.column_name_pattern,
+        ).to_default_unit()
 
     @property
     def discharge_capacity(self) -> pl.Expr:
@@ -260,15 +253,11 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the discharge capacity column.
         """
-        return (
-            self.search_columns(
-                self._dataframe_columns,
-                self.column_dict["Discharge Capacity"],
-                self.column_name_pattern,
-            )
-            .to_default_unit()
-            .cast(pl.Float64)
-        )
+        return self.search_columns(
+            self._dataframe_columns,
+            self.column_dict["Discharge Capacity"],
+            self.column_name_pattern,
+        ).to_default_unit()
 
     @property
     def capacity_from_ch_dch(self) -> pl.Expr:
@@ -299,15 +288,11 @@ class BaseCycler(BaseModel):
             pl.Expr: A polars expression for the capacity column.
         """
         if "Capacity" in self.column_dict:
-            return (
-                self.search_columns(
-                    self._dataframe_columns,
-                    self.column_dict["Capacity"],
-                    self.column_name_pattern,
-                )
-                .to_default_name_and_unit()
-                .cast(pl.Float64)
-            )
+            return self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Capacity"],
+                self.column_name_pattern,
+            ).to_default_name_and_unit()
         else:
             return self.capacity_from_ch_dch
 
@@ -321,15 +306,11 @@ class BaseCycler(BaseModel):
             pl.Expr: A polars expression for the temperature column.
         """
         try:
-            return (
-                self.search_columns(
-                    self._dataframe_columns,
-                    self.column_dict["Temperature"],
-                    self.column_name_pattern,
-                )
-                .to_default_name_and_unit()
-                .cast(pl.Float64)
-            )
+            return self.search_columns(
+                self._dataframe_columns,
+                self.column_dict["Temperature"],
+                self.column_name_pattern,
+            ).to_default_name_and_unit()
         except ValueError:
             return pl.lit(None).alias("Temperature [C]")
 
@@ -345,8 +326,8 @@ class BaseCycler(BaseModel):
         """
         return (
             (
-                pl.col(self.column_dict["Step"])
-                - pl.col(self.column_dict["Step"]).shift()
+                pl.col(self.column_dict["Step"]).cast(pl.Int64)
+                - pl.col(self.column_dict["Step"]).cast(pl.Int64).shift()
                 < 0
             )
             .fill_null(strategy="zero")
@@ -366,8 +347,8 @@ class BaseCycler(BaseModel):
         """
         return (
             (
-                pl.col(self.column_dict["Step"])
-                - pl.col(self.column_dict["Step"]).shift()
+                pl.col(self.column_dict["Step"]).cast(pl.Int64)
+                - pl.col(self.column_dict["Step"]).cast(pl.Int64).shift()
                 != 0
             )
             .fill_null(strategy="zero")

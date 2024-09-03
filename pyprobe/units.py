@@ -101,7 +101,7 @@ class Units:
         Returns:
             pl.Expr: The converted column expression.
         """
-        conversion = pl.col(self.name) * self.factor
+        conversion = pl.col(self.name).cast(pl.Float64) * self.factor
         return conversion.alias(f"{self.default_quantity} [{self.default_unit}]")
 
     def to_default_unit(self) -> pl.Expr:
@@ -110,6 +110,6 @@ class Units:
         Returns:
             pl.Expr: The converted column expression.
         """
-        return (pl.col(self.name) * self.factor).alias(
+        return (pl.col(self.name).cast(pl.Float64) * self.factor).alias(
             f"{self.input_quantity} [{self.default_unit}]"
         )
