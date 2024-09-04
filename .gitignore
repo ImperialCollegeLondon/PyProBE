@@ -132,3 +132,10 @@ dmypy.json
 
 # asv
 .asv/
+tests/sample_data/mock_dataframe.xlsx
+
+tests/sample_data/test_data_1.csv
+
+tests/sample_data/test_data_2.csv
+
+tests/sample_data/test_data.csv

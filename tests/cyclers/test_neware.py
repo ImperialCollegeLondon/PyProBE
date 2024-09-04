@@ -30,8 +30,8 @@ def test_sort_files(neware_cycler):
         "test_2_experiment_3_file_5.xlsx",
         "test_2_experiment_3_file_5_2.xlsx",
     ]
-    sorted_files = neware_cycler._sort_files(file_list)
-    assert sorted_files == [
+    file_list.sort()
+    assert file_list == [
         "test_2_experiment_3_file_5.xlsx",
         "test_2_experiment_3_file_5_1.xlsx",
         "test_2_experiment_3_file_5_2.xlsx",

@@ -14,7 +14,6 @@ class Neware(BaseCycler):
     """
 
     input_data_path: str
-    common_suffix: str = ""
     column_name_pattern: str = r"(.+)\((.+)\)"
     column_dict: dict[str, str] = {
         "Date": "Date",

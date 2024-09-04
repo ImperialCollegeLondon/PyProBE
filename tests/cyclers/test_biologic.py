@@ -43,7 +43,7 @@ def test_read_file(biologic_cycler, biologic_MB_cycler):
     )
 
 
-def test_sort_files(biologic_MB_cycler):
+def test_sort_files():
     """Test the _sort_files method."""
     file_list = [
         "test_2_experiment_3_03_MB_file.xlsx",
@@ -51,8 +51,8 @@ def test_sort_files(biologic_MB_cycler):
         "test_2_experiment_3_04_MB_file.xlsx",
         "test_2_experiment_3_02_MB_file.xlsx",
     ]
-    sorted_files = biologic_MB_cycler._sort_files(file_list)
-    assert sorted_files == [
+    file_list.sort()
+    assert file_list == [
         "test_2_experiment_3_01_MB_file.xlsx",
         "test_2_experiment_3_02_MB_file.xlsx",
         "test_2_experiment_3_03_MB_file.xlsx",

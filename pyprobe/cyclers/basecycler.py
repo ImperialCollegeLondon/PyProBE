@@ -2,14 +2,13 @@
 
 import glob
 import os
-import re
 import warnings
 
 # from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 import polars as pl
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from pyprobe.units import Units
 
@@ -30,8 +29,6 @@ class BaseCycler(BaseModel):
     input_data_path: str
     column_name_pattern: str
     column_dict: Dict[str, str]
-    common_suffix: str = Field(default="")
-    common_prefix: str = Field(default="")
 
     def model_post_init(self, __context: Any) -> None:
         """Post initialization method for the BaseModel."""
@@ -70,7 +67,7 @@ class BaseCycler(BaseModel):
             List[DataFrame]: A list of DataFrames.
         """
         files = glob.glob(input_data_path)
-        files = self._sort_files(files)
+        files.sort()
         list = [self.read_file(file) for file in files]
         all_columns = set([col for df in list for col in df.collect_schema().names()])
         indices_to_remove = []
@@ -83,43 +80,6 @@ class BaseCycler(BaseModel):
                 )
                 continue
         return [df for i, df in enumerate(list) if i not in indices_to_remove]
-
-    def _sort_files(self, file_list: List[str]) -> List[str]:
-        """Sort a list of files by the integer in the filename.
-
-        Args:
-            file_list: The list of files.
-
-        Returns:
-            list: The sorted list of files.
-        """
-        # common first part of file names
-        self.common_prefix = os.path.commonprefix(file_list)
-        return sorted(file_list, key=self._sort_key)
-
-    def _sort_key(self, filepath: str) -> int:
-        """Sort key for the files.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            int: The integer in the filename.
-        """
-        # replace common prefix
-        stripped_filepath = filepath.replace(self.common_prefix, "")
-
-        if self.common_suffix == "":
-            self.common_suffix = os.path.splitext(stripped_filepath)[1]
-        # find the index of the common suffix
-        suffix_index = stripped_filepath.find(self.common_suffix)
-
-        # if the suffix is found, strip it and everything after it
-        if suffix_index != -1:
-            stripped_filepath = stripped_filepath[:suffix_index]
-        # extract the first number in the filename
-        match = re.search(r"\d+", stripped_filepath)
-        return int(match.group()) if match else 0
 
     def get_imported_dataframe(
         self, dataframe_list: List[pl.DataFrame]
