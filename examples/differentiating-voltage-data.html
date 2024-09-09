@@ -506,8 +506,8 @@ document.write(`
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smoother</span> <span class="o">=</span> <span class="n">Smoothing</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">final_cycle</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 
 <span class="n">spline_smoothed_data</span> <span class="o">=</span> <span class="n">smoother</span><span class="o">.</span><span class="n">spline_smoothing</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;Capacity [Ah]&#39;</span><span class="p">,</span>
-                                                   <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span>
-                                                   <span class="n">smoothing_lambda</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
+                                                 <span class="n">target_column</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span>
+                                                 <span class="n">smoothing_lambda</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
                                                 <span class="p">)</span>
 <span class="n">differentiation_object</span> <span class="o">=</span> <span class="n">Differentiation</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">spline_smoothed_data</span><span class="p">)</span>
 <span class="n">spline_smoothed_data_dVdQ</span> <span class="o">=</span> <span class="n">differentiation_object</span><span class="o">.</span><span class="n">differentiate_FD</span><span class="p">(</span><span class="s2">&quot;Capacity [Ah]&quot;</span><span class="p">,</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">,</span> <span class="n">gradient</span><span class="o">=</span><span class="s1">&#39;dxdy&#39;</span><span class="p">)</span>
@@ -525,20 +525,8 @@ document.write(`
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">TypeError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[6], line 3</span>
-<span class="ansi-green-intense-fg ansi-bold">      1</span> smoother <span style="color: rgb(98,98,98)">=</span> Smoothing(input_data <span style="color: rgb(98,98,98)">=</span> final_cycle<span style="color: rgb(98,98,98)">.</span>discharge(<span style="color: rgb(98,98,98)">0</span>))
-<span class="ansi-green-fg">----&gt; 3</span> spline_smoothed_data <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">smoother</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">spline_smoothing</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">x</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Capacity [Ah]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">      4</span> <span class="ansi-yellow-bg">                                                   </span><span class="ansi-yellow-bg">y</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Voltage [V]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">      5</span> <span class="ansi-yellow-bg">                                                   </span><span class="ansi-yellow-bg">smoothing_lambda</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1e-10</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-yellow-bg">                                                </span><span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">      7</span> differentiation_object <span style="color: rgb(98,98,98)">=</span> Differentiation(input_data <span style="color: rgb(98,98,98)">=</span> spline_smoothed_data)
-<span class="ansi-green-intense-fg ansi-bold">      8</span> spline_smoothed_data_dVdQ <span style="color: rgb(98,98,98)">=</span> differentiation_object<span style="color: rgb(98,98,98)">.</span>differentiate_FD(<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#34;</span>, gradient<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">dxdy</span><span style="color: rgb(175,0,0)">&#39;</span>)
-
-<span class="ansi-red-fg">TypeError</span>: Smoothing.spline_smoothing() got an unexpected keyword argument &#39;y&#39;
-</pre></div></div>
+<img alt="../_images/examples_differentiating-voltage-data_12_0.png" src="../_images/examples_differentiating-voltage-data_12_0.png" />
+</div>
 </div>
 <p>We can also compare to an alternative differentiation method, the LEAN method described in Feng X, Merla Y, Weng C, Ouyang M, He X, Liaw BY, et al. A reliable approach of differentiating discrete sampled-data for battery diagnosis. eTransportation. 2020;3: 100051. <a class="reference external" href="https://doi.org/10.1016/j.etran.2020.100051">https://doi.org/10.1016/j.etran.2020.100051</a>.</p>
 <div class="nbinput docutils container">
@@ -559,18 +547,8 @@ Cell <span class="ansi-green-fg">In[6], line 3</span>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[7], line 5</span>
-<span class="ansi-green-intense-fg ansi-bold">      3</span> fig <span style="color: rgb(98,98,98)">=</span> pyprobe<span style="color: rgb(98,98,98)">.</span>Plot()
-<span class="ansi-green-intense-fg ansi-bold">      4</span> fig<span style="color: rgb(98,98,98)">.</span>add_line(level_smoothed_data_dVdQ, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">d(Capacity [Ah])/d(Voltage [V])</span><span style="color: rgb(175,0,0)">&#39;</span>, label<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Level smoothed data</span><span style="color: rgb(175,0,0)">&#39;</span>, color<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">red</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-fg">----&gt; 5</span> fig<span style="color: rgb(98,98,98)">.</span>add_line(<span class="ansi-yellow-bg">spline_smoothed_data_dVdQ</span>, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">d(Capacity [Ah])/d(Voltage [V])</span><span style="color: rgb(175,0,0)">&#39;</span>, label<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Spline smoothed data</span><span style="color: rgb(175,0,0)">&#39;</span>, color<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">blue</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      6</span> fig<span style="color: rgb(98,98,98)">.</span>add_line(LEAN_dQdV, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#39;</span>, <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">d(Capacity [Ah])/d(Voltage [V])</span><span style="color: rgb(175,0,0)">&#39;</span>, label<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">LEAN smoothed data</span><span style="color: rgb(175,0,0)">&#39;</span>, color<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">green</span><span style="color: rgb(175,0,0)">&#39;</span>)
-<span class="ansi-green-intense-fg ansi-bold">      7</span> fig<span style="color: rgb(98,98,98)">.</span>show_image()
-
-<span class="ansi-red-fg">NameError</span>: name &#39;spline_smoothed_data_dVdQ&#39; is not defined
-</pre></div></div>
+<img alt="../_images/examples_differentiating-voltage-data_14_0.png" src="../_images/examples_differentiating-voltage-data_14_0.png" />
+</div>
 </div>
 </section>
 
