@@ -6,12 +6,11 @@ from typing import Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
-import yaml
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import basecycler, biologic, neware
 from pyprobe.filters import Procedure
-from pyprobe.readme_processor import ReadmeModel
+from pyprobe.readme_processor import process_readme
 
 
 class Cell(BaseModel):
@@ -189,7 +188,7 @@ class Cell(BaseModel):
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
         readme_path = os.path.join(data_folder, readme_name)
-        readme = self._process_readme(readme_path)
+        readme = process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
             titles=readme.titles,
@@ -284,25 +283,6 @@ class Cell(BaseModel):
 
         data_path = os.path.join(folder_path, filename_str)
         return data_path
-
-    def _process_readme(
-        cls,
-        readme_path: str,
-    ) -> "ReadmeModel":
-        """Function to process the README.yaml file.
-
-        Args:
-            readme_path (str): The path to the README.yaml file.
-
-        Returns:
-            Tuple[List[str], List[List[int]], Optional[pybamm.Experiment]]
-                - List[str]: The list of titles from the README.yaml file.
-                - List[List[int]]: The list of steps from the README.yaml file.
-                - Optional[pybamm.Experiment]: The PyBaMM experiment object.
-        """
-        with open(readme_path, "r") as file:
-            readme_dict = yaml.safe_load(file)
-        return ReadmeModel(readme_dict=readme_dict)
 
 
 def make_cell_list(

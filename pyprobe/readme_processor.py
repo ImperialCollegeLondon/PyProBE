@@ -3,6 +3,7 @@ import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 import pybamm
+import yaml
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -96,15 +97,15 @@ class ReadmeModel(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         """Get all the attributes of the class."""
         self.titles = list(self.readme_dict.keys())
-        self.step_numbers = self.get_step_numbers()
-        self.step_indices = self.get_step_indices()
-        self.step_descriptions = self.get_step_descriptions()
-        self.cycle_details = self.get_cycle_details()
-        self.pybamm_experiment_descriptions = self.get_pybamm_experiment_descriptions()
-        self.pybamm_experiment_list = self.get_pybamm_experiment_list()
-        self.pybamm_experiment = self.get_pybamm_experiment()
+        self.step_numbers = self._get_step_numbers()
+        self.step_indices = self._get_step_indices()
+        self.step_descriptions = self._get_step_descriptions()
+        self.cycle_details = self._get_cycle_details()
+        self.pybamm_experiment_descriptions = self._get_pybamm_experiment_descriptions()
+        self.pybamm_experiment_list = self._get_pybamm_experiment_list()
+        self.pybamm_experiment = self._get_pybamm_experiment()
 
-    def get_step_numbers(self) -> List[List[int]]:
+    def _get_step_numbers(self) -> List[List[int]]:
         """Get the step numbers from the README.yaml file.
 
         Returns:
@@ -127,7 +128,7 @@ class ReadmeModel(BaseModel):
             all_steps.append(exp_steps)
         return all_steps
 
-    def get_step_indices(self) -> List[List[int]]:
+    def _get_step_indices(self) -> List[List[int]]:
         """Get the step indices from the README.yaml file.
 
         Returns:
@@ -140,7 +141,7 @@ class ReadmeModel(BaseModel):
             step_indices.append(list(range(len(exp_step_numbers))))
         return step_indices
 
-    def get_step_descriptions(self) -> List[List[str]]:
+    def _get_step_descriptions(self) -> List[List[str]]:
         """Get the step descriptions from the README.yaml file.
 
         Returns:
@@ -161,7 +162,7 @@ class ReadmeModel(BaseModel):
             all_descriptions.append(exp_step_descriptions)
         return all_descriptions
 
-    def get_cycle_details(self) -> List[List[Tuple[int, int, int]]]:
+    def _get_cycle_details(self) -> List[List[Tuple[int, int, int]]]:
         """Get the cycle details from the README.yaml file.
 
         Returns:
@@ -191,7 +192,7 @@ class ReadmeModel(BaseModel):
             cycles.append(exp_cycles)
         return cycles
 
-    def get_pybamm_experiment_descriptions(self) -> List[Tuple[str, ...]]:
+    def _get_pybamm_experiment_descriptions(self) -> List[Tuple[str, ...]]:
         """Get the PyBaMM experiment objects from the README.yaml file.
 
         Returns:
@@ -218,7 +219,7 @@ class ReadmeModel(BaseModel):
             all_descriptions.append(tuple(final_descriptions))
         return all_descriptions
 
-    def get_pybamm_experiment_list(self) -> List[pybamm.Experiment]:
+    def _get_pybamm_experiment_list(self) -> List[pybamm.Experiment]:
         """Get the PyBaMM experiment objects from the README.yaml file.
 
         Returns:
@@ -246,7 +247,7 @@ class ReadmeModel(BaseModel):
                 )
         return pybamm_experiments
 
-    def get_pybamm_experiment(self) -> Optional[pybamm.Experiment]:
+    def _get_pybamm_experiment(self) -> Optional[pybamm.Experiment]:
         """Get the PyBaMM experiment object from the README.yaml file.
 
         Returns:
@@ -304,3 +305,22 @@ class ReadmeModel(BaseModel):
                     i += 1
             repeated_list = result
         return result
+
+
+def process_readme(
+    readme_path: str,
+) -> "ReadmeModel":
+    """Function to process the README.yaml file.
+
+    Args:
+        readme_path (str): The path to the README.yaml file.
+
+    Returns:
+        Tuple[List[str], List[List[int]], Optional[pybamm.Experiment]]
+            - List[str]: The list of titles from the README.yaml file.
+            - List[List[int]]: The list of steps from the README.yaml file.
+            - Optional[pybamm.Experiment]: The PyBaMM experiment object.
+    """
+    with open(readme_path, "r") as file:
+        readme_dict = yaml.safe_load(file)
+    return ReadmeModel(readme_dict=readme_dict)
