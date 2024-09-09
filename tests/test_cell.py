@@ -145,17 +145,6 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     )
 
 
-def test_set_color_scheme(cell_instance):
-    """Test the set_color_scheme method."""
-    assert cell_instance.set_color_scheme(5) == [
-        "#ff00ff",
-        "#0080ff",
-        "#00db21",
-        "#f03504",
-        "#a09988",
-    ]
-
-
 def test_process_readme(cell_instance, titles_fixture, benchmark):
     """Test processing a readme file in yaml format."""
     expected_steps = [

@@ -285,39 +285,6 @@ class Cell(BaseModel):
         data_path = os.path.join(folder_path, filename_str)
         return data_path
 
-    @staticmethod
-    def set_color_scheme(
-        n_colors: int, scheme: str = "distinctipy", **kwargs: Any
-    ) -> List[str]:
-        """Function to set the colour scheme for plotting.
-
-        Args:
-            n_colors (int): The number of colors to produce.
-            scheme (str): The colour scheme to use.
-            **kwargs: Additional keyword arguments for the colour scheme.
-
-        Returns:
-            list: The list of colours in hex format.
-        """
-        if scheme == "distinctipy":
-            rgb = distinctipy.get_colors(
-                n_colors,
-                exclude_colors=[
-                    (0, 0, 0),
-                    (1, 1, 1),
-                    (1, 1, 0),
-                ],  # Exclude black, white, and yellow
-                rng=1,  # Set the random seed
-                n_attempts=5000,
-                **kwargs,
-            )
-            hex_list = []
-            for i in range(len(rgb)):
-                hex_list.append(distinctipy.get_hex(rgb[i]))
-            return hex_list
-        else:
-            raise NotImplementedError
-
     def _process_readme(
         cls,
         readme_path: str,
@@ -355,10 +322,19 @@ def make_cell_list(
 
     n_cells = len(record)
     cell_list = []
-    colors = Cell.set_color_scheme(n_cells, scheme="distinctipy")
+    rgb = distinctipy.get_colors(
+        n_cells,
+        exclude_colors=[
+            (0, 0, 0),
+            (1, 1, 1),
+            (1, 1, 0),
+        ],  # Exclude black, white, and yellow
+        rng=1,  # Set the random seed
+        n_attempts=5000,
+    )
     for i in range(n_cells):
         info = record.row(i, named=True)
-        info["color"] = colors[i]
+        info["color"] = distinctipy.get_hex(rgb[i])
         cell_list.append(Cell(info=info))
     return cell_list
 
