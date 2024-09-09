@@ -1,9 +1,10 @@
 """Script to create a Streamlit dashboard for PyProBE."""
+import copy
 import pickle
 from typing import List
 
-import pandas as pd
 import plotly
+import polars as pl
 import streamlit as st
 from ordered_set import OrderedSet
 
@@ -19,9 +20,9 @@ if __name__ == "__main__":
     info_list = []
     for i in range(len(cell_list)):
         info_list.append(cell_list[i].info)
-    info = pd.DataFrame(info_list)
+    info = pl.DataFrame(info_list)
 
-    def dataframe_with_selections(df: pd.DataFrame) -> List[int]:
+    def dataframe_with_selections(df: pl.DataFrame) -> List[int]:
         """Create a dataframe with a selection column for user input.
 
         Args:
@@ -30,7 +31,8 @@ if __name__ == "__main__":
         Returns:
             list: The list of selected row indices.
         """
-        df_with_selections = df.copy()
+        df = df.to_pandas()
+        df_with_selections = copy.deepcopy(df)
         df_with_selections.insert(0, "Select", False)
 
         # Get dataframe row-selections from user with st.data_editor
