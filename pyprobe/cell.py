@@ -321,44 +321,6 @@ class Cell(BaseModel):
         else:
             raise NotImplementedError
 
-    @staticmethod
-    def launch_dashboard(cell_list: List["Cell"]) -> None:
-        """Function to launch the dashboard for the preprocessed data.
-
-        Args:
-            cell_list (list): The list of cell objects to display in the dashboard.
-        """
-        with open("dashboard_data.pkl", "wb") as f:
-            pickle.dump(cell_list, f)
-
-        if platform.system() == "Windows":
-            subprocess.Popen(
-                [
-                    "cmd",
-                    "/c",
-                    "start",
-                    "/B",
-                    "streamlit",
-                    "run",
-                    os.path.join(os.path.dirname(__file__), "dashboard.py"),
-                    ">",
-                    "nul",
-                    "2>&1",
-                ],
-                shell=True,
-            )
-        elif platform.system() == "Darwin":
-            subprocess.Popen(
-                [
-                    "nohup",
-                    "streamlit",
-                    "run",
-                    os.path.join(os.path.dirname(__file__), "dashboard.py"),
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.STDOUT,
-            )
-
     def _process_readme(
         cls,
         readme_path: str,
@@ -382,7 +344,7 @@ class Cell(BaseModel):
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
-) -> List["Cell"]:
+) -> List[Cell]:
     """Function to make a list of cell objects from a record of tests.
 
     Args:
@@ -402,6 +364,44 @@ def make_cell_list(
         info["color"] = colors[i]
         cell_list.append(Cell(info=info))
     return cell_list
+
+
+def launch_dashboard(cell_list: List[Cell]) -> None:
+    """Function to launch the dashboard for the preprocessed data.
+
+    Args:
+        cell_list (list): The list of cell objects to display in the dashboard.
+    """
+    with open("dashboard_data.pkl", "wb") as f:
+        pickle.dump(cell_list, f)
+
+    if platform.system() == "Windows":
+        subprocess.Popen(
+            [
+                "cmd",
+                "/c",
+                "start",
+                "/B",
+                "streamlit",
+                "run",
+                os.path.join(os.path.dirname(__file__), "dashboard.py"),
+                ">",
+                "nul",
+                "2>&1",
+            ],
+            shell=True,
+        )
+    elif platform.system() == "Darwin":
+        subprocess.Popen(
+            [
+                "nohup",
+                "streamlit",
+                "run",
+                os.path.join(os.path.dirname(__file__), "dashboard.py"),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
 
 
 class ReadmeModel(BaseModel):
