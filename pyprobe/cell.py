@@ -1,8 +1,5 @@
 """Module for the Cell class."""
 import os
-import pickle
-import platform
-import subprocess
 import time
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -364,44 +361,6 @@ def make_cell_list(
         info["color"] = colors[i]
         cell_list.append(Cell(info=info))
     return cell_list
-
-
-def launch_dashboard(cell_list: List[Cell]) -> None:
-    """Function to launch the dashboard for the preprocessed data.
-
-    Args:
-        cell_list (list): The list of cell objects to display in the dashboard.
-    """
-    with open("dashboard_data.pkl", "wb") as f:
-        pickle.dump(cell_list, f)
-
-    if platform.system() == "Windows":
-        subprocess.Popen(
-            [
-                "cmd",
-                "/c",
-                "start",
-                "/B",
-                "streamlit",
-                "run",
-                os.path.join(os.path.dirname(__file__), "dashboard.py"),
-                ">",
-                "nul",
-                "2>&1",
-            ],
-            shell=True,
-        )
-    elif platform.system() == "Darwin":
-        subprocess.Popen(
-            [
-                "nohup",
-                "streamlit",
-                "run",
-                os.path.join(os.path.dirname(__file__), "dashboard.py"),
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-        )
 
 
 class ReadmeModel(BaseModel):
