@@ -16,7 +16,7 @@ def noisy_data():
     y = x**2 + np.random.normal(0, 0.1, size=x.size)  # y = x^2 with noise
 
     return Result(
-        base_dataframe=pl.DataFrame({"x": x, "y": y}),
+        base_dataframe=pl.LazyFrame({"x": x, "y": y}),
         info={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
@@ -31,7 +31,7 @@ def noisy_data_reversed():
     flipped_x = np.flip(x)
     flipped_y = np.flip(y)
     return Result(
-        base_dataframe=pl.DataFrame({"x": flipped_x, "y": flipped_y}),
+        base_dataframe=pl.LazyFrame({"x": flipped_x, "y": flipped_y}),
         info={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
@@ -42,9 +42,11 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     smoothing = Smoothing(input_data=noisy_data)
 
     def smooth():
-        return smoothing.spline_smoothing(x="x", target_column="y")
+        return smoothing.spline_smoothing(x="x", target_column="y").get_only("y")
 
-    result = benchmark(smooth)
+    benchmark(smooth)
+
+    result = smoothing.spline_smoothing(x="x", target_column="y")
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
 
@@ -70,10 +72,7 @@ def test_level_smoothing(noisy_data, noisy_data_reversed, benchmark):
     """Test the level smoothing method with noisy data."""
     smoothing = Smoothing(input_data=noisy_data)
 
-    def smooth():
-        return smoothing.level_smoothing(target_column="y", interval=1, monotonic=True)
-
-    result = benchmark(smooth)
+    result = smoothing.level_smoothing(target_column="y", interval=1, monotonic=True)
 
     assert result.data.select(pl.col("y").diff().min().alias("min_diff")).item(0, 0) > 1
     all_data = result.data.join(noisy_data.data, on="y")
@@ -104,9 +103,13 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
     def smooth():
         return smoothing.savgol_smoothing(
             target_column="y", window_length=100, polyorder=2
-        )
+        ).get_only("y")
 
-    result = benchmark(smooth)
+    benchmark(smooth)
+
+    result = smoothing.savgol_smoothing(
+        target_column="y", window_length=100, polyorder=2
+    )
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
 

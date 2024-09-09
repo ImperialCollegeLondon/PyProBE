@@ -37,3 +37,6 @@ jobs:
           comment-on-alert: true
           # Enable Job Summary for PRs
           summary-always: true
+      - run: pip install nbmake
+      - run: pip install .
+      - run: pytest --nbmake docs/source/examples/*ipynb 
