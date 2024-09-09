@@ -14,15 +14,14 @@ class Neware(BaseCycler):
     """
 
     input_data_path: str
-    column_name_pattern: str = r"(.+)\((.+)\)"
     column_dict: dict[str, str] = {
         "Date": "Date",
-        "Step": "Step Index",
-        "Current": "Current",
-        "Voltage": "Voltage",
-        "Charge Capacity": "Chg. Cap.",
-        "Discharge Capacity": "DChg. Cap.",
-        "Temperature": "Temperature",
+        "Step Index": "Step",
+        "Current(*)": "Current [*]",
+        "Voltage(*)": "Voltage [*]",
+        "Chg. Cap.(*)": "Charge Capacity [*]",
+        "DChg. Cap.(*)": "Discharge Capacity [*]",
+        "T1(*)": "Temperature [*]",
     }
 
     @property

@@ -69,7 +69,7 @@ def test_process_dataframe(monkeypatch):
                 0,
             ],
             "DChg. Cap.(mAh)": [0, 0, 10, 20, 20, 20],
-            "Temperature(C)": [25, 25, 25, 25, 25, 25],
+            "T1(℃)": [25, 25, 25, 25, 25, 25],
         }
     )
     mock_dataframe.to_pandas().to_excel(

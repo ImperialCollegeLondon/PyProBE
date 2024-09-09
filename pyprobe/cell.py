@@ -180,7 +180,6 @@ class Cell(BaseModel):
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
         column_dict: Dict[str, str],
-        column_name_pattern: str,
         filename_inputs: Optional[List[str]] = None,
     ) -> None:
         """Convert generic file into PyProBE format.
@@ -197,9 +196,6 @@ class Cell(BaseModel):
             column_dict (dict):
                 A dictionary mapping the column names in the generic file to the PyProBE
                 column names.
-            column_name_pattern (str):
-                A regular expression that defines the structure of the column headings
-                in the data.
             filename_inputs (list):
                 The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
@@ -218,7 +214,6 @@ class Cell(BaseModel):
         importer = basecycler.BaseCycler(
             input_data_path=input_data_path,
             column_dict=column_dict,
-            column_name_pattern=column_name_pattern,
         )
         self._write_parquet(importer, output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")

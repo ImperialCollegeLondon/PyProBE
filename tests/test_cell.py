@@ -93,12 +93,12 @@ def test_process_generic_file(cell_instance):
     df.write_csv(f"{folder_path}/test_generic_file.csv")
     column_dict = {
         "Date": "Date",
-        "Time": "T",
-        "Voltage": "V",
-        "Current": "I",
-        "Capacity": "Q",
-        "Step": "Count",
-        "Temperature": "fka",
+        "T [*]": "Time [*]",
+        "V [*]": "Voltage [*]",
+        "I [*]": "Current [*]",
+        "Q [*]": "Capacity [*]",
+        "Count": "Step",
+        "Temp [*]": "Temperature [C]",
     }
     cell_instance.process_generic_file(
         folder_path=folder_path,

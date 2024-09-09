@@ -1,155 +1,119 @@
 """Test the Units class."""
+import numpy as np
 import polars as pl
-import polars.testing as pl_testing
-import pytest
 
 from pyprobe.units import Units
 
 
-@pytest.fixture
-def current_quantity():
-    """Return a Units instance for current."""
-    return Units("Current [A]")
-
-
-@pytest.fixture
-def capacity_quantity():
-    """Return a Units instance for capacity."""
-    return Units("Capacity [mAh]")
-
-
-@pytest.fixture
-def time_quantity():
-    """Return a Units instance for time."""
-    return Units("Time [hr]")
-
-
-@pytest.fixture
-def current_from_cycler_quantity():
-    """Return a Units instance for current from a cycler."""
-    pattern = r"(\w+)/(\w+)"
-    return Units("Current/A", pattern)
-
-
-@pytest.fixture
-def I_from_cycler_quantity():
-    """Return a Units instance for I from a cycler."""
-    pattern = r"(\w+)/(\w+)"
-    return Units("I/mA", pattern)
-
-
-def test_get_quantity_and_unit():
+def test_from_regexp():
     """Test the get_quantity_and_unit method."""
     name = "Capacity [Ah]"
-    quantity, unit = Units.get_quantity_and_unit(name)
-    assert quantity == "Capacity"
-    assert unit == "Ah"
+    unit_object = Units.from_regexp(name)
+    assert unit_object.input_quantity == "Capacity"
+    assert unit_object.input_unit == "Ah"
 
     name = "Two names [Ah]"
-    quantity, unit = Units.get_quantity_and_unit(name)
-    assert quantity == "Two names"
-    assert unit == "Ah"
-
-    name = "Step"
-    pattern = r"(\w+)\s*\[(\w+)\]"
-    with pytest.raises(ValueError):
-        quantity, unit = Units.get_quantity_and_unit(name)
+    unit_object = Units.from_regexp(name)
+    assert unit_object.input_quantity == "Two names"
+    assert unit_object.input_unit == "Ah"
 
     name = "Current/mA"
     pattern = r"(\w+)/(\w+)"
-    quantity, unit = Units.get_quantity_and_unit(name, pattern)
-    assert quantity == "Current"
-    assert unit == "mA"
+    unit_object = Units.from_regexp(name, pattern)
+    assert unit_object.input_quantity == "Current"
+    assert unit_object.input_unit == "mA"
 
 
-def test_init(
-    current_quantity,
-    capacity_quantity,
-    time_quantity,
-    current_from_cycler_quantity,
-    I_from_cycler_quantity,
-):
+def test_init():
     """Test the __init__ method."""
-    assert current_quantity.name == "Current [A]"
+    current_quantity = Units("Current", "A")
+    assert current_quantity.input_quantity == "Current"
     assert current_quantity.default_quantity == "Current"
     assert current_quantity.default_unit == "A"
     assert current_quantity.prefix is None
 
-    assert capacity_quantity.name == "Capacity [mAh]"
+    capacity_quantity = Units("Capacity", "mAh")
+    assert capacity_quantity.input_quantity == "Capacity"
     assert capacity_quantity.default_unit == "Ah"
     assert capacity_quantity.prefix == "m"
 
-    assert time_quantity.name == "Time [hr]"
+    time_quantity = Units("Time", "hr")
+    assert time_quantity.input_quantity == "Time"
     assert time_quantity.default_quantity == "Time"
     assert time_quantity.default_unit == "s"
     assert time_quantity.prefix is None
 
-    assert current_from_cycler_quantity.name == "Current/A"
-    assert current_from_cycler_quantity.default_quantity == "Current"
-    assert current_from_cycler_quantity.default_unit == "A"
-    assert current_from_cycler_quantity.prefix is None
 
-    assert I_from_cycler_quantity.name == "I/mA"
-    assert I_from_cycler_quantity.default_quantity == "Current"
-    assert I_from_cycler_quantity.default_unit == "A"
-    assert I_from_cycler_quantity.prefix == "m"
-
-    with pytest.raises(ValueError):
-        Units("Step")
-    with pytest.raises(ValueError):
-        Units("Current/A")
-
-
-def test_from_default_unit(current_quantity, capacity_quantity, time_quantity):
+def test_from_default_unit():
     """Test the from_default_unit method."""
-    instruction = current_quantity.from_default_unit()
+    instruction = Units("Current", "mA").from_default_unit()
     original_frame = pl.DataFrame({"Current [A]": [1.0, 2.0, 3.0]})
     updated_frame = original_frame.with_columns(instruction)
-    assert "Current [A]" in updated_frame.columns
-    pl_testing.assert_series_equal(
-        updated_frame["Current [A]"], original_frame["Current [A]"]
+    assert "Current [mA]" in updated_frame.columns
+    assert np.allclose(
+        updated_frame["Current [mA]"].to_numpy(),
+        original_frame["Current [A]"].to_numpy() * 1000,
     )
 
-    instruction = capacity_quantity.from_default_unit()
+    # Test for Current
+    instruction = Units("Current", "mA").from_default_unit()
+    original_frame = pl.DataFrame({"Current [A]": [1.0, 2.0, 3.0]})
+    updated_frame = original_frame.with_columns(instruction)
+    assert "Current [mA]" in updated_frame.columns
+    assert np.allclose(
+        updated_frame["Current [mA]"].to_numpy(),
+        original_frame["Current [A]"].to_numpy() * 1000,
+    )
+
+    # Test for Capacity
+    instruction = Units("Capacity", "mAh").from_default_unit()
     original_frame = pl.DataFrame({"Capacity [Ah]": [1.0, 2.0, 3.0]})
     updated_frame = original_frame.with_columns(instruction)
     assert "Capacity [mAh]" in updated_frame.columns
-    pl_testing.assert_series_equal(
-        updated_frame["Capacity [mAh]"],
-        original_frame["Capacity [Ah]"] / 1e-3,
-        check_names=False,
+    assert np.allclose(
+        updated_frame["Capacity [mAh]"].to_numpy(),
+        original_frame["Capacity [Ah]"].to_numpy() * 1000,
     )
 
-    instruction = time_quantity.from_default_unit()
-    print(time_quantity.default_quantity)
-    print(time_quantity.factor)
+    # Test for Time
+    instruction = Units("Time", "hr").from_default_unit()
     original_frame = pl.DataFrame({"Time [s]": [1.0, 2.0, 3.0]})
     updated_frame = original_frame.with_columns(instruction)
     assert "Time [hr]" in updated_frame.columns
-    pl_testing.assert_series_equal(
-        updated_frame["Time [hr]"], original_frame["Time [s]"] / 3600, check_names=False
-    )
-
-
-def test_to_default_name_and_unit(I_from_cycler_quantity):
-    """Test the to_default_name_and_unit method."""
-    original_frame = pl.DataFrame({"I/mA": [1.0, 2.0, 3.0]})
-    instruction = I_from_cycler_quantity.to_default_name_and_unit()
-    updated_frame = original_frame.with_columns(instruction)
-    assert "Current [A]" in updated_frame.columns
-    pl_testing.assert_series_equal(
-        updated_frame["Current [A]"], original_frame["I/mA"] * 1e-3, check_names=False
+    assert np.allclose(
+        updated_frame["Time [hr]"].to_numpy(),
+        original_frame["Time [s]"].to_numpy() / 3600,
     )
 
 
 def test_to_default_unit():
     """Test the to_default_unit method."""
-    original_frame = pl.DataFrame({"Chg. Cap.(Ah)": [1.0, 2.0, 3.0]})
-    instruction = Units("Chg. Cap.(Ah)", r"(.+)\((.+)\)").to_default_unit()
+    # Test for Current
+    instruction = Units("Current", "mA").to_default_unit()
+    original_frame = pl.DataFrame({"Current [mA]": [1000.0, 2000.0, 3000.0]})
     updated_frame = original_frame.with_columns(instruction)
-    assert "Chg. Cap. [Ah]" in updated_frame.columns
-    pl_testing.assert_series_equal(
-        updated_frame["Chg. Cap. [Ah]"],
-        original_frame["Chg. Cap.(Ah)"],
-        check_names=False,
+    assert "Current [A]" in updated_frame.columns
+    assert np.allclose(
+        updated_frame["Current [A]"].to_numpy(),
+        original_frame["Current [mA]"].to_numpy() / 1000,
+    )
+
+    # Test for Capacity
+    instruction = Units("Capacity", "mAh").to_default_unit()
+    original_frame = pl.DataFrame({"Capacity [mAh]": [1000.0, 2000.0, 3000.0]})
+    updated_frame = original_frame.with_columns(instruction)
+    assert "Capacity [Ah]" in updated_frame.columns
+    assert np.allclose(
+        updated_frame["Capacity [Ah]"].to_numpy(),
+        original_frame["Capacity [mAh]"].to_numpy() / 1000,
+    )
+
+    # Test for Time
+    instruction = Units("Time", "hr").to_default_unit()
+    original_frame = pl.DataFrame({"Time [hr]": [1.0, 2.0, 3.0]})
+    updated_frame = original_frame.with_columns(instruction)
+    assert "Time [s]" in updated_frame.columns
+    assert np.allclose(
+        updated_frame["Time [s]"].to_numpy(),
+        original_frame["Time [hr]"].to_numpy() * 3600,
     )

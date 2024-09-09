@@ -50,54 +50,125 @@ def sample_pyprobe_dataframe():
     ).with_columns(pl.col("Date").str.to_datetime())
 
 
-def test_init(sample_dataframe, sample_pyprobe_dataframe):
-    """Test initialising the basecycler."""
-    # test with single file
+@pytest.fixture
+def column_dict():
+    """A sample column dictionary."""
+    return {
+        "DateTime": "Date",
+        "T [*]": "Time [*]",
+        "V [*]": "Voltage [*]",
+        "I [*]": "Current [*]",
+        "Q [*]": "Capacity [*]",
+        "Count": "Step",
+        "Temp [*]": "Temperature [*]",
+        "Q_ch [*]": "Charge Capacity [*]",
+        "Q_dis [*]": "Discharge Capacity [*]",
+    }
+
+
+@pytest.fixture
+def sample_cycler_instance(sample_dataframe, column_dict):
+    """A sample cycler instance."""
     sample_dataframe.write_csv("tests/sample_data/test_data.csv")
-    base_cycler = BaseCycler(
+    return BaseCycler(
         input_data_path="tests/sample_data/test_data.csv",
-        column_name_pattern=r"([\w\s]+?)\s*\[(\w+)\]",
-        column_dict={
-            "Date": "DateTime",
-            "Time": "T",
-            "Voltage": "V",
-            "Current": "I",
-            "Capacity": "Q",
-            "Step": "Count",
-            "Temperature": "Temp",
-        },
-        common_suffix="",
+        column_dict=column_dict,
     )
 
+
+def test_map_columns(column_dict):
+    """Test initialising the basecycler."""
+    # test with single file
+    dict_with_extra = copy.deepcopy(column_dict)
+    dict_with_extra["Ecell [*]"] = "Voltage [*]"
+    column_list = [
+        "DateTime",
+        "T [s]",
+        "V [V]",
+        "I [mA]",
+        "Q [Ah]",
+        "Count",
+        "Temp [C]",
+    ]
+    expected_map = {
+        "Date": {
+            "Cycler column name": "DateTime",
+            "PyProBE column name": "Date",
+            "Unit": "",
+            "Type": pl.String,
+        },
+        "Time": {
+            "Cycler column name": "T [s]",
+            "PyProBE column name": "Time [s]",
+            "Unit": "s",
+            "Type": pl.Float64,
+        },
+        "Voltage": {
+            "Cycler column name": "V [V]",
+            "PyProBE column name": "Voltage [V]",
+            "Unit": "V",
+            "Type": pl.Float64,
+        },
+        "Current": {
+            "Cycler column name": "I [mA]",
+            "PyProBE column name": "Current [mA]",
+            "Unit": "mA",
+            "Type": pl.Float64,
+        },
+        "Capacity": {
+            "Cycler column name": "Q [Ah]",
+            "PyProBE column name": "Capacity [Ah]",
+            "Unit": "Ah",
+            "Type": pl.Float64,
+        },
+        "Step": {
+            "Cycler column name": "Count",
+            "PyProBE column name": "Step",
+            "Unit": "",
+            "Type": pl.Int64,
+        },
+        "Temperature": {
+            "Cycler column name": "Temp [C]",
+            "PyProBE column name": "Temperature [C]",
+            "Unit": "C",
+            "Type": pl.Float64,
+        },
+    }
+
+    assert BaseCycler.map_columns(dict_with_extra, column_list) == expected_map
+
+    # missing columns
+    column_list = ["DateTime", "T [s]", "V [V]", "I [mA]", "Q [Ah]", "Count"]
+    expected_map.pop("Temperature")
+    assert BaseCycler.map_columns(dict_with_extra, column_list) == expected_map
+
+
+def test_init(sample_cycler_instance, sample_dataframe):
+    """Test initialising the basecycler."""
     df = sample_dataframe.with_columns(
         pl.col("DateTime").str.to_datetime().alias("DateTime")
     )
     pl_testing.assert_frame_equal(
-        base_cycler._imported_dataframe.collect(), df.with_columns(pl.all().cast(str))
+        sample_cycler_instance._imported_dataframe.collect(),
+        df.with_columns(pl.all().cast(str)),
     )
 
+
+def test_pyprobe_dataframe(sample_cycler_instance, sample_pyprobe_dataframe):
+    """Test the pyprobe dataframe."""
     pl_testing.assert_frame_equal(
-        base_cycler.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
+        sample_cycler_instance.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
     )
 
 
-def test_multiple_files(sample_dataframe):
+def test_multiple_files(sample_dataframe, column_dict):
     """Test reading multiple files."""
     # test with multiple files
     sample_dataframe.write_csv("tests/sample_data/test_data_1.csv")
     sample_dataframe.write_csv("tests/sample_data/test_data_2.csv")
     base_cycler = BaseCycler(
         input_data_path="tests/sample_data/test_data_*.csv",
-        column_name_pattern=r"([\w\s]+?)\s*\[(\w+)\]",
-        column_dict={
-            "Date": "DateTime",
-            "Time": "T",
-            "Voltage": "V",
-            "Current": "I",
-            "Capacity": "Q",
-            "Step": "Count",
-            "Temperature": "Temp",
-        },
+        column_dict=column_dict,
     )
 
     df = sample_dataframe.with_columns(
@@ -110,24 +181,16 @@ def test_multiple_files(sample_dataframe):
     )
 
 
-def test_missing_columns(sample_dataframe, sample_pyprobe_dataframe):
+def test_missing_columns(sample_dataframe, sample_pyprobe_dataframe, column_dict):
     """Test with a dataframe missing columns."""
     df = copy.deepcopy(sample_dataframe)
     df = df.drop("DateTime")
     df.write_csv("tests/sample_data/test_data.csv")
     base_cycler = BaseCycler(
         input_data_path="tests/sample_data/test_data.csv",
-        column_name_pattern=r"([\w\s]+?)\s*\[(\w+)\]",
-        column_dict={
-            "Date": "DateTime",
-            "Time": "T",
-            "Voltage": "V",
-            "Current": "I",
-            "Capacity": "Q",
-            "Step": "Count",
-            "Temperature": "Temp",
-        },
+        column_dict=column_dict,
     )
+
     pl_testing.assert_frame_equal(
         base_cycler._imported_dataframe.collect(), df.with_columns(pl.all().cast(str))
     )
@@ -140,7 +203,7 @@ def test_missing_columns(sample_dataframe, sample_pyprobe_dataframe):
     )
 
 
-def test_ch_dis_capacity(sample_dataframe, sample_pyprobe_dataframe):
+def test_ch_dis_capacity(sample_dataframe, sample_pyprobe_dataframe, column_dict):
     """Test with a dataframe containing charge and discharge capacity."""
     df = copy.deepcopy(sample_dataframe)
     df = df.drop("Q [Ah]")
@@ -151,18 +214,7 @@ def test_ch_dis_capacity(sample_dataframe, sample_pyprobe_dataframe):
     df = df.hstack(ch_dis)
     df.write_csv("tests/sample_data/test_data.csv")
     base_cycler = BaseCycler(
-        input_data_path="tests/sample_data/test_data.csv",
-        column_name_pattern=r"([\w\s]+?)\s*\[(\w+)\]",
-        column_dict={
-            "Date": "DateTime",
-            "Time": "T",
-            "Voltage": "V",
-            "Current": "I",
-            "Step": "Count",
-            "Temperature": "Temp",
-            "Charge Capacity": "Q_ch",
-            "Discharge Capacity": "Q_dis",
-        },
+        input_data_path="tests/sample_data/test_data.csv", column_dict=column_dict
     )
     pl_testing.assert_frame_equal(
         base_cycler.pyprobe_dataframe.collect(), sample_pyprobe_dataframe

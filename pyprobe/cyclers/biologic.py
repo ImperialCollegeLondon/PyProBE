@@ -17,16 +17,15 @@ class Biologic(BaseCycler):
     """
 
     input_data_path: str
-    column_name_pattern: str = r"(.+)/(.+)"
     column_dict: dict[str, str] = {
         "Date": "Date",
-        "Time": "time",
-        "Step": "Ns",
-        "Current": "I",
-        "Voltage": "Ecell",
-        "Charge Capacity": "Q charge",
-        "Discharge Capacity": "Q discharge",
-        "Temperature": "Temperature",
+        "time/*": "Time [*]",
+        "Ns": "Step",
+        "I/*": "Current [*]",
+        "Ecell/*": "Voltage [*]",
+        "Q charge/*": "Charge Capacity [*]",
+        "Q discharge/*": "Discharge Capacity [*]",
+        "Temperature/*": "Temperature [*]",
     }
 
     @staticmethod
@@ -67,8 +66,12 @@ class Biologic(BaseCycler):
 
     @property
     def step(self) -> pl.Expr:
-        """Identify and format the step column."""
-        return (pl.col(self.column_dict["Step"]).cast(pl.Int64) + 1).alias("Step")
+        """Identify the step number.
+
+        Returns:
+            pl.Expr: A polars expression for the step number.
+        """
+        return pl.col("Step") + 1
 
 
 class BiologicMB(Biologic):
