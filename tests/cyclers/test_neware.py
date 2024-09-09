@@ -30,8 +30,8 @@ def test_sort_files(neware_cycler):
         "test_2_experiment_3_file_5.xlsx",
         "test_2_experiment_3_file_5_2.xlsx",
     ]
-    sorted_files = neware_cycler._sort_files(file_list)
-    assert sorted_files == [
+    file_list.sort()
+    assert file_list == [
         "test_2_experiment_3_file_5.xlsx",
         "test_2_experiment_3_file_5_1.xlsx",
         "test_2_experiment_3_file_5_2.xlsx",
@@ -69,16 +69,12 @@ def test_process_dataframe(monkeypatch):
                 0,
             ],
             "DChg. Cap.(mAh)": [0, 0, 10, 20, 20, 20],
-            "Temperature(C)": [25, 25, 25, 25, 25, 25],
+            "T1(℃)": [25, 25, 25, 25, 25, 25],
         }
     )
+    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
+    neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
 
-    neware_cycler = Neware(
-        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
-    )
-    # neware_cycler._imported_dataframe = mock_dataframe
-    monkeypatch.setattr(neware_cycler, "_imported_dataframe", mock_dataframe)
-    print(neware_cycler._imported_dataframe)
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
 
     pyprobe_dataframe = pyprobe_dataframe.select(

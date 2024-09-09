@@ -1,5 +1,7 @@
 """Module containing tests of the procedure class."""
 
+import os
+
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -87,3 +89,5 @@ def test_add_external_data(procedure_fixture):
     value = value[~nan_mask]
     data = data[~nan_mask]
     assert np.allclose(data, value, atol=0.005)
+
+    os.remove("tests/sample_data/neware/external_data.csv")

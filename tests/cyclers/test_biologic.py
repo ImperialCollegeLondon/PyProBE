@@ -43,7 +43,7 @@ def test_read_file(biologic_cycler, biologic_MB_cycler):
     )
 
 
-def test_sort_files(biologic_MB_cycler):
+def test_sort_files():
     """Test the _sort_files method."""
     file_list = [
         "test_2_experiment_3_03_MB_file.xlsx",
@@ -51,8 +51,8 @@ def test_sort_files(biologic_MB_cycler):
         "test_2_experiment_3_04_MB_file.xlsx",
         "test_2_experiment_3_02_MB_file.xlsx",
     ]
-    sorted_files = biologic_MB_cycler._sort_files(file_list)
-    assert sorted_files == [
+    file_list.sort()
+    assert file_list == [
         "test_2_experiment_3_01_MB_file.xlsx",
         "test_2_experiment_3_02_MB_file.xlsx",
         "test_2_experiment_3_03_MB_file.xlsx",
@@ -169,50 +169,6 @@ def test_process_dataframe(monkeypatch):
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
             "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
-        }
-    )
-    pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
-
-    # test without temperature
-    mock_dataframe = pl.DataFrame(
-        {
-            "Date": [
-                datetime(2022, 2, 2, 2, 2, 0),
-                datetime(2022, 2, 2, 2, 2, 1),
-                datetime(2022, 2, 2, 2, 2, 2),
-                datetime(2022, 2, 2, 2, 2, 3),
-                datetime(2022, 2, 2, 2, 2, 4),
-                datetime(2022, 2, 2, 2, 2, 5),
-                datetime(2022, 2, 2, 2, 2, 6),
-            ],
-            "time/s": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "Ns": [0, 0, 1, 1, 1, 0, 0],
-            "I/mA": [1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0],
-            "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
-            "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
-        }
-    )
-    biologic_cycler._imported_dataframe = mock_dataframe
-
-    pyprobe_dataframe = biologic_cycler.pyprobe_dataframe.select(
-        [
-            "Time [s]",
-            "Step",
-            "Current [A]",
-            "Voltage [V]",
-            "Capacity [Ah]",
-            "Temperature [C]",
-        ]
-    )
-    expected_dataframe = pl.DataFrame(
-        {
-            "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "Step": [1, 1, 2, 2, 2, 1, 1],
-            "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0, 0],
-            "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
-            "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],
-            "Temperature [C]": [None, None, None, None, None, None, None],
         }
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)

@@ -170,7 +170,7 @@ class Result(BaseModel):
             column_name (str): The column name to convert to.
         """
         if column_name not in self.base_dataframe.collect_schema().names():
-            converter_object = Units(column_name)
+            converter_object = Units.from_regexp(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default_unit()
                 self.base_dataframe = self.base_dataframe.with_columns(instruction)
@@ -193,7 +193,7 @@ class Result(BaseModel):
         _quantities = []
         for _, column in enumerate(self.column_list):
             try:
-                quantity, _ = Units.get_quantity_and_unit(column)
+                quantity = Units.from_regexp(column).input_quantity
                 _quantities.append(quantity)
             except ValueError:
                 continue

@@ -13,7 +13,7 @@ import pybamm
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator, validate_call
 
-from pyprobe.cyclers import biologic, neware
+from pyprobe.cyclers import basecycler, biologic, neware
 from pyprobe.filters import Procedure
 
 
@@ -111,6 +111,22 @@ class Cell(BaseModel):
             filename = os.path.splitext(filename)[0] + ".parquet"
         return filename
 
+    def _write_parquet(
+        self,
+        importer: basecycler.BaseCycler,
+        output_data_path: str,
+    ) -> None:
+        """Import data from a cycler file.
+
+        Args:
+            importer (BaseCycler): The cycler object to import the data.
+            output_data_path (str): The path to write the parquet file.
+        """
+        dataframe = importer.pyprobe_dataframe
+        if isinstance(dataframe, pl.LazyFrame):
+            dataframe = dataframe.collect()
+        dataframe.write_parquet(output_data_path)
+
     @validate_call
     def process_cycler_file(
         self,
@@ -146,6 +162,7 @@ class Cell(BaseModel):
         output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
+
         cycler_dict = {
             "neware": neware.Neware,
             "biologic": biologic.Biologic,
@@ -153,10 +170,52 @@ class Cell(BaseModel):
         }
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
-        dataframe = importer.pyprobe_dataframe
-        if isinstance(dataframe, pl.LazyFrame):
-            dataframe = dataframe.collect()
-        dataframe.write_parquet(output_data_path)
+        self._write_parquet(importer, output_data_path)
+        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+
+    @validate_call
+    def process_generic_file(
+        self,
+        folder_path: str,
+        input_filename: str | Callable[[str], str],
+        output_filename: str | Callable[[str], str],
+        column_dict: Dict[str, str],
+        filename_inputs: Optional[List[str]] = None,
+    ) -> None:
+        """Convert generic file into PyProBE format.
+
+        Args:
+            folder_path (str):
+                The path to the folder containing the data file.
+            input_filename (str | function):
+                A filename string or a function to generate the file name for the
+                generic data.
+            output_filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            column_dict (dict):
+                A dictionary mapping the column names in the generic file to the PyProBE
+                column names.
+            filename_inputs (list):
+                The list of inputs to input_filename and output_filename.
+                These must be keys of the cell info.
+        """
+        input_data_path = self._get_data_paths(
+            folder_path, input_filename, filename_inputs
+        )
+        output_data_path = self._get_data_paths(
+            folder_path, output_filename, filename_inputs
+        )
+        output_data_path = self._verify_parquet(output_data_path)
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path")
+
+        t1 = time.time()
+        importer = basecycler.BaseCycler(
+            input_data_path=input_data_path,
+            column_dict=column_dict,
+        )
+        self._write_parquet(importer, output_data_path)
         print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
 
     @validate_call
