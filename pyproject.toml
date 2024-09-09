@@ -50,7 +50,8 @@ dev = [
     "sphinxcontrib-bibtex",
     "sphinx-design",
     "pydata-sphinx-theme",
-    "nbsphinx"
+    "nbsphinx",
+    "xlsxwriter", # write to Excel from polars
 ]
 
 [tool.mypy]

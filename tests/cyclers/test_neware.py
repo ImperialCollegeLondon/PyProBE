@@ -72,9 +72,7 @@ def test_process_dataframe(monkeypatch):
             "T1(℃)": [25, 25, 25, 25, 25, 25],
         }
     )
-    mock_dataframe.to_pandas().to_excel(
-        "tests/sample_data/mock_dataframe.xlsx", index=False
-    )
+    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
     neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
 
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
