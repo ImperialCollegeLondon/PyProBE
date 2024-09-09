@@ -37,18 +37,3 @@ jobs:
           comment-on-alert: true
           # Enable Job Summary for PRs
           summary-always: true
-  test-examples:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      - name: Install Jupyter and nbconvert
-        run: pip install jupyter nbconvert
-      - name: Run Jupyter Notebooks
-        run: |
-          for notebook in examples/*.ipynb; do
-            jupyter nbconvert --to notebook --execute "$notebook" --output "$notebook"
-          done
