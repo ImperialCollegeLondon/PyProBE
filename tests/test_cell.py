@@ -105,7 +105,6 @@ def test_process_generic_file(cell_instance):
         input_filename="test_generic_file.csv",
         output_filename="test_generic_file.parquet",
         column_dict=column_dict,
-        column_name_pattern=r"([\w\s]+?)\s*\[(\w+)\]",
     )
     expected_df = pl.DataFrame(
         {
