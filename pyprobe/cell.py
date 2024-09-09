@@ -67,32 +67,6 @@ class Cell(BaseModel):
         values = info
         return values
 
-    @classmethod
-    def make_cell_list(
-        cls,
-        record_filepath: str,
-        worksheet_name: str,
-    ) -> List["Cell"]:
-        """Function to make a list of cell objects from a record of tests.
-
-        Args:
-            record_filepath (str): The path to the experiment record .xlsx file.
-            worksheet_name (str): The worksheet name to read from the record.
-
-        Returns:
-            list: The list of cell objects
-        """
-        record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
-
-        n_cells = len(record)
-        cell_list = []
-        colors = cls.set_color_scheme(n_cells, scheme="distinctipy")
-        for i in range(n_cells):
-            info = record.row(i, named=True)
-            info["color"] = colors[i]
-            cell_list.append(cls(info=info))
-        return cell_list
-
     @staticmethod
     def _verify_parquet(filename: str) -> str:
         """Function to verify the filename is in the correct format.
@@ -403,6 +377,31 @@ class Cell(BaseModel):
         with open(readme_path, "r") as file:
             readme_dict = yaml.safe_load(file)
         return ReadmeModel(readme_dict=readme_dict)
+
+
+def make_cell_list(
+    record_filepath: str,
+    worksheet_name: str,
+) -> List["Cell"]:
+    """Function to make a list of cell objects from a record of tests.
+
+    Args:
+        record_filepath (str): The path to the experiment record .xlsx file.
+        worksheet_name (str): The worksheet name to read from the record.
+
+    Returns:
+        list: The list of cell objects
+    """
+    record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
+
+    n_cells = len(record)
+    cell_list = []
+    colors = Cell.set_color_scheme(n_cells, scheme="distinctipy")
+    for i in range(n_cells):
+        info = record.row(i, named=True)
+        info["color"] = colors[i]
+        cell_list.append(Cell(info=info))
+    return cell_list
 
 
 class ReadmeModel(BaseModel):

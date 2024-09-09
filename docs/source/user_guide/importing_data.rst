@@ -130,11 +130,11 @@ procedures they have undergone. See the :ref:`writing_an_experiment_record` sect
 guidance.
 
 Once you have an Experiment Record, you can create a list of cells using the 
-:func:`~pyprobe.cell.Cell.make_cell_list` function:
+:func:`~pyprobe.cell.make_cell_list` function:
 
 .. code-block:: python
 
-   cell_list = Cell.make_cell_list(record_filepath = 'path/to/experiment_record.xlsx',
+   cell_list = pyprobe.make_cell_list(record_filepath = 'path/to/experiment_record.xlsx',
                                    worksheet_name = 'Sample experiment')
 
 This function creates a list of cells, where the :attr:`~pyprobe.cell.Cell.info` 

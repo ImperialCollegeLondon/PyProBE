@@ -7,6 +7,7 @@ import pybamm
 import pytest
 from polars.testing import assert_frame_equal
 
+import pyprobe
 from pyprobe.cell import Cell, ReadmeModel
 
 
@@ -34,7 +35,7 @@ def test_make_cell_list(info_fixture):
     """Test the make_cell_list method."""
     filepath = "tests/sample_data/neware/Experiment_Record.xlsx"
     record_name = "sample_data_neware"
-    cell_list = Cell.make_cell_list(filepath, record_name)
+    cell_list = pyprobe.make_cell_list(filepath, record_name)
     expected_info = copy.copy(info_fixture)
     expected_info["color"] = "#ff00ff"
     assert cell_list[0].info == expected_info
