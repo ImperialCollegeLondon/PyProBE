@@ -3,8 +3,6 @@
 import glob
 import os
 import warnings
-
-# from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 import polars as pl
@@ -19,7 +17,7 @@ class BaseCycler(BaseModel):
     Args:
         input_data_path (str): The path to the input data.
         column_dict (Dict[str, str]): A dictionary mapping the column name format of the
-            cyler to the PyProBE format. Units are indicated by an asterisk (*).
+            cycler to the PyProBE format. Units are indicated by an asterisk (*).
     """
 
     input_data_path: str
