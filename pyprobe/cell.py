@@ -340,10 +340,10 @@ class Cell(BaseModel):
                 n_attempts=5000,
                 **kwargs,
             )
-            hex = []
+            hex_list = []
             for i in range(len(rgb)):
-                hex.append(distinctipy.get_hex(rgb[i]))
-            return hex
+                hex_list.append(distinctipy.get_hex(rgb[i]))
+            return hex_list
         else:
             raise NotImplementedError
 
