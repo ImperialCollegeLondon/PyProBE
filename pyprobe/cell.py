@@ -64,40 +64,6 @@ class Cell(BaseModel):
         values = info
         return values
 
-    @staticmethod
-    def _verify_parquet(filename: str) -> str:
-        """Function to verify the filename is in the correct format.
-
-        Args:
-            filename (str): The filename to verify.
-
-        Returns:
-            str: The filename.
-        """
-        # Get the file extension of output_filename
-        _, ext = os.path.splitext(filename)
-
-        # If the file extension is not .parquet, replace it with .parquet
-        if ext != ".parquet":
-            filename = os.path.splitext(filename)[0] + ".parquet"
-        return filename
-
-    def _write_parquet(
-        self,
-        importer: basecycler.BaseCycler,
-        output_data_path: str,
-    ) -> None:
-        """Import data from a cycler file.
-
-        Args:
-            importer (BaseCycler): The cycler object to import the data.
-            output_data_path (str): The path to write the parquet file.
-        """
-        dataframe = importer.pyprobe_dataframe
-        if isinstance(dataframe, pl.LazyFrame):
-            dataframe = dataframe.collect()
-        dataframe.write_parquet(output_data_path)
-
     @validate_call
     def process_cycler_file(
         self,
@@ -233,6 +199,40 @@ class Cell(BaseModel):
             pybamm_experiment=readme.pybamm_experiment,
             pybamm_experiment_list=readme.pybamm_experiment_list,
         )
+
+    @staticmethod
+    def _verify_parquet(filename: str) -> str:
+        """Function to verify the filename is in the correct format.
+
+        Args:
+            filename (str): The filename to verify.
+
+        Returns:
+            str: The filename.
+        """
+        # Get the file extension of output_filename
+        _, ext = os.path.splitext(filename)
+
+        # If the file extension is not .parquet, replace it with .parquet
+        if ext != ".parquet":
+            filename = os.path.splitext(filename)[0] + ".parquet"
+        return filename
+
+    def _write_parquet(
+        self,
+        importer: basecycler.BaseCycler,
+        output_data_path: str,
+    ) -> None:
+        """Import data from a cycler file.
+
+        Args:
+            importer (BaseCycler): The cycler object to import the data.
+            output_data_path (str): The path to write the parquet file.
+        """
+        dataframe = importer.pyprobe_dataframe
+        if isinstance(dataframe, pl.LazyFrame):
+            dataframe = dataframe.collect()
+        dataframe.write_parquet(output_data_path)
 
     @staticmethod
     def _get_filename(
