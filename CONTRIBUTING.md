@@ -25,7 +25,13 @@ $ make html
 $ pytest
 ```
 
-6. Open a pull request. In the pull request description, please describe in detail the changes your feature branch introduces, and reference the associated issue.
+6. Ensure that the examples run to completion:
+```bash
+$ pip install nbmake
+$ pytest --nbmake docs/source/examples/*.ipynb
+```
+
+7. Open a pull request. In the pull request description, please describe in detail the changes your feature branch introduces, and reference the associated issue.
 
 ## PyProBE structure
 Additions to the code should be made in accordance with the structure of PyProBE, to 
