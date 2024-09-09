@@ -52,12 +52,8 @@ click==8.1.7
     #   black
     #   pip-tools
     #   streamlit
-contourpy==1.2.1
-    # via matplotlib
 coverage[toml]==7.6.1
     # via pytest-cov
-cycler==0.12.1
-    # via matplotlib
 decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
@@ -90,8 +86,6 @@ flake8==7.1.1
     #   flake8-docstrings
 flake8-docstrings==1.7.0
     # via PyProBE (pyproject.toml)
-fonttools==4.53.1
-    # via matplotlib
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
@@ -137,8 +131,6 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 kaleido==0.2.1
     # via PyProBE (pyproject.toml)
-kiwisolver==1.4.5
-    # via matplotlib
 latexcodec==3.0.0
     # via pybtex
 markdown-it-py==3.0.0
@@ -147,8 +139,6 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.2
-    # via PyProBE (pyproject.toml)
 matplotlib-inline==0.1.7
     # via ipython
 mccabe==0.7.0
@@ -186,9 +176,7 @@ numpy==1.26.4
     # via
     #   PyProBE (pyproject.toml)
     #   casadi
-    #   contourpy
     #   distinctipy
-    #   matplotlib
     #   pandas
     #   pyarrow
     #   pybamm
@@ -204,7 +192,6 @@ packaging==24.1
     #   altair
     #   black
     #   build
-    #   matplotlib
     #   nbconvert
     #   plotly
     #   pooch
@@ -215,7 +202,6 @@ packaging==24.1
     #   xarray
 pandas==2.2.2
     # via
-    #   PyProBE (pyproject.toml)
     #   pybamm
     #   streamlit
     #   xarray
@@ -228,9 +214,7 @@ pathspec==0.12.1
 pexpect==4.9.0
     # via ipython
 pillow==10.4.0
-    # via
-    #   matplotlib
-    #   streamlit
+    # via streamlit
 pip-tools==7.4.1
     # via PyProBE (pyproject.toml)
 platformdirs==4.2.2
@@ -294,8 +278,6 @@ pygments==2.18.0
     #   rich
     #   sphinx
     #   sphinx-tabs
-pyparsing==3.1.2
-    # via matplotlib
 pyproject-hooks==1.1.0
     # via
     #   build
@@ -318,7 +300,6 @@ pytest-mypy==0.10.3
 python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
-    #   matplotlib
     #   pandas
 pytz==2024.1
     # via pandas
@@ -448,8 +429,6 @@ wheel==0.44.0
     # via pip-tools
 xarray==2024.7.0
     # via pybamm
-xlsx2csv==0.8.3
-    # via PyProBE (pyproject.toml)
 xlsxwriter==3.2.0
     # via PyProBE (pyproject.toml)
 
