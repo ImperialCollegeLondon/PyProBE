@@ -456,6 +456,30 @@ These must be keys of the cell info.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.Cell.process_generic_file">
+<span class="sig-name descname"><span class="pre">process_generic_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_generic_file" title="Link to this definition">#</a></dt>
+<dd><p>Convert generic file into PyProBE format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder_path</strong> (<em>str</em>) – The path to the folder containing the data file.</p></li>
+<li><p><strong>input_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for the
+generic data.</p></li>
+<li><p><strong>output_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
+data.</p></li>
+<li><p><strong>column_dict</strong> (<em>dict</em>) – A dictionary mapping the column names in the generic file to the PyProBE
+column names.</p></li>
+<li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
+These must be keys of the cell info.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.add_procedure">
 <span class="sig-name descname"><span class="pre">add_procedure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">procedure_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'README.yaml'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.add_procedure" title="Link to this definition">#</a></dt>
 <dd><p>Add data in a PyProBE-format parquet file to the procedure dict of the cell.</p>
@@ -738,6 +762,7 @@ info.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.procedure"><code class="docutils literal notranslate"><span class="pre">Cell.procedure</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.make_cell_list"><code class="docutils literal notranslate"><span class="pre">Cell.make_cell_list()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_cycler_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_cycler_file()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_generic_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_generic_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.set_color_scheme"><code class="docutils literal notranslate"><span class="pre">Cell.set_color_scheme()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.launch_dashboard"><code class="docutils literal notranslate"><span class="pre">Cell.launch_dashboard()</span></code></a></li>

@@ -18,21 +18,17 @@ allow PyProBE to work with your data.
    You should then declare the following variables:
    
    - :code:`input_data_path` as an unset string
-   
-   - :code:`common_suffix` if all of the files from a cycler have the same ending (excluding file extensions). If they do not, leave as :code:`""`.
-   
-   - :code:`column_name_pattern` the regular expression that describes the pattern of the column names. This is to distinguish `Current [A]` from `Current (A)`, for example.
-   
-   - :code:`column_dict` a dictionary of quantities per the PyProBE convention and their 
-     counterparts in the data file from the cycler e.g. :code:`{..."Current": "I",...}`.
-     You only need to include the quantity names, PyProBE will deal with the unit conversion.
+         
+   - :code:`column_dict` a dictionary relating the cycler format for column headings to
+     the PyProBE format. E.g. :code:`{"I/*": Current [*]}`. Note that the units are 
+     indicated by an asterisk :code:`*`: PyProBE will perform unit conversion automatically.
    
    Below is an example from the :class:`~pyprobe.cyclers.biologic.Biologic` class:
 
    .. literalinclude:: ../../../pyprobe/cyclers/biologic.py
     :language: python
     :linenos:
-    :lines: 12-30
+    :lines: 12-29
 
 2. Add a method to read a file into a dataframe. 
    
@@ -50,8 +46,8 @@ allow PyProBE to work with your data.
 
    It is very likely that the base :func:`~pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe`
    will work for you, in which case you will not need this function. In the 
-   :class:`~pyprobe.cyclers.biologic.Biologic` class, this method is used when there
-   are multiple `ModuloBat` files being read, to concatenate the dataframes while 
+   :class:`~pyprobe.cyclers.biologic.BiologicMB` class, this method is used when there
+   are multiple `ModuloBat` files being read to concatenate the dataframes while 
    ensuring that the step number does not reduce to zero when the start of one file ends
    and another begins.
 

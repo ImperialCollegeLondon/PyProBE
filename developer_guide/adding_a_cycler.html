@@ -384,11 +384,9 @@ which is a <a class="reference external" href="https://docs.pydantic.dev/latest/
 You should then declare the following variables:</p>
 <ul class="simple">
 <li><p><code class="code docutils literal notranslate"><span class="pre">input_data_path</span></code> as an unset string</p></li>
-<li><p><code class="code docutils literal notranslate"><span class="pre">common_suffix</span></code> if all of the files from a cycler have the same ending (excluding file extensions). If they do not, leave as <code class="code docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p></li>
-<li><p><code class="code docutils literal notranslate"><span class="pre">column_name_pattern</span></code> the regular expression that describes the pattern of the column names. This is to distinguish <cite>Current [A]</cite> from <cite>Current (A)</cite>, for example.</p></li>
-<li><p><code class="code docutils literal notranslate"><span class="pre">column_dict</span></code> a dictionary of quantities per the PyProBE convention and their
-counterparts in the data file from the cycler e.g. <code class="code docutils literal notranslate"><span class="pre">{...&quot;Current&quot;:</span> <span class="pre">&quot;I&quot;,...}</span></code>.
-You only need to include the quantity names, PyProBE will deal with the unit conversion.</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">column_dict</span></code> a dictionary relating the cycler format for column headings to
+the PyProBE format. E.g. <code class="code docutils literal notranslate"><span class="pre">{&quot;I/*&quot;:</span> <span class="pre">Current</span> <span class="pre">[*]}</span></code>. Note that the units are
+indicated by an asterisk <code class="code docutils literal notranslate"><span class="pre">*</span></code>: PyProBE will perform unit conversion automatically.</p></li>
 </ul>
 <p>Below is an example from the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">class</span> <span class="nc">Biologic</span><span class="p">(</span><span class="n">BaseCycler</span><span class="p">):</span>
@@ -399,17 +397,16 @@ You only need to include the quantity names, PyProBE will deal with the unit con
 <span class="linenos"> 6</span><span class="sd">    &quot;&quot;&quot;</span>
 <span class="linenos"> 7</span>
 <span class="linenos"> 8</span>    <span class="n">input_data_path</span><span class="p">:</span> <span class="nb">str</span>
-<span class="linenos"> 9</span>    <span class="n">common_suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-<span class="linenos">10</span>    <span class="n">column_name_pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(.+)/(.+)&quot;</span>
-<span class="linenos">11</span>    <span class="n">column_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-<span class="linenos">12</span>        <span class="s2">&quot;Date&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
-<span class="linenos">13</span>        <span class="s2">&quot;Time&quot;</span><span class="p">:</span> <span class="s2">&quot;time/s&quot;</span><span class="p">,</span>
-<span class="linenos">14</span>        <span class="s2">&quot;Step&quot;</span><span class="p">:</span> <span class="s2">&quot;Ns&quot;</span><span class="p">,</span>
-<span class="linenos">15</span>        <span class="s2">&quot;Current&quot;</span><span class="p">:</span> <span class="s2">&quot;I&quot;</span><span class="p">,</span>
-<span class="linenos">16</span>        <span class="s2">&quot;Voltage&quot;</span><span class="p">:</span> <span class="s2">&quot;Ecell&quot;</span><span class="p">,</span>
-<span class="linenos">17</span>        <span class="s2">&quot;Charge Capacity&quot;</span><span class="p">:</span> <span class="s2">&quot;Q charge&quot;</span><span class="p">,</span>
-<span class="linenos">18</span>        <span class="s2">&quot;Discharge Capacity&quot;</span><span class="p">:</span> <span class="s2">&quot;Q discharge&quot;</span><span class="p">,</span>
-<span class="linenos">19</span>        <span class="s2">&quot;Temperature&quot;</span><span class="p">:</span> <span class="s2">&quot;Temperature&quot;</span><span class="p">,</span>
+<span class="linenos"> 9</span>    <span class="n">column_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="linenos">10</span>        <span class="s2">&quot;Date&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+<span class="linenos">11</span>        <span class="s2">&quot;time/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Time [*]&quot;</span><span class="p">,</span>
+<span class="linenos">12</span>        <span class="s2">&quot;Ns&quot;</span><span class="p">:</span> <span class="s2">&quot;Step&quot;</span><span class="p">,</span>
+<span class="linenos">13</span>        <span class="s2">&quot;I/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
+<span class="linenos">14</span>        <span class="s2">&quot;Ecell/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Voltage [*]&quot;</span><span class="p">,</span>
+<span class="linenos">15</span>        <span class="s2">&quot;Q charge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Charge Capacity [*]&quot;</span><span class="p">,</span>
+<span class="linenos">16</span>        <span class="s2">&quot;Q discharge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Discharge Capacity [*]&quot;</span><span class="p">,</span>
+<span class="linenos">17</span>        <span class="s2">&quot;Temperature/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Temperature [*]&quot;</span><span class="p">,</span>
+<span class="linenos">18</span>    <span class="p">}</span>
 </pre></div>
 </div>
 </li>
@@ -426,8 +423,8 @@ the class of your cycler.</p>
 <li><p>Add a method to form the complete imported dataframe.</p>
 <p>It is very likely that the base <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe" title="pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_imported_dataframe()</span></code></a>
 will work for you, in which case you will not need this function. In the
-<a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class, this method is used when there
-are multiple <cite>ModuloBat</cite> files being read, to concatenate the dataframes while
+<a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB" title="pyprobe.cyclers.biologic.BiologicMB"><code class="xref py py-class docutils literal notranslate"><span class="pre">BiologicMB</span></code></a> class, this method is used when there
+are multiple <cite>ModuloBat</cite> files being read to concatenate the dataframes while
 ensuring that the step number does not reduce to zero when the start of one file ends
 and another begins.</p>
 </li>

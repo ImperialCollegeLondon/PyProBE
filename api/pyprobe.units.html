@@ -380,17 +380,17 @@ document.write(`
                   
   <section id="module-pyprobe.units">
 <span id="pyprobe-units-module"></span><h1>pyprobe.units module<a class="headerlink" href="#module-pyprobe.units" title="Link to this heading">#</a></h1>
-<p>A module for unit conversion and zero referencing of data columns.</p>
+<p>A module for unit conversion of PyProBE data.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.units.Units">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.units.</span></span><span class="sig-name descname"><span class="pre">Units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'([\\w\\s]+?)\\s*\\[(\\w+)\\]'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.units.</span></span><span class="sig-name descname"><span class="pre">Units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_unit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class to store unit conversion information about columns.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>column_name</strong> (<em>str</em>)</p></li>
-<li><p><strong>name_pattern</strong> (<em>str</em>)</p></li>
+<li><p><strong>input_quantity</strong> (<em>str</em>) – The quantity of the column.</p></li>
+<li><p><strong>input_unit</strong> (<em>str</em>) – The unit of the column.</p></li>
 </ul>
 </dd>
 </dl>
@@ -410,18 +410,18 @@ document.write(`
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.units.Units.get_quantity_and_unit">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_quantity_and_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'([\\w\\s]+?)\\s*\\[(\\w+)\\]'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units.get_quantity_and_unit" title="Link to this definition">#</a></dt>
-<dd><p>Return the quantity and unit of a column name.</p>
+<dt class="sig sig-object py" id="pyprobe.units.Units.from_regexp">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_regexp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regular_expression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'([\\w\\s]+?)\\s*\\[(\\w+)\\]'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units.from_regexp" title="Link to this definition">#</a></dt>
+<dd><p>Create an instance of a units class from column name and regular expression.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – The column name.</p></li>
-<li><p><strong>name_pattern</strong> (<em>str</em>) – The pattern to match the column name.</p></li>
+<li><p><strong>regular_expression</strong> (<em>str</em>) – The pattern to match the column name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Tuple</em>[str | <em>Any</em>, …]</p>
+<dd class="field-even"><p><a class="reference internal" href="#pyprobe.units.Units" title="pyprobe.units.Units"><em>Units</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -441,23 +441,9 @@ document.write(`
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.units.Units.to_default_name_and_unit">
-<span class="sig-name descname"><span class="pre">to_default_name_and_unit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units.to_default_name_and_unit" title="Link to this definition">#</a></dt>
-<dd><p>Convert the column to the default unit and change to the default name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The converted column expression.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pl.Expr</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.units.Units.to_default_unit">
 <span class="sig-name descname"><span class="pre">to_default_unit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units.to_default_unit" title="Link to this definition">#</a></dt>
-<dd><p>Convert the column to the default unit without changing the name.</p>
+<dd><p>Convert the column to the default unit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The converted column expression.</p>
@@ -513,9 +499,8 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.prefix_dict"><code class="docutils literal notranslate"><span class="pre">Units.prefix_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.time_unit_dict"><code class="docutils literal notranslate"><span class="pre">Units.time_unit_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.unit_dict"><code class="docutils literal notranslate"><span class="pre">Units.unit_dict</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.get_quantity_and_unit"><code class="docutils literal notranslate"><span class="pre">Units.get_quantity_and_unit()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.from_regexp"><code class="docutils literal notranslate"><span class="pre">Units.from_regexp()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.from_default_unit"><code class="docutils literal notranslate"><span class="pre">Units.from_default_unit()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.to_default_name_and_unit"><code class="docutils literal notranslate"><span class="pre">Units.to_default_name_and_unit()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.to_default_unit"><code class="docutils literal notranslate"><span class="pre">Units.to_default_unit()</span></code></a></li>
 </ul>
 </li>

@@ -394,33 +394,20 @@ document.write(`
 <p>A module to load and process Neware battery cycler data.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.neware.</span></span><span class="sig-name descname"><span class="pre">Neware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">common_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_name_pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'(.+)\\((.+)\\)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Charge</span> <span class="pre">Capacity':</span> <span class="pre">'Chg.</span> <span class="pre">Cap.',</span> <span class="pre">'Current':</span> <span class="pre">'Current',</span> <span class="pre">'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Discharge</span> <span class="pre">Capacity':</span> <span class="pre">'DChg.</span> <span class="pre">Cap.',</span> <span class="pre">'Step':</span> <span class="pre">'Step</span> <span class="pre">Index',</span> <span class="pre">'Temperature':</span> <span class="pre">'Temperature',</span> <span class="pre">'Voltage':</span> <span class="pre">'Voltage'}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">common_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.neware.Neware" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.neware.</span></span><span class="sig-name descname"><span class="pre">Neware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Chg.</span> <span class="pre">Cap.(*)':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current(*)':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'DChg.</span> <span class="pre">Cap.(*)':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Step</span> <span class="pre">Index':</span> <span class="pre">'Step',</span> <span class="pre">'T1(*)':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Voltage(*)':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.neware.Neware" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a></p>
 <p>A class to load and process Neware battery cycler data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input_data_path</strong> (<em>str</em>) – The path to the input data.</p></li>
-<li><p><strong>common_suffix</strong> (<em>str</em>)</p></li>
-<li><p><strong>column_name_pattern</strong> (<em>str</em>)</p></li>
 <li><p><strong>column_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
-<li><p><strong>common_prefix</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.input_data_path">
 <span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.input_data_path" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.common_suffix">
-<span class="sig-name descname"><span class="pre">common_suffix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.common_suffix" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.column_name_pattern">
-<span class="sig-name descname"><span class="pre">column_name_pattern</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.column_name_pattern" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -494,8 +481,6 @@ document.write(`
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware"><code class="docutils literal notranslate"><span class="pre">Neware</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.input_data_path"><code class="docutils literal notranslate"><span class="pre">Neware.input_data_path</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.common_suffix"><code class="docutils literal notranslate"><span class="pre">Neware.common_suffix</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.column_name_pattern"><code class="docutils literal notranslate"><span class="pre">Neware.column_name_pattern</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.column_dict"><code class="docutils literal notranslate"><span class="pre">Neware.column_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.time"><code class="docutils literal notranslate"><span class="pre">Neware.time</span></code></a></li>
 </ul>
