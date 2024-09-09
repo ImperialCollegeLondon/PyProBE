@@ -1,5 +1,6 @@
 """Tests for the Cell class."""
 import copy
+import os
 
 import polars as pl
 import pybamm
@@ -79,7 +80,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
 
 def test_process_generic_file(cell_instance):
     """Test the process_generic_file method."""
-    folder_path = "tests/sample_data/neware/"
+    folder_path = "tests/sample_data/"
     df = pl.DataFrame(
         {
             "T [s]": [1.0, 2.0, 3.0],
@@ -121,6 +122,8 @@ def test_process_generic_file(cell_instance):
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
+    os.remove(f"{folder_path}/test_generic_file.csv")
+    os.remove(f"{folder_path}/test_generic_file.parquet")
 
 
 def test_add_procedure(cell_instance, procedure_fixture, benchmark):

@@ -1,5 +1,6 @@
 """Test the basecycler module."""
 import copy
+import os
 
 import polars as pl
 import polars.testing as pl_testing
@@ -152,6 +153,7 @@ def test_init(sample_cycler_instance, sample_dataframe):
         sample_cycler_instance._imported_dataframe.collect(),
         df.with_columns(pl.all().cast(str)),
     )
+    os.remove("tests/sample_data/test_data.csv")
 
 
 def test_pyprobe_dataframe(sample_cycler_instance, sample_pyprobe_dataframe):
@@ -159,6 +161,7 @@ def test_pyprobe_dataframe(sample_cycler_instance, sample_pyprobe_dataframe):
     pl_testing.assert_frame_equal(
         sample_cycler_instance.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
     )
+    os.remove("tests/sample_data/test_data.csv")
 
 
 def test_multiple_files(sample_dataframe, column_dict):
@@ -179,6 +182,8 @@ def test_multiple_files(sample_dataframe, column_dict):
         base_cycler._imported_dataframe.collect(),
         expected_dataframe.with_columns(pl.all().cast(str)),
     )
+    os.remove("tests/sample_data/test_data_1.csv")
+    os.remove("tests/sample_data/test_data_2.csv")
 
 
 def test_missing_columns(sample_dataframe, sample_pyprobe_dataframe, column_dict):
@@ -201,6 +206,7 @@ def test_missing_columns(sample_dataframe, sample_pyprobe_dataframe, column_dict
     pl_testing.assert_frame_equal(
         base_cycler.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
     )
+    os.remove("tests/sample_data/test_data.csv")
 
 
 def test_ch_dis_capacity(sample_dataframe, sample_pyprobe_dataframe, column_dict):
@@ -219,3 +225,4 @@ def test_ch_dis_capacity(sample_dataframe, sample_pyprobe_dataframe, column_dict
     pl_testing.assert_frame_equal(
         base_cycler.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
     )
+    os.remove("tests/sample_data/test_data.csv")
