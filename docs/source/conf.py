@@ -39,7 +39,8 @@ html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
 autodoc_typehints = "description"
 autodoc_default_options = {
     "exclude-members": "model_post_init, Config",
-    "inherited-members": "BaseModel",
+    "show-inheritance": True,
+    "inherited-members": False,
 }
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------

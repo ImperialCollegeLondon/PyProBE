@@ -147,6 +147,8 @@ class Result(BaseModel):
             ValueError: If no column name is provided.
         """
         column = self.get(column_name)
+        if not isinstance(column, np.ndarray):
+            raise ValueError("More than one column returned.")
         return column
 
     def array(self, *filtering_column_names: str) -> NDArray[np.float64]:

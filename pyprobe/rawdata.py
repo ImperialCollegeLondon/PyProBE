@@ -1,8 +1,8 @@
 """A module for the RawData class."""
-from typing import Any, Optional
+from typing import Dict, Optional
 
 import polars as pl
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 # from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
@@ -49,22 +49,13 @@ class RawData(Result):
         - `Capacity [Ah]`
 
     This defines the PyProBE format.
-
-    Key attributes for returning data:
-        - :attr:`data`: The data as a Polars DataFrame.
-        - :meth:`get`: Get a column from the data as a NumPy array.
-
-    Key attributes for describing the data:
-        - :attr:`info`: A dictionary containing information about the cell.
-        - :attr:`column_definitions`: A dictionary of column definitions.
-        - :meth:`print_definitions`: Print the column definitions.
-        - :attr:`column_list`: A list of column names.
-
-    Key attributes for manipulating the data:
-        - :meth:`zero_column`: Set the first value of a column to zero.
-        - :meth:`set_SOC`: Add an SOC column to the data.
-        - :meth:`set_reference_capacity`: Fix the capacity to a reference value.
     """
+
+    base_dataframe: pl.LazyFrame | pl.DataFrame
+    info: Dict[str, Optional[str | int | float]]
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
 
     @field_validator("base_dataframe")
     @classmethod
@@ -77,14 +68,6 @@ class RawData(Result):
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
         return dataframe
-
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization method for the RawData model."""
-        self.column_definitions = {
-            key: default_column_definitions[key]
-            for key in self.column_list
-            if key in default_column_definitions
-        }
 
     def zero_column(
         self,

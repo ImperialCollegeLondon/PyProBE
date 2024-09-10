@@ -105,7 +105,6 @@ def test_definitions(lazyframe_fixture, info_fixture):
     definition_keys = list(rawdata.column_definitions.keys())
     assert set(definition_keys) == set(
         [
-            "Date",
             "Time [s]",
             "Current [A]",
             "Voltage [V]",
@@ -113,5 +112,7 @@ def test_definitions(lazyframe_fixture, info_fixture):
             "Cycle",
             "Step",
             "Event",
+            "Date",
+            "Temperature [C]",
         ]
     )
