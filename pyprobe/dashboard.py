@@ -1,6 +1,9 @@
 """Script to create a Streamlit dashboard for PyProBE."""
 import copy
+import os
 import pickle
+import platform
+import subprocess
 from typing import List
 
 import plotly
@@ -8,7 +11,47 @@ import polars as pl
 import streamlit as st
 from ordered_set import OrderedSet
 
+from pyprobe.cell import Cell
 from pyprobe.plot import Plot
+
+
+def launch_dashboard(cell_list: List[Cell]) -> None:
+    """Function to launch the dashboard for the preprocessed data.
+
+    Args:
+        cell_list (list): The list of cell objects to display in the dashboard.
+    """
+    with open("dashboard_data.pkl", "wb") as f:
+        pickle.dump(cell_list, f)
+
+    if platform.system() == "Windows":
+        subprocess.Popen(
+            [
+                "cmd",
+                "/c",
+                "start",
+                "/B",
+                "streamlit",
+                "run",
+                os.path.join(os.path.dirname(__file__), "dashboard.py"),
+                ">",
+                "nul",
+                "2>&1",
+            ],
+            shell=True,
+        )
+    elif platform.system() == "Darwin":
+        subprocess.Popen(
+            [
+                "nohup",
+                "streamlit",
+                "run",
+                os.path.join(os.path.dirname(__file__), "dashboard.py"),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
+
 
 if __name__ == "__main__":
     with open("dashboard_data.pkl", "rb") as f:
@@ -61,9 +104,9 @@ if __name__ == "__main__":
 
     # Find the common procedure names
     if len(procedure_names_sets) == 0:
-        procedure_names = []
+        procedure_names: List[str] = []
     else:
-        procedure_names = procedure_names_sets[0]
+        procedure_names = list(procedure_names_sets[0])
         for s in procedure_names_sets[1:]:
             procedure_names = [x for x in procedure_names if x in s]
     procedure_names = list(procedure_names)
@@ -77,7 +120,7 @@ if __name__ == "__main__":
         selected_experiment = st.sidebar.multiselect(
             "Select an experiment", experiment_names
         )
-        selected_experiment = tuple(selected_experiment)
+        selected_experiment_tuple = tuple(selected_experiment)
 
     # Get the cycle and step numbers from the user
     cycle_step_input = st.sidebar.text_input(
@@ -125,13 +168,13 @@ if __name__ == "__main__":
     selected_data = []
     for i in range(len(selected_indices)):
         selected_index = selected_indices[i]
-        if len(selected_experiment) == 0:
+        if len(selected_experiment_tuple) == 0:
             experiment_data = cell_list[selected_index].procedure[selected_raw_data]
         else:
             experiment_data = (
                 cell_list[selected_index]
                 .procedure[selected_raw_data]
-                .experiment(*selected_experiment)
+                .experiment(*selected_experiment_tuple)
             )
         # Check if the input is not empty
         if cycle_step_input:

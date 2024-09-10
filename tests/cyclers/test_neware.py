@@ -1,4 +1,5 @@
 """Tests for the neware module."""
+import os
 from datetime import datetime
 
 import polars as pl
@@ -98,6 +99,7 @@ def test_process_dataframe(monkeypatch):
         }
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
+    os.remove("tests/sample_data/mock_dataframe.xlsx")
 
 
 def test_read_and_process(benchmark, neware_cycler):
