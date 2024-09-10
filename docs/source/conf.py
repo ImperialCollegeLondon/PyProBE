@@ -40,6 +40,7 @@ autodoc_typehints = "description"
 autodoc_default_options = {
     "exclude-members": "model_post_init, Config",
     "show-inheritance": True,
+    "member-order": "bysource",
 }
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
@@ -57,3 +58,4 @@ nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
 # -- sphinxcontrib-autodoc_pydantic configuration ----------------------------
 autodoc_pydantic_model_show_json = False
 autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_member_order = "bysource"
