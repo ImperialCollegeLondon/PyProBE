@@ -317,7 +317,6 @@ def test_average_ocvs(BreakinCycles_fixture):
     """Test the average_ocvs method."""
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_SOC()
-    print(type(break_in))
     dma = DMA.average_ocvs(input_data=break_in, charge_filter="constant_current(1)")
     assert math.isclose(dma.input_data.get_only("Voltage [V]")[0], 3.14476284763849)
     assert math.isclose(dma.input_data.get_only("Voltage [V]")[-1], 4.170649780122139)
