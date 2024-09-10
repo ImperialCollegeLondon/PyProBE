@@ -27,6 +27,7 @@ class BaseCycler(BaseModel):
         """Post initialization method for the BaseModel."""
         dataframe_list = self.get_dataframe_list(self.input_data_path)
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
+        self._dataframe_columns = self._imported_dataframe.collect_schema().names()
         self._column_map = self.map_columns(self.column_dict, self._dataframe_columns)
 
     @staticmethod
@@ -146,15 +147,6 @@ class BaseCycler(BaseModel):
                     else:
                         column_map[quantity]["Type"] = pl.Float64
         return column_map
-
-    @property
-    def _dataframe_columns(self) -> List[str]:
-        """The columns of the DataFrame.
-
-        Returns:
-            List[str]: The columns.
-        """
-        return self._imported_dataframe.collect_schema().names()
 
     @property
     def pyprobe_dataframe(self) -> pl.DataFrame:
