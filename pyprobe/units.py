@@ -1,7 +1,7 @@
 """A module for unit conversion of PyProBE data."""
 
 import re
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import polars as pl
 
@@ -14,9 +14,20 @@ class Units:
         input_unit (str): The unit of the column.
     """
 
-    prefix_dict = {"m": 1e-3, "µ": 1e-6, "n": 1e-9, "p": 1e-12, "k": 1e3, "M": 1e6}
-    time_unit_dict = {"s": 1.0, "min": 60.0, "hr": 3600.0}
-    unit_dict = {
+    prefix_dict: Dict[str, float] = {
+        "m": 1e-3,
+        "µ": 1e-6,
+        "n": 1e-9,
+        "p": 1e-12,
+        "k": 1e3,
+        "M": 1e6,
+    }
+    """A dictionary of SI prefixes and their corresponding factors."""
+
+    time_unit_dict: Dict[str, float] = {"s": 1.0, "min": 60.0, "hr": 3600.0}
+    """A dictionary of time units and their corresponding factors."""
+
+    unit_dict: Dict[str, str] = {
         "A": "Current",
         "V": "Voltage",
         "Ah": "Capacity",
@@ -25,6 +36,7 @@ class Units:
         "C": "Temperature",
         "Ohms": "Resistance",
     }
+    """A dictionary of units and their corresponding quantities."""
 
     def __init__(
         self,
@@ -71,23 +83,6 @@ class Units:
         except KeyError:
             raise ValueError(f"Unit {unit} is not recognized.")
 
-    @staticmethod
-    def from_regexp(
-        name: str, regular_expression: str = r"([\w\s]+?)\s*\[(\w+)\]"
-    ) -> "Units":
-        """Create an instance of a units class from column name and regular expression.
-
-        Args:
-            name (str): The column name.
-            regular_expression (str): The pattern to match the column name.
-        """
-        pattern = re.compile(regular_expression)
-        match = pattern.match(name)
-        if match is not None:
-            return Units(match.group(1), match.group(2))
-        else:
-            raise ValueError(f"Name {name} does not match pattern.")
-
     def from_default_unit(self) -> pl.Expr:
         """Convert the column from the default unit.
 
@@ -108,3 +103,20 @@ class Units:
             pl.col(f"{self.input_quantity} [{self.input_unit}]").cast(pl.Float64)
             * self.factor
         ).alias(f"{self.input_quantity} [{self.default_unit}]")
+
+
+def unit_from_regexp(
+    name: str, regular_expression: str = r"([\w\s]+?)\s*\[(\w+)\]"
+) -> "Units":
+    """Create an instance of a units class from column name and regular expression.
+
+    Args:
+        name (str): The column name.
+        regular_expression (str): The pattern to match the column name.
+    """
+    pattern = re.compile(regular_expression)
+    match = pattern.match(name)
+    if match is not None:
+        return Units(match.group(1), match.group(2))
+    else:
+        raise ValueError(f"Name {name} does not match pattern.")

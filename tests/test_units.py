@@ -2,24 +2,24 @@
 import numpy as np
 import polars as pl
 
-from pyprobe.units import Units
+from pyprobe.units import Units, unit_from_regexp
 
 
 def test_from_regexp():
     """Test the get_quantity_and_unit method."""
     name = "Capacity [Ah]"
-    unit_object = Units.from_regexp(name)
+    unit_object = unit_from_regexp(name)
     assert unit_object.input_quantity == "Capacity"
     assert unit_object.input_unit == "Ah"
 
     name = "Two names [Ah]"
-    unit_object = Units.from_regexp(name)
+    unit_object = unit_from_regexp(name)
     assert unit_object.input_quantity == "Two names"
     assert unit_object.input_unit == "Ah"
 
     name = "Current/mA"
     pattern = r"(\w+)/(\w+)"
-    unit_object = Units.from_regexp(name, pattern)
+    unit_object = unit_from_regexp(name, pattern)
     assert unit_object.input_quantity == "Current"
     assert unit_object.input_unit == "mA"
 

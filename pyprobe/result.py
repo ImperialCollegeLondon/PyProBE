@@ -8,7 +8,7 @@ import polars as pl
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field
 
-from pyprobe.units import Units
+from pyprobe.units import unit_from_regexp
 
 
 class Result(BaseModel):
@@ -203,7 +203,7 @@ class Result(BaseModel):
             ValueError: If the column name is not in the data.
         """
         if column_name not in self.base_dataframe.collect_schema().names():
-            converter_object = Units.from_regexp(column_name)
+            converter_object = unit_from_regexp(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default_unit()
                 self.base_dataframe = self.base_dataframe.with_columns(instruction)
@@ -230,7 +230,7 @@ class Result(BaseModel):
         _quantities = []
         for _, column in enumerate(self.column_list):
             try:
-                quantity = Units.from_regexp(column).input_quantity
+                quantity = unit_from_regexp(column).input_quantity
                 _quantities.append(quantity)
             except ValueError:
                 continue
