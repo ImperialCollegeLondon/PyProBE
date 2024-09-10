@@ -8,12 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class ReadmeModel(BaseModel):
-    """A Pydantic BaseModel class for processing the README.yaml file.
-
-    Args:
-        readme_dict (Dict[str, Any]): A dictionary containing the contents of the
-            README.yaml file.
-    """
+    """A Pydantic BaseModel class for processing the README.yaml file."""
 
     readme_dict: Dict[str, Any]
     """A dictionary containing the contents of the README.yaml file."""
@@ -46,7 +41,7 @@ class ReadmeModel(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _check_readme_dict(cls, data: Any) -> "ReadmeModel":
+    def check_readme_dict(cls, data: Any) -> "ReadmeModel":
         """Validate the structure of the README.yaml file.
 
         Args:
@@ -54,6 +49,17 @@ class ReadmeModel(BaseModel):
 
         Returns:
             ReadmeModel: The validated data.
+
+        Raises:
+            TypeError: If the 'Steps' field is not a dictionary or a list.
+            TypeError:
+                If the 'Steps' field is a dictionary and the keys are not integers
+                or the values are not strings.
+            TypeError: If the 'Steps' field is a list and the values are not strings.
+            TypeError: If the 'cycle' fields are not dictionaries.
+            TypeError:
+                If the 'cycle' fields are dictionaries and the keys are not strings
+                or the values are not integers.
         """
         readme_dict = data["readme_dict"]
         data["readme_type"] = []
