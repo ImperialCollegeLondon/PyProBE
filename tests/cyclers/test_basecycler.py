@@ -200,9 +200,7 @@ def test_missing_columns(sample_dataframe, sample_pyprobe_dataframe, column_dict
         base_cycler._imported_dataframe.collect(), df.with_columns(pl.all().cast(str))
     )
 
-    sample_pyprobe_dataframe = sample_pyprobe_dataframe.with_columns(
-        pl.lit(None).alias("Date")
-    )
+    sample_pyprobe_dataframe = sample_pyprobe_dataframe.drop("Date")
     pl_testing.assert_frame_equal(
         base_cycler.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
     )
