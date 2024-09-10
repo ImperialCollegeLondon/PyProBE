@@ -109,7 +109,6 @@ def test_process_generic_file(cell_instance):
     )
     expected_df = pl.DataFrame(
         {
-            "Date": [None, None, None],
             "Time [s]": [1.0, 2.0, 3.0],
             "Cycle": [0, 0, 0],
             "Step": [1, 2, 3],
@@ -117,7 +116,6 @@ def test_process_generic_file(cell_instance):
             "Current [A]": [7.0, 8.0, 9.0],
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [10.0, 11.0, 12.0],
-            "Temperature [C]": [None, None, None],
         }
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")

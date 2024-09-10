@@ -117,7 +117,6 @@ def test_read_and_process(benchmark, neware_cycler):
         "Current [A]",
         "Voltage [V]",
         "Capacity [Ah]",
-        "Temperature [C]",
     ]
     assert isinstance(pyprobe_dataframe, pl.DataFrame)
     assert set(pyprobe_dataframe.columns) == set(expected_columns)

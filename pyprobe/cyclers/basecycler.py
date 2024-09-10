@@ -27,6 +27,7 @@ class BaseCycler(BaseModel):
         """Post initialization method for the BaseModel."""
         dataframe_list = self.get_dataframe_list(self.input_data_path)
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
+        self._dataframe_columns = self._imported_dataframe.collect_schema().names()
         self._column_map = self.map_columns(self.column_dict, self._dataframe_columns)
 
     @staticmethod
@@ -148,15 +149,6 @@ class BaseCycler(BaseModel):
         return column_map
 
     @property
-    def _dataframe_columns(self) -> List[str]:
-        """The columns of the DataFrame.
-
-        Returns:
-            List[str]: The columns.
-        """
-        return self._imported_dataframe.collect_schema().names()
-
-    @property
     def pyprobe_dataframe(self) -> pl.DataFrame:
         """The DataFrame containing the required columns.
 
@@ -178,6 +170,7 @@ class BaseCycler(BaseModel):
             self.convert_names(quantity) for quantity in self._column_map.keys()
         ]
         imported_dataframe = self._imported_dataframe.with_columns(name_converters)
+        required_columns = [col for col in required_columns if col is not None]
         return imported_dataframe.select(required_columns)
 
     def convert_names(self, quantity: str) -> pl.Expr:
@@ -200,16 +193,16 @@ class BaseCycler(BaseModel):
         )
 
     @property
-    def date(self) -> pl.Expr:
+    def date(self) -> Optional[pl.Expr]:
         """Identify and format the date column.
 
         Returns:
-            pl.Expr: A polars expression for the date column.
+            Optional[pl.Expr]: A polars expression for the date column.
         """
         if "Date" in self._column_map.keys():
             return pl.col("Date").str.to_datetime(time_unit="us")
         else:
-            return pl.lit(None).alias("Date")
+            return None
 
     @property
     def time(self) -> pl.Expr:
@@ -296,20 +289,20 @@ class BaseCycler(BaseModel):
             return self.capacity_from_ch_dch
 
     @property
-    def temperature(self) -> pl.Expr:
+    def temperature(self) -> Optional[pl.Expr]:
         """Identify and format the temperature column.
 
         An optional column, if not found, a column of None values is returned.
 
         Returns:
-            pl.Expr: A polars expression for the temperature column.
+            Optional[pl.Expr]: A polars expression for the temperature column.
         """
         if "Temperature" in self._column_map.keys():
             return Units(
                 "Temperature", self._column_map["Temperature"]["Unit"]
             ).to_default_unit()
         else:
-            return pl.lit(None).alias("Temperature [C]")
+            return None
 
     @property
     def step(self) -> pl.Expr:
