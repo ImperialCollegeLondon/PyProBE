@@ -12,7 +12,21 @@ from pyprobe.units import Units
 
 
 class Result(BaseModel):
-    """A result object for holding PyProBE data."""
+    """A class for holding any data in PyProBE.
+
+    A Result object is the base type for every data object in PyProBE. This class
+    includes all of the main methods for returning and describing any data in PyProBE.
+
+    Key attributes for returning data:
+        - :attr:`data`: The data as a Polars DataFrame.
+        - :meth:`get`: Get a column from the data as a NumPy array.
+
+    Key attributes for describing the data:
+        - :attr:`info`: A dictionary containing information about the cell.
+        - :attr:`column_definitions`: A dictionary of column definitions.
+        - :meth:`print_definitions`: Print the column definitions.
+        - :attr:`column_list`: A list of column names.
+    """
 
     class Config:
         """Pydantic configuration."""
