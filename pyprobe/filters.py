@@ -24,12 +24,15 @@ def _filter_numerical(
     """Filter a polars Lazyframe or Dataframe by a numerical condition.
 
     Args:
-        dataframe (pl.LazyFrame | pl.DataFrame): A LazyFrame object.
+        dataframe (pl.LazyFrame | pl.DataFrame): A LazyFrame or DataFrame to filter.
         column (str): The column to filter on.
         indices (Tuple[Union[int, range], ...]): A tuple of index values to filter by.
 
     Returns:
-        pl.LazyFrame | pl.DataFrame: A filtered LazyFrame object.
+        pl.LazyFrame | pl.DataFrame: A filtered LazyFrame or DataFrame.
+
+    Raises:
+        ValueError: If indices are not all positive or all negative.
     """
     index_list = []
     for index in indices:
@@ -224,22 +227,16 @@ def _constant_voltage(
 
 
 class Procedure(RawData):
-    """A class for a procedure in a battery experiment.
-
-    Args:
-        base_dataframe (pl.LazyFrame | pl.DataFrame): The data for the procedure.
-        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
-        column_definitions (Dict[str, str], optional):
-            A dict containing column definitions. Defaults to None.
-        titles (List[str]): A dict containing the titles of the experiments.
-        steps_idx (List[List[int]]): A list of lists containing the step indices for
-            each experiment.
-    """
+    """A class for a procedure in a battery experiment."""
 
     titles: List[str]
+    """The titles of the experiments in the procedure."""
     steps_idx: List[List[int]]
+    """The indices of the steps in each experiment."""
     pybamm_experiment: Optional[PybammExperiment]
+    """A PyBaMM experiment object for the whole procedure."""
     pybamm_experiment_list: List[Optional[PybammExperiment]]
+    """A list of PyBaMM experiment objects for each experiment in the procedure."""
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
@@ -274,8 +271,8 @@ class Procedure(RawData):
         """Return an experiment object from the procedure.
 
         Args:
-            experiment_names (str): Variable-length argument list of
-                experiment names.
+            experiment_names (str):
+                Variable-length argument list of experiment names.
 
         Returns:
             Experiment: An experiment object from the procedure.
@@ -377,14 +374,7 @@ class Procedure(RawData):
 
 
 class Experiment(RawData):
-    """A class for an experiment in a battery experimental procedure.
-
-    Args:
-        dataframe (pl.LazyFrame | pl.DataFrame): The data for the experiment.
-        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
-        column_definitions (Dict[str, str], optional):
-            A dict containing column definitions. Defaults to None.
-    """
+    """A class for an experiment in a battery experimental procedure."""
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
@@ -417,14 +407,7 @@ class Experiment(RawData):
 
 
 class Cycle(RawData):
-    """A class for a cycle in a battery experimental procedure.
-
-    Args:
-        dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
-        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
-        column_definitions (Dict[str, str], optional):
-            A dict containing column definitions. Defaults to None.
-    """
+    """A class for a cycle in a battery experimental procedure."""
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
@@ -456,14 +439,7 @@ class Cycle(RawData):
 
 
 class Step(RawData):
-    """A class for a step in a battery experimental procedure.
-
-    Args:
-        dataframe (pl.LazyFrame | pl.DataFrame): The data for the cycle.
-        info (Dict[str, Optional[str | int | float]]): A dict containing test info.
-        column_definitions (Dict[str, str], optional):
-            A dict containing column definitions. Defaults to None.
-    """
+    """A class for a step in a battery experimental procedure."""
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
