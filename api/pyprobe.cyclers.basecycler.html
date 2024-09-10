@@ -552,14 +552,14 @@ to the correct data type.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.date">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.date" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.date" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the date column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A polars expression for the date column.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pl.Expr</p>
+<dd class="field-even"><p>Optional[pl.Expr]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -664,7 +664,7 @@ to the correct data type.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.temperature">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the temperature column.</p>
 <p>An optional column, if not found, a column of None values is returned.</p>
 <dl class="field-list simple">
@@ -672,7 +672,7 @@ to the correct data type.</p>
 <dd class="field-odd"><p>A polars expression for the temperature column.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pl.Expr</p>
+<dd class="field-even"><p>Optional[pl.Expr]</p>
 </dd>
 </dl>
 </dd></dl>
