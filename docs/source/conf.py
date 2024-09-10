@@ -52,3 +52,4 @@ nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
 
 # -- sphinxcontrib-autodoc_pydantic configuration ----------------------------
 autodoc_pydantic_model_show_json = False
+autodoc_pydantic_model_member_order = "bysource"
