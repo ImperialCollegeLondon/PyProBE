@@ -40,7 +40,6 @@ autodoc_typehints = "description"
 autodoc_default_options = {
     "exclude-members": "model_post_init, Config",
     "show-inheritance": True,
-    "inherited-members": False,
 }
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
