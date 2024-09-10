@@ -27,19 +27,6 @@ def test_init(RawData_fixture):
         RawData(base_dataframe=data, info={"test": 1})
 
 
-# def test_gradient(BreakinCycles_fixture):
-#     """Test the gradient property."""
-#     discharge = BreakinCycles_fixture.cycle(0).discharge(0)
-#     gradient = discharge.gradient("Capacity [Ah]", "Voltage [V]", "LEAN", 1, "dxdy")
-#     assert isinstance(gradient, Result)
-#     assert isinstance(gradient.data, pl.DataFrame)
-#     assert gradient.data.columns == [
-#         "Capacity [Ah]",
-#         "Voltage [V]",
-#         "d(Capacity [Ah])/d(Voltage [V])",
-#     ]
-
-
 def test_capacity(BreakinCycles_fixture):
     """Test the capacity property."""
     capacity = BreakinCycles_fixture.cycle(0).charge(0).capacity
@@ -67,7 +54,6 @@ def test_set_SOC(BreakinCycles_fixture):
 def test_SOC_ref_as_dataframe(BreakinCycles_fixture):
     """Test the set_SOC method with the reference charge collected into a dataframe."""
     with_charge_specified = BreakinCycles_fixture
-    print(with_charge_specified.base_dataframe)
     assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
     BreakinCycles_fixture.cycle(-1).charge(-1).data
     with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
@@ -117,7 +103,6 @@ def test_definitions(lazyframe_fixture, info_fixture):
     """Test that the definitions have been correctly set."""
     rawdata = RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
     definition_keys = list(rawdata.column_definitions.keys())
-    print(rawdata.column_definitions)
     assert set(definition_keys) == set(
         [
             "Date",
@@ -125,5 +110,8 @@ def test_definitions(lazyframe_fixture, info_fixture):
             "Current [A]",
             "Voltage [V]",
             "Capacity [Ah]",
+            "Cycle",
+            "Step",
+            "Event",
         ]
     )

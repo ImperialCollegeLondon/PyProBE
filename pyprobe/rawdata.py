@@ -1,5 +1,5 @@
 """A module for the RawData class."""
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import polars as pl
 from pydantic import Field, field_validator
@@ -7,14 +7,26 @@ from pydantic import Field, field_validator
 # from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
-required_columns = ["Date", "Time [s]", "Current [A]", "Voltage [V]", "Capacity [Ah]"]
+required_columns = [
+    "Time [s]",
+    "Step",
+    "Cycle",
+    "Event",
+    "Current [A]",
+    "Voltage [V]",
+    "Capacity [Ah]",
+]
 
 default_column_definitions = {
     "Date": "The timestamp of the data point. Type: datetime.",
     "Time [s]": "The time passed from the start of the procedure.",
+    "Step": "The step number.",
+    "Cycle": "The cycle number.",
+    "Event": "The event number. Counts the changes in cycles and steps.",
     "Current [A]": "The current through the cell.",
     "Voltage [V]": "The terminal voltage.",
     "Capacity [Ah]": "The net charge passed since the start of the procedure.",
+    "Temperature [C]": "The temperature of the cell.",
 }
 
 
@@ -32,9 +44,7 @@ class RawData(Result):
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
-    column_definitions: Dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy()
-    )
+    column_definitions: Dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
 
     @field_validator("base_dataframe")
@@ -43,14 +53,19 @@ class RawData(Result):
         cls, dataframe: pl.LazyFrame | pl.DataFrame
     ) -> "RawData":
         """Check if the required columns are present in the input_data."""
-        missing_columns = [
-            col
-            for col in required_columns
-            if col not in dataframe.collect_schema().names()
-        ]
+        column_list = dataframe.collect_schema().names()
+        missing_columns = [col for col in required_columns if col not in column_list]
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
         return dataframe
+
+    def model_post_init(self, __context: Any) -> None:
+        """Post-initialization method for the RawData model."""
+        self.column_definitions = {
+            key: default_column_definitions[key]
+            for key in self.column_list
+            if key in default_column_definitions
+        }
 
     def zero_column(
         self,
