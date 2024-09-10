@@ -32,10 +32,14 @@ extensions = [
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
-autodoc_member_order = "bysource"
+
+
+# -- Options for autodoc extension -------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 autodoc_typehints = "description"
 autodoc_default_options = {
-    "exclude-members": "model_computed_fields, model_config, model_fields, Config",
+    "exclude-members": "model_post_init, Config",
+    "inherited-members": "BaseModel",
 }
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
@@ -52,5 +56,4 @@ nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
 
 # -- sphinxcontrib-autodoc_pydantic configuration ----------------------------
 autodoc_pydantic_model_show_json = False
-autodoc_pydantic_model_member_order = "bysource"
 autodoc_pydantic_model_show_config_summary = False
