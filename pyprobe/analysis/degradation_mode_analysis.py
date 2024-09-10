@@ -16,19 +16,19 @@ from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
 # 1. Define the class as a Pydantic BaseModel.
 class DMA(BaseModel):
-    """A class for degradation mode analysis methods.
-
-    Args:
-        input_data (RawData): The input data to the method.
-    """
+    """A class for degradation mode analysis methods."""
 
     # 2. Define the input_data attribute, giving it a type
     input_data: PyProBEDataType
+    """The input data for the degradation mode analysis."""
 
     # 3. Define the attributes that will be populated by the methods.
     stoichiometry_limits: Optional[Result] = None
+    """The stoichiometry limits and electrode capacities."""
     fitted_OCV: Optional[Result] = None
+    """The fitted OCV data."""
     dma_result: Optional[Result] = None
+    """The degradation mode analysis results."""
 
     def fit_ocv(
         self,
@@ -41,6 +41,8 @@ class DMA(BaseModel):
         optimizer: Optional[str] = None,
     ) -> Tuple[Result, Result]:
         """Fit half cell open circuit potential curves to full cell OCV data.
+
+        Based on the code from :footcite:t:`Kirkaldy_batteryDAT_2023`.
 
         Args:
             x_ne (NDArray[np.float64]): The anode stoichiometry data.

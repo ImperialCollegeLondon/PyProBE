@@ -4,7 +4,6 @@ from typing import Dict, Optional
 import polars as pl
 from pydantic import Field, field_validator
 
-# from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
 required_columns = [

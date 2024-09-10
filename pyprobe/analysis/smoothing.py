@@ -18,12 +18,10 @@ class Smoothing(BaseModel):
 
     Smoothing methods return result objects containing the same columns as the input
     data, but with the target column smoothed using the specified method.
-
-    Args:
-        input_data (Result): The raw data to analyse.
     """
 
     input_data: Result
+    """The input data for the smoothing."""
 
     def spline_smoothing(
         self,
