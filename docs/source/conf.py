@@ -49,3 +49,6 @@ bibtex_tooltips = True
 autosummary_generate = True
 nbsphinx_execute = "always"  # Always execute notebooks
 nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
+
+# -- sphinxcontrib-autodoc_pydantic configuration ----------------------------
+autodoc_pydantic_model_show_json = False
