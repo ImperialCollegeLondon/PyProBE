@@ -25,6 +25,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "nbsphinx",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 
 # -- Options for HTML output -------------------------------------------------
