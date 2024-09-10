@@ -7,11 +7,7 @@ from pyprobe.cyclers.basecycler import BaseCycler
 
 
 class Neware(BaseCycler):
-    """A class to load and process Neware battery cycler data.
-
-    Args:
-        input_data_path: The path to the input data.
-    """
+    """A class to load and process Neware battery cycler data."""
 
     input_data_path: str
     column_dict: dict[str, str] = {

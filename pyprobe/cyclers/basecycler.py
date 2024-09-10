@@ -12,23 +12,20 @@ from pyprobe.units import Units
 
 
 class BaseCycler(BaseModel):
-    """A class to load and process battery cycler data.
-
-    Args:
-        input_data_path (str): The path to the input data.
-        column_dict (Dict[str, str]): A dictionary mapping the column name format of the
-            cycler to the PyProBE format. Units are indicated by an asterisk (*).
-    """
+    """A class to load and process battery cycler data."""
 
     input_data_path: str
+    """The path to the input data."""
     column_dict: Dict[str, str]
+    """A dictionary mapping the column name format of the cycler to the PyProBE format.
+    Units are indicated by an asterisk (*)."""
 
     def model_post_init(self, __context: Any) -> None:
         """Post initialization method for the BaseModel."""
-        dataframe_list = self.get_dataframe_list(self.input_data_path)
+        dataframe_list = self._get_dataframe_list()
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
         self._dataframe_columns = self._imported_dataframe.collect_schema().names()
-        self._column_map = self.map_columns(self.column_dict, self._dataframe_columns)
+        self._column_map = self._map_columns(self.column_dict, self._dataframe_columns)
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -50,9 +47,7 @@ class BaseCycler(BaseModel):
             case _:
                 raise ValueError(f"Unsupported file extension: {file_ext}")
 
-    def get_dataframe_list(
-        self, input_data_path: str
-    ) -> list[pl.DataFrame | pl.LazyFrame]:
+    def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
         """Return a list of all the imported dataframes.
 
         Args:
@@ -61,7 +56,7 @@ class BaseCycler(BaseModel):
         Returns:
             List[DataFrame]: A list of DataFrames.
         """
-        files = glob.glob(input_data_path)
+        files = glob.glob(self.input_data_path)
         files.sort()
         list = [self.read_file(file) for file in files]
         all_columns = set([col for df in list for col in df.collect_schema().names()])
@@ -90,7 +85,7 @@ class BaseCycler(BaseModel):
         return pl.concat(dataframe_list, how="vertical", rechunk=True)
 
     @staticmethod
-    def match_unit(column_name: str, pattern: str) -> Optional[str]:
+    def _match_unit(column_name: str, pattern: str) -> Optional[str]:
         """Return the unit of a column name in the place of an asterisk.
 
         Args:
@@ -121,14 +116,14 @@ class BaseCycler(BaseModel):
                 return None
 
     @classmethod
-    def map_columns(
+    def _map_columns(
         cls, column_dict: Dict[str, str], dataframe_columns: List[str]
     ) -> Dict[str, Dict[str, str | pl.DataType]]:
         """Map the columns of the imported dataframe to the PyProBE format."""
         column_map: Dict[str, Dict[str, str | pl.DataType]] = {}
         for cycler_format, pyprobe_format in column_dict.items():
             for cycler_column_name in dataframe_columns:
-                unit = cls.match_unit(cycler_column_name, cycler_format)
+                unit = cls._match_unit(cycler_column_name, cycler_format)
                 if unit is not None:
                     quantity = pyprobe_format.replace(" [*]", "")
                     if quantity == "Temperature":
@@ -147,6 +142,25 @@ class BaseCycler(BaseModel):
                     else:
                         column_map[quantity]["Type"] = pl.Float64
         return column_map
+
+    def _convert_names(self, quantity: str) -> pl.Expr:
+        """Write a column in the PyProBE column name format and convert its type.
+
+        Args:
+            quantity (str): The quantity to convert.
+
+        Returns:
+            pl.Expr:
+                A polars expression to convert the name to the PyProBE format and cast
+                to the correct data type.
+        """
+        column = self._column_map[quantity]
+        # cast to type and rename
+        return (
+            pl.col(column["Cycler column name"])
+            .cast(column["Type"])
+            .alias(column["PyProBE column name"])
+        )
 
     @property
     def pyprobe_dataframe(self) -> pl.DataFrame:
@@ -167,30 +181,11 @@ class BaseCycler(BaseModel):
             self.temperature,
         ]
         name_converters = [
-            self.convert_names(quantity) for quantity in self._column_map.keys()
+            self._convert_names(quantity) for quantity in self._column_map.keys()
         ]
         imported_dataframe = self._imported_dataframe.with_columns(name_converters)
         required_columns = [col for col in required_columns if col is not None]
         return imported_dataframe.select(required_columns)
-
-    def convert_names(self, quantity: str) -> pl.Expr:
-        """Write a column in the PyProBE column name format and convert its type.
-
-        Args:
-            quantity (str): The quantity to convert.
-
-        Returns:
-            pl.Expr:
-                A polars expression to convert the name to the PyProBE format and cast
-                to the correct data type.
-        """
-        column = self._column_map[quantity]
-        # cast to type and rename
-        return (
-            pl.col(column["Cycler column name"])
-            .cast(column["Type"])
-            .alias(column["PyProBE column name"])
-        )
 
     @property
     def date(self) -> Optional[pl.Expr]:

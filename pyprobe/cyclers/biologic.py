@@ -10,11 +10,7 @@ from pyprobe.cyclers.basecycler import BaseCycler
 
 
 class Biologic(BaseCycler):
-    """A class to load and process Biologic battery cycler data.
-
-    Args:
-            input_data_path: The path to the input data.
-    """
+    """A class to load and process Biologic battery cycler data."""
 
     input_data_path: str
     column_dict: dict[str, str] = {
@@ -75,11 +71,7 @@ class Biologic(BaseCycler):
 
 
 class BiologicMB(Biologic):
-    """A class to load and process Biologic Modulo Bat  battery cycler data.
-
-    Args:
-            input_data_path: The path to the input data.
-    """
+    """A class to load and process Biologic Modulo Bat  battery cycler data."""
 
     def get_imported_dataframe(
         self, dataframe_list: List[pl.DataFrame]
