@@ -13,7 +13,7 @@ battery cyclers. It has four core objectives:
     that can be accessed with a few lines of code using natural language. The 
     procedure shown below:
 
-    .. image:: images/Procedures_and_experiments.png
+    .. image:: images/Procedures_and_experiments.jpg
 
    can be filtered with simple commands like:
 
@@ -27,10 +27,13 @@ battery cyclers. It has four core objectives:
 
    This makes it easy to quickly access the data you need for analysis.
 
+   See the :doc:`filtering data <../examples/filtering-data>` example to see this in action.
+
 2. Accelerate battery data exploration
     PyProBE has a built-in :ref:`plotting <plotting>` module for fast and flexible 
     visualisation of battery data. It also includes a graphical user interface (GUI) 
-    for exploring data interactively, with almost no code. 
+    for exploring data interactively, with almost no code. See the 
+    :doc:`getting started <../examples/getting-started>` example to try the GUI.
 
 3. Encourage data processing aligned with FAIR principles
     PyProBE is designed to encourage good practice for storing and processing data. The 
@@ -59,9 +62,10 @@ battery cyclers. It has four core objectives:
 
 PyProBE Structure
 -----------------
-Below is a flowchart of the data objects that make up PyProBE:
+Below is a flowchart of how a PyProBE :class:`~pyprobe.cell.Cell` object is structured
+and how the stored data can be filtered:
 
-.. image:: images/PyProBE_flowchart.png
+.. image:: images/Filtering_flowchart.jpg
 
 All data is stored in a :class:`~pyprobe.cell.Cell` object, which contains an
 :attr:`~pyprobe.cell.Cell.info` attribute for storing metadata and a 
