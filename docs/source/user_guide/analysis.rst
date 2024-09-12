@@ -21,7 +21,7 @@ for example, to perform :mod:`degradation mode analysis <pyprobe.analysis.degrad
    dma_object = DMA(input_data = discharge_pOCV)
 
 Analysis classes can be selective about the data that you provide to them. For example,
-the :class:`~pyprobe.analysis.cycling.Cycling` analysis class requires the `input_data`
+the :class:`~pyprobe.analysis.cycling.Cycling` analysis class requires the :code:`input_data`
 attribute to be assigned an :class:`~pyprobe.filters.Experiment` object. This is to
 allow this class to use attributes such as :func:`~pyprobe.filters.Experiment.charge`
 internally. PyProBE will provide an error if the incorrect type is provided.
