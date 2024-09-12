@@ -11,10 +11,19 @@ battery cyclers.
 
     ![Procedures and experiments](./docs/source/user_guide/images/Procedures_and_experiments.jpg)
 
-   can be filtered easily:
+    can be filtered into the experiments that make up the procedure:
 
-   ![Filtering](./docs/source/user_guide/images/Filtering_flowchart.jpg)
-    
+    ```python
+    cell.procedure['Reference Test'].experiment('Initial Charge')
+    cell.procedure['Reference Test'].experiment('Discharge Pulses')
+    ```
+    And filtered by cycle, step or step type:
+
+    ```python
+    cell.procedure['Reference Test'].step(1)
+    cell.procedure['Reference Test'].experiment('Discharge Pulses').cycle(3).discharge(0)
+    ```
+
    This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://congenial-adventure-mz797n5.pages.github.io/examples/filtering-data>) example to see this in action.
 
    See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
@@ -28,7 +37,7 @@ battery cyclers.
 
     PyProBE has a built-in [plotting](https://congenial-adventure-mz797n5.pages.github.io/api/pyprobe.plot.html) module for fast and flexible visualisation of battery data. It also includes a graphical user interface (GUI) 
     for exploring data interactively, with almost no code. See the 
-    [getting started](https://congenial-adventure-mz797n5.pages.github.io/examples/getting-started.html) example to try the GUI.
+    [getting started](./docs/source/examples/getting-started.ipynb) example to try the GUI.
 
     ![PyProBE Dashboard](./docs/source/user_guide/images/Dashboard.png)
 
@@ -59,6 +68,8 @@ battery cyclers.
     perform further analysis of battery data. It is designed to maintain compatibility 
     with the PyProBE data format and plotting tools while ensuring functions are simply 
     defined, portable and tested.
+
+
 
     It is easy to contribute to the analysis module. See the [developer guide](https://congenial-adventure-mz797n5.pages.github.io/developer_guide/contributing_to_the_analysis_module.html)
     and [contributing guidelines](CONTRIBUTING.md).
