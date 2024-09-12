@@ -4,6 +4,33 @@ Installation
 To install PyProBE you must be running Python 3.11 or later. It is recommended to use a 
 virtual environment to install PyProBE, for example venv or conda.
 
+.. dropdown:: If you are completely new to Python
+
+   **Recommended software**
+
+   The easiest way to get started with data processing in Python is to use 
+   `Anaconda <https://docs.anaconda.com/anaconda/install/>`_ for package management and
+   `Visual Studio Code <https://code.visualstudio.com/download>`_ for code editing. You 
+   will need `Git <https://git-scm.com/>`_ installed to clone the repository. If you 
+   are new to Git version control, the `GitHub Desktop <https://github.com/apps/desktop>`_
+   is a good place to start.
+
+   In order to follow the installation instructions below, on Windows you can work in
+   Anaconda Prompt. On Mac or Linux you can use Terminal directly.
+
+   **Using PyProBE after installation**
+
+   Jupyter Notebooks are a popular format for Python data processing. VSCode has 
+   support for writing and running these, which you can open from the dropdown menu:
+
+   .. image:: images/VSCode_open_file.png
+
+   You should then select the Anaconda environment that you will create from the list of 
+   available Python environments:
+
+   .. image:: images/VSCode_select_kernel.png
+
+
 You should have two separate directories: 
 
 * one for the PyProBE repository 
@@ -15,7 +42,7 @@ The steps to install PyProBE are as follows:
    
    .. code-block:: bash
 
-      cd /path/to/your/directory
+      cd /path/to/installation/directory
 
 2. Clone the repository to your local machine. This creates a directory called PyProBE.
 
@@ -86,7 +113,7 @@ The steps to install PyProBE are as follows:
 
       pip install .
 
-5. In your working directory you can create a new python script or jupyter notebook to 
+5. In a second directory you can create a new python script or jupyter notebook to 
    process your data. You can import PyProBE into your script as follows:
 
    .. code-block:: python
