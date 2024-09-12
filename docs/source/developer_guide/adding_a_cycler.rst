@@ -28,7 +28,7 @@ allow PyProBE to work with your data.
    .. literalinclude:: ../../../pyprobe/cyclers/biologic.py
     :language: python
     :linenos:
-    :lines: 12-29
+    :lines: 12-25
 
 2. Add a method to read a file into a dataframe. 
    
