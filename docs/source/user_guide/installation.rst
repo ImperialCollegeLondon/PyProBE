@@ -75,7 +75,7 @@ The steps to install PyProBE are as follows:
 
 3. Install PyProBE's dependencies:
    
-      .. code-block:: bash
+   .. code-block:: bash
 
       cd /path/to/your/directory/PyProBE
       pip install -r requirements.txt
