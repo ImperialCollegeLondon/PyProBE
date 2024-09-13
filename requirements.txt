@@ -18,7 +18,7 @@ attrs==24.2.0
     #   referencing
 blinker==1.8.2
     # via streamlit
-cachetools==5.4.0
+cachetools==5.5.0
     # via streamlit
 casadi==3.6.6
     # via pybamm

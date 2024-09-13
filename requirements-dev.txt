@@ -39,7 +39,7 @@ blinker==1.8.2
     # via streamlit
 build==1.2.1
     # via pip-tools
-cachetools==5.4.0
+cachetools==5.5.0
     # via streamlit
 casadi==3.6.6
     # via pybamm
