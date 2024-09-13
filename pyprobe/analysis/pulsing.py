@@ -23,7 +23,7 @@ class Pulsing(BaseModel):
         """Return a step object for a pulse in the pulsing experiment.
 
         Args:
-            pulse_number (int): The pulse number to return.
+            pulse_number (int): The Pulse Number to return.
 
         Returns:
             Step: A step object for a pulse in the pulsing experiment.
@@ -56,7 +56,8 @@ class Pulsing(BaseModel):
                 - Experiment Capacity [Ah]
                 - SOC
                 - OCV [V]
-                - R0 [Ohms]
+                - R0 [Ohms], calculated from the OCV and the first data point in the
+                pulse where the current is within 1% of the median pulse current
                 - Resistance calculated at each time provided in seconds in the r_times
                 argument
         """
@@ -64,35 +65,67 @@ class Pulsing(BaseModel):
             input_data=self.input_data,
             required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event", "SOC"],
         )
+        all_data_df = self.input_data.base_dataframe
 
-        all_data_df = self.input_data.data.with_columns(
-            [
-                pl.col("Voltage [V]").shift().alias("Prev Voltage"),
-                pl.col("Voltage [V]").shift(-1).alias("Next Voltage"),
-            ]
+        # get the pulse number for each row
+        all_data_df = all_data_df.with_columns(
+            ((pl.col("Current [A]").shift() == 0) & (pl.col("Current [A]") != 0))
+            .cum_sum()
+            .alias("Pulse Number")
+        )
+        # get the last OCV point and timestamp before each pulse
+        ocv = (
+            all_data_df.filter(pl.col("Current [A]") == 0)
+            .group_by("Pulse Number")
+            .agg(
+                pl.col("Voltage [V]").last().alias("OCV [V]"),
+                pl.col("Time [s]").last().alias("Start Time [s]"),
+            )
+            .with_columns(pl.col("Pulse Number") + 1)
+        )
+        # get the median current for each pulse
+        pulse_current = (
+            all_data_df.filter(pl.col("Current [A]") != 0)
+            .group_by("Pulse Number")
+            .agg(pl.col("Current [A]").median().alias("Pulse Current"))
+        )
+        # recombine the dataframes
+        all_data_df = (
+            all_data_df.join(ocv, on="Pulse Number", how="left")
+            .join(pulse_current, on="Pulse Number", how="left")
+            .sort("Time [s]")
+        )
+        # get the first point in each pulse where the current is within 1% of the pulse
+        # current
+        pulse_df = (
+            all_data_df.filter(
+                (pl.col("Current [A]").abs() > 0.99 * pl.col("Pulse Current").abs())
+                & (pl.col("Current [A]").abs() < 1.01 * pl.col("Pulse Current").abs())
+            )
+            .group_by("Pulse Number")
+            .first()
+            .sort("Pulse Number")
         )
 
-        starts = (pl.col("Current [A]").shift() == 0) & (pl.col("Current [A]") != 0)
-        pulse_df = all_data_df.filter(starts)
-        pulse_df = pulse_df.rename({"Prev Voltage": "OCV [V]"})
-
+        # calculate the resistance at the start of the pulse
         R0 = (
             (pl.col("Voltage [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")
         ).alias("R0 [Ohms]")
         pulse_df = pulse_df.with_columns(R0)
 
+        t_col_names = [f"t_{time}s [s]" for time in r_times]
         r_t_col_names = [f"R_{time}s [Ohms]" for time in r_times]
-        if r_t_col_names != []:
+        if t_col_names != []:
             # add columns for the timestamps requested after each pulse
-            t_after_pulse_df = pulse_df.with_columns(
+            pulse_df = pulse_df.with_columns(
                 [
-                    (pl.col("Time [s]") + time).alias(r_t_col_names[idx])
+                    (pl.col("Start Time [s]") + time).alias(t_col_names[idx])
                     for idx, time in enumerate(r_times)
                 ]
             )
 
             # reformat df into two rows, r_time and the corresponding timestamp
-            t_after_pulse_df = t_after_pulse_df.unpivot(r_t_col_names).rename(
+            t_after_pulse_df = pulse_df.unpivot(t_col_names).rename(
                 {"variable": "r_time", "value": "Time [s]"}
             )
 
@@ -108,37 +141,29 @@ class Pulsing(BaseModel):
             t_after_pulse_df = t_after_pulse_df.with_columns(
                 [
                     pl.col("Voltage [V]").interpolate(),
-                    pl.col("Event").fill_null(strategy="backward"),
                 ]
             )
-
             # filter the array to return only the inserted rows
             t_after_pulse_df = t_after_pulse_df.filter(
                 pl.col("r_time").is_not_null()
-            ).select("Voltage [V]", "Event", "r_time")
+            ).select("Voltage [V]", "Time [s]")
 
-            # pivot the dataframe to obtain seperate rows for the requested time points
-            # against Event
-            t_after_pulse_df = t_after_pulse_df.pivot("r_time", values="Voltage [V]")
+            for time in r_times:
+                pulse_df = pulse_df.join(
+                    t_after_pulse_df,
+                    left_on=f"t_{time}s [s]",
+                    right_on="Time [s]",
+                    how="left",
+                ).rename({"Voltage [V]_right": f"V_{time}s [V]"})
+                pulse_df = pulse_df.with_columns(
+                    (pl.col(f"V_{time}s [V]") - pl.col("OCV [V]"))
+                    / pl.col("Current [A]")
+                ).rename({f"V_{time}s [V]": f"R_{time}s [Ohms]"})
 
-            # merge back into the main pulse dataframe on Event
-            pulse_df = pulse_df.join(t_after_pulse_df, on="Event")
-
-            # calculate the resistance
-            pulse_df = pulse_df.with_columns(
-                [
-                    (pl.col(r_time_column) - pl.col("OCV [V]")) / pl.col("Current [A]")
-                    for r_time_column in r_t_col_names
-                ]
-            )
-
-            pulse_df = pulse_df.with_columns(
-                pl.col("Event").rank(method="dense").alias("Pulse number")
-            )
             # filter the dataframe to the final selection
             pulse_df = pulse_df.select(
                 [
-                    "Pulse number",
+                    "Pulse Number",
                     "Experiment Capacity [Ah]",
                     "SOC",
                     "OCV [V]",
@@ -147,12 +172,9 @@ class Pulsing(BaseModel):
                 + r_t_col_names
             )
         else:
-            pulse_df = pulse_df.with_columns(
-                pl.col("Event").rank(method="dense").alias("Pulse number")
-            )
             pulse_df = pulse_df.select(
                 [
-                    "Pulse number",
+                    "Pulse Number",
                     "Experiment Capacity [Ah]",
                     "SOC",
                     "OCV [V]",
@@ -161,7 +183,7 @@ class Pulsing(BaseModel):
             )
 
         column_definitions = {
-            "Pulse number": "An index for each pulse.",
+            "Pulse Number": "An index for each pulse.",
             "Experiment Capacity [Ah]": self.input_data.column_definitions[
                 "Experiment Capacity [Ah]"
             ],
@@ -172,10 +194,9 @@ class Pulsing(BaseModel):
             "point and the first data point in the pulse.",
         }
         result = self.input_data.clean_copy(pulse_df, column_definitions)
-        for r_t in r_t_col_names:
-            time = r_t.split("_")[1][-9]
+        for time in r_times:
             result.define_column(
-                r_t,
+                f"R_{time}s",
                 f"The resistance measured between the OCV and the voltage t = {time}s "
                 f"after the pulse.",
             )
