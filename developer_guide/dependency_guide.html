@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -386,7 +387,7 @@ print, plot or perform analysis on the data with the <cite>analysis</cite> modul
 <h2>Pydantic<a class="headerlink" href="#pydantic" title="Link to this heading">#</a></h2>
 <p><a class="reference external" href="https://docs.pydantic.dev/latest/">Pydantic</a> is used across PyProBE for class input
 validation. <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>, <a class="reference internal" href="../api/pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a> and
-all of the classes in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">filter</span></code> module inherit from Pydantic
+all of the classes in the <a class="reference internal" href="../api/pyprobe.filters.html#module-pyprobe.filters" title="pyprobe.filters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filters</span></code></a> module inherit from Pydantic
 <a class="reference external" href="https://docs.pydantic.dev/latest/api/base_model/">BaseModel</a>, as do all of
 the <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> classes. This means all of their
 inputs are type-validated automatically. The <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a>

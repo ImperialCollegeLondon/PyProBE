@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -383,48 +384,81 @@ document.write(`
   <section id="module-pyprobe.rawdata">
 <span id="pyprobe-rawdata-module"></span><h1>pyprobe.rawdata module<a class="headerlink" href="#module-pyprobe.rawdata" title="Link to this heading">#</a></h1>
 <p>A module for the RawData class.</p>
-<dl class="py class">
+<dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.rawdata.RawData">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.rawdata.</span></span><span class="sig-name descname"><span class="pre">RawData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.rawdata.RawData" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.rawdata.</span></span><span class="sig-name descname"><span class="pre">RawData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.rawdata.RawData" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a></p>
-<p>A RawData object for returning data.</p>
+<p>A class for holding data in the PyProBE format.</p>
+<p>This is the default object returned when data is loaded into PyProBE with the
+standard methods of the <cite>pyprobe.cell.Cell</cite> class. It is a subclass of the
+<cite>pyprobe.result.Result</cite> class so can be used in the same way as other result
+objects.</p>
+<p>The RawData object is stricter than the <cite>pyprobe.result.Result</cite> object in that it
+requires the presence of specific columns in the data. These columns are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>Time [s]</cite></p></li>
+<li><p><cite>Step</cite></p></li>
+<li><p><cite>Cycle</cite></p></li>
+<li><p><cite>Event</cite></p></li>
+<li><p><cite>Current [A]</cite></p></li>
+<li><p><cite>Voltage [V]</cite></p></li>
+<li><p><cite>Capacity [Ah]</cite></p></li>
+</ul>
+</div></blockquote>
+<p>This defines the PyProBE format.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Validators<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>base_dataframe</strong> (<em>Union</em><em>[</em><em>pl.LazyFrame</em><em>, </em><em>pl.DataFrame</em><em>]</em>) – The data as a polars DataFrame or LazyFrame.</p></li>
-<li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – A dictionary containing test info.</p></li>
-<li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A dictionary containing the definitions of the columns in the data.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.rawdata.RawData.check_required_columns" title="pyprobe.rawdata.RawData.check_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_required_columns</span></code></a> » <a class="reference internal" href="#pyprobe.rawdata.RawData.base_dataframe" title="pyprobe.rawdata.RawData.base_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_dataframe</span></code></a></p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
+<li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.rawdata.RawData.base_dataframe">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">base_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.base_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>The data as a polars DataFrame or LazyFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.rawdata.RawData.check_required_columns" title="pyprobe.rawdata.RawData.check_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_required_columns</span></code></a></p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="pyprobe.rawdata.RawData.base_dataframe">
-<span class="sig-name descname"><span class="pre">base_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.base_dataframe" title="Link to this definition">#</a></dt>
-<dd><p>The data as a polars DataFrame or LazyFrame.</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.rawdata.RawData.info">
-<span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.info" title="Link to this definition">#</a></dt>
-<dd><p>A dictionary containing test info.</p>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.info" title="Link to this definition">#</a></dt>
+<dd><p>Dictionary containing information about the cell.</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.rawdata.RawData.column_definitions">
-<span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.column_definitions" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.column_definitions" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the definitions of the columns in the data.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.rawdata.RawData.model_post_init">
-<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_RawData__context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.rawdata.RawData.model_post_init" title="Link to this definition">#</a></dt>
-<dd><p>Post-initialization method for the RawData model.</p>
+<dl class="py method pydantic_validator">
+<dt class="sig sig-object py" id="pyprobe.rawdata.RawData.check_required_columns">
+<em class="property"><span class="pre">validator</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_required_columns</span></span><em class="autodoc_pydantic_validator_arrow property">&#160; <span class="pre">»</span>&#160; </em><a class="reference internal" href="#pyprobe.rawdata.RawData.base_dataframe" title="pyprobe.rawdata.RawData.base_dataframe"><em class="xref py py-obj"><span class="pre">base_dataframe</span></em></a><a class="headerlink" href="#pyprobe.rawdata.RawData.check_required_columns" title="Link to this definition">#</a></dt>
+<dd><p>Check if the required columns are present in the input_data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_RawData__context</strong> (<em>Any</em>)</p>
+<dd class="field-odd"><p><strong>dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
+<dd class="field-even"><p><a class="reference internal" href="#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -432,7 +466,7 @@ document.write(`
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.rawdata.RawData.zero_column">
 <span class="sig-name descname"><span class="pre">zero_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_column_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_column_definition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.rawdata.RawData.zero_column" title="Link to this definition">#</a></dt>
-<dd><p>Add a new column to a dataframe or lazyframe, zeroed to the first value.</p>
+<dd><p>Set the first value of a column to zero.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -453,10 +487,10 @@ document.write(`
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.rawdata.RawData.capacity">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#pyprobe.rawdata.RawData.capacity" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the capacity passed during the step.</p>
+<dd><p>Calculate the net capacity passed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The capacity passed during the step.</p>
+<dd class="field-odd"><p>The net capacity passed.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>float</p>
@@ -478,8 +512,7 @@ is called.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>reference_capacity</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>) – The reference capacity value.</p></li>
-<li><p><strong>reference_charge</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em>]</em>) – A rawdata object containing a charge
-cycle to use as a reference.</p></li>
+<li><p><strong>reference_charge</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em>]</em>) – A RawData object containing a charge to use as a reference.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -561,7 +594,7 @@ RawData object upon which this method is called or a user-specified value.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.base_dataframe"><code class="docutils literal notranslate"><span class="pre">RawData.base_dataframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.info"><code class="docutils literal notranslate"><span class="pre">RawData.info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.column_definitions"><code class="docutils literal notranslate"><span class="pre">RawData.column_definitions</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.model_post_init"><code class="docutils literal notranslate"><span class="pre">RawData.model_post_init()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.check_required_columns"><code class="docutils literal notranslate"><span class="pre">RawData.check_required_columns</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.zero_column"><code class="docutils literal notranslate"><span class="pre">RawData.zero_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.capacity"><code class="docutils literal notranslate"><span class="pre">RawData.capacity</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.rawdata.RawData.set_SOC"><code class="docutils literal notranslate"><span class="pre">RawData.set_SOC()</span></code></a></li>

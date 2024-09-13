@@ -26,7 +26,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "In this example, we are going to generate a synthetic aged OCV curve. We will use the half cell OCV fits from Chen 2020:"
+    "In this example, we are going to generate a synthetic aged OCV curve. We will use the half cell OCV fits from Chen 2020 [1]."
    ]
   },
   {
@@ -186,6 +186,13 @@
     "fig.add_line(fitted_curve, x='SOC', y='Fitted dSOCdV [1/V]', color='red', label = 'Fit', dash='dash')\n",
     "fig.show_image()\n",
     "# fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "1.  Chen CH, Planella FB, O’Regan K, Gastol D, Widanage WD, Kendrick E. Development of Experimental Techniques for Parameterization of Multi-scale Lithium-ion Battery Models. Journal of The Electrochemical Society. 2020;167(8): 080534. https://doi.org/10.1149/1945-7111/AB9050."
    ]
   }
  ],

@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -397,34 +398,20 @@ document.write(`
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyprobe.units.Units.prefix_dict">
-<span class="sig-name descname"><span class="pre">prefix_dict</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'M':</span> <span class="pre">1000000.0,</span> <span class="pre">'k':</span> <span class="pre">1000.0,</span> <span class="pre">'m':</span> <span class="pre">0.001,</span> <span class="pre">'n':</span> <span class="pre">1e-09,</span> <span class="pre">'p':</span> <span class="pre">1e-12,</span> <span class="pre">'µ':</span> <span class="pre">1e-06}</span></em><a class="headerlink" href="#pyprobe.units.Units.prefix_dict" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">prefix_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'M':</span> <span class="pre">1000000.0,</span> <span class="pre">'k':</span> <span class="pre">1000.0,</span> <span class="pre">'m':</span> <span class="pre">0.001,</span> <span class="pre">'n':</span> <span class="pre">1e-09,</span> <span class="pre">'p':</span> <span class="pre">1e-12,</span> <span class="pre">'µ':</span> <span class="pre">1e-06}</span></em><a class="headerlink" href="#pyprobe.units.Units.prefix_dict" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary of SI prefixes and their corresponding factors.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyprobe.units.Units.time_unit_dict">
-<span class="sig-name descname"><span class="pre">time_unit_dict</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'hr':</span> <span class="pre">3600.0,</span> <span class="pre">'min':</span> <span class="pre">60.0,</span> <span class="pre">'s':</span> <span class="pre">1.0}</span></em><a class="headerlink" href="#pyprobe.units.Units.time_unit_dict" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">time_unit_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'hr':</span> <span class="pre">3600.0,</span> <span class="pre">'min':</span> <span class="pre">60.0,</span> <span class="pre">'s':</span> <span class="pre">1.0}</span></em><a class="headerlink" href="#pyprobe.units.Units.time_unit_dict" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary of time units and their corresponding factors.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pyprobe.units.Units.unit_dict">
-<span class="sig-name descname"><span class="pre">unit_dict</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'A':</span> <span class="pre">'Current',</span> <span class="pre">'A.h':</span> <span class="pre">'Capacity',</span> <span class="pre">'Ah':</span> <span class="pre">'Capacity',</span> <span class="pre">'C':</span> <span class="pre">'Temperature',</span> <span class="pre">'Ohms':</span> <span class="pre">'Resistance',</span> <span class="pre">'V':</span> <span class="pre">'Voltage',</span> <span class="pre">'s':</span> <span class="pre">'Time'}</span></em><a class="headerlink" href="#pyprobe.units.Units.unit_dict" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.units.Units.from_regexp">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_regexp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regular_expression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'([\\w\\s]+?)\\s*\\[(\\w+)\\]'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.Units.from_regexp" title="Link to this definition">#</a></dt>
-<dd><p>Create an instance of a units class from column name and regular expression.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – The column name.</p></li>
-<li><p><strong>regular_expression</strong> (<em>str</em>) – The pattern to match the column name.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#pyprobe.units.Units" title="pyprobe.units.Units"><em>Units</em></a></p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">unit_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'A':</span> <span class="pre">'Current',</span> <span class="pre">'A.h':</span> <span class="pre">'Capacity',</span> <span class="pre">'Ah':</span> <span class="pre">'Capacity',</span> <span class="pre">'C':</span> <span class="pre">'Temperature',</span> <span class="pre">'Ohms':</span> <span class="pre">'Resistance',</span> <span class="pre">'V':</span> <span class="pre">'Voltage',</span> <span class="pre">'s':</span> <span class="pre">'Time'}</span></em><a class="headerlink" href="#pyprobe.units.Units.unit_dict" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary of units and their corresponding quantities.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -455,6 +442,23 @@ document.write(`
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.units.unit_from_regexp">
+<span class="sig-prename descclassname"><span class="pre">pyprobe.units.</span></span><span class="sig-name descname"><span class="pre">unit_from_regexp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regular_expression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'([\\w\\s]+?)\\s*\\[(\\w+)\\]'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.units.unit_from_regexp" title="Link to this definition">#</a></dt>
+<dd><p>Create an instance of a units class from column name and regular expression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The column name.</p></li>
+<li><p><strong>regular_expression</strong> (<em>str</em>) – The pattern to match the column name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pyprobe.units.Units" title="pyprobe.units.Units"><em>Units</em></a></p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -500,11 +504,11 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.prefix_dict"><code class="docutils literal notranslate"><span class="pre">Units.prefix_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.time_unit_dict"><code class="docutils literal notranslate"><span class="pre">Units.time_unit_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.unit_dict"><code class="docutils literal notranslate"><span class="pre">Units.unit_dict</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.from_regexp"><code class="docutils literal notranslate"><span class="pre">Units.from_regexp()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.from_default_unit"><code class="docutils literal notranslate"><span class="pre">Units.from_default_unit()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.Units.to_default_unit"><code class="docutils literal notranslate"><span class="pre">Units.to_default_unit()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.units.unit_from_regexp"><code class="docutils literal notranslate"><span class="pre">unit_from_regexp()</span></code></a></li>
 </ul>
   </nav></div>
 

@@ -88,7 +88,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "pyprobe.launch_dashboard([cell])"
+    "# pyprobe.launch_dashboard([cell])"
    ]
   },
   {

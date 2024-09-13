@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -374,70 +375,11 @@ document.write(`
                   
   <section id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h1>
-<p>PyProBE is a Python package designed to simplify the process of analysing data from
-battery cyclers. It has four core objectives:</p>
-<ol class="arabic">
-<li><dl>
-<dt>Ease of use</dt><dd><p>PyProBE is written in Python, a commonly used programming language in the battery
-community. However, it has been designed to be approachable for those with little
-programming experience.</p>
-<p>PyProBE breaks down complex battery data into simple, easy to understand objects
-that can be accessed with a few lines of code using natural language. The
-procedure shown below:</p>
-<img alt="../_images/Procedures_and_experiments.png" src="../_images/Procedures_and_experiments.png" />
-</dd>
-</dl>
-<p>can be filtered with simple commands like:</p>
-<blockquote>
-<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Filter the data to only include the charge pulses</span>
-<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;RPT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Charge Pulses&#39;</span><span class="p">)</span>
-
-<span class="c1"># Filter to only the charge step of the third pulse</span>
-<span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;RPT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Charge Pulses&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</pre></div>
-</div>
-</div></blockquote>
-<p>This makes it easy to quickly access the data you need for analysis.</p>
-</li>
-<li><dl class="simple">
-<dt>Accelerate battery data exploration</dt><dd><p>PyProBE has a built-in <a class="reference internal" href="plotting.html#plotting"><span class="std std-ref">plotting</span></a> module for fast and flexible
-visualisation of battery data. It also includes a graphical user interface (GUI)
-for exploring data interactively, with almost no code.</p>
-</dd>
-</dl>
-</li>
-<li><dl>
-<dt>Encourage data processing aligned with FAIR principles</dt><dd><p>PyProBE is designed to encourage good practice for storing and processing data. The
-FAIR principles. PyProBE requires a README file to sit alongside your experimental
-data which is:</p>
-<dl class="simple">
-<dt>Computer readable</dt><dd><p>Simplifies the PyProBE backend, maximises flexibility to different input data and
-makes the setup setup process fast and intuitive for new data.</p>
-</dd>
-<dt>Human readable</dt><dd><p>Sits alongside your data to allow others to quickly understand your experimental
-procedure.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>See the <a class="reference internal" href="writing_a_readme_file.html#writing-a-readme-file"><span class="std std-ref">guidance</span></a> for writing README files for your
-experiments.</p>
-</li>
-<li><dl>
-<dt>Host a library of post processing methods</dt><dd><p>PyProBE’s <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> module contains classes and methods to
-perform further analysis of battery data. It is designed to maintain compatibility
-with the PyProBE data format and plotting tools while ensuring functions are simply
-defined, portable and tested.</p>
-<p>It is easy to contribute to the analysis module. See the <a class="reference internal" href="../developer_guide/contributing_to_the_analysis_module.html#contributing-to-the-analysis-module"><span class="std std-ref">guidance</span></a>
-and <a class="reference external" href="https://github.com/ImperialCollegeLondon/PyProBE/blob/main/CONTRIBUTING.md">contributing guidelines</a>.</p>
-</dd>
-</dl>
-</li>
-</ol>
 <section id="pyprobe-structure">
 <h2>PyProBE Structure<a class="headerlink" href="#pyprobe-structure" title="Link to this heading">#</a></h2>
-<p>Below is a flowchart of the data objects that make up PyProBE:</p>
-<img alt="../_images/PyProBE_flowchart.png" src="../_images/PyProBE_flowchart.png" />
+<p>Below is a flowchart of how a PyProBE <a class="reference internal" href="../api/pyprobe.cell.html#pyprobe.cell.Cell" title="pyprobe.cell.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a> object is structured
+and how the stored data can be filtered:</p>
+<img alt="../_images/Filtering_flowchart.jpg" src="../_images/Filtering_flowchart.jpg" />
 <p>All data is stored in a <a class="reference internal" href="../api/pyprobe.cell.html#pyprobe.cell.Cell" title="pyprobe.cell.Cell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cell</span></code></a> object, which contains an
 <a class="reference internal" href="../api/pyprobe.cell.html#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">info</span></code></a> attribute for storing metadata and a
 <a class="reference internal" href="../api/pyprobe.cell.html#pyprobe.cell.Cell.procedure" title="pyprobe.cell.Cell.procedure"><code class="xref py py-attr docutils literal notranslate"><span class="pre">procedure</span></code></a> dictionary for storing data for the experimental

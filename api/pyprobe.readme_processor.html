@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -383,16 +384,20 @@ document.write(`
   <section id="module-pyprobe.readme_processor">
 <span id="pyprobe-readme-processor-module"></span><h1>pyprobe.readme_processor module<a class="headerlink" href="#module-pyprobe.readme_processor" title="Link to this heading">#</a></h1>
 <p>Module for processing PyPrBE README files.</p>
-<dl class="py class">
+<dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.readme_processor.</span></span><span class="sig-name descname"><span class="pre">ReadmeModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_experiments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_numbers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_details</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.readme_processor.</span></span><span class="sig-name descname"><span class="pre">ReadmeModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_experiments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_numbers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_details</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A Pydantic BaseModel class for processing the README.yaml file.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Validators<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>readme_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary containing the contents of the
-README.yaml file.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a> » <code class="xref py py-obj docutils literal notranslate"><span class="pre">all</span> <span class="pre">fields</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>readme_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p></li>
 <li><p><strong>readme_type</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p></li>
 <li><p><strong>number_of_experiments</strong> (<em>int</em>)</p></li>
 <li><p><strong>titles</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p></li>
@@ -405,84 +410,178 @@ README.yaml file.</p></li>
 <li><p><strong>pybamm_experiment</strong> (<em>Experiment</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
 </dl>
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.readme_dict">
-<span class="sig-name descname"><span class="pre">readme_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.readme_dict" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">readme_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.readme_dict" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the contents of the README.yaml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.readme_type">
-<span class="sig-name descname"><span class="pre">readme_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.readme_type" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">readme_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.readme_type" title="Link to this definition">#</a></dt>
 <dd><p>A list of strings indicating the README format for each experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.number_of_experiments">
-<span class="sig-name descname"><span class="pre">number_of_experiments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.number_of_experiments" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">number_of_experiments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.number_of_experiments" title="Link to this definition">#</a></dt>
 <dd><p>The number of experiments in the README file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.titles">
-<span class="sig-name descname"><span class="pre">titles</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.titles" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">titles</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.titles" title="Link to this definition">#</a></dt>
 <dd><p>A list of strings containing the titles of the experiments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.step_numbers">
-<span class="sig-name descname"><span class="pre">step_numbers</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.step_numbers" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">step_numbers</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.step_numbers" title="Link to this definition">#</a></dt>
 <dd><p>A list of lists containing the step numbers for each experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.step_indices">
-<span class="sig-name descname"><span class="pre">step_indices</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.step_indices" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">step_indices</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.step_indices" title="Link to this definition">#</a></dt>
 <dd><p>A list of lists containing the step indices for each experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.step_descriptions">
-<span class="sig-name descname"><span class="pre">step_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.step_descriptions" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">step_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.step_descriptions" title="Link to this definition">#</a></dt>
 <dd><p>A list of lists containing the step descriptions for each experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.cycle_details">
-<span class="sig-name descname"><span class="pre">cycle_details</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.cycle_details" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cycle_details</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.cycle_details" title="Link to this definition">#</a></dt>
 <dd><p>A list of lists containing the cycle details for each experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.pybamm_experiment_descriptions">
-<span class="sig-name descname"><span class="pre">pybamm_experiment_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_descriptions" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pybamm_experiment_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_descriptions" title="Link to this definition">#</a></dt>
 <dd><p>A list of tuples containing the PyBaMM experiment descriptions for each
 experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.pybamm_experiment_list">
-<span class="sig-name descname"><span class="pre">pybamm_experiment_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Experiment</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_list" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pybamm_experiment_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Experiment</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_list" title="Link to this definition">#</a></dt>
 <dd><p>A list of PyBaMM experiment objects for each experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.pybamm_experiment">
-<span class="sig-name descname"><span class="pre">pybamm_experiment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Experiment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pybamm_experiment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Experiment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment" title="Link to this definition">#</a></dt>
 <dd><p>A PyBaMM experiment object for all experiments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_readme_dict</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.model_post_init">
-<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_ReadmeModel__context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.model_post_init" title="Link to this definition">#</a></dt>
-<dd><p>Get all the attributes of the class.</p>
+<dl class="py method pydantic_validator">
+<dt class="sig sig-object py" id="pyprobe.readme_processor.ReadmeModel.check_readme_dict">
+<em class="property"><span class="pre">validator</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_readme_dict</span></span><em class="autodoc_pydantic_validator_arrow property">&#160; <span class="pre">»</span>&#160; </em><em class="xref py py-obj"><span class="pre">all</span> <span class="pre">fields</span></em><a class="headerlink" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict" title="Link to this definition">#</a></dt>
+<dd><p>Validate the structure of the README.yaml file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>_ReadmeModel__context</strong> (<em>Any</em>)</p>
+<dd class="field-odd"><p><strong>data</strong> (<em>Any</em>) – The data to be validated.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The validated data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.readme_processor.ReadmeModel" title="pyprobe.readme_processor.ReadmeModel">ReadmeModel</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If the ‘Steps’ field is not a dictionary or a list.</p></li>
+<li><p><strong>TypeError</strong> – If the ‘Steps’ field is a dictionary and the keys are not integers
+    or the values are not strings.</p></li>
+<li><p><strong>TypeError</strong> – If the ‘Steps’ field is a list and the values are not strings.</p></li>
+<li><p><strong>TypeError</strong> – If the ‘cycle’ fields are not dictionaries.</p></li>
+<li><p><strong>TypeError</strong> – If the ‘cycle’ fields are dictionaries and the keys are not strings
+    or the values are not integers.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -574,7 +673,7 @@ experiment.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment_descriptions</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_list"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment_list</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.readme_processor.ReadmeModel.pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.readme_processor.ReadmeModel.model_post_init"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.model_post_init()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.check_readme_dict</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.readme_processor.process_readme"><code class="docutils literal notranslate"><span class="pre">process_readme()</span></code></a></li>

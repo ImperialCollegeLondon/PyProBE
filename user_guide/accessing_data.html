@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -428,7 +429,7 @@ cycle is accessed with <code class="code docutils literal notranslate"><span cla
 </section>
 <section id="rawdata-objects">
 <h2>RawData objects<a class="headerlink" href="#rawdata-objects" title="Link to this heading">#</a></h2>
-<p>Any filter applied to a cell returns a <a class="reference internal" href="../api/pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyprobe.rawdata.RawData</span></code></a> object. This is
+<p>Any filter applied to a cell returns a <a class="reference internal" href="../api/pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a> object. This is
 a special type of <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object that is designed to hold cell
 experimental data processed by PyProBE. It therefore has all the attributes of the
 <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> class. This includes:</p>
@@ -451,7 +452,7 @@ containing the filtered data.</p>
 </div>
 <p>Or you can access individual columns as 1D numpy arrays by calling the
 <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result.get" title="pyprobe.result.Result.get"><code class="xref py py-func docutils literal notranslate"><span class="pre">get()</span></code></a> method:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">voltage</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">voltage</span><span class="p">,</span> <span class="n">current</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Voltage [V]&quot;</span><span class="p">,</span> <span class="s2">&quot;Current [A]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Accessing columns directly with this method is useful for converting data to unit

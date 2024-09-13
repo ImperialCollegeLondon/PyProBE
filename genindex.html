@@ -28,6 +28,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -364,8 +365,6 @@ document.write(`
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator">AnalysisValidator (class in pyprobe.analysis.utils)</a>
-</li>
       <li><a href="api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB.apply_step_correction">apply_step_correction() (pyprobe.cyclers.biologic.BiologicMB static method)</a>
 </li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.array">array() (pyprobe.result.Result method)</a>
@@ -400,12 +399,6 @@ document.write(`
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler">BaseCycler (class in pyprobe.cyclers.basecycler)</a>
-</li>
-      <li><a href="api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic">Biologic (class in pyprobe.cyclers.biologic)</a>
-</li>
-      <li><a href="api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB">BiologicMB (class in pyprobe.cyclers.biologic)</a>
-</li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.build">build() (pyprobe.result.Result class method)</a>
 </li>
   </ul></td>
@@ -430,8 +423,6 @@ document.write(`
       </ul></li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.capacity_from_ch_dch">capacity_from_ch_dch (pyprobe.cyclers.basecycler.BaseCycler property)</a>
 </li>
-      <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell">Cell (class in pyprobe.cell)</a>
-</li>
       <li><a href="api/pyprobe.filters.html#pyprobe.filters.Cycle.charge">charge() (pyprobe.filters.Cycle method)</a>
 
       <ul>
@@ -450,6 +441,12 @@ document.write(`
         <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure.chargeordischarge">(pyprobe.filters.Procedure method)</a>
 </li>
       </ul></li>
+      <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.check_and_set_name">check_and_set_name() (pyprobe.cell.Cell class method)</a>
+</li>
+      <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.check_readme_dict">check_readme_dict() (pyprobe.readme_processor.ReadmeModel class method)</a>
+</li>
+      <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData.check_required_columns">check_required_columns() (pyprobe.rawdata.RawData class method)</a>
+</li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.clean_copy">clean_copy() (pyprobe.result.Result method)</a>
 </li>
       <li><a href="api/pyprobe.filters.html#pyprobe.filters.Cycle.column_definitions">column_definitions (pyprobe.filters.Cycle attribute)</a>
@@ -500,11 +497,7 @@ document.write(`
       </ul></li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.contains_lazyframe">contains_lazyframe (pyprobe.result.Result property)</a>
 </li>
-      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.convert_names">convert_names() (pyprobe.cyclers.basecycler.BaseCycler method)</a>
-</li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.current">current (pyprobe.cyclers.basecycler.BaseCycler property)</a>
-</li>
-      <li><a href="api/pyprobe.filters.html#pyprobe.filters.Cycle">Cycle (class in pyprobe.filters)</a>
 </li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.cycle">cycle (pyprobe.cyclers.basecycler.BaseCycler property)</a>
 </li>
@@ -515,8 +508,6 @@ document.write(`
 </li>
       </ul></li>
       <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.cycle_details">cycle_details (pyprobe.readme_processor.ReadmeModel attribute)</a>
-</li>
-      <li><a href="api/pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling">Cycling (class in pyprobe.analysis.cycling)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -534,11 +525,9 @@ document.write(`
 </li>
       <li><a href="api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_FD">differentiate_FD() (pyprobe.analysis.differentiation.Differentiation method)</a>
 </li>
-      <li><a href="api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_LEAN">differentiate_LEAN() (pyprobe.analysis.differentiation.Differentiation method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation">Differentiation (class in pyprobe.analysis.differentiation)</a>
+      <li><a href="api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_LEAN">differentiate_LEAN() (pyprobe.analysis.differentiation.Differentiation method)</a>
 </li>
       <li><a href="api/pyprobe.filters.html#pyprobe.filters.Cycle.discharge">discharge() (pyprobe.filters.Cycle method)</a>
 
@@ -550,8 +539,6 @@ document.write(`
       </ul></li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.discharge_capacity">discharge_capacity (pyprobe.cyclers.basecycler.BaseCycler property)</a>
 </li>
-      <li><a href="api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA">DMA (class in pyprobe.analysis.degradation_mode_analysis)</a>
-</li>
       <li><a href="api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.dma_result">dma_result (pyprobe.analysis.degradation_mode_analysis.DMA attribute)</a>
 </li>
   </ul></td>
@@ -561,8 +548,6 @@ document.write(`
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.event">event (pyprobe.cyclers.basecycler.BaseCycler property)</a>
-</li>
-      <li><a href="api/pyprobe.filters.html#pyprobe.filters.Experiment">Experiment (class in pyprobe.filters)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -582,17 +567,15 @@ document.write(`
 </li>
       <li><a href="api/pyprobe.typing.html#pyprobe.typing.FilterToExperimentType">FilterToExperimentType (in module pyprobe.typing)</a>
 </li>
-      <li><a href="api/pyprobe.typing.html#pyprobe.typing.FilterToStepType">FilterToStepType (in module pyprobe.typing)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.typing.html#pyprobe.typing.FilterToStepType">FilterToStepType (in module pyprobe.typing)</a>
+</li>
       <li><a href="api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv">fit_ocv() (pyprobe.analysis.degradation_mode_analysis.DMA method)</a>
 </li>
       <li><a href="api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fitted_OCV">fitted_OCV (pyprobe.analysis.degradation_mode_analysis.DMA attribute)</a>
 </li>
       <li><a href="api/pyprobe.units.html#pyprobe.units.Units.from_default_unit">from_default_unit() (pyprobe.units.Units method)</a>
-</li>
-      <li><a href="api/pyprobe.units.html#pyprobe.units.Units.from_regexp">from_regexp() (pyprobe.units.Units static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -601,8 +584,6 @@ document.write(`
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.get">get() (pyprobe.result.Result method)</a>
-</li>
-      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.get_dataframe_list">get_dataframe_list() (pyprobe.cyclers.basecycler.BaseCycler method)</a>
 </li>
       <li><a href="api/pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.get_dx">get_dx() (in module pyprobe.analysis.base.differentiation_functions)</a>
 </li>
@@ -690,26 +671,6 @@ document.write(`
 </li>
       <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.make_colorscale">make_colorscale() (pyprobe.plot.Plot static method)</a>
 </li>
-      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.map_columns">map_columns() (pyprobe.cyclers.basecycler.BaseCycler class method)</a>
-</li>
-      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.match_unit">match_unit() (pyprobe.cyclers.basecycler.BaseCycler static method)</a>
-</li>
-      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.model_post_init">model_post_init() (pyprobe.cyclers.basecycler.BaseCycler method)</a>
-
-      <ul>
-        <li><a href="api/pyprobe.filters.html#pyprobe.filters.Cycle.model_post_init">(pyprobe.filters.Cycle method)</a>
-</li>
-        <li><a href="api/pyprobe.filters.html#pyprobe.filters.Experiment.model_post_init">(pyprobe.filters.Experiment method)</a>
-</li>
-        <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure.model_post_init">(pyprobe.filters.Procedure method)</a>
-</li>
-        <li><a href="api/pyprobe.filters.html#pyprobe.filters.Step.model_post_init">(pyprobe.filters.Step method)</a>
-</li>
-        <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData.model_post_init">(pyprobe.rawdata.RawData method)</a>
-</li>
-        <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.model_post_init">(pyprobe.readme_processor.ReadmeModel method)</a>
-</li>
-      </ul></li>
       <li>
     module
 
@@ -769,10 +730,6 @@ document.write(`
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware">Neware (class in pyprobe.cyclers.neware)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.number_of_experiments">number_of_experiments (pyprobe.readme_processor.ReadmeModel attribute)</a>
 </li>
   </ul></td>
@@ -795,8 +752,6 @@ document.write(`
 </li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.print_definitions">print_definitions() (pyprobe.result.Result method)</a>
 </li>
-      <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure">Procedure (class in pyprobe.filters)</a>
-</li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.procedure">procedure (pyprobe.cell.Cell attribute)</a>
 </li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.process_cycler_file">process_cycler_file() (pyprobe.cell.Cell method)</a>
@@ -810,8 +765,6 @@ document.write(`
       <li><a href="api/pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse_rest">pulse_rest() (pyprobe.analysis.pulsing.Pulsing method)</a>
 </li>
       <li><a href="api/pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse_summary">pulse_summary() (pyprobe.analysis.pulsing.Pulsing method)</a>
-</li>
-      <li><a href="api/pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing">Pulsing (class in pyprobe.analysis.pulsing)</a>
 </li>
       <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure.pybamm_experiment">pybamm_experiment (pyprobe.filters.Procedure attribute)</a>
 
@@ -1021,8 +974,6 @@ document.write(`
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData">RawData (class in pyprobe.rawdata)</a>
-</li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.read_file">read_file() (pyprobe.cyclers.basecycler.BaseCycler static method)</a>
 
       <ul>
@@ -1032,8 +983,6 @@ document.write(`
       <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.readme_dict">readme_dict (pyprobe.readme_processor.ReadmeModel attribute)</a>
 </li>
       <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.readme_type">readme_type (pyprobe.readme_processor.ReadmeModel attribute)</a>
-</li>
-      <li><a href="api/pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel">ReadmeModel (class in pyprobe.readme_processor)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1049,8 +998,6 @@ document.write(`
         <li><a href="api/pyprobe.filters.html#pyprobe.filters.Procedure.rest">(pyprobe.filters.Procedure method)</a>
 </li>
       </ul></li>
-      <li><a href="api/pyprobe.result.html#pyprobe.result.Result">Result (class in pyprobe.result)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -1069,11 +1016,7 @@ document.write(`
 </li>
       <li><a href="api/pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.smooth_gradient">smooth_gradient() (in module pyprobe.analysis.base.differentiation_functions)</a>
 </li>
-      <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing">Smoothing (class in pyprobe.analysis.smoothing)</a>
-</li>
       <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.spline_smoothing">spline_smoothing() (pyprobe.analysis.smoothing.Smoothing method)</a>
-</li>
-      <li><a href="api/pyprobe.filters.html#pyprobe.filters.Step">Step (class in pyprobe.filters)</a>
 </li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.step">step (pyprobe.cyclers.basecycler.BaseCycler property)</a>
 
@@ -1143,6 +1086,8 @@ document.write(`
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.units.html#pyprobe.units.unit_from_regexp">unit_from_regexp() (in module pyprobe.units)</a>
+</li>
       <li><a href="api/pyprobe.units.html#pyprobe.units.Units">Units (class in pyprobe.units)</a>
 </li>
   </ul></td>

@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -393,28 +394,34 @@ document.write(`
   <section id="module-pyprobe.cyclers.biologic">
 <span id="pyprobe-cyclers-biologic-module"></span><h1>pyprobe.cyclers.biologic module<a class="headerlink" href="#module-pyprobe.cyclers.biologic" title="Link to this heading">#</a></h1>
 <p>A module to load and process Biologic battery cycler data.</p>
-<dl class="py class">
+<dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.cyclers.biologic.Biologic">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.biologic.</span></span><span class="sig-name descname"><span class="pre">Biologic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Ecell/*':</span> <span class="pre">'Voltage</span> <span class="pre">[*]',</span> <span class="pre">'I/*':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Ns':</span> <span class="pre">'Step',</span> <span class="pre">'Q</span> <span class="pre">charge/*':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Q</span> <span class="pre">discharge/*':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Temperature/*':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'time/*':</span> <span class="pre">'Time</span> <span class="pre">[*]'}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.biologic.Biologic" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.biologic.</span></span><span class="sig-name descname"><span class="pre">Biologic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Ecell/*':</span> <span class="pre">'Voltage</span> <span class="pre">[*]',</span> <span class="pre">'I/*':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Ns':</span> <span class="pre">'Step',</span> <span class="pre">'Q</span> <span class="pre">charge/*':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Q</span> <span class="pre">discharge/*':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Temperature/*':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'time/*':</span> <span class="pre">'Time</span> <span class="pre">[*]'}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.biologic.Biologic" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a></p>
 <p>A class to load and process Biologic battery cycler data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_data_path</strong> (<em>str</em>) – The path to the input data.</p></li>
+<li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
 <li><p><strong>column_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
 </ul>
 </dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
 </dl>
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.cyclers.biologic.Biologic.input_data_path">
-<span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pyprobe.cyclers.biologic.Biologic.input_data_path" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cyclers.biologic.Biologic.input_data_path" title="Link to this definition">#</a></dt>
+<dd><p>The path to the input data.</p>
+</dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.cyclers.biologic.Biologic.column_dict">
-<span class="sig-name descname"><span class="pre">column_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cyclers.biologic.Biologic.column_dict" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Ecell/*':</span> <span class="pre">'Voltage</span> <span class="pre">[*]',</span> <span class="pre">'I/*':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Ns':</span> <span class="pre">'Step',</span> <span class="pre">'Q</span> <span class="pre">charge/*':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Q</span> <span class="pre">discharge/*':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Temperature/*':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'time/*':</span> <span class="pre">'Time</span> <span class="pre">[*]'}</span></em><a class="headerlink" href="#pyprobe.cyclers.biologic.Biologic.column_dict" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary mapping the column name format of the cycler to the PyProBE format.
+Units are indicated by an asterisk (*).</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cyclers.biologic.Biologic.read_file">
@@ -449,17 +456,20 @@ document.write(`
 
 </dd></dl>
 
-<dl class="py class">
+<dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.cyclers.biologic.BiologicMB">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.biologic.</span></span><span class="sig-name descname"><span class="pre">BiologicMB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Ecell/*':</span> <span class="pre">'Voltage</span> <span class="pre">[*]',</span> <span class="pre">'I/*':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Ns':</span> <span class="pre">'Step',</span> <span class="pre">'Q</span> <span class="pre">charge/*':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Q</span> <span class="pre">discharge/*':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Temperature/*':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'time/*':</span> <span class="pre">'Time</span> <span class="pre">[*]'}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.biologic.BiologicMB" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.biologic.</span></span><span class="sig-name descname"><span class="pre">BiologicMB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Ecell/*':</span> <span class="pre">'Voltage</span> <span class="pre">[*]',</span> <span class="pre">'I/*':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Ns':</span> <span class="pre">'Step',</span> <span class="pre">'Q</span> <span class="pre">charge/*':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Q</span> <span class="pre">discharge/*':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Temperature/*':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'time/*':</span> <span class="pre">'Time</span> <span class="pre">[*]'}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.biologic.BiologicMB" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a></p>
 <p>A class to load and process Biologic Modulo Bat  battery cycler data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_data_path</strong> (<em>str</em>) – The path to the input data.</p></li>
+<li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
 <li><p><strong>column_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
 </ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 <dl class="py method">

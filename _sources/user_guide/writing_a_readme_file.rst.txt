@@ -2,6 +2,10 @@
 
 Writing a README file
 =====================
+
+The PyProBE README format
+-------------------------
+
 README files are important to store alongside your experimental data. The PyProBE
 README format is a :code:`.yaml` file that contains details about the instructions 
 provided to the battery cycler used to generate the data. It is then used filter the 
@@ -12,7 +16,7 @@ The :code:`README.yaml` contains the following information:
 * The name of the experiment
    This enables filtering by :code:`'Experiment Name'` with the 
    
-   :code:`cell.procedure['Procedure Name'].experiment['Experiment Name']` 
+   :code:`cell.procedure['Procedure Name'].experiment('Experiment Name')` 
    
    syntax.
 
@@ -31,7 +35,7 @@ The :code:`README.yaml` contains the following information:
    step. Therefore, where there is a repeat instruction in the cycler procedure, the 
    corresponding step number should be skipped.
 
-* Cycle*:
+* Cycle:
    This is a section that provides details on repeats of the provided steps. PyProBE 
    looks for any title containing the string `"cycle"`, so you can choose any name that 
    includes this or add multiple cycles with different names.
@@ -52,12 +56,16 @@ Which corresponds to the following Neware procedure file:
 
 .. image:: images/Neware_procedure.png
 
+The YAML format
+---------------
+The `YAML` format is a readable, structured format for data serialization. To identify
+formatting errors, the `YAML VSCode extension <https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml>`_
+is highly recommended.
+
 Shortcuts
 ---------
-It is in the future plans of PyProBE to include automatic generation of the README file
-from cycler procedure files. However, for now it must be done manually. For most 
-experiments this should not be too time consuming, and provides value by documenting
-your data in a human readable format.
+For most experiments, writing a README file should not be too time consuming and 
+provides value by documenting your data in a human readable format.
 
 For testing purposes or if an experiment is particularly cumbersome to write out. You 
 can instead the :code:`Steps` list with :code:`Total Steps`, allowing you to provide 

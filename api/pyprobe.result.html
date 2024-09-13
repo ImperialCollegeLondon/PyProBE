@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -383,35 +384,54 @@ document.write(`
   <section id="module-pyprobe.result">
 <span id="pyprobe-result-module"></span><h1>pyprobe.result module<a class="headerlink" href="#module-pyprobe.result" title="Link to this heading">#</a></h1>
 <p>A module for the Result class.</p>
-<dl class="py class">
+<dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.result.Result">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.result.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.result.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>A result object for returning data and plotting.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>base_dataframe</strong> (<em>Union</em><em>[</em><em>pl.LazyFrame</em><em>, </em><em>pl.DataFrame</em><em>]</em>) – The data as a polars DataFrame or LazyFrame.</p></li>
-<li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>, </em><em>float</em><em>]</em><em>]</em>) – A dictionary containing test info.</p></li>
-<li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A dictionary containing the definitions of the columns in the data.</p></li>
+<p>A class for holding any data in PyProBE.</p>
+<p>A Result object is the base type for every data object in PyProBE. This class
+includes all of the main methods for returning and describing any data in PyProBE.</p>
+<dl class="simple">
+<dt>Key attributes for returning data:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.result.Result.data" title="pyprobe.result.Result.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data</span></code></a>: The data as a Polars DataFrame.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.result.Result.get" title="pyprobe.result.Result.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a>: Get a column from the data as a NumPy array.</p></li>
+</ul>
+</dd>
+<dt>Key attributes for describing the data:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.result.Result.info" title="pyprobe.result.Result.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">info</span></code></a>: A dictionary containing information about the cell.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.result.Result.column_definitions" title="pyprobe.result.Result.column_definitions"><code class="xref py py-attr docutils literal notranslate"><span class="pre">column_definitions</span></code></a>: A dictionary of column definitions.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.result.Result.print_definitions" title="pyprobe.result.Result.print_definitions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">print_definitions()</span></code></a>: Print the column definitions.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.result.Result.column_list" title="pyprobe.result.Result.column_list"><code class="xref py py-attr docutils literal notranslate"><span class="pre">column_list</span></code></a>: A list of column names.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
+<li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.result.Result.base_dataframe">
-<span class="sig-name descname"><span class="pre">base_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#pyprobe.result.Result.base_dataframe" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">base_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.result.Result.base_dataframe" title="Link to this definition">#</a></dt>
 <dd><p>The data as a polars DataFrame or LazyFrame.</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.result.Result.info">
-<span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.Result.info" title="Link to this definition">#</a></dt>
-<dd><p>A dictionary containing test info.</p>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.result.Result.info" title="Link to this definition">#</a></dt>
+<dd><p>Dictionary containing information about the cell.</p>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.result.Result.column_definitions">
-<span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.Result.column_definitions" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.result.Result.column_definitions" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the definitions of the columns in the data.</p>
 </dd></dl>
 
@@ -425,6 +445,9 @@ document.write(`
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>pl.DataFrame</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If no data exists for this filter.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -446,7 +469,7 @@ document.write(`
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.result.Result.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">column_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.get" title="Link to this definition">#</a></dt>
-<dd><p>Return one or more columns of the data as numpy arrays.</p>
+<dd><p>Return one or more columns of the data as seperate 1D numpy arrays.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>column_names</strong> (<em>str</em>) – The column name(s) to return.</p>
@@ -456,6 +479,12 @@ document.write(`
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Union[NDArray[np.float64], Tuple[NDArray[np.float64], …]]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If no column names are provided.</p></li>
+<li><p><strong>ValueError</strong> – If a column name is not in the data.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -474,22 +503,31 @@ document.write(`
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>NDArray[np.float64]</p>
 </dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If the column name is not in the data.</p></li>
+<li><p><strong>ValueError</strong> – If no column name is provided.</p></li>
+</ul>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.result.Result.array">
 <span class="sig-name descname"><span class="pre">array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">filtering_column_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.array" title="Link to this definition">#</a></dt>
-<dd><p>Return the data as a numpy array.</p>
+<dd><p>Return the data as a single numpy array.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>*filtering_column_names</strong> (<em>str</em>) – The column names to return.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The data as a numpy array.</p>
+<dd class="field-even"><p>The data as a single numpy array.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>NDArray[np.float64]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If a column name is not in the data.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -497,13 +535,29 @@ document.write(`
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.result.Result.quantities">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.Result.quantities" title="Link to this definition">#</a></dt>
-<dd><p>Return the quantities of the data, with unit information removed.</p>
+<dd><p>The quantities of the data, with unit information removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The quantities of the data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.result.Result.column_list">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.Result.column_list" title="Link to this definition">#</a></dt>
-<dd><p>Return a list of the columns in the data.</p>
+<dd><p>The columns in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The columns in the data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -536,7 +590,7 @@ document.write(`
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.result.Result.clean_copy">
-<span class="sig-name descname"><span class="pre">clean_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe=shape:</span> <span class="pre">(0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0)</span> <span class="pre">┌┐</span> <span class="pre">╞╡</span> <span class="pre">└┘</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions={}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.clean_copy" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">clean_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.clean_copy" title="Link to this definition">#</a></dt>
 <dd><p>Create a copy of the result object with info dictionary but without data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -558,7 +612,9 @@ document.write(`
 <dt class="sig sig-object py" id="pyprobe.result.Result.add_new_data_columns">
 <span class="sig-name descname"><span class="pre">add_new_data_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.add_new_data_columns" title="Link to this definition">#</a></dt>
 <dd><p>Add new data columns to the result object.</p>
-<p>The data must be time series data with a date column.</p>
+<p>The data must be time series data with a date column. The new data is joined to
+the base dataframe on the date column, and the new data columns are interpolated
+to fill in missing values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -566,8 +622,11 @@ document.write(`
 <li><p><strong>date_column_name</strong> (<em>str</em>) – The name of the column in the new data containing the date.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the base dataframe has no date column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>

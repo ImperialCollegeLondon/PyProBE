@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -383,34 +384,63 @@ document.write(`
   <section id="module-pyprobe.cell">
 <span id="pyprobe-cell-module"></span><h1>pyprobe.cell module<a class="headerlink" href="#module-pyprobe.cell" title="Link to this heading">#</a></h1>
 <p>Module for the Cell class.</p>
-<dl class="py class">
+<dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cell.</span></span><span class="sig-name descname"><span class="pre">Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cell.</span></span><span class="sig-name descname"><span class="pre">Cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">procedure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A class for a cell in a battery experiment.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Validators<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>info</strong> (<em>dict</em>) – Dictionary containing information about the cell.
-The dictionary must contain a ‘Name’ field, other information may include
-channel number or other rig information.</p></li>
-<li><p><strong>procedure</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary containing the procedures that have been
-run on the cell. Defaults to an empty dictionary.</p></li>
+<li><p><a class="reference internal" href="#pyprobe.cell.Cell.check_and_set_name" title="pyprobe.cell.Cell.check_and_set_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_and_set_name</span></code></a> » <a class="reference internal" href="#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">info</span></code></a></p></li>
 </ul>
 </dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>procedure</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
 </dl>
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.info">
-<span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.Cell.info" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cell.Cell.info" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing information about the cell.
 The dictionary must contain a ‘Name’ field, other information may include
 channel number or other rig information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.cell.Cell.check_and_set_name" title="pyprobe.cell.Cell.check_and_set_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_and_set_name</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="py attribute">
+<dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.procedure">
-<span class="sig-name descname"><span class="pre">procedure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><span class="pre">Procedure</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.cell.Cell.procedure" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">procedure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><span class="pre">Procedure</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.cell.Cell.procedure" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing the procedures that have been run on the cell.</p>
+</dd></dl>
+
+<dl class="py method pydantic_validator">
+<dt class="sig sig-object py" id="pyprobe.cell.Cell.check_and_set_name">
+<em class="property"><span class="pre">validator</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_and_set_name</span></span><em class="autodoc_pydantic_validator_arrow property">&#160; <span class="pre">»</span>&#160; </em><a class="reference internal" href="#pyprobe.cell.Cell.info" title="pyprobe.cell.Cell.info"><em class="xref py py-obj"><span class="pre">info</span></em></a><a class="headerlink" href="#pyprobe.cell.Cell.check_and_set_name" title="Link to this definition">#</a></dt>
+<dd><p>Validate the <cite>info</cite> field.</p>
+<p>Checks that a <cite>Name</cite> field is present in the <cite>info</cite> dictionary, if not it is
+set to ‘Default Name’. If the <cite>color</cite> field is not present, a color is
+generated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, str | int | float | None]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -420,14 +450,17 @@ channel number or other rig information.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cycler</strong> (<em>str</em>) – The cycler used to produce the data. E.g. ‘neware’ or ‘biologic’.</p></li>
+<li><p><strong>cycler</strong> (<em>str</em>) – The cycler used to produce the data. Available cyclers are:
+- ‘neware’
+- ‘biologic’
+- ‘biologic_MB’ (for Modulo Bat Biologic data)</p></li>
 <li><p><strong>folder_path</strong> (<em>str</em>) – The path to the folder containing the data file.</p></li>
 <li><p><strong>input_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for cycler
 data.</p></li>
 <li><p><strong>output_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
 data.</p></li>
-<li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
-These must be keys of the cell info.</p></li>
+<li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename, if they are
+functions. These must be keys of the cell info.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -449,7 +482,10 @@ generic data.</p></li>
 <li><p><strong>output_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
 data.</p></li>
 <li><p><strong>column_dict</strong> (<em>dict</em>) – A dictionary mapping the column names in the generic file to the PyProBE
-column names.</p></li>
+column names. The keys of the dictionary are the cycler column names and
+the values are the PyProBE column names. You must use asterisks to
+indicate the units of the columns.
+E.g. <code class="code docutils literal notranslate"><span class="pre">{&quot;V</span> <span class="pre">(*)&quot;:</span> <span class="pre">&quot;Voltage</span> <span class="pre">[*]&quot;}</span></code>.</p></li>
 <li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
 These must be keys of the cell info.</p></li>
 </ul>
@@ -470,11 +506,12 @@ These must be keys of the cell info.</p></li>
 <li><p><strong>procedure_name</strong> (<em>str</em>) – A name to give the procedure. This will be used when calling
 <code class="code docutils literal notranslate"><span class="pre">cell.procedure[procedure_name]</span></code>.</p></li>
 <li><p><strong>folder_path</strong> (<em>str</em>) – The path to the folder containing the data file.</p></li>
-<li><p><strong>filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE d
-ata.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
+data.</p></li>
 <li><p><strong>filename_inputs</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em>) – The list of inputs to filename_function. These must be keys of the cell
 info.</p></li>
-<li><p><strong>readme_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the readme file. Defaults to “README.yaml”.</p></li>
+<li><p><strong>readme_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the readme file. Defaults to “README.yaml”. It is assumed
+that the readme file is in the same folder as the data file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -488,7 +525,7 @@ info.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyprobe.cell.make_cell_list">
 <span class="sig-prename descclassname"><span class="pre">pyprobe.cell.</span></span><span class="sig-name descname"><span class="pre">make_cell_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worksheet_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.make_cell_list" title="Link to this definition">#</a></dt>
-<dd><p>Function to make a list of cell objects from a record of tests.</p>
+<dd><p>Function to make a list of cell objects from a record of tests in Excel format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -497,7 +534,7 @@ info.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The list of cell objects</p>
+<dd class="field-even"><p>The list of cell objects.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
@@ -556,6 +593,7 @@ info.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell"><code class="docutils literal notranslate"><span class="pre">Cell</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.info"><code class="docutils literal notranslate"><span class="pre">Cell.info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.procedure"><code class="docutils literal notranslate"><span class="pre">Cell.procedure</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.check_and_set_name"><code class="docutils literal notranslate"><span class="pre">Cell.check_and_set_name</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_cycler_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_cycler_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_generic_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_generic_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>

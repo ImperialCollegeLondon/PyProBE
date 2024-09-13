@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -378,13 +379,13 @@ document.write(`
 <h2>Supported cyclers and formats<a class="headerlink" href="#supported-cyclers-and-formats" title="Link to this heading">#</a></h2>
 <p>PyProBE is able to import data from the following cyclers:</p>
 <ul class="simple">
-<li><p>Neware: <cite>‘neware’</cite></p>
+<li><p>Neware: <code class="code docutils literal notranslate"><span class="pre">'neware'</span></code></p>
 <ul>
 <li><p>.csv</p></li>
 <li><p>.xlsx</p></li>
 </ul>
 </li>
-<li><p>BioLogic: <cite>‘biologic’</cite> or for Modulo Bat files <cite>‘biologic_MB’</cite></p>
+<li><p>BioLogic: <code class="code docutils literal notranslate"><span class="pre">'biologic'</span></code> or for Modulo Bat files <code class="code docutils literal notranslate"><span class="pre">'biologic_MB'</span></code></p>
 <ul>
 <li><p>.mpt</p></li>
 <li><p>.txt</p></li>
@@ -457,7 +458,7 @@ column names of of data from supported cyclers:</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Date</p></td>
-<td><p>Yes</p></td>
+<td><p>No</p></td>
 <td><p>Date</p></td>
 <td><p>“Acquisition started on”
 in header</p></td>
@@ -465,7 +466,7 @@ in header</p></td>
 <tr class="row-odd"><td><p>Time [s]</p></td>
 <td><p>Yes</p></td>
 <td><p><em>Auto from Date</em></p></td>
-<td><p>time/s</p></td>
+<td><p>time/*</p></td>
 </tr>
 <tr class="row-even"><td><p>Step</p></td>
 <td><p>Yes</p></td>
@@ -484,20 +485,20 @@ in header</p></td>
 </tr>
 <tr class="row-odd"><td><p>Current [A]</p></td>
 <td><p>Yes</p></td>
-<td><p>Current(unit)</p></td>
-<td><p>Current/unit</p></td>
+<td><p>Current(*)</p></td>
+<td><p>I/*</p></td>
 </tr>
 <tr class="row-even"><td><p>Voltage [V]</p></td>
 <td><p>Yes</p></td>
-<td><p>Voltage(unit)</p></td>
-<td><p>Ecell/unit</p></td>
+<td><p>Voltage(*)</p></td>
+<td><p>Ecell/*</p></td>
 </tr>
 <tr class="row-odd"><td><p>Capacity [Ah]</p></td>
 <td><p>Yes</p></td>
-<td><p>Chg. Cap.(unit),
-DChg. Cap.(unit)</p></td>
-<td><p>Q charge/unit,
-Q discharge/unit</p></td>
+<td><p>Chg. Cap.(*),
+DChg. Cap.(*)</p></td>
+<td><p>Q charge/*,
+Q discharge/*</p></td>
 </tr>
 </tbody>
 </table>

@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
@@ -389,7 +390,7 @@ document.write(`
 </pre></div>
 </div>
 </div>
-<p>In this example, we are going to generate a synthetic aged OCV curve. We will use the half cell OCV fits from Chen 2020:</p>
+<p>In this example, we are going to generate a synthetic aged OCV curve. We will use the half cell OCV fits from Chen 2020 [1].</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -559,7 +560,7 @@ shape: (1, 8)
 │ f64        ┆ f64        ┆ f64        ┆ f64       ┆ ---       ┆ ---       ┆ ---       ┆ ---       │
 │            ┆            ┆            ┆           ┆ f64       ┆ f64       ┆ f64       ┆ f64       │
 ╞════════════╪════════════╪════════════╪═══════════╪═══════════╪═══════════╪═══════════╪═══════════╡
-│ 0.849925   ┆ 0.27001    ┆ 0.030003   ┆ 0.900015  ┆ 5.0       ┆ 8.621949  ┆ 5.747048  ┆ 7.500442  │
+│ 0.849926   ┆ 0.27001    ┆ 0.030001   ┆ 0.900016  ┆ 5.0       ┆ 8.621933  ┆ 5.747026  ┆ 7.500422  │
 └────────────┴────────────┴────────────┴───────────┴───────────┴───────────┴───────────┴───────────┘
 </pre></div></div>
 </div>
@@ -570,6 +571,9 @@ shape: (1, 8)
 <img alt="../_images/examples_ocv-fitting_13_1.png" src="../_images/examples_ocv-fitting_13_1.png" />
 </div>
 </div>
+<ol class="arabic simple">
+<li><p>Chen CH, Planella FB, O’Regan K, Gastol D, Widanage WD, Kendrick E. Development of Experimental Techniques for Parameterization of Multi-scale Lithium-ion Battery Models. Journal of The Electrochemical Society. 2020;167(8): 080534. <a class="reference external" href="https://doi.org/10.1149/1945-7111/AB9050">https://doi.org/10.1149/1945-7111/AB9050</a>.</p></li>
+</ol>
 </section>
 
 

@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -377,7 +378,27 @@ document.write(`
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
 <p>To install PyProBE you must be running Python 3.11 or later. It is recommended to use a
 virtual environment to install PyProBE, for example venv or conda.</p>
-<p>You should have two separate directories:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">If you are completely new to Python</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text"><strong>Recommended software</strong></p>
+<p class="sd-card-text">The easiest way to get started with data processing in Python is to use
+<a class="reference external" href="https://docs.anaconda.com/anaconda/install/">Anaconda</a> for package management and
+<a class="reference external" href="https://code.visualstudio.com/download">Visual Studio Code</a> for code editing. You
+will need <a class="reference external" href="https://git-scm.com/">Git</a> installed to clone the repository. If you
+are new to Git version control, the <a class="reference external" href="https://github.com/apps/desktop">GitHub Desktop</a>
+is a good place to start.</p>
+<p class="sd-card-text">In order to follow the installation instructions below, on Windows you can work in
+Anaconda Prompt. On Mac or Linux you can use Terminal directly.</p>
+<p class="sd-card-text"><strong>Using PyProBE after installation</strong></p>
+<p class="sd-card-text">Jupyter Notebooks are a popular format for Python data processing. VSCode has
+support for writing and running these, which you can open from the dropdown menu:</p>
+<img alt="../_images/VSCode_open_file.png" src="../_images/VSCode_open_file.png" />
+<p class="sd-card-text">You should then select the Anaconda environment that you will create from the list of
+available Python environments:</p>
+<img alt="../_images/VSCode_select_kernel.png" src="../_images/VSCode_select_kernel.png" />
+</div>
+</details><p>You should have two separate directories:</p>
 <ul class="simple">
 <li><p>one for the PyProBE repository</p></li>
 <li><p>one for your processing script</p></li>
@@ -385,7 +406,7 @@ virtual environment to install PyProBE, for example venv or conda.</p>
 <p>The steps to install PyProBE are as follows:</p>
 <ol class="arabic">
 <li><p>Enter a directory in which you wish to install PyProBE:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/your/directory
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/installation/directory
 </pre></div>
 </div>
 </li>
@@ -432,22 +453,25 @@ conda<span class="w"> </span>activate<span class="w"> </span>pyprobe
 </div></blockquote>
 <ol class="arabic" start="3">
 <li><p>Install PyProBE’s dependencies:</p>
-<blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/your/directory/PyProBE
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 </pre></div>
 </div>
-<p>cd /path/to/your/directory/PyProBE
-pip install -r requirements.txt</p>
-</div></blockquote>
 </li>
 <li><p>Install PyProBE as a package into your virtual environment:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
 </li>
-<li><p>In your working directory you can create a new python script or jupyter notebook to
+<li><p>In a second directory you can create a new python script or jupyter notebook to
 process your data. You can import PyProBE into your script as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyprobe</span>
+</pre></div>
+</div>
+</li>
+<li><p>Before being able to launch the dashboard you will need to initialise streamlit.
+Do this by running the streamlit Hello app from your command line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>streamlit<span class="w"> </span>hello
 </pre></div>
 </div>
 </li>

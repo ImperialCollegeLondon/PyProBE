@@ -29,6 +29,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
     <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -374,6 +375,8 @@ document.write(`
                   
   <section id="writing-a-readme-file">
 <span id="id1"></span><h1>Writing a README file<a class="headerlink" href="#writing-a-readme-file" title="Link to this heading">#</a></h1>
+<section id="the-pyprobe-readme-format">
+<h2>The PyProBE README format<a class="headerlink" href="#the-pyprobe-readme-format" title="Link to this heading">#</a></h2>
 <p>README files are important to store alongside your experimental data. The PyProBE
 README format is a <code class="code docutils literal notranslate"><span class="pre">.yaml</span></code> file that contains details about the instructions
 provided to the battery cycler used to generate the data. It is then used filter the
@@ -382,7 +385,7 @@ procedure into experiments that can be analysed separately.</p>
 <ul>
 <li><dl>
 <dt>The name of the experiment</dt><dd><p>This enables filtering by <code class="code docutils literal notranslate"><span class="pre">'Experiment</span> <span class="pre">Name'</span></code> with the</p>
-<p><code class="code docutils literal notranslate"><span class="pre">cell.procedure['Procedure</span> <span class="pre">Name'].experiment['Experiment</span> <span class="pre">Name']</span></code></p>
+<p><code class="code docutils literal notranslate"><span class="pre">cell.procedure['Procedure</span> <span class="pre">Name'].experiment('Experiment</span> <span class="pre">Name')</span></code></p>
 <p>syntax.</p>
 </dd>
 </dl>
@@ -404,7 +407,7 @@ corresponding step number should be skipped.</p>
 </dl>
 </li>
 <li><dl>
-<dt>Cycle*:</dt><dd><p>This is a section that provides details on repeats of the provided steps. PyProBE
+<dt>Cycle:</dt><dd><p>This is a section that provides details on repeats of the provided steps. PyProBE
 looks for any title containing the string <cite>“cycle”</cite>, so you can choose any name that
 includes this or add multiple cycles with different names.</p>
 <p>Cycle details must include the keywords “Start”, “End” and “Count”. These identify
@@ -449,12 +452,17 @@ If cycles are nested, the outer cycle must be listed <em>before</em> the inner c
 </div>
 <p>Which corresponds to the following Neware procedure file:</p>
 <img alt="../_images/Neware_procedure.png" src="../_images/Neware_procedure.png" />
+</section>
+<section id="the-yaml-format">
+<h2>The YAML format<a class="headerlink" href="#the-yaml-format" title="Link to this heading">#</a></h2>
+<p>The <cite>YAML</cite> format is a readable, structured format for data serialization. To identify
+formatting errors, the <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml">YAML VSCode extension</a>
+is highly recommended.</p>
+</section>
 <section id="shortcuts">
 <h2>Shortcuts<a class="headerlink" href="#shortcuts" title="Link to this heading">#</a></h2>
-<p>It is in the future plans of PyProBE to include automatic generation of the README file
-from cycler procedure files. However, for now it must be done manually. For most
-experiments this should not be too time consuming, and provides value by documenting
-your data in a human readable format.</p>
+<p>For most experiments, writing a README file should not be too time consuming and
+provides value by documenting your data in a human readable format.</p>
 <p>For testing purposes or if an experiment is particularly cumbersome to write out. You
 can instead the <code class="code docutils literal notranslate"><span class="pre">Steps</span></code> list with <code class="code docutils literal notranslate"><span class="pre">Total</span> <span class="pre">Steps</span></code>, allowing you to provide
 just a single number for the total number of steps in the experiment:</p>
@@ -515,6 +523,8 @@ the example above, as <cite>Break-in Cycles</cite> contains 4 listed steps and a
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-pyprobe-readme-format">The PyProBE README format</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-yaml-format">The YAML format</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shortcuts">Shortcuts</a></li>
 </ul>
   </nav></div>
