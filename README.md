@@ -25,7 +25,7 @@ cell.procedure['Reference Test'].step(1)
 cell.procedure['Reference Test'].experiment('Discharge Pulses').cycle(3).discharge(0)
 ```
 
-This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://congenial-adventure-mz797n5.pages.github.io/examples/filtering-data>) example to see this in action.
+This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://congenial-adventure-mz797n5.pages.github.io/examples/filtering-data.html) example to see this in action.
 
 See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
 - [Importing data](https://congenial-adventure-mz797n5.pages.github.io/user_guide/importing_data.html)
@@ -39,8 +39,8 @@ PyProBE works with numerous cyclers. For guidance on how to export your data to 
 <summary><strong style="font-size: 1.2em;">2. Accelerate battery data exploration</strong></summary>
 
 PyProBE has a built-in [plotting](https://congenial-adventure-mz797n5.pages.github.io/api/pyprobe.plot.html) module for fast and flexible visualisation of battery data. It also includes a graphical user interface (GUI) 
-for exploring data interactively, with almost no code. See the 
-[getting started](./docs/source/examples/getting-started.ipynb) example to try the GUI.
+for exploring data interactively, with almost no code. Run the 
+[getting started](./docs/source/examples/getting-started.ipynb) example locally to try the GUI.
 
 ![PyProBE Dashboard](./docs/source/user_guide/images/Dashboard.png)
 
