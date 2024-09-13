@@ -25,7 +25,7 @@ cell.procedure['Reference Test'].step(1)
 cell.procedure['Reference Test'].experiment('Discharge Pulses').cycle(3).discharge(0)
 ```
 
-This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://congenial-adventure-mz797n5.pages.github.io/examples/filtering-data>) example to see this in action.
+This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://congenial-adventure-mz797n5.pages.github.io/examples/filtering-data.html) example to see this in action.
 
 See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
 - [Importing data](https://congenial-adventure-mz797n5.pages.github.io/user_guide/importing_data.html)
