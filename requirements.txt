@@ -122,7 +122,7 @@ platformdirs==4.2.2
     # via pooch
 plotly==5.23.0
     # via PyProBE (pyproject.toml)
-polars==1.4.1
+polars==1.7.1
     # via PyProBE (pyproject.toml)
 pooch==1.8.2
     # via pybamm
