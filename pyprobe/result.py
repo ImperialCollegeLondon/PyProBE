@@ -8,19 +8,24 @@ import polars as pl
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field
 
-from pyprobe.units import Units
+from pyprobe.units import unit_from_regexp
 
 
 class Result(BaseModel):
-    """A result object for returning data and plotting.
+    """A class for holding any data in PyProBE.
 
-    Args:
-        base_dataframe (Union[pl.LazyFrame, pl.DataFrame]):
-            The data as a polars DataFrame or LazyFrame.
-        info (Dict[str, Union[str, int, float]]):
-            A dictionary containing test info.
-        column_definitions (Dict[str, str], optional):
-            A dictionary containing the definitions of the columns in the data.
+    A Result object is the base type for every data object in PyProBE. This class
+    includes all of the main methods for returning and describing any data in PyProBE.
+
+    Key attributes for returning data:
+        - :attr:`data`: The data as a Polars DataFrame.
+        - :meth:`get`: Get a column from the data as a NumPy array.
+
+    Key attributes for describing the data:
+        - :attr:`info`: A dictionary containing information about the cell.
+        - :attr:`column_definitions`: A dictionary of column definitions.
+        - :meth:`print_definitions`: Print the column definitions.
+        - :attr:`column_list`: A list of column names.
     """
 
     class Config:
@@ -31,7 +36,7 @@ class Result(BaseModel):
     base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
     """The data as a polars DataFrame or LazyFrame."""
     info: Dict[str, Optional[str | int | float]]
-    """A dictionary containing test info."""
+    """Dictionary containing information about the cell."""
     column_definitions: Dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
 
@@ -83,6 +88,9 @@ class Result(BaseModel):
 
         Returns:
             pl.DataFrame: The data as a polars DataFrame.
+
+        Raises:
+            ValueError: If no data exists for this filter.
         """
         if isinstance(self.base_dataframe, pl.LazyFrame):
             self.base_dataframe = self.base_dataframe.collect()
@@ -102,7 +110,7 @@ class Result(BaseModel):
     def get(
         self, *column_names: str
     ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
-        """Return one or more columns of the data as numpy arrays.
+        """Return one or more columns of the data as seperate 1D numpy arrays.
 
         Args:
             column_names (str): The column name(s) to return.
@@ -110,6 +118,10 @@ class Result(BaseModel):
         Returns:
             Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
                 The column(s) as numpy array(s).
+
+        Raises:
+            ValueError: If no column names are provided.
+            ValueError: If a column name is not in the data.
         """
         if not column_names:
             raise ValueError("At least one column name must be provided.")
@@ -129,6 +141,10 @@ class Result(BaseModel):
 
         Returns:
             NDArray[np.float64]: The column as a numpy array.
+
+        Raises:
+            ValueError: If the column name is not in the data.
+            ValueError: If no column name is provided.
         """
         column = self.get(column_name)
         if not isinstance(column, np.ndarray):
@@ -136,13 +152,16 @@ class Result(BaseModel):
         return column
 
     def array(self, *filtering_column_names: str) -> NDArray[np.float64]:
-        """Return the data as a numpy array.
+        """Return the data as a single numpy array.
 
         Args:
             *filtering_column_names (str): The column names to return.
 
         Returns:
-            NDArray[np.float64]: The data as a numpy array.
+            NDArray[np.float64]: The data as a single numpy array.
+
+        Raises:
+            ValueError: If a column name is not in the data.
         """
         if len(filtering_column_names) == 0:
             return self.data.to_numpy()
@@ -152,6 +171,17 @@ class Result(BaseModel):
     def _get_filtered_array(
         self, filtering_column_names: Tuple[str, ...]
     ) -> NDArray[np.float64]:
+        """Return the data as a single numpy array from a list of column names.
+
+        Args:
+            filtering_column_names (Tuple[str, ...]): The column names to return.
+
+        Returns:
+            NDArray[np.float64]: The data as a single numpy array.
+
+        Raises:
+            ValueError: If a column name is not in the data.
+        """
         for column_name in filtering_column_names:
             self._check_units(column_name)
             if column_name not in self.base_dataframe.collect_schema().names():
@@ -168,9 +198,12 @@ class Result(BaseModel):
 
         Args:
             column_name (str): The column name to convert to.
+
+        Raises:
+            ValueError: If the column name is not in the data.
         """
         if column_name not in self.base_dataframe.collect_schema().names():
-            converter_object = Units.from_regexp(column_name)
+            converter_object = unit_from_regexp(column_name)
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default_unit()
                 self.base_dataframe = self.base_dataframe.with_columns(instruction)
@@ -189,11 +222,15 @@ class Result(BaseModel):
 
     @property
     def quantities(self) -> List[str]:
-        """Return the quantities of the data, with unit information removed."""
+        """The quantities of the data, with unit information removed.
+
+        Returns:
+            List[str]: The quantities of the data.
+        """
         _quantities = []
         for _, column in enumerate(self.column_list):
             try:
-                quantity = Units.from_regexp(column).input_quantity
+                quantity = unit_from_regexp(column).input_quantity
                 _quantities.append(quantity)
             except ValueError:
                 continue
@@ -201,7 +238,11 @@ class Result(BaseModel):
 
     @property
     def column_list(self) -> List[str]:
-        """Return a list of the columns in the data."""
+        """The columns in the data.
+
+        Returns:
+            List[str]: The columns in the data.
+        """
         return self.base_dataframe.collect_schema().names()
 
     def define_column(self, column_name: str, definition: str) -> None:
@@ -219,8 +260,8 @@ class Result(BaseModel):
 
     def clean_copy(
         self,
-        dataframe: Optional[Union[pl.DataFrame, pl.LazyFrame]] = pl.DataFrame({}),
-        column_definitions: Dict[str, str] = {},
+        dataframe: Optional[Union[pl.DataFrame, pl.LazyFrame]] = None,
+        column_definitions: Optional[Dict[str, str]] = None,
     ) -> "Result":
         """Create a copy of the result object with info dictionary but without data.
 
@@ -233,6 +274,10 @@ class Result(BaseModel):
         Returns:
             Result: A new result object with the specified data.
         """
+        if dataframe is None:
+            dataframe = pl.DataFrame({})
+        if column_definitions is None:
+            column_definitions = {}
         return Result(
             base_dataframe=dataframe,
             info=self.info,
@@ -244,14 +289,21 @@ class Result(BaseModel):
     ) -> None:
         """Add new data columns to the result object.
 
-        The data must be time series data with a date column.
+        The data must be time series data with a date column. The new data is joined to
+        the base dataframe on the date column, and the new data columns are interpolated
+        to fill in missing values.
 
         Args:
             new_data (pl.DataFrame | pl.LazyFrame):
                 The new data to add to the result object.
             date_column_name (str):
                 The name of the column in the new data containing the date.
+
+        Raises:
+            ValueError: If the base dataframe has no date column.
         """
+        if "Date" not in self.column_list:
+            raise ValueError("No date column in the base dataframe.")
         # get the columns of the new data
         new_data_cols = new_data.collect_schema().names()
         new_data_cols.remove(date_column_name)

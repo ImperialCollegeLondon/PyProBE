@@ -53,6 +53,7 @@ dev = [
     "pydata-sphinx-theme", # for theme
     "nbsphinx", # integrate notebooks in docs
     "xlsxwriter", # write to Excel from polars
+    "autodoc_pydantic",
 ]
 
 [tool.mypy]

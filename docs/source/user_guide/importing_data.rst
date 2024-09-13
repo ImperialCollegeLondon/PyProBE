@@ -3,13 +3,14 @@ Importing Data
 
 Making a cell object
 --------------------
-PyProBE stores all experimental data and information in a  :class:`pyprobe.cell.Cell` 
-object. It has two main attributes: a dictionary of cell details and experimental info 
-(:attr:`pyprobe.cell.Cell.info`) and a dictionary of experimental procedures performed 
-on the cell (:attr:`pyprobe.cell.Cell.procedure`).
+PyProBE stores all experimental data and information in a :class:`pyprobe.cell.Cell` 
+object. It has two main attributes: 
+
+- a dictionary of cell details and experimental info (:attr:`pyprobe.cell.Cell.info`) 
+- a dictionary of experimental procedures performed on the cell (:attr:`pyprobe.cell.Cell.procedure`).
 
 A cell object can be created by providing an info dictionary as a keyword argument to 
-`info`:
+``info``:
 
 .. code-block:: python
 
@@ -25,15 +26,15 @@ A cell object can be created by providing an info dictionary as a keyword argume
    # Create a cell object
    cell = pyprobe.Cell(info = info_dictionary)
 
-The info dictionary can contain any number of key-value pairs. The only required key is
-'Name', which is used to identify the cell in plots. PyProBE will verify that the 
-info dictionary contains the 'Name' field. If it does not, it will fill this field with
-'Default Name'.
+The ``info`` dictionary can contain any number of key-value pairs. The only required key is
+``'Name'``, which is used to identify the cell in plots. PyProBE will verify that the 
+``info`` dictionary contains the ``'Name'`` field. If it does not, it will fill this field with
+``'Default Name'``.
 
 Converting data to PyProBE Format
 ---------------------------------
 PyProBE defines a Procedure as a dataset collected from a single run of an experimental
-procedure created on a battery cycler. Throughout its life, a cell will likely undergo
+protocol created on a battery cycler. Throughout its life, a cell will likely undergo
 multiple procedures, such as beginning-of-life testing, degradation cycles, reference 
 performance tests (RPTs) etc. 
 
@@ -72,7 +73,7 @@ This will process all files in the folder that match the pattern
 :code:`cycler_file*.csv`, e.g. :code:`cycler_file_1.csv`, :code:`cycler_file_2.csv`, 
 etc.
 
-For BioLogic Modulo Bat data:
+The Biologic Modulo Bat format has its own reader ``'biologic_MB'``:
 
 .. code-block:: python
 
@@ -92,7 +93,9 @@ experimental procedure that generated the data. See the :ref:`writing_a_readme_f
 section for guidance.
 
 A data file in the standard PyProBE format can be added to a cell object using the
-:func:`~pyprobe.cell.Cell.add_procedure` method:
+:func:`~pyprobe.cell.Cell.add_procedure` method. A procedure must be given a name when 
+it is imported. Choose something descriptive, so it is easy to distinguish between 
+different procedures that have been run on the same cell.
 
 .. code-block:: python
 
@@ -135,7 +138,7 @@ Once you have an Experiment Record, you can create a list of cells using the
 .. code-block:: python
 
    cell_list = pyprobe.make_cell_list(record_filepath = 'path/to/experiment_record.xlsx',
-                                   worksheet_name = 'Sample experiment')
+                                      worksheet_name = 'Sample experiment')
 
 This function creates a list of cells, where the :attr:`~pyprobe.cell.Cell.info` 
 dictionary is populated with the information from the Experiment Record.
@@ -178,14 +181,14 @@ parametrically. The steps are as follows:
 Adding data not from a cycler
 -----------------------------
 In your battery experiment, it is likely that you will be collecting data from sources
-additional to your battery cycler. This can be added to your `~pyprobe.filters.Procedure`
+additional to your battery cycler. This can be added to your :class:`~pyprobe.filters.Procedure`
 object after it has been created with its :func:`~pyprobe.filters.Procedure.add_external_data`
 method.
 
 The data that you provide must be timeseries, with a column that can be interpreted in
-DateTime format. This is usually a string that may appear like: `"2024-02-29 09:19:58.554"`.
+DateTime format. This is usually a string that may appear like: ``"2024-02-29 09:19:58.554"``.
 PyProBE will interpolate your data into the time series of the cycling data already there,
-so it will be filtered as normal.
+so it can be filtered as normal.
 
 
 .. footbibliography::

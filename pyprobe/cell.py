@@ -14,15 +14,7 @@ from pyprobe.readme_processor import process_readme
 
 
 class Cell(BaseModel):
-    """A class for a cell in a battery experiment.
-
-    Args:
-        info (dict): Dictionary containing information about the cell.
-            The dictionary must contain a 'Name' field, other information may include
-            channel number or other rig information.
-        procedure (dict, optional): Dictionary containing the procedures that have been
-            run on the cell. Defaults to an empty dictionary.
-    """
+    """A class for a cell in a battery experiment."""
 
     info: Dict[str, Optional[str | int | float]]
     """Dictionary containing information about the cell.
@@ -33,7 +25,7 @@ class Cell(BaseModel):
     """Dictionary containing the procedures that have been run on the cell."""
 
     @field_validator("info")
-    def _check_and_set_name(
+    def check_and_set_name(
         cls, info: Dict[str, Optional[str | int | float]]
     ) -> Dict[str, Optional[str | int | float]]:
         """Validate the `info` field.
@@ -76,7 +68,10 @@ class Cell(BaseModel):
 
         Args:
             cycler (str):
-                The cycler used to produce the data. E.g. 'neware' or 'biologic'.
+                The cycler used to produce the data. Available cyclers are:
+                - 'neware'
+                - 'biologic'
+                - 'biologic_MB' (for Modulo Bat Biologic data)
             folder_path (str):
                 The path to the folder containing the data file.
             input_filename (str | function):
@@ -86,8 +81,8 @@ class Cell(BaseModel):
                 A filename string or a function to generate the file name for PyProBE
                 data.
             filename_inputs (list):
-                The list of inputs to input_filename and output_filename.
-                These must be keys of the cell info.
+                The list of inputs to input_filename and output_filename, if they are
+                functions. These must be keys of the cell info.
         """
         input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_inputs
@@ -131,7 +126,10 @@ class Cell(BaseModel):
                 data.
             column_dict (dict):
                 A dictionary mapping the column names in the generic file to the PyProBE
-                column names.
+                column names. The keys of the dictionary are the cycler column names and
+                the values are the PyProBE column names. You must use asterisks to
+                indicate the units of the columns.
+                E.g. :code:`{"V (*)": "Voltage [*]"}`.
             filename_inputs (list):
                 The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
@@ -172,13 +170,14 @@ class Cell(BaseModel):
             folder_path (str):
                 The path to the folder containing the data file.
             filename (str | function):
-                A filename string or a function to generate the file name for PyProBE d
-                ata.
+                A filename string or a function to generate the file name for PyProBE
+                data.
             filename_inputs (Optional[list]):
                 The list of inputs to filename_function. These must be keys of the cell
                 info.
             readme_name (str, optional):
-                The name of the readme file. Defaults to "README.yaml".
+                The name of the readme file. Defaults to "README.yaml". It is assumed
+                that the readme file is in the same folder as the data file.
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         output_data_path = self._verify_parquet(output_data_path)
@@ -201,7 +200,7 @@ class Cell(BaseModel):
 
     @staticmethod
     def _verify_parquet(filename: str) -> str:
-        """Function to verify the filename is in the correct format.
+        """Function to verify the filename is in the correct parquet format.
 
         Args:
             filename (str): The filename to verify.
@@ -222,7 +221,7 @@ class Cell(BaseModel):
         importer: basecycler.BaseCycler,
         output_data_path: str,
     ) -> None:
-        """Import data from a cycler file.
+        """Import data from a cycler file and write to a PyProBE parquet file.
 
         Args:
             importer (BaseCycler): The cycler object to import the data.
@@ -239,13 +238,14 @@ class Cell(BaseModel):
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
     ) -> str:
-        """Function to generate the input name for the data file.
+        """Function to generate the filename for the data, if provided as a function.
 
         Args:
             info (dict): The info entry for the data file.
             filename_function (function): The function to generate the input name.
-            filename_inputs (list): The list of inputs to filename_function.
-                These must be keys of the cell info.
+            filename_inputs (list):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
 
         Returns:
             str: The input name for the data file.
@@ -289,14 +289,14 @@ def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
 ) -> List[Cell]:
-    """Function to make a list of cell objects from a record of tests.
+    """Function to make a list of cell objects from a record of tests in Excel format.
 
     Args:
         record_filepath (str): The path to the experiment record .xlsx file.
         worksheet_name (str): The worksheet name to read from the record.
 
     Returns:
-        list: The list of cell objects
+        list: The list of cell objects.
     """
     record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
 

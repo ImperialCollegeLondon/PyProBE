@@ -26,6 +26,7 @@ Submodules
    pyprobe.filters
    pyprobe.plot
    pyprobe.rawdata
+   pyprobe.readme_processor
    pyprobe.result
    pyprobe.typing
    pyprobe.units

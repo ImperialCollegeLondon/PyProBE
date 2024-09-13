@@ -11,13 +11,10 @@ from pyprobe.result import Result
 
 
 class Pulsing(BaseModel):
-    """A pulsing experiment in a battery procedure.
-
-    Args:
-        input_data (Experiment): The raw data for the pulsing experiment.
-    """
+    """A pulsing experiment in a battery procedure."""
 
     input_data: Experiment
+    """The input data for the pulsing experiment."""
 
     def pulse(self, pulse_number: int) -> Step:
         """Return a step object for a pulse in the pulsing experiment.

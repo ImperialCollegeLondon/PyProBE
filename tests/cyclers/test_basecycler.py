@@ -136,12 +136,12 @@ def test_map_columns(column_dict):
         },
     }
 
-    assert BaseCycler.map_columns(dict_with_extra, column_list) == expected_map
+    assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
 
     # missing columns
     column_list = ["DateTime", "T [s]", "V [V]", "I [mA]", "Q [Ah]", "Count"]
     expected_map.pop("Temperature")
-    assert BaseCycler.map_columns(dict_with_extra, column_list) == expected_map
+    assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
 
 
 def test_init(sample_cycler_instance, sample_dataframe):

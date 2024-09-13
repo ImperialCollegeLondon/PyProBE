@@ -10,13 +10,10 @@ from pyprobe.result import Result
 
 
 class Cycling(BaseModel):
-    """A cycling experiment in a battery procedure.
-
-    Args:
-        input_data (Experiment): The input_data to analyse.
-    """
+    """A cycling experiment in a battery procedure."""
 
     input_data: Experiment
+    """The input data for the cycling experiment."""
 
     def _create_capacity_throughput(self) -> None:
         """Calculate the capcity throughput of the input_data."""

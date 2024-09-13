@@ -55,7 +55,7 @@ It is possible to filter data by a number of methods:
 
 RawData objects
 ---------------
-Any filter applied to a cell returns a :class:`pyprobe.rawdata.RawData` object. This is
+Any filter applied to a cell returns a :class:`~pyprobe.rawdata.RawData` object. This is
 a special type of :class:`~pyprobe.result.Result` object that is designed to hold cell
 experimental data processed by PyProBE. It therefore has all the attributes of the
 :class:`~pyprobe.result.Result` class. This includes:
@@ -77,7 +77,7 @@ Or you can access individual columns as 1D numpy arrays by calling the
 
 .. code-block:: python
 
-   voltage = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1).step(1).get("Voltage [V]")
+   voltage, current = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1).step(1).get("Voltage [V]", "Current [A]")
 
 Accessing columns directly with this method is useful for converting data to unit 
 variants:

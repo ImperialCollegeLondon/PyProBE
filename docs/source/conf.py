@@ -25,16 +25,22 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "nbsphinx",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
-autodoc_member_order = "bysource"
+
+
+# -- Options for autodoc extension -------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 autodoc_typehints = "description"
 autodoc_default_options = {
-    "exclude-members": "model_computed_fields, model_config, model_fields, Config",
+    "exclude-members": "model_post_init, Config",
+    "show-inheritance": True,
+    "member-order": "bysource",
 }
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
@@ -48,3 +54,10 @@ bibtex_tooltips = True
 autosummary_generate = True
 nbsphinx_execute = "always"  # Always execute notebooks
 nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
+
+# -- sphinxcontrib-autodoc_pydantic configuration ----------------------------
+autodoc_pydantic_model_show_json = False
+autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_member_order = "bysource"
+autodoc_pydantic_model_show_field_summary = False
+autodoc_pydantic_model_hide_paramlist = False

@@ -25,21 +25,21 @@ Setup
 .. literalinclude:: ../../../pyprobe/analysis/differentiation.py
     :language: python
     :linenos:
-    :lines: 13-22
+    :lines: 15-21
 
 3. Some analysis classes have multiple methods that need to pass information to each 
    other. For instance the :class:`~pyprobe.analysis.degradation_mode_analysis.DMA`
    analysis class first calculates stoichiometry limits with the 
    :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv` method, that are then
    used in the :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes`
-   method. So, when `fit_ocv` is called, it saves this result in `stoichiometry_limits`
-   for use later. If they are required, these attributes must also be defined at the 
-   top of the class.
+   method. So, when :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv` is called, 
+   it saves this result in `stoichiometry_limits` for use later. If they are required, 
+   these attributes must also be defined at the top of the class.
 
 .. literalinclude:: ../../../pyprobe/analysis/degradation_mode_analysis.py
     :language: python
     :linenos:
-    :lines: 15-29
+    :lines: 17-31
 
 
 Then you can add any additional methods to perform your calculations. 

@@ -14,14 +14,11 @@ from pyprobe.typing import PyProBEDataType
 
 # 1. Define the class as a Pydantic BaseModel.
 class Differentiation(BaseModel):
-    """A class for differentiating experimental data.
-
-    Args:
-        input_data (PyProBERawDataType): The raw data to analyse.
-    """
+    """A class for differentiating experimental data."""
 
     # 2. Define the input_data attribute, giving it a type
     input_data: PyProBEDataType
+    """The input data for the differentiation."""
 
     def differentiate_FD(  # 1. Define the method
         self,

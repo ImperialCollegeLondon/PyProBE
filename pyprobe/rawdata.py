@@ -1,10 +1,9 @@
 """A module for the RawData class."""
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import polars as pl
 from pydantic import Field, field_validator
 
-# from pyprobe.analysis.differentiation import Differentiation
 from pyprobe.result import Result
 
 required_columns = [
@@ -31,25 +30,35 @@ default_column_definitions = {
 
 
 class RawData(Result):
-    """A RawData object for returning data.
+    """A class for holding data in the PyProBE format.
 
-    Args:
-        base_dataframe (Union[pl.LazyFrame, pl.DataFrame]):
-            The data as a polars DataFrame or LazyFrame.
-        info (Dict[str, Union[str, int, float]]):
-            A dictionary containing test info.
-        column_definitions (Dict[str, str], optional):
-            A dictionary containing the definitions of the columns in the data.
+    This is the default object returned when data is loaded into PyProBE with the
+    standard methods of the `pyprobe.cell.Cell` class. It is a subclass of the
+    `pyprobe.result.Result` class so can be used in the same way as other result
+    objects.
+
+    The RawData object is stricter than the `pyprobe.result.Result` object in that it
+    requires the presence of specific columns in the data. These columns are:
+        - `Time [s]`
+        - `Step`
+        - `Cycle`
+        - `Event`
+        - `Current [A]`
+        - `Voltage [V]`
+        - `Capacity [Ah]`
+
+    This defines the PyProBE format.
     """
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
-    column_definitions: Dict[str, str] = Field(default_factory=dict)
-    """A dictionary containing the definitions of the columns in the data."""
+    column_definitions: Dict[str, str] = Field(
+        default_factory=lambda: default_column_definitions.copy()
+    )
 
     @field_validator("base_dataframe")
     @classmethod
-    def _check_required_columns(
+    def check_required_columns(
         cls, dataframe: pl.LazyFrame | pl.DataFrame
     ) -> "RawData":
         """Check if the required columns are present in the input_data."""
@@ -59,21 +68,13 @@ class RawData(Result):
             raise ValueError(f"Missing required columns: {missing_columns}")
         return dataframe
 
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization method for the RawData model."""
-        self.column_definitions = {
-            key: default_column_definitions[key]
-            for key in self.column_list
-            if key in default_column_definitions
-        }
-
     def zero_column(
         self,
         column: str,
         new_column_name: str,
         new_column_definition: Optional[str] = None,
     ) -> None:
-        """Add a new column to a dataframe or lazyframe, zeroed to the first value.
+        """Set the first value of a column to zero.
 
         Args:
             column (str): The column to zero.
@@ -91,10 +92,10 @@ class RawData(Result):
 
     @property
     def capacity(self) -> float:
-        """Calculate the capacity passed during the step.
+        """Calculate the net capacity passed.
 
         Returns:
-            float: The capacity passed during the step.
+            float: The net capacity passed.
         """
         return abs(self.data["Capacity [Ah]"].max() - self.data["Capacity [Ah]"].min())
 
@@ -116,8 +117,8 @@ class RawData(Result):
 
         Args:
             reference_capacity (Optional[float]): The reference capacity value.
-            reference_charge (Optional[RawData]): A rawdata object containing a charge
-                cycle to use as a reference.
+            reference_charge (Optional[RawData]):
+                A RawData object containing a charge to use as a reference.
         """
         if reference_capacity is None:
             reference_capacity = (
@@ -195,26 +196,3 @@ class RawData(Result):
                 + reference_capacity
             ).alias("Capacity - Referenced [Ah]")
         )
-
-    # def gradient(
-    #     self, x: str, y: str, method: str, *args: Any, **kwargs: Any
-    # ) -> Result:
-    #     """Calculate the gradient of the data from a variety of methods.
-
-    #     Args:
-    #         method (str): The differentiation method.
-    #         x (str): The x data column.
-    #         y (str): The y data column.
-    #         *args: Additional arguments.
-    #         **kwargs: Additional keyword arguments.
-
-    #     Returns:
-    #         Result: The result object from the gradient method.
-    #     """
-    #     differentiation = Differentiation(rawdata=self)
-    #     if method == "LEAN":
-    #         return differentiation.differentiate_LEAN(x, y, *args, **kwargs)
-    #     elif method == "Finite Difference":
-    #         return differentiation.differentiate_FD(x, y, *args, **kwargs)
-    #     else:
-    #         raise ValueError("Invalid differentiation method.")
