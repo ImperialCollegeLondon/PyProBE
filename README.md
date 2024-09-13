@@ -39,8 +39,8 @@ PyProBE works with numerous cyclers. For guidance on how to export your data to 
 <summary><strong style="font-size: 1.2em;">2. Accelerate battery data exploration</strong></summary>
 
 PyProBE has a built-in [plotting](https://congenial-adventure-mz797n5.pages.github.io/api/pyprobe.plot.html) module for fast and flexible visualisation of battery data. It also includes a graphical user interface (GUI) 
-for exploring data interactively, with almost no code. See the 
-[getting started](./docs/source/examples/getting-started.ipynb) example to try the GUI.
+for exploring data interactively, with almost no code. Run the 
+[getting started](./docs/source/examples/getting-started.ipynb) example locally to try the GUI.
 
 ![PyProBE Dashboard](./docs/source/user_guide/images/Dashboard.png)
 
