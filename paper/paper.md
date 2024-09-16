@@ -6,6 +6,7 @@ tags:
     - electrochemistry
     - battery cycling
     - battery testing
+    - battery degradation
     - data processing
     - data analysis
 authors:
