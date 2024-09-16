@@ -6,7 +6,7 @@ If you have a suggestion, please open an issue describing in detail the change y
 
 If you would like to contribute code, please:
 
-1. Install PyProBE with [developer settings](https://congenial-adventure-mz797n5.pages.github.io/developer_guide/developer_installation.html)
+1. Install PyProBE with [developer settings](https://imperialcollegelondon.github.io/PyProBE/developer_guide/developer_installation.html)
 
 2. Open an issue to detail the change/addition you wish to make, unless one already exists
 
@@ -38,10 +38,10 @@ Additions to the code should be made in accordance with the structure of PyProBE
 maximise compatibility and ensure it is a maintainable package. Guidance for writing
 code for PyProBE includes:
 1. DataFrame operations should only be done using polars expressions. Data should be kept by default in polars LazyFrame format and only converted to DataFrame if needed for a particular operation.
-2. Analysis classes should be written in the format described in the [documentation](https://congenial-adventure-mz797n5.pages.github.io/developer_guide/contributing_to_the_analysis_module.html).
+2. Analysis classes should be written in the format described in the [documentation](https://imperialcollegelondon.github.io/PyProBE/developer_guide/contributing_to_the_analysis_module.html).
 
 ## Viewing the API documentation
 
 API documentation is built in html format, and stored locally in docs/build/html/. This can be viewed in your browser at docs/build/html/index.html.
 
-The documentation is also continuously deployed via GitHub Actions, and can be viewed [here](https://congenial-adventure-mz797n5.pages.github.io).
+The documentation is also continuously deployed via GitHub Actions, and can be viewed [here](https://imperialcollegelondon.github.io/PyProBE/).
