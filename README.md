@@ -2,6 +2,8 @@
 PyProBE is a Python package designed to simplify and accelerate the process of analysing data from 
 battery cyclers.
 
+PyProBE is documented [here](https://congenial-adventure-mz797n5.pages.github.io).
+
 ## Objectives
 <details open>
 <summary><strong style="font-size: 1.2em;">1. Ease of use</strong></summary>
