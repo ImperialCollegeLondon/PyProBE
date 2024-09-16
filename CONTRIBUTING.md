@@ -44,4 +44,4 @@ code for PyProBE includes:
 
 API documentation is built in html format, and stored locally in docs/build/html/. This can be viewed in your browser at docs/build/html/index.html.
 
-The documentation is also continuously deployed via GitHub Actions, and can be viewed [here](https://congenial-adventure-mz797n5.pages.github.io).
+The documentation is also continuously deployed via GitHub Actions, and can be viewed [here](https://imperialcollegelondon.github.io/PyProBE/).

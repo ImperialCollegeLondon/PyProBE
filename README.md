@@ -2,7 +2,7 @@
 PyProBE (Python Processing for Battery Experiments) is a Python package designed to simplify and accelerate the process of analysing data from 
 battery cyclers.
 
-PyProBE is documented [here](https://congenial-adventure-mz797n5.pages.github.io). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://imperialcollegelondon.github.io/PyProBE/examples/examples.html).
+PyProBE is documented [here](https://imperialcollegelondon.github.io/PyProBE/). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://imperialcollegelondon.github.io/PyProBE/examples/examples.html).
 
 ## Installing PyProBE
 Please follow the [user installation guide](https://imperialcollegelondon.github.io/PyProBE/user_guide/installation.html) to install PyProBE.
@@ -32,7 +32,7 @@ cell.procedure['Reference Test'].experiment('Discharge Pulses').cycle(3).dischar
 
 This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://imperialcollegelondon.github.io/PyProBE/examples/filtering-data.html) example to see this in action.
 
-See the [documentation](https://congenial-adventure-mz797n5.pages.github.io) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
+See the [documentation](https://imperialcollegelondon.github.io/PyProBE/) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
 - [Importing data](https://imperialcollegelondon.github.io/PyProBE/user_guide/importing_data.html)
 - [Accessing data](https://imperialcollegelondon.github.io/PyProBE/user_guide/accessing_data.html)
 - [Plotting](https://imperialcollegelondon.github.io/PyProBE/user_guide/plotting.html)
