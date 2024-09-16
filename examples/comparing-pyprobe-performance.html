@@ -477,14 +477,14 @@ document.write(`
 
     <span class="k">return</span> <span class="n">cumulative_time</span><span class="p">,</span> <span class="n">csv_time</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">voltage</span>
 
-<span class="k">def</span> <span class="nf">make_boxplots</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">,</span> <span class="n">log_scale</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">make_boxplots</span><span class="p">(</span><span class="n">total_time_pyprobe</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">,</span> <span class="n">log_scale</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
     <span class="c1"># Create labels for the boxplots</span>
     <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;1: Read file&quot;</span><span class="p">,</span> <span class="s2">&quot;2: Select experiment&quot;</span><span class="p">,</span> <span class="s2">&quot;3: Select cycle&quot;</span><span class="p">,</span> <span class="s2">&quot;4: Select step&quot;</span><span class="p">,</span> <span class="s2">&quot;5: Return voltage&quot;</span><span class="p">]</span>
     <span class="c1"># Create the subplots</span>
     <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="c1"># Boxplot for Polars</span>
-    <span class="n">ax1</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">total_time_polars</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">tick_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">vert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">showfliers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Boxplot for pyprobe</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">total_time_pyprobe</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">tick_labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">vert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">showfliers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;PyProBE Execution Time&#39;</span><span class="p">)</span>
     <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Cumulative Time (seconds)&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">log_scale</span><span class="p">:</span>
@@ -501,23 +501,23 @@ document.write(`
 <br/></pre></div>
 </div>
 </div>
-<p>Running the tests shows the initial overhead for PyProBE to read and filter the data is zero. This is because of the Lazy implementation where all the computation is delayed until the final request for data is made. Overall, it is faster than Pandas as the polars backend is able to optimize the filtering process, instead of requiring filters to be performed one-by-one.</p>
+<p>Running the tests shows the initial overhead for PyProBE to read and filter the data is zero. This is because of the Lazy implementation where all the computation is delayed until the final request for data is made. Overall, it is faster than Pandas as the pyprobe backend is able to optimize the filtering process, instead of requiring filters to be performed one-by-one.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">repeats</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">total_time_polars</span><span class="p">,</span> <span class="n">polars_time</span><span class="p">,</span> <span class="n">polars_voltage</span>  <span class="o">=</span> <span class="n">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware.parquet&#39;</span><span class="p">)</span>
+<span class="n">total_time_pyprobe</span><span class="p">,</span> <span class="n">pyprobe_time</span><span class="p">,</span> <span class="n">pyprobe_voltage</span>  <span class="o">=</span> <span class="n">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware.parquet&#39;</span><span class="p">)</span>
 <span class="n">total_time_pandas</span><span class="p">,</span> <span class="n">csv_time_pandas</span><span class="p">,</span> <span class="n">pandas_time</span><span class="p">,</span> <span class="n">pandas_voltage</span> <span class="o">=</span> <span class="n">measure_pandas</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware.parquet&#39;</span><span class="p">)</span>
-<span class="n">make_boxplots</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">)</span>
+<span class="n">make_boxplots</span><span class="p">(</span><span class="n">total_time_pyprobe</span><span class="p">,</span> <span class="n">total_time_pandas</span><span class="p">)</span>
 
-<span class="n">median_total_time_idx_polars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])[</span><span class="n">total_time_polars</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">median_total_time_idx_pyprobe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])[</span><span class="n">total_time_pyprobe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
 <span class="n">median_total_time_idx_pandas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])[</span><span class="n">total_time_pandas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
 
-<span class="n">median_total_time_polars</span> <span class="o">=</span> <span class="n">total_time_polars</span><span class="p">[:,</span> <span class="n">median_total_time_idx_polars</span><span class="p">]</span>
+<span class="n">median_total_time_pyprobe</span> <span class="o">=</span> <span class="n">total_time_pyprobe</span><span class="p">[:,</span> <span class="n">median_total_time_idx_pyprobe</span><span class="p">]</span>
 <span class="n">median_total_time_pandas</span> <span class="o">=</span> <span class="n">total_time_pandas</span><span class="p">[:,</span> <span class="n">median_total_time_idx_pandas</span><span class="p">]</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The median execution time for the filtering query in PyProBE is </span><span class="si">{</span><span class="n">median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">median_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> times faster than Pandas.&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The median execution time for the filtering query in PyProBE is </span><span class="si">{</span><span class="n">median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">median_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> times faster than Pandas.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -533,7 +533,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 2.75 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 2.70 times faster than Pandas.
 </pre></div></div>
 </div>
 <p>Confirm that the same data has been retrieved:</p>
@@ -541,10 +541,10 @@ The median execution time for the filtering query in PyProBE is 2.75 times faste
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">polars_voltage</span><span class="p">,</span> <span class="n">pandas_voltage</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">pyprobe_voltage</span><span class="p">,</span> <span class="n">pandas_voltage</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">polars_time</span><span class="p">,</span> <span class="n">polars_voltage</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PyProBE&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pyprobe_time</span><span class="p">,</span> <span class="n">pyprobe_voltage</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PyProBE&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pandas_time</span><span class="p">,</span> <span class="n">pandas_voltage</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Pandas&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
@@ -558,7 +558,7 @@ The median execution time for the filtering query in PyProBE is 2.75 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f29a164e2d0&gt;
+&lt;matplotlib.legend.Legend at 0x7fe01bf64d10&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -574,12 +574,11 @@ The median execution time for the filtering query in PyProBE is 2.75 times faste
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">boxplot</span><span class="p">([</span><span class="n">csv_time_pandas</span><span class="p">,</span> <span class="n">total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]],</span> <span class="n">tick_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Read from .csv&#39;</span><span class="p">,</span> <span class="s1">&#39;Read from .parquet&#39;</span><span class="p">],</span> <span class="n">vert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">showfliers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">boxplot</span><span class="p">([</span><span class="n">csv_time_pandas</span><span class="p">,</span> <span class="n">total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]],</span> <span class="n">tick_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Read from .csv&#39;</span><span class="p">,</span> <span class="s1">&#39;Read from .parquet&#39;</span><span class="p">],</span> <span class="n">vert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">showfliers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Time (seconds)&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-<span class="n">average_difference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">csv_time_pandas</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])</span>
+<span class="n">average_difference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">csv_time_pandas</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading from .parquet is on average </span><span class="si">{</span><span class="n">average_difference</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> times faster than reading from .csv&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -596,7 +595,7 @@ The median execution time for the filtering query in PyProBE is 2.75 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Reading from .parquet is on average 21.60 times faster than reading from .csv
+Reading from .parquet is on average 20.74 times faster than reading from .csv
 </pre></div></div>
 </div>
 <p>The sample dataset is not large, covering only around a week of testing. Battery degradation experiments can last for years, so the test below demonstrates the scalability of PyProBE to large data sets. We will now repeat our battery experiment multiple times and save the new dataset:</p>
@@ -650,7 +649,7 @@ Reading from .parquet is on average 21.60 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f298110e010&gt;
+&lt;matplotlib.legend.Legend at 0x7fe03f565d90&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -666,32 +665,33 @@ Reading from .parquet is on average 21.60 times faster than reading from .csv
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">repeats</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">rep_total_time_polars</span><span class="p">,</span> <span class="n">rep_pyprobe_time</span><span class="p">,</span> <span class="n">rep_pyprobe_voltage</span> <span class="o">=</span> <span class="n">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware_repeated.parquet&#39;</span><span class="p">)</span>
+<span class="n">rep_total_time_pyprobe</span><span class="p">,</span> <span class="n">rep_pyprobe_time</span><span class="p">,</span> <span class="n">rep_pyprobe_voltage</span> <span class="o">=</span> <span class="n">measure_pyprobe</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware_repeated.parquet&#39;</span><span class="p">)</span>
 <span class="n">rep_total_time_pandas</span><span class="p">,</span> <span class="n">rep_csv_time_pandas</span><span class="p">,</span> <span class="n">rep_pandas_time</span><span class="p">,</span> <span class="n">rep_pandas_voltage</span> <span class="o">=</span> <span class="n">measure_pandas</span><span class="p">(</span><span class="n">repeats</span><span class="p">,</span> <span class="s1">&#39;sample_data_neware_repeated.parquet&#39;</span><span class="p">,</span> <span class="n">test_csv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="n">rep_median_total_time_idx_polars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">rep_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])[</span><span class="n">rep_total_time_polars</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">rep_median_total_time_idx_pyprobe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">rep_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])[</span><span class="n">rep_total_time_pyprobe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
 <span class="n">rep_median_total_time_idx_pandas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">rep_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:])[</span><span class="n">rep_total_time_pandas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
 
-<span class="n">rep_median_total_time_polars</span> <span class="o">=</span> <span class="n">rep_total_time_polars</span><span class="p">[:,</span> <span class="n">rep_median_total_time_idx_polars</span><span class="p">]</span>
+<span class="n">rep_median_total_time_pyprobe</span> <span class="o">=</span> <span class="n">rep_total_time_pyprobe</span><span class="p">[:,</span> <span class="n">rep_median_total_time_idx_pyprobe</span><span class="p">]</span>
 <span class="n">rep_median_total_time_pandas</span> <span class="o">=</span> <span class="n">rep_total_time_pandas</span><span class="p">[:,</span> <span class="n">rep_median_total_time_idx_pandas</span><span class="p">]</span>
 
 <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="s1">&#39;/sample_data_neware_repeated.parquet&#39;</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The median execution time for the filtering query in PyProBE is </span><span class="si">{</span><span class="n">rep_median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">rep_median_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> times faster than Pandas.&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The median execution time for the filtering query in PyProBE is </span><span class="si">{</span><span class="n">rep_median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">rep_median_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> times faster than Pandas.&quot;</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">median_total_time_polars</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PyProBE - 1 week of data&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rep_median_total_time_polars</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;PyProBE - </span><span class="si">{</span><span class="n">n_repeats</span><span class="si">}</span><span class="s1"> weeks of data&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">median_total_time_pyprobe</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PyProBE - 1 week of data&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rep_median_total_time_pyprobe</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;PyProBE - </span><span class="si">{</span><span class="n">n_repeats</span><span class="si">}</span><span class="s1"> weeks of data&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">median_total_time_pandas</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Pandas - 1 week of data&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rep_median_total_time_pandas</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Pandas - </span><span class="si">{</span><span class="n">n_repeats</span><span class="si">}</span><span class="s1"> weeks of data&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;Read file&quot;</span><span class="p">,</span> <span class="s2">&quot;Select experiment&quot;</span><span class="p">,</span> <span class="s2">&quot;Select cycle&quot;</span><span class="p">,</span> <span class="s2">&quot;Select step&quot;</span><span class="p">,</span> <span class="s2">&quot;Return voltage&quot;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Cumulative Time of Median Query (seconds)&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;Read file&quot;</span><span class="p">,</span> <span class="s2">&quot;Select experiment&quot;</span><span class="p">,</span> <span class="s2">&quot;Select cycle&quot;</span><span class="p">,</span> <span class="s2">&quot;Select step&quot;</span><span class="p">,</span> <span class="s2">&quot;Return voltage&quot;</span><span class="p">],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Cumulative Time of Median Query (seconds)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;Period&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 week&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_repeats</span><span class="si">}</span><span class="s2"> weeks&quot;</span><span class="p">,</span> <span class="s1">&#39;Increase Factor&#39;</span><span class="p">],</span>
-    <span class="s1">&#39;PyProBE&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">median_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rep_median_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rep_median_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">median_total_time_polars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span>
+    <span class="s1">&#39;PyProBE&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">median_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rep_median_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rep_median_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">median_total_time_pyprobe</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span>
     <span class="s1">&#39;Pandas&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rep_median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">rep_median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">median_total_time_pandas</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Execution time breakdown:&quot;</span><span class="p">)</span>
@@ -705,12 +705,12 @@ Reading from .parquet is on average 21.60 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 19.15 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 19.32 times faster than Pandas.
 Execution time breakdown:
             Period   PyProBE    Pandas
-0           1 week  0.028297  0.077826
-1         12 weeks  0.035309  0.676067
-2  Increase Factor  1.247811  8.686852
+0           1 week  0.027899  0.075234
+1         12 weeks  0.034777  0.671982
+2  Increase Factor  1.246547  8.931873
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -742,7 +742,7 @@ Execution time breakdown:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f29802906d0&gt;
+&lt;matplotlib.legend.Legend at 0x7fe01ccc6090&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
