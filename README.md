@@ -4,7 +4,10 @@ battery cyclers.
 
 PyProBE is documented [here](https://congenial-adventure-mz797n5.pages.github.io).
 
-## Objectives
+## Installing PyProBE
+Please follow the [user installation guide](https://congenial-adventure-mz797n5.pages.github.io/user_guide/installation.html) to install PyProBE.
+
+## PyProBE Objectives
 <details open>
 <summary><strong style="font-size: 1.2em;">1. Ease of use</strong></summary>
         
@@ -96,9 +99,6 @@ The currently implemented analysis methods includes:
 It is easy to contribute to the analysis module. See the [developer guide](https://congenial-adventure-mz797n5.pages.github.io/developer_guide/contributing_to_the_analysis_module.html)
 and [contributing guidelines](CONTRIBUTING.md).
 </details>
-
-## Installing PyProBE
-Please follow the [user installation guide](https://congenial-adventure-mz797n5.pages.github.io/user_guide/installation.html) to install PyProBE.
 
 ## Contributing to PyProBE
 
