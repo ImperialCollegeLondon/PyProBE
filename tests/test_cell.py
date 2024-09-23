@@ -78,6 +78,47 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     assert_frame_equal(expected_dataframe, saved_dataframe)
 
 
+def test_add_event_start_duplicates():
+    """Test the _add_event_start_duplicates method."""
+    dataframe = pl.DataFrame(
+        {
+            "Step": [1, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2],
+            "Cycle": [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
+            "Event": [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4],
+            "Time [s]": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "Current [A]": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        }
+    )
+    updated_dataframe = Cell._add_event_start_duplicates(dataframe)
+    expected_dataframe = pl.DataFrame(
+        {
+            "Step": [1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2],
+            "Cycle": [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2],
+            "Event": [1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],
+            "Time [s]": [1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 11, 12],
+            "Current [A]": [1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 11, 12],
+            "Event Start": [
+                True,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False,
+            ],
+        }
+    )
+    assert_frame_equal(updated_dataframe, expected_dataframe)
+
+
 def test_process_generic_file(cell_instance):
     """Test the process_generic_file method."""
     folder_path = "tests/sample_data/"

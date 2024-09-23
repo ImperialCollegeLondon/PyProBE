@@ -102,101 +102,7 @@ class Cell(BaseModel):
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
         self._write_parquet(importer, output_data_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
-
-    @validate_call
-    def process_generic_file(
-        self,
-        folder_path: str,
-        input_filename: str | Callable[[str], str],
-        output_filename: str | Callable[[str], str],
-        column_dict: Dict[str, str],
-        filename_inputs: Optional[List[str]] = None,
-    ) -> None:
-        """Convert generic file into PyProBE format.
-
-        Args:
-            folder_path (str):
-                The path to the folder containing the data file.
-            input_filename (str | function):
-                A filename string or a function to generate the file name for the
-                generic data.
-            output_filename (str | function):
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            column_dict (dict):
-                A dictionary mapping the column names in the generic file to the PyProBE
-                column names. The keys of the dictionary are the cycler column names and
-                the values are the PyProBE column names. You must use asterisks to
-                indicate the units of the columns.
-                E.g. :code:`{"V (*)": "Voltage [*]"}`.
-            filename_inputs (list):
-                The list of inputs to input_filename and output_filename.
-                These must be keys of the cell info.
-        """
-        input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_inputs
-        )
-        output_data_path = self._get_data_paths(
-            folder_path, output_filename, filename_inputs
-        )
-        output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            raise ValueError("* characters are not allowed for a complete data path")
-
-        t1 = time.time()
-        importer = basecycler.BaseCycler(
-            input_data_path=input_data_path,
-            column_dict=column_dict,
-        )
-        self._write_parquet(importer, output_data_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
-
-    @validate_call
-    def add_procedure(
-        self,
-        procedure_name: str,
-        folder_path: str,
-        filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
-        readme_name: str = "README.yaml",
-    ) -> None:
-        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
-
-        Args:
-            procedure_name (str):
-                A name to give the procedure. This will be used when calling
-                :code:`cell.procedure[procedure_name]`.
-            folder_path (str):
-                The path to the folder containing the data file.
-            filename (str | function):
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            filename_inputs (Optional[list]):
-                The list of inputs to filename_function. These must be keys of the cell
-                info.
-            readme_name (str, optional):
-                The name of the readme file. Defaults to "README.yaml". It is assumed
-                that the readme file is in the same folder as the data file.
-        """
-        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            raise ValueError("* characters are not allowed for a complete data path.")
-
-        base_dataframe = pl.scan_parquet(output_data_path)
-        data_folder = os.path.dirname(output_data_path)
-        readme_path = os.path.join(data_folder, readme_name)
-        readme = process_readme(readme_path)
-
-        self.procedure[procedure_name] = Procedure(
-            titles=readme.titles,
-            steps_idx=readme.step_numbers,
-            base_dataframe=base_dataframe,
-            info=self.info,
-            pybamm_experiment=readme.pybamm_experiment,
-            pybamm_experiment_list=readme.pybamm_experiment_list,
-        )
+        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @staticmethod
     def _verify_parquet(filename: str) -> str:
@@ -215,22 +121,6 @@ class Cell(BaseModel):
         if ext != ".parquet":
             filename = os.path.splitext(filename)[0] + ".parquet"
         return filename
-
-    def _write_parquet(
-        self,
-        importer: basecycler.BaseCycler,
-        output_data_path: str,
-    ) -> None:
-        """Import data from a cycler file and write to a PyProBE parquet file.
-
-        Args:
-            importer (BaseCycler): The cycler object to import the data.
-            output_data_path (str): The path to write the parquet file.
-        """
-        dataframe = importer.pyprobe_dataframe
-        if isinstance(dataframe, pl.LazyFrame):
-            dataframe = dataframe.collect()
-        dataframe.write_parquet(output_data_path)
 
     @staticmethod
     def _get_filename(
@@ -283,6 +173,155 @@ class Cell(BaseModel):
 
         data_path = os.path.join(folder_path, filename_str)
         return data_path
+
+    def _write_parquet(
+        self,
+        importer: basecycler.BaseCycler,
+        output_data_path: str,
+    ) -> None:
+        """Import data from a cycler file and write to a PyProBE parquet file.
+
+        Args:
+            importer (BaseCycler): The cycler object to import the data.
+            output_data_path (str): The path to write the parquet file.
+        """
+        dataframe = importer.pyprobe_dataframe
+        if isinstance(dataframe, pl.LazyFrame):
+            dataframe = dataframe.collect()
+        dataframe = self._add_event_start_duplicates(dataframe)
+        dataframe.write_parquet(output_data_path)
+
+    @staticmethod
+    def _add_event_start_duplicates(dataframe: pl.DataFrame) -> pl.DataFrame:
+        """Add a dupicate row for the first row of each event.
+
+        Args:
+            dataframe (pl.DataFrame): The dataframe to add the duplicates to.
+
+        Returns:
+            pl.DataFrame: The dataframe with the duplicates added.
+        """
+        event_ends = dataframe.filter(
+            (
+                pl.col("Event").cast(pl.Int64)
+                - pl.col("Event").cast(pl.Int64).shift(-1)
+                != 0
+            )
+        )
+        dataframe = dataframe.with_columns(
+            [
+                pl.when(pl.arange(0, dataframe.height) == 0)
+                .then(True)
+                .otherwise(False)
+                .alias("Event Start"),
+            ]
+        )
+        event_ends = event_ends.with_columns(
+            [
+                pl.lit(None).alias("Cycle"),
+                pl.lit(None).alias("Step"),
+                pl.col("Event") + 1,
+                pl.lit(True).alias("Event Start"),
+            ]
+        )
+        dataframe = pl.concat([dataframe, event_ends]).sort(by=["Time [s]", "Event"])
+        return dataframe.with_columns(
+            pl.col(["Cycle", "Step"]).fill_null(strategy="backward")
+        )
+
+    @validate_call
+    def process_generic_file(
+        self,
+        folder_path: str,
+        input_filename: str | Callable[[str], str],
+        output_filename: str | Callable[[str], str],
+        column_dict: Dict[str, str],
+        filename_inputs: Optional[List[str]] = None,
+    ) -> None:
+        """Convert generic file into PyProBE format.
+
+        Args:
+            folder_path (str):
+                The path to the folder containing the data file.
+            input_filename (str | function):
+                A filename string or a function to generate the file name for the
+                generic data.
+            output_filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            column_dict (dict):
+                A dictionary mapping the column names in the generic file to the PyProBE
+                column names. The keys of the dictionary are the cycler column names and
+                the values are the PyProBE column names. You must use asterisks to
+                indicate the units of the columns.
+                E.g. :code:`{"V (*)": "Voltage [*]"}`.
+            filename_inputs (list):
+                The list of inputs to input_filename and output_filename.
+                These must be keys of the cell info.
+        """
+        input_data_path = self._get_data_paths(
+            folder_path, input_filename, filename_inputs
+        )
+        output_data_path = self._get_data_paths(
+            folder_path, output_filename, filename_inputs
+        )
+        output_data_path = self._verify_parquet(output_data_path)
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path")
+
+        t1 = time.time()
+        importer = basecycler.BaseCycler(
+            input_data_path=input_data_path,
+            column_dict=column_dict,
+        )
+        self._write_parquet(importer, output_data_path)
+        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
+
+    @validate_call
+    def add_procedure(
+        self,
+        procedure_name: str,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
+        readme_name: str = "README.yaml",
+    ) -> None:
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+            readme_name (str, optional):
+                The name of the readme file. Defaults to "README.yaml". It is assumed
+                that the readme file is in the same folder as the data file.
+        """
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        output_data_path = self._verify_parquet(output_data_path)
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path.")
+
+        base_dataframe = pl.scan_parquet(output_data_path)
+        data_folder = os.path.dirname(output_data_path)
+        readme_path = os.path.join(data_folder, readme_name)
+        readme = process_readme(readme_path)
+
+        self.procedure[procedure_name] = Procedure(
+            titles=readme.titles,
+            steps_idx=readme.step_numbers,
+            base_dataframe=base_dataframe,
+            info=self.info,
+            pybamm_experiment=readme.pybamm_experiment,
+            pybamm_experiment_list=readme.pybamm_experiment_list,
+        )
 
 
 def make_cell_list(
