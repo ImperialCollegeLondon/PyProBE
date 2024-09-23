@@ -12,7 +12,11 @@ from pyprobe.rawdata import RawData
 @pytest.fixture
 def RawData_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
-    return RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
+    return RawData(
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
+        preceding_points=pl.LazyFrame({}),
+    )
 
 
 def test_init(RawData_fixture):
@@ -101,7 +105,11 @@ def test_zero_column(RawData_fixture):
 
 def test_definitions(lazyframe_fixture, info_fixture):
     """Test that the definitions have been correctly set."""
-    rawdata = RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
+    rawdata = RawData(
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
+        preceding_points=pl.LazyFrame({}),
+    )
     definition_keys = list(rawdata.column_definitions.keys())
     assert set(definition_keys) == set(
         [

@@ -55,6 +55,7 @@ class RawData(Result):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    preceding_points: pl.LazyFrame | pl.DataFrame
 
     @field_validator("base_dataframe")
     @classmethod

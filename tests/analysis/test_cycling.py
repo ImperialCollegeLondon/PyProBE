@@ -2,6 +2,7 @@
 
 import math
 
+import polars as pl
 import pytest
 
 from pyprobe.analysis.cycling import Cycling
@@ -12,7 +13,11 @@ from pyprobe.result import Result
 @pytest.fixture
 def Cycling_fixture(lazyframe_fixture, info_fixture):
     """Return a Cycling instance."""
-    input_data = Experiment(base_dataframe=lazyframe_fixture, info=info_fixture)
+    input_data = Experiment(
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
+        preceding_points=pl.LazyFrame({}),
+    )
     return Cycling(input_data=input_data)
 
 

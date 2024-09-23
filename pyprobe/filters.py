@@ -84,6 +84,7 @@ def _step(
         base_dataframe=base_dataframe,
         info=filter.info,
         column_definitions=filter.column_definitions,
+        preceding_points=filter.preceding_points,
     )
 
 
@@ -104,6 +105,7 @@ def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cyc
         base_dataframe=lf_filtered,
         info=filter.info,
         column_definitions=filter.column_definitions,
+        preceding_points=filter.preceding_points,
     )
 
 
@@ -321,6 +323,7 @@ class Procedure(RawData):
             base_dataframe=lf_filtered,
             info=self.info,
             column_definitions=self.column_definitions,
+            preceding_points=self.preceding_points,
         )
 
     @property
@@ -410,6 +413,7 @@ class Experiment(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    preceding_points: pl.LazyFrame | pl.DataFrame
 
     def model_post_init(self, __context: Any) -> None:
         """Create an experiment class."""
@@ -443,6 +447,7 @@ class Cycle(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    preceding_points: pl.LazyFrame | pl.DataFrame
 
     def model_post_init(self, __context: Any) -> None:
         """Create a cycle class."""
@@ -475,6 +480,7 @@ class Step(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    preceding_points: pl.LazyFrame | pl.DataFrame
 
     def model_post_init(self, __context: Any) -> None:
         """Create a step class."""

@@ -61,9 +61,40 @@ def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark)
     assert experiment.data["Experiment Capacity [Ah]"][0] == 0
 
 
-def test_experiment_names(procedure_fixture, titles_fixture):
-    """Test the experiment_names method."""
+def test_init(procedure_fixture, titles_fixture):
+    """Test the initialisation of a procedure object."""
     assert procedure_fixture.experiment_names == titles_fixture
+    assert procedure_fixture.data["Procedure Time [s]"][0] == 0
+    assert procedure_fixture.data["Procedure Capacity [Ah]"][0] == 0
+
+    np.testing.assert_array_equal(
+        procedure_fixture.preceding_points.select("Event")
+        .collect()
+        .to_numpy()
+        .flatten(),
+        np.arange(1, 62),
+    )
+    assert (
+        procedure_fixture.preceding_points.select("Current [A]").collect().to_numpy()[0]
+        == 0.3996 / 1000
+    )
+    assert (
+        procedure_fixture.preceding_points.select("Voltage [V]").collect().to_numpy()[0]
+        == 4.2001
+    )
+
+    assert (
+        procedure_fixture.preceding_points.select("Current [A]")
+        .collect()
+        .to_numpy()[-1]
+        == 0
+    )
+    assert (
+        procedure_fixture.preceding_points.select("Voltage [V]")
+        .collect()
+        .to_numpy()[-1]
+        == 3.4382
+    )
 
 
 def test_flatten(procedure_fixture):
@@ -71,12 +102,6 @@ def test_flatten(procedure_fixture):
     lst = [[1, 2, 3], [4, 5], 6]
     flat_list = procedure_fixture._flatten(lst)
     assert flat_list == [1, 2, 3, 4, 5, 6]
-
-
-def test_zero_columns(procedure_fixture):
-    """Test methods to set the first value of columns to zero."""
-    assert procedure_fixture.data["Procedure Time [s]"][0] == 0
-    assert procedure_fixture.data["Procedure Capacity [Ah]"][0] == 0
 
 
 def test_add_external_data(procedure_fixture):
