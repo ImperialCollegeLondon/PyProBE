@@ -243,9 +243,11 @@ class Procedure(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    preceding_points: pl.LazyFrame | pl.DataFrame = pl.LazyFrame({})
 
     def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
+        self.preceding_points = self._get_preceding_points(self.base_dataframe)
         self.zero_column(
             "Time [s]",
             "Procedure Time [s]",
@@ -266,6 +268,33 @@ class Procedure(RawData):
     rest = _rest
     constant_current = _constant_current
     constant_voltage = _constant_voltage
+
+    @staticmethod
+    def _get_preceding_points(dataframe: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame:
+        """Get the rows of the data frame prior to the first point of each event.
+
+        Args:
+            dataframe (pl.DataFrame): The data frame to filter.
+
+        Returns:
+            pl.DataFrame:
+                The rows of the data frame prior to the first point of each
+                event.
+        """
+        event_ends = dataframe.filter(
+            (
+                pl.col("Event").cast(pl.Int64)
+                - pl.col("Event").cast(pl.Int64).shift(-1)
+                != 0
+            )
+        )
+        return event_ends.with_columns(
+            [
+                pl.lit(None).alias("Cycle"),
+                pl.lit(None).alias("Step"),
+                pl.col("Event") + 1,
+            ]
+        )
 
     def experiment(self, *experiment_names: str) -> "Experiment":
         """Return an experiment object from the procedure.

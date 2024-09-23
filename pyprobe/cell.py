@@ -188,46 +188,7 @@ class Cell(BaseModel):
         dataframe = importer.pyprobe_dataframe
         if isinstance(dataframe, pl.LazyFrame):
             dataframe = dataframe.collect()
-        dataframe = self._add_event_start_duplicates(dataframe)
         dataframe.write_parquet(output_data_path)
-
-    @staticmethod
-    def _add_event_start_duplicates(dataframe: pl.DataFrame) -> pl.DataFrame:
-        """Add a dupicate row for the first row of each event.
-
-        Args:
-            dataframe (pl.DataFrame): The dataframe to add the duplicates to.
-
-        Returns:
-            pl.DataFrame: The dataframe with the duplicates added.
-        """
-        event_ends = dataframe.filter(
-            (
-                pl.col("Event").cast(pl.Int64)
-                - pl.col("Event").cast(pl.Int64).shift(-1)
-                != 0
-            )
-        )
-        dataframe = dataframe.with_columns(
-            [
-                pl.when(pl.arange(0, dataframe.height) == 0)
-                .then(True)
-                .otherwise(False)
-                .alias("Event Start"),
-            ]
-        )
-        event_ends = event_ends.with_columns(
-            [
-                pl.lit(None).alias("Cycle"),
-                pl.lit(None).alias("Step"),
-                pl.col("Event") + 1,
-                pl.lit(True).alias("Event Start"),
-            ]
-        )
-        dataframe = pl.concat([dataframe, event_ends]).sort(by=["Time [s]", "Event"])
-        return dataframe.with_columns(
-            pl.col(["Cycle", "Step"]).fill_null(strategy="backward")
-        )
 
     @validate_call
     def process_generic_file(

@@ -5,6 +5,33 @@ import os
 import numpy as np
 import pandas as pd
 import polars as pl
+from polars.testing import assert_frame_equal
+
+from pyprobe.filters import Procedure
+
+
+def test_get_preceding_points():
+    """Test the _add_event_start_duplicates method."""
+    dataframe = pl.DataFrame(
+        {
+            "Step": [1, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2],
+            "Cycle": [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
+            "Event": [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4],
+            "Time [s]": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "Current [A]": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        }
+    )
+    preceding_points = Procedure._get_preceding_points(dataframe)
+    expected_dataframe = pl.DataFrame(
+        {
+            "Step": [None, None, None],
+            "Cycle": [None, None, None],
+            "Event": [2, 3, 4],
+            "Time [s]": [3, 6, 9],
+            "Current [A]": [3, 6, 9],
+        }
+    )
+    assert_frame_equal(preceding_points, expected_dataframe)
 
 
 def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark):
