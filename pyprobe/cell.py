@@ -8,7 +8,7 @@ import distinctipy
 import polars as pl
 from pydantic import BaseModel, Field, field_validator, validate_call
 
-from pyprobe.cyclers import basecycler, biologic, neware
+from pyprobe.cyclers import arbin, basecycler, biologic, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
 
@@ -98,11 +98,12 @@ class Cell(BaseModel):
             "neware": neware.Neware,
             "biologic": biologic.Biologic,
             "biologic_MB": biologic.BiologicMB,
+            "arbin": arbin.Arbin,
         }
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
         self._write_parquet(importer, output_data_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @validate_call
     def process_generic_file(
@@ -150,7 +151,7 @@ class Cell(BaseModel):
             column_dict=column_dict,
         )
         self._write_parquet(importer, output_data_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @validate_call
     def add_procedure(
