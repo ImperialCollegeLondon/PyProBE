@@ -8,7 +8,7 @@ import distinctipy
 import polars as pl
 from pydantic import BaseModel, Field, field_validator, validate_call
 
-from pyprobe.cyclers import arbin, basecycler, biologic, neware
+from pyprobe.cyclers import arbin, basecycler, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
 
@@ -99,6 +99,7 @@ class Cell(BaseModel):
             "biologic": biologic.Biologic,
             "biologic_MB": biologic.BiologicMB,
             "arbin": arbin.Arbin,
+            "maccor": maccor.Maccor,
         }
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
