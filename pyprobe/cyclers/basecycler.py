@@ -19,6 +19,11 @@ class BaseCycler(BaseModel):
     column_dict: Dict[str, str]
     """A dictionary mapping the column name format of the cycler to the PyProBE format.
     Units are indicated by an asterisk (*)."""
+    datetime_format: Optional[str] = None
+    """The string format of the date column if present. See the
+    `chrono crate <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>`_
+    documentation for more information on the format string.
+    """
 
     def model_post_init(self, __context: Any) -> None:
         """Post initialization method for the BaseModel."""
@@ -195,7 +200,9 @@ class BaseCycler(BaseModel):
             Optional[pl.Expr]: A polars expression for the date column.
         """
         if "Date" in self._column_map.keys():
-            return pl.col("Date").str.to_datetime(time_unit="us")
+            return pl.col("Date").str.to_datetime(
+                format=self.datetime_format, time_unit="us"
+            )
         else:
             return None
 

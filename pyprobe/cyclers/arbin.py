@@ -1,10 +1,6 @@
 """A module to load and process Arbin battery cycler data."""
 
 
-from typing import Optional
-
-import polars as pl
-
 from pyprobe.cyclers.basecycler import BaseCycler
 
 
@@ -22,17 +18,4 @@ class Arbin(BaseCycler):
         "Discharge Capacity (*)": "Discharge Capacity [*]",
         "Aux_Temperature_1 (*)": "Temperature [*]",
     }
-
-    @property
-    def date(self) -> Optional[pl.Expr]:
-        """Identify and format the date column.
-
-        Returns:
-            Optional[pl.Expr]: A polars expression for the date column.
-        """
-        if "Date" in self._column_map.keys():
-            return pl.col("Date").str.to_datetime(
-                format="%m/%d/%Y %H:%M:%S%.f", time_unit="us"
-            )
-        else:
-            return None
+    datetime_format: str = "%d/%m/%Y %H:%M:%S%.f"
