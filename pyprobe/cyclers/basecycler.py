@@ -134,6 +134,22 @@ class BaseCycler(BaseModel):
                     if quantity == "Temperature":
                         if unit != "K":
                             unit = "C"
+                    if unit == "":
+                        if quantity == "Time":
+                            unit = "s"
+                        elif quantity == "Current":
+                            unit = "A"
+                        elif quantity == "Voltage":
+                            unit = "V"
+                        elif quantity == "Capacity":
+                            unit = "Ah"
+                        elif quantity == "Charge Capacity":
+                            unit = "Ah"
+                        elif quantity == "Discharge Capacity":
+                            unit = "Ah"
+                        elif quantity == "Temperature":
+                            unit = "C"
+
                     pyprobe_column_name = pyprobe_format.replace("*", unit)
 
                     column_map[quantity] = {}
