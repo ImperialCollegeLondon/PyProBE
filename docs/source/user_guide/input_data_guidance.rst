@@ -52,16 +52,45 @@ column names of of data from supported cyclers:
 .. raw:: html
 
    <style>
-      .scrollable-table {
+      .scrollable-table-container {
+           position: relative;
            overflow-x: auto;
            white-space: nowrap;
       }
+      .scrollable-table {
+           border-collapse: collapse;
+           width: 100%;
+      }
+      .scrollable-table th, .scrollable-table td {
+           padding: 8px;
+           text-align: left;
+           border: 1px solid #ddd;
+      }
+      .scrollable-table th {
+           background-color: #f2f2f2;
+           position: sticky;
+           top: 0;
+           z-index: 1;
+      }
+      .scrollable-table th:first-child, .scrollable-table td:first-child {
+           position: sticky;
+           left: 0;
+           z-index: 2;
+           background-color: #f2f2f2;
+      }
+      .scrollable-table th:nth-child(2), .scrollable-table td:nth-child(2) {
+           position: sticky;
+           left: 115px; /* Adjust this value based on the width of the first column */
+           z-index: 2;
+           background-color: #f2f2f2;
+      }
    </style>
 
-   <div class="scrollable-table">
+   <div class="scrollable-table-container">
 
 .. table::
-   :widths: 20 20 20 20 20
+   :widths: 120 20 20 20 20
+   :class: scrollable-table
 
    +----------------+-----------+------------------------+-----------------------------+-----------------------------+
    | PyProBE        | Required? | Neware                 | BioLogic                    | Arbin                       |
