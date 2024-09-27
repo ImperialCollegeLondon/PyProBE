@@ -4,27 +4,63 @@ import copy
 
 import numpy as np
 import polars as pl
+import pybamm
 import pytest
+from polars.testing import assert_frame_equal
 
 from pyprobe.rawdata import RawData
 
 
 @pytest.fixture
-def RawData_fixture(lazyframe_fixture, info_fixture):
+def RawData_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Result instance."""
-    return RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
+    return RawData(
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
+        step_descriptions=step_descriptions_fixture,
+    )
 
 
-def test_init(RawData_fixture):
+def test_init(RawData_fixture, step_descriptions_fixture):
     """Test the __init__ method."""
     assert isinstance(RawData_fixture, RawData)
     assert isinstance(RawData_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(RawData_fixture.info, dict)
+    assert_frame_equal(RawData_fixture.step_descriptions, step_descriptions_fixture)
 
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
         RawData(base_dataframe=data, info={"test": 1})
+
+
+def test_pybamm_experiment(RawData_fixture):
+    """Test the pybamm_experiment method."""
+    assert isinstance(RawData_fixture.pybamm_experiment, pybamm.Experiment)
+    assert (
+        RawData_fixture.pybamm_experiment.steps[-1].description == "Rest for 1.5 hours"
+    )
+
+    RawData_fixture.step_descriptions = pl.LazyFrame(
+        {
+            "Step": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12],
+            "Description": [
+                "Rest for 4 hours",
+                "Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A",
+                "Rest for 2 hours",
+                "Discharge at 4 mA until 3 V",
+                None,
+                "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
+                "Rest for 2 hours",
+                "Rest for 10 seconds",
+                None,
+                "Rest for 30 minutes",
+                "Rest for 1.5 hours",
+            ],
+        }
+    )
+    with pytest.raises(ValueError):
+        RawData_fixture.pybamm_experiment
 
 
 def test_capacity(BreakinCycles_fixture):
@@ -99,9 +135,13 @@ def test_zero_column(RawData_fixture):
     )
 
 
-def test_definitions(lazyframe_fixture, info_fixture):
+def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Test that the definitions have been correctly set."""
-    rawdata = RawData(base_dataframe=lazyframe_fixture, info=info_fixture)
+    rawdata = RawData(
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
+        step_descriptions=step_descriptions_fixture,
+    )
     definition_keys = list(rawdata.column_definitions.keys())
     assert set(definition_keys) == set(
         [

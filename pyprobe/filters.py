@@ -83,6 +83,7 @@ def _step(
         base_dataframe=base_dataframe,
         info=filter.info,
         column_definitions=filter.column_definitions,
+        step_descriptions=filter.step_descriptions,
     )
 
 
@@ -103,6 +104,7 @@ def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cyc
         base_dataframe=lf_filtered,
         info=filter.info,
         column_definitions=filter.column_definitions,
+        step_descriptions=filter.step_descriptions,
     )
 
 
@@ -235,6 +237,7 @@ class Procedure(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    step_descriptions: pl.LazyFrame = pl.LazyFrame({})
 
     def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
@@ -249,6 +252,17 @@ class Procedure(RawData):
             "Procedure Capacity [Ah]",
             "The net charge passed since beginning of procedure.",
         )
+        for experiment in self.readme_dict:
+            lf = pl.LazyFrame(
+                {
+                    "Step": self.readme_dict[experiment]["Steps"],
+                    "Description": self.readme_dict[experiment]["Step Descriptions"],
+                }
+            )
+            if len(self.step_descriptions.collect_schema().names()) == 0:
+                self.step_descriptions = lf
+            else:
+                self.step_descriptions = pl.concat([self.step_descriptions, lf])
 
     step = _step
     cycle = _cycle
@@ -283,6 +297,7 @@ class Procedure(RawData):
             base_dataframe=lf_filtered,
             info=self.info,
             column_definitions=self.column_definitions,
+            step_descriptions=self.step_descriptions,
         )
 
     @property
