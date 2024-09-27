@@ -10,7 +10,6 @@ from pyprobe.result import Result
 required_columns = [
     "Time [s]",
     "Step",
-    "Cycle",
     "Event",
     "Current [A]",
     "Voltage [V]",

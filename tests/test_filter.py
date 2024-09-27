@@ -1,6 +1,9 @@
 """Tests for the filter module."""
 import numpy as np
+import polars as pl
 import pytest
+
+import pyprobe.filters as filters
 
 
 def test_step(BreakinCycles_fixture, benchmark):
@@ -161,3 +164,121 @@ def test_zeroed_columns(BreakinCycles_fixture):
     assert cycle_filtered_data.get_only("Cycle Capacity [Ah]")[0] == 0
     assert step_filtered_data.get_only("Step Time [s]")[0] == 0
     assert step_filtered_data.get_only("Step Capacity [Ah]")[0] == 0
+
+
+@pytest.fixture
+def generic_experiment():
+    """Return a generic filter."""
+    steps = [
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+    ]
+    dataframe = pl.DataFrame(
+        {
+            "Time [s]": list(range(len(steps))),
+            "Step": steps,
+            "Event": list(range(len(steps))),
+            "Current [A]": steps,
+            "Voltage [V]": steps,
+            "Capacity [Ah]": steps,
+        }
+    )
+    info = {}
+    step_descriptions = pl.LazyFrame(
+        {
+            "Step": [0, 1, 2, 3],
+            "Description": ["Charge", "Discharge", "Charge", "Discharge"],
+        }
+    )
+    cycle_info = [(0, 3, 2), (0, 1, 2)]
+    return filters.Experiment(
+        base_dataframe=dataframe,
+        info=info,
+        step_descriptions=step_descriptions,
+        cycle_info=cycle_info,
+    )
+
+
+def test_cycle_generic(generic_experiment):
+    """Test the cycle method."""
+    assert generic_experiment.cycle_info == [(0, 3, 2), (0, 1, 2)]
+    assert filters._cycle(generic_experiment, 0).data[
+        "Time [s]"
+    ].unique().to_list() == list(range(26))
+    assert filters._cycle(generic_experiment, 1).data[
+        "Time [s]"
+    ].unique().to_list() == list(range(26, 52))
+    assert filters._cycle(generic_experiment, -1).data[
+        "Time [s]"
+    ].unique().to_list() == list(range(26, 52))
+
+    next_cycle = filters._cycle(generic_experiment, 1)
+    assert next_cycle.cycle_info == [(0, 1, 2)]
+    assert filters._cycle(next_cycle, 0).data["Time [s]"].unique().to_list() == list(
+        range(26, 31)
+    )
+    assert filters._cycle(next_cycle, 3).data["Time [s]"].unique().to_list() == list(
+        range(41, 46)
+    )
+    assert filters._cycle(next_cycle, -1).data["Time [s]"].unique().to_list() == list(
+        range(46, 52)
+    )
+
+    # test when cycle numbers are inferred
+    generic_experiment.cycle_info = []
+    assert filters._cycle(generic_experiment, 0).data[
+        "Time [s]"
+    ].unique().to_list() == list(range(5))
+    assert filters._cycle(generic_experiment, -1).data[
+        "Time [s]"
+    ].unique().to_list() == list(range(41, 52))

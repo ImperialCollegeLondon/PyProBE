@@ -10,8 +10,8 @@ from pyprobe.rawdata import RawData, default_column_definitions
 
 if TYPE_CHECKING:
     from pyprobe.typing import (  # , FilterToStepType
+        ExperimentOrCycleType,
         FilterToCycleType,
-        FilterToExperimentType,
     )
 
 
@@ -87,7 +87,7 @@ def _step(
     )
 
 
-def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
+def _cycle(filter: "ExperimentOrCycleType", *cycle_numbers: Union[int]) -> "Cycle":
     """Return a cycle object. Filters on the Cycle column.
 
     Args:
@@ -98,13 +98,37 @@ def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cyc
     Returns:
         Cycle: A cycle object.
     """
-    lf_filtered = _filter_numerical(filter.base_dataframe, "Cycle", cycle_numbers)
+    if len(filter.cycle_info) > 0:
+        cycle_ends = ((pl.col("Step").shift() == filter.cycle_info[0][1])) & (
+            pl.col("Step") != filter.cycle_info[0][1]
+        ).fill_null(strategy="zero").cast(pl.Int16)
+        cycle_column = cycle_ends.cum_sum().fill_null(strategy="zero").alias("Cycle")
+    else:
+        warnings.warn(
+            "No cycle information provided. Cycles will be inferred from the step "
+            "numbers."
+        )
+        cycle_column = (
+            (pl.col("Step").cast(pl.Int64) - pl.col("Step").cast(pl.Int64).shift() < 0)
+            .fill_null(strategy="zero")
+            .cum_sum()
+            .alias("Cycle")
+        )
+    df = filter.base_dataframe.with_columns(cycle_column)
+
+    if len(filter.cycle_info) > 1:
+        next_cycle_info = filter.cycle_info[1:]
+    else:
+        next_cycle_info = []
+
+    lf_filtered = _filter_numerical(df, "Cycle", cycle_numbers)
 
     return Cycle(
         base_dataframe=lf_filtered,
         info=filter.info,
         column_definitions=filter.column_definitions,
         step_descriptions=filter.step_descriptions,
+        cycle_info=next_cycle_info,
     )
 
 
@@ -265,7 +289,6 @@ class Procedure(RawData):
                 self.step_descriptions = pl.concat([self.step_descriptions, lf])
 
     step = _step
-    cycle = _cycle
     charge = _charge
     discharge = _discharge
     chargeordischarge = _chargeordischarge
@@ -293,11 +316,25 @@ class Procedure(RawData):
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self.base_dataframe.filter(conditions)
+        cycles_list: List[Tuple[int, int, int]] = []
+        if len(experiment_names) > 1:
+            warnings.warn(
+                "Multiple experiments selected. Cycles will be inferred from "
+                "the step numbers."
+            )
+        else:
+            # ignore type on below line due to persistent mypy warnings about
+            # incompatible types
+            cycles_list = self.readme_dict[experiment_names[0]][
+                "Cycles"
+            ]  # type: ignore
+
         return Experiment(
             base_dataframe=lf_filtered,
             info=self.info,
             column_definitions=self.column_definitions,
             step_descriptions=self.step_descriptions,
+            cycle_info=cycles_list,
         )
 
     @property
@@ -387,6 +424,7 @@ class Experiment(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    cycle_info: List[Tuple[int, int, int]]
 
     def model_post_init(self, __context: Any) -> None:
         """Create an experiment class."""
@@ -420,6 +458,7 @@ class Cycle(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    cycle_info: List[Tuple[int, int, int]]
 
     def model_post_init(self, __context: Any) -> None:
         """Create a cycle class."""
