@@ -4,7 +4,6 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import polars as pl
-from pybamm import Experiment as PybammExperiment
 from pydantic import Field
 
 from pyprobe.rawdata import RawData, default_column_definitions
@@ -229,14 +228,7 @@ def _constant_voltage(
 class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
-    titles: List[str]
-    """The titles of the experiments in the procedure."""
-    steps_idx: List[List[int]]
-    """The indices of the steps in each experiment."""
-    pybamm_experiment: Optional[PybammExperiment]
-    """A PyBaMM experiment object for the whole procedure."""
-    pybamm_experiment_list: List[Optional[PybammExperiment]]
-    """A list of PyBaMM experiment objects for each experiment in the procedure."""
+    readme_dict: Dict[str, Dict[str, List[str | int | Tuple[int, int, int]]]]
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
@@ -279,10 +271,9 @@ class Procedure(RawData):
         """
         steps_idx = []
         for experiment_name in experiment_names:
-            if experiment_name not in self.titles:
+            if experiment_name not in self.experiment_names:
                 raise ValueError(f"{experiment_name} not in procedure.")
-            experiment_number = self.titles.index(experiment_name)
-            steps_idx.append(self.steps_idx[experiment_number])
+            steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = self._flatten(steps_idx)
         conditions = [
             pl.col("Step").is_in(flattened_steps),
@@ -301,7 +292,7 @@ class Procedure(RawData):
         Returns:
             List[str]: The names of the experiments in the procedure.
         """
-        return list(self.titles)
+        return list(self.readme_dict.keys())
 
     def add_external_data(
         self,

@@ -102,7 +102,7 @@ class Cell(BaseModel):
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
         self._write_parquet(importer, output_data_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @validate_call
     def process_generic_file(
@@ -150,7 +150,7 @@ class Cell(BaseModel):
             column_dict=column_dict,
         )
         self._write_parquet(importer, output_data_path)
-        print(f"\tparquet written in {time.time()-t1:.2f} seconds.")
+        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @validate_call
     def add_procedure(
@@ -190,12 +190,9 @@ class Cell(BaseModel):
         readme = process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
-            titles=readme.titles,
-            steps_idx=readme.step_numbers,
+            readme_dict=readme.experiment_dict,
             base_dataframe=base_dataframe,
             info=self.info,
-            pybamm_experiment=readme.pybamm_experiment,
-            pybamm_experiment_list=readme.pybamm_experiment_list,
         )
 
     @staticmethod
