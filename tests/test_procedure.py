@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import polars as pl
+import pytest
 
 
 def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark):
@@ -14,24 +15,20 @@ def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark)
         return procedure_fixture.experiment("Break-in Cycles")
 
     experiment = benchmark(make_experiment)
-    assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[1]
     assert experiment.data["Step"].unique().to_list() == steps_fixture[1]
+    assert experiment.cycle_info == [(4, 7, 5)]
 
     experiment = procedure_fixture.experiment("Discharge Pulses")
-    assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[2]
     assert experiment.data["Step"].unique().to_list() == steps_fixture[2]
+    assert experiment.cycle_info == [(9, 12, 10)]
 
     """Test filtering by multiple experiment names."""
-    experiment = procedure_fixture.experiment("Break-in Cycles", "Discharge Pulses")
-    assert set(experiment.data["Cycle"].unique().to_list()) == set(
-        cycles_fixture[1] + cycles_fixture[2]
-    )
-    assert set(experiment.data["Step"].unique().to_list()) == set(
-        steps_fixture[1] + steps_fixture[2]
-    )
+    with pytest.warns(UserWarning):
+        experiment = procedure_fixture.experiment("Break-in Cycles", "Discharge Pulses")
 
     assert experiment.data["Experiment Time [s]"][0] == 0
     assert experiment.data["Experiment Capacity [Ah]"][0] == 0
+    assert experiment.cycle_info == []
 
 
 def test_experiment_names(procedure_fixture, titles_fixture):
