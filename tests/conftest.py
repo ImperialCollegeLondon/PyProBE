@@ -60,6 +60,29 @@ def step_names_fixture():
 
 
 @pytest.fixture
+def step_descriptions_fixture():
+    """Pytest fixture for example step descriptions."""
+    return pl.LazyFrame(
+        {
+            "Step": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12],
+            "Description": [
+                "Rest for 4 hours",
+                "Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A",
+                "Rest for 2 hours",
+                "Discharge at 4 mA until 3 V",
+                "Rest for 2 hours",
+                "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
+                "Rest for 2 hours",
+                "Rest for 10 seconds",
+                "Discharge at 20 mA for 0.2 hours or until 3 V",
+                "Rest for 30 minutes",
+                "Rest for 1.5 hours",
+            ],
+        }
+    )
+
+
+@pytest.fixture
 def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
     cell = Cell(info=info_fixture)
