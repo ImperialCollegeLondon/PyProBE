@@ -16,6 +16,7 @@ def Cycling_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
         base_dataframe=lazyframe_fixture,
         info=info_fixture,
         step_descriptions=step_descriptions_fixture,
+        cycle_info=[],
     )
     return Cycling(input_data=input_data)
 

@@ -5,7 +5,7 @@ import polars as pl
 from pydantic import BaseModel
 
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.filters import Experiment
+from pyprobe.filters import Experiment, get_cycle_column
 from pyprobe.result import Result
 
 
@@ -42,6 +42,7 @@ class Cycling(BaseModel):
         AnalysisValidator(
             input_data=self.input_data, required_columns=["Capacity [Ah]", "Time [s]"]
         )
+        self.input_data.base_dataframe = get_cycle_column(self.input_data)
 
         self._create_capacity_throughput()
         lf_capacity_throughput = self.input_data.base_dataframe.group_by(
