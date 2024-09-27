@@ -193,12 +193,9 @@ class Cell(BaseModel):
         readme = process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
-            titles=readme.titles,
-            steps_idx=readme.step_numbers,
+            readme_dict=readme.experiment_dict,
             base_dataframe=base_dataframe,
             info=self.info,
-            pybamm_experiment=readme.pybamm_experiment,
-            pybamm_experiment_list=readme.pybamm_experiment_list,
         )
 
     @staticmethod
