@@ -87,16 +87,23 @@ def _step(
     )
 
 
-def _cycle(filter: "ExperimentOrCycleType", *cycle_numbers: Union[int]) -> "Cycle":
-    """Return a cycle object. Filters on the Cycle column.
+def get_cycle_column(filter: "ExperimentOrCycleType") -> pl.DataFrame | pl.LazyFrame:
+    """Adds a cycle column to the data.
+
+    If cycle details have been provided in the README, the cycle column will be created
+    by checking for the last step of the cycle. For nested cycles, the "outer" cycle
+    will be created first. Subsequent filtering with the cycle method will then allow
+    for filtering on the "inner" cycles.
+
+    If no cycle details have been provided, the cycle column will be created by
+    identifying the last step of the cycle by checking for a decrease in the step
+    number.
 
     Args:
-        filter (FilterToExperimentType): A filter object that this method is called on.
-        cycle_numbers (int | range):
-            Variable-length argument list of cycle indices or a range object.
+        filter (ExperimentOrCycleType): The experiment or cycle object.
 
     Returns:
-        Cycle: A cycle object.
+        pl.DataFrame | pl.LazyFrame: The data with a cycle column.
     """
     if len(filter.cycle_info) > 0:
         cycle_ends = ((pl.col("Step").shift() == filter.cycle_info[0][1])) & (
@@ -114,7 +121,21 @@ def _cycle(filter: "ExperimentOrCycleType", *cycle_numbers: Union[int]) -> "Cycl
             .cum_sum()
             .alias("Cycle")
         )
-    df = filter.base_dataframe.with_columns(cycle_column)
+    return filter.base_dataframe.with_columns(cycle_column)
+
+
+def _cycle(filter: "ExperimentOrCycleType", *cycle_numbers: Union[int]) -> "Cycle":
+    """Return a cycle object. Filters on the Cycle column.
+
+    Args:
+        filter (FilterToExperimentType): A filter object that this method is called on.
+        cycle_numbers (int | range):
+            Variable-length argument list of cycle indices or a range object.
+
+    Returns:
+        Cycle: A cycle object.
+    """
+    df = get_cycle_column(filter)
 
     if len(filter.cycle_info) > 1:
         next_cycle_info = filter.cycle_info[1:]
