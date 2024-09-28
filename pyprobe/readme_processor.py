@@ -1,7 +1,9 @@
 """Module for processing PyPrBE README files."""
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union, cast
 
 import yaml
+
+from pyprobe import utils
 
 
 class ReadmeModel:
@@ -9,29 +11,69 @@ class ReadmeModel:
 
     def __init__(self, readme_dict: Dict[str, Any]) -> None:
         """Initialize the ReadmeModel class."""
-        experiment_names = readme_dict.keys()
+        self.readme_dict = readme_dict
+        experiment_names = self.readme_dict.keys()
 
         self.experiment_dict: Dict[
             str, Dict[str, List[str | int | Tuple[int, int, int]]]
         ] = {name: {} for name in experiment_names}
         self.step_details = None
         for experiment_name in experiment_names:
-            step_numbers = list(readme_dict[experiment_name]["Steps"].keys())
-            step_descriptions = list(readme_dict[experiment_name]["Steps"].values())
-            cycle_keys = [
-                key for key in readme_dict[experiment_name] if "cycle" in key.lower()
-            ]
-            exp_cycles: List[str | int | Tuple[int, int, int]] = []
-            for cycle in cycle_keys:
-                start = readme_dict[experiment_name][cycle]["Start"]
-                end = readme_dict[experiment_name][cycle]["End"]
-                count = readme_dict[experiment_name][cycle]["Count"]
-                exp_cycles.append((start, end, count))
-            self.experiment_dict[experiment_name]["Steps"] = step_numbers
-            self.experiment_dict[experiment_name][
-                "Step Descriptions"
-            ] = step_descriptions
-            self.experiment_dict[experiment_name]["Cycles"] = exp_cycles
+            if "Steps" in self.readme_dict[experiment_name].keys():
+                if isinstance(self.readme_dict[experiment_name]["Steps"], dict):
+                    self._process_explicit_experiment(experiment_name)
+                elif isinstance(self.readme_dict[experiment_name]["Steps"], list):
+                    self._process_implicit_experiment(experiment_name)
+                else:
+                    raise ValueError("Invalid format for steps in README file")
+            elif "Total Steps" in self.readme_dict[experiment_name].keys():
+                pass
+            else:
+                raise ValueError(
+                    "Each experiment must have a 'Steps' or 'Total Steps' key."
+                )
+
+    def _process_explicit_experiment(self, experiment_name: str) -> None:
+        """Process an experiment with explicit step numbers.
+
+        Args:
+            experiment_name (str): The name of the experiment.
+        """
+        step_numbers = list(self.readme_dict[experiment_name]["Steps"].keys())
+        step_descriptions = list(self.readme_dict[experiment_name]["Steps"].values())
+        cycle_keys = [
+            key for key in self.readme_dict[experiment_name] if "cycle" in key.lower()
+        ]
+        exp_cycles: List[str | int | Tuple[int, int, int]] = []
+        for cycle in cycle_keys:
+            start = self.readme_dict[experiment_name][cycle]["Start"]
+            end = self.readme_dict[experiment_name][cycle]["End"]
+            count = self.readme_dict[experiment_name][cycle]["Count"]
+            exp_cycles.append((start, end, count))
+        self.experiment_dict[experiment_name]["Steps"] = step_numbers
+        self.experiment_dict[experiment_name]["Step Descriptions"] = step_descriptions
+        self.experiment_dict[experiment_name]["Cycles"] = exp_cycles
+
+    def _process_implicit_experiment(self, experiment_name: str) -> None:
+        """Process an experiment with implicit step numbers.
+
+        Args:
+            experiment_name (str): The name of the experiment.
+        """
+        all_steps = [
+            experiment["Steps"]
+            for experiment in self.experiment_dict.values()
+            if "Steps" in experiment
+        ]
+        max_step = max(utils.flatten_list(all_steps)) if all_steps else 0
+        step_descriptions = self.readme_dict[experiment_name]["Steps"]
+        step_numbers = list(range(max_step + 1, max_step + len(step_descriptions) + 1))
+
+        self.experiment_dict[experiment_name]["Steps"] = cast(
+            List[Union[str, int, Tuple[int, int, int]]], step_numbers
+        )  # cast to satisfy mypy
+        self.experiment_dict[experiment_name]["Step Descriptions"] = step_descriptions
+        self.experiment_dict[experiment_name]["Cycles"] = []
 
 
 def process_readme(
