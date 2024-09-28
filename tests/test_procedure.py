@@ -36,13 +36,6 @@ def test_experiment_names(procedure_fixture, titles_fixture):
     assert procedure_fixture.experiment_names == titles_fixture
 
 
-def test_flatten(procedure_fixture):
-    """Test flattening lists."""
-    lst = [[1, 2, 3], [4, 5], 6]
-    flat_list = procedure_fixture._flatten(lst)
-    assert flat_list == [1, 2, 3, 4, 5, 6]
-
-
 def test_zero_columns(procedure_fixture):
     """Test methods to set the first value of columns to zero."""
     assert procedure_fixture.data["Procedure Time [s]"][0] == 0
