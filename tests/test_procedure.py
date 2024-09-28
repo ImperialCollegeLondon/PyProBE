@@ -7,8 +7,10 @@ import pandas as pd
 import polars as pl
 import pytest
 
+from pyprobe.cell import Cell
 
-def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark):
+
+def test_experiment(procedure_fixture, steps_fixture, benchmark):
     """Test creating an experiment."""
 
     def make_experiment():
@@ -29,6 +31,25 @@ def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark)
     assert experiment.data["Experiment Time [s]"][0] == 0
     assert experiment.data["Experiment Capacity [Ah]"][0] == 0
     assert experiment.cycle_info == []
+
+
+def test_experiment_no_description():
+    """Test creating a procedure with no step descriptions."""
+    cell = Cell(info={})
+    cell.add_procedure(
+        "sample",
+        "tests/sample_data/neware/",
+        "sample_data_neware.xlsx",
+        readme_name="README_total_steps.yaml",
+    )
+    step_descriptions = (
+        cell.procedure["sample"]
+        .step_descriptions.select("Description")
+        .collect()
+        .to_numpy()
+        .flatten()
+    )
+    assert np.all(np.isnan(step_descriptions))
 
 
 def test_experiment_names(procedure_fixture, titles_fixture):

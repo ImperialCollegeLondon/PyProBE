@@ -299,12 +299,22 @@ class Procedure(RawData):
             "The net charge passed since beginning of procedure.",
         )
         for experiment in self.readme_dict:
-            lf = pl.LazyFrame(
-                {
-                    "Step": self.readme_dict[experiment]["Steps"],
-                    "Description": self.readme_dict[experiment]["Step Descriptions"],
-                }
-            )
+            if self.readme_dict[experiment]["Step Descriptions"] == []:
+                lf = pl.LazyFrame(
+                    {
+                        "Step": self.readme_dict[experiment]["Steps"],
+                    }
+                )
+                lf = lf.with_columns(pl.lit(None).alias("Description"))
+            else:
+                lf = pl.LazyFrame(
+                    {
+                        "Step": self.readme_dict[experiment]["Steps"],
+                        "Description": self.readme_dict[experiment][
+                            "Step Descriptions"
+                        ],
+                    }
+                )
             if len(self.step_descriptions.collect_schema().names()) == 0:
                 self.step_descriptions = lf
             else:
