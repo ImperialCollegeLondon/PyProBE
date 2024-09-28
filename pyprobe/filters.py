@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 import polars as pl
 from pydantic import Field
 
+from pyprobe import utils
 from pyprobe.rawdata import RawData, default_column_definitions
 
 if TYPE_CHECKING:
@@ -332,7 +333,7 @@ class Procedure(RawData):
             if experiment_name not in self.experiment_names:
                 raise ValueError(f"{experiment_name} not in procedure.")
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
-        flattened_steps = self._flatten(steps_idx)
+        flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
@@ -420,21 +421,6 @@ class Procedure(RawData):
                 return pl.read_excel(filepath)
             case _:
                 raise ValueError(f"Unsupported file type: {file_ext}")
-
-    @classmethod
-    def _flatten(cls, lst: int | List[Any]) -> List[int]:
-        """Flatten a list of lists into a single list.
-
-        Args:
-            lst (list): The list of lists to flatten.
-
-        Returns:
-            list: The flattened list.
-        """
-        if not isinstance(lst, list):
-            return [lst]
-        else:
-            return [item for sublist in lst for item in cls._flatten(sublist)]
 
 
 class Experiment(RawData):
