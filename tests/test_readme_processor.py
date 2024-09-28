@@ -67,6 +67,19 @@ def test_readme(readme_dict_fixture):
     ]
     assert readme.experiment_dict["Experiment 2"]["Cycles"] == []
 
+    assert readme.experiment_dict["Experiment 3"]["Steps"] == [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+    ]
+    assert readme.experiment_dict["Experiment 3"]["Step Descriptions"] == []
+    assert readme.experiment_dict["Experiment 3"]["Cycles"] == []
+
 
 def test_process_readme_file_explicit(titles_fixture, benchmark):
     """Test processing a readme file in yaml format."""
@@ -120,4 +133,22 @@ def test_process_readme_file_implicit(titles_fixture, benchmark):
         "Rest for 30 minutes",
         "Rest for 1.5 hours",
     ]
+    assert readme.experiment_dict["Discharge Pulses"]["Cycles"] == []
+
+
+def process_readme_file_total_steps(titles_fixture, benchmark):
+    """Test processing a readme file in yaml format."""
+
+    def _process_readme():
+        return process_readme("tests/sample_data/neware/README_total_steps.yaml")
+
+    readme = benchmark(_process_readme)
+
+    assert list(readme.experiment_dict.keys()) == titles_fixture
+    assert readme.experiment_dict["Break-in Cycles"]["Steps"] == [4, 5, 6, 7]
+    assert readme.experiment_dict["Break-in Cycles"]["Step Descriptions"] == []
+    assert readme.experiment_dict["Break-in Cycles"]["Cycles"] == []
+
+    assert readme.experiment_dict["Discharge Pulses"]["Steps"] == [8, 9, 10, 11]
+    assert readme.experiment_dict["Discharge Pulses"]["Step Descriptions"] == []
     assert readme.experiment_dict["Discharge Pulses"]["Cycles"] == []
