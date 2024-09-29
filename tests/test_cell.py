@@ -110,7 +110,6 @@ def test_process_generic_file(cell_instance):
     expected_df = pl.DataFrame(
         {
             "Time [s]": [1.0, 2.0, 3.0],
-            "Cycle": [0, 0, 0],
             "Step": [1, 2, 3],
             "Event": [0, 1, 2],
             "Current [A]": [7.0, 8.0, 9.0],
