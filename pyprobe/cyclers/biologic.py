@@ -61,15 +61,6 @@ class Biologic(BaseCycler):
         )
         return dataframe
 
-    @property
-    def step(self) -> pl.Expr:
-        """Identify the step number.
-
-        Returns:
-            pl.Expr: A polars expression for the step number.
-        """
-        return pl.col("Step") + 1
-
 
 class BiologicMB(Biologic):
     """A class to load and process Biologic Modulo Bat  battery cycler data."""
