@@ -76,13 +76,13 @@ class Neware(BaseCycler):
             )
         else:
             return pl.col("Time [s]")
-            # return Units("Time", self._column_map["Time"]["Unit"]).to_default_unit()
 
     @property
     def charge_capacity(self) -> pl.Expr:
         """Identify and format the charge capacity column.
 
-        For the Maccor cycler, this is the capacity column when the current is positive.
+        For the Neware cycler, this is either the "Chg. Cap.(*)" column or the
+        "Capacity(*)" column when the current is positive.
 
         Returns:
             pl.Expr: A polars expression for the charge capacity column.
@@ -103,7 +103,8 @@ class Neware(BaseCycler):
     def discharge_capacity(self) -> pl.Expr:
         """Identify and format the discharge capacity column.
 
-        For the Maccor cycler, this is the capacity column when the current is negative.
+        For the Neware cycler, this is either the "DChg. Cap.(*)" column or the
+        "Capacity(*)" column when the current is negative.
 
         Returns:
             pl.Expr: A polars expression for the discharge capacity column.
@@ -124,7 +125,7 @@ class Neware(BaseCycler):
     def capacity(self) -> pl.Expr:
         """Identify and format the capacity column.
 
-        For the Maccor cycler remove the option to calculate the capacity from a single
+        For the Neware cycler remove the option to calculate the capacity from a single
         capacity column.
 
         Returns:
