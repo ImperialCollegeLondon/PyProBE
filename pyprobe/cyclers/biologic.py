@@ -18,6 +18,7 @@ class Biologic(BaseCycler):
         "time/*": "Time [*]",
         "Ns": "Step",
         "I/*": "Current [*]",
+        "<I>/*": "Current [*]",
         "Ecell/*": "Voltage [*]",
         "Q charge/*": "Charge Capacity [*]",
         "Q discharge/*": "Discharge Capacity [*]",
