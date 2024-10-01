@@ -3,10 +3,10 @@
 import glob
 import os
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import polars as pl
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from pyprobe.units import Units
 
@@ -25,12 +25,15 @@ class BaseCycler(BaseModel):
     documentation for more information on the format string.
     """
 
-    def model_post_init(self, __context: Any) -> None:
-        """Post initialization method for the BaseModel."""
+    @model_validator(mode="after")
+    def import_and_validate_data(self) -> "BaseCycler":
+        """Import the data and validate the column mapping."""
         dataframe_list = self._get_dataframe_list()
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
-        self._dataframe_columns = self._imported_dataframe.collect_schema().names()
-        self._column_map = self._map_columns(self.column_dict, self._dataframe_columns)
+        self._column_map = self._map_columns(
+            self.column_dict, self._imported_dataframe.collect_schema().names()
+        )
+        return self
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
