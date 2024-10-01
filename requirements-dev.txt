@@ -430,7 +430,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-pyyaml==6.0.12.20240808
+types-pyyaml==6.0.12.20240917
     # via PyProBE (pyproject.toml)
 typing-extensions==4.12.2
     # via
