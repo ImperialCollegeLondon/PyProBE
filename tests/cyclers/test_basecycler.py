@@ -77,21 +77,10 @@ def sample_cycler_instance(sample_dataframe, column_dict):
     )
 
 
-def test_map_columns(column_dict):
-    """Test initialising the basecycler."""
-    # test with single file
-    dict_with_extra = copy.deepcopy(column_dict)
-    dict_with_extra["Ecell [*]"] = "Voltage [*]"
-    column_list = [
-        "DateTime",
-        "T [s]",
-        "V [V]",
-        "I [mA]",
-        "Q [Ah]",
-        "Count",
-        "Temp [C]",
-    ]
-    expected_map = {
+@pytest.fixture
+def sample_column_map():
+    """A sample column map."""
+    return {
         "Date": {
             "Cycler column name": "DateTime",
             "PyProBE column name": "Date",
@@ -136,12 +125,66 @@ def test_map_columns(column_dict):
         },
     }
 
+
+def test_map_columns(column_dict, sample_column_map):
+    """Test initialising the basecycler."""
+    # test with single file
+    dict_with_extra = copy.deepcopy(column_dict)
+    dict_with_extra["Ecell [*]"] = "Voltage [*]"
+    column_list = [
+        "DateTime",
+        "T [s]",
+        "V [V]",
+        "I [mA]",
+        "Q [Ah]",
+        "Count",
+        "Temp [C]",
+    ]
+    expected_map = sample_column_map
+
     assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
 
     # missing columns
     column_list = ["DateTime", "T [s]", "V [V]", "I [mA]", "Q [Ah]", "Count"]
     expected_map.pop("Temperature")
     assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
+
+
+def test_tabulate_column_map(sample_column_map):
+    """Test tabulating the column map."""
+    column_map_table = BaseCycler._tabulate_column_map(sample_column_map)
+    expected_dataframe = pl.DataFrame(
+        {
+            "Quantity": [
+                "Date",
+                "Time",
+                "Voltage",
+                "Current",
+                "Capacity",
+                "Step",
+                "Temperature",
+            ],
+            "Cycler column name": [
+                "DateTime",
+                "T [s]",
+                "V [V]",
+                "I [mA]",
+                "Q [Ah]",
+                "Count",
+                "Temp [C]",
+            ],
+            "PyProBE column name": [
+                "Date",
+                "Time [s]",
+                "Voltage [V]",
+                "Current [mA]",
+                "Capacity [Ah]",
+                "Step",
+                "Temperature [C]",
+            ],
+        }
+    )
+    pl_testing.assert_frame_equal(column_map_table, expected_dataframe)
 
 
 def test_init(sample_cycler_instance, sample_dataframe):

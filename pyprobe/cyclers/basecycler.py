@@ -164,6 +164,22 @@ class BaseCycler(BaseModel):
                         column_map[quantity]["Type"] = pl.Float64
         return column_map
 
+    @staticmethod
+    def _tabulate_column_map(
+        column_map: Dict[str, Dict[str, str | pl.DataType]]
+    ) -> str:
+        data = {
+            "Quantity": list(column_map.keys()),
+            "Cycler column name": [
+                v["Cycler column name"] for v in column_map.values()
+            ],
+            "PyProBE column name": [
+                v["PyProBE column name"] for v in column_map.values()
+            ],
+        }
+
+        return pl.DataFrame(data)
+
     def _convert_names(self, quantity: str) -> pl.Expr:
         """Write a column in the PyProBE column name format and convert its type.
 
