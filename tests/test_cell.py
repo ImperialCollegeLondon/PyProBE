@@ -145,7 +145,7 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     )
 
 
-def test_import_pybamm_solution():
+def test_import_pybamm_solution(benchmark):
     """Test the import_pybamm_solution method."""
     parameter_values = pybamm.ParameterValues("Chen2020")
     spm = pybamm.lithium_ion.SPM()
@@ -171,37 +171,104 @@ def test_import_pybamm_solution():
     cell_instance = Cell(info={})
     cell_instance.import_pybamm_solution(
         procedure_name="PyBaMM",
-        pybamm_solution=sol,
+        pybamm_solutions=sol,
+        experiment_names="Test",
     )
     assert_array_equal(
-        cell_instance.procedure["PyBaMM"].get("Voltage [V]"),
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Voltage [V]"),
         sol["Terminal voltage [V]"].entries,
     )
     assert_array_equal(
-        cell_instance.procedure["PyBaMM"].get("Current [A]"), sol["Current [A]"].entries
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Current [A]"),
+        sol["Current [A]"].entries,
     )
     assert_array_equal(
-        cell_instance.procedure["PyBaMM"].get("Time [s]"), sol["Time [s]"].entries
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Time [s]"),
+        sol["Time [s]"].entries,
     )
     assert_array_equal(
-        cell_instance.procedure["PyBaMM"].get("Capacity [Ah]"),
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Capacity [Ah]"),
         sol["Discharge capacity [A.h]"].entries * -1,
     )
 
     # test filtering by cycle and step
     assert_array_equal(
-        cell_instance.procedure["PyBaMM"].cycle(1).get("Voltage [V]"),
+        cell_instance.procedure["PyBaMM"]
+        .experiment("Test")
+        .cycle(1)
+        .get("Voltage [V]"),
         sol.cycles[1]["Terminal voltage [V]"].entries,
     )
     assert_array_equal(
-        cell_instance.procedure["PyBaMM"].cycle(1).step(3).get("Current [A]"),
+        cell_instance.procedure["PyBaMM"]
+        .experiment("Test")
+        .cycle(1)
+        .step(3)
+        .get("Current [A]"),
         sol.cycles[1].steps[3]["Current [A]"].entries,
+    )
+
+    assert cell_instance.procedure["PyBaMM"].readme_dict["Test"]["Steps"] == [
+        0,
+        1,
+        2,
+        3,
+        4,
+    ]
+
+    # test with multiple experiments from different simulations
+    experiment2 = pybamm.Experiment(
+        [
+            (
+                "Discharge at 1C for 10 hours or until 3.3 V",
+                "Rest for 1 hour",
+                "Charge at 1 A until 4.1 V",
+                "Hold at 4.1 V until 50 mA",
+                "Rest for 1 hour",
+            )
+        ]
+        * 5
+    )
+    sim2 = pybamm.Simulation(
+        spm, experiment=experiment2, parameter_values=parameter_values
+    )
+
+    sol2 = sim2.solve(starting_solution=sol)
+
+    def add_two_experiments():
+        return cell_instance.import_pybamm_solution(
+            procedure_name="PyBaMM two experiments",
+            pybamm_solutions=[sol, sol2],
+            experiment_names=["Test1", "Test2"],
+        )
+
+    benchmark(add_two_experiments)
+    assert set(
+        cell_instance.procedure["PyBaMM two experiments"].experiment_names
+    ) == set(["Test1", "Test2"])
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM two experiments"].get("Voltage [V]"),
+        sol2["Terminal voltage [V]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM two experiments"]
+        .experiment("Test1")
+        .get("Voltage [V]"),
+        sol["Terminal voltage [V]"].entries,
+    )
+    sol_length = len(sol["Terminal voltage [V]"].entries)
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM two experiments"]
+        .experiment("Test2")
+        .get("Voltage [V]"),
+        sol2["Terminal voltage [V]"].entries[sol_length:],
     )
 
     # test reading and writing to parquet
     cell_instance.import_pybamm_solution(
         procedure_name="PyBaMM",
-        pybamm_solution=sol,
+        pybamm_solutions=sol,
+        experiment_names="Test",
         output_data_path="tests/sample_data/pybamm.parquet",
     )
     written_data = pl.read_parquet("tests/sample_data/pybamm.parquet")
