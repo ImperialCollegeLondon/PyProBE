@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
+import pybamm.solvers.solution as pybamm_solution
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -283,6 +284,72 @@ class Cell(BaseModel):
 
         data_path = os.path.join(folder_path, filename_str)
         return data_path
+
+    def import_pybamm_solution(
+        self,
+        procedure_name: str,
+        pybamm_solution: pybamm_solution,
+        output_data_path: Optional[str] = None,
+        optional_variables: Optional[List[str]] = None,
+    ) -> None:
+        """Import a PyBaMM solution object into a procedure of the cell.
+
+        Filtering a PyBaMM solution object by cycle and step reflects the behaviour of
+        the :code:`cycles` and :code:`steps` dictionaries of the PyBaMM solution object.
+
+        This method optionally writes the data to a parquet file, if a data path is
+        provided.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            pybamm_solution (pybamm.solvers.solution.Solution):
+                The PyBaMM solution object to import.
+            output_data_path (str, optional):
+                The path to write the parquet file. Defaults to None.
+            optional_variables (list, optional):
+                A list of variables to import from the PyBaMM solution object in
+                addition to the PyProBE required variables. Defaults to None.
+        """
+        required_variables = [
+            "Time [s]",
+            "Current [A]",
+            "Terminal voltage [V]",
+            "Discharge capacity [A.h]",
+        ]
+        if optional_variables is not None:
+            imported_variables = required_variables + optional_variables
+        else:
+            imported_variables = required_variables
+        pybamm_data = pybamm_solution.get_data_dict(imported_variables)
+        base_dataframe = pl.LazyFrame(pybamm_data)
+        base_dataframe = base_dataframe.select(
+            [
+                pl.col("Time [s]"),
+                pl.col("Current [A]"),
+                pl.col("Terminal voltage [V]").alias("Voltage [V]"),
+                (pl.col("Discharge capacity [A.h]") * -1).alias("Capacity [Ah]"),
+                pl.col("Step"),
+                (
+                    (
+                        pl.col("Step").cast(pl.Int64)
+                        - pl.col("Step").cast(pl.Int64).shift()
+                        != 0
+                    )
+                    .fill_null(strategy="zero")
+                    .cum_sum()
+                    .alias("Event")
+                ),
+            ]
+        )
+        self.procedure[procedure_name] = Procedure(
+            base_dataframe=base_dataframe, info=self.info, readme_dict={}
+        )
+        if output_data_path is not None:
+            if not output_data_path.endswith(".parquet"):
+                output_data_path += ".parquet"
+            base_dataframe.collect().write_parquet(output_data_path)
 
 
 def make_cell_list(
