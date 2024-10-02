@@ -33,7 +33,58 @@ class BaseCycler(BaseModel):
         self._column_map = self._map_columns(
             self.column_dict, self._imported_dataframe.collect_schema().names()
         )
+        self._check_missing_columns(self.column_dict, self._column_map)
         return self
+
+    @staticmethod
+    def _check_missing_columns(
+        column_dict: Dict[str, str], column_map: Dict[str, Dict[str, str | pl.DataType]]
+    ) -> None:
+        """Check for missing columns in the imported data.
+
+        Args:
+            column_map (Dict[str, Dict[str, str | pl.DataType]]):
+                A dictionary mapping the column name format of the cycler to the PyProBE
+                format.
+
+        Raises:
+            ValueError:
+                If any of ["Time", "Current", "Voltage", "Capacity", "Step"]
+                are missing.
+        """
+        pyprobe_required_columns = set(
+            [
+                "Time",
+                "Current",
+                "Voltage",
+                "Capacity",
+                "Step",
+            ]
+        )
+        missing_columns = pyprobe_required_columns - set(column_map.keys())
+        if missing_columns:
+            if "Capacity" in missing_columns:
+                if (
+                    "Charge Capacity" in column_map.keys()
+                    and "Discharge Capacity" in column_map.keys()
+                ):
+                    missing_columns.remove("Capacity")
+                else:
+                    missing_columns.add("Charge Capacity")
+                    missing_columns.add("Discharge Capacity")
+            search_names = []
+            for column in missing_columns:
+                if column != "Step":
+                    full_name = column + " [*]"
+                else:
+                    full_name = column
+                for cycler_name, pyprobe_name in column_dict.items():
+                    if pyprobe_name == full_name:
+                        search_names.append(cycler_name)
+            raise ValueError(
+                f"PyProBE cannot find the following columns, please check your data: "
+                f"{search_names}."
+            )
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -134,24 +185,20 @@ class BaseCycler(BaseModel):
                 unit = cls._match_unit(cycler_column_name, cycler_format)
                 if unit is not None:
                     quantity = pyprobe_format.replace(" [*]", "")
-                    if quantity == "Temperature":
-                        if unit != "K":
-                            unit = "C"
-                    if unit == "":
-                        if quantity == "Time":
-                            unit = "s"
-                        elif quantity == "Current":
-                            unit = "A"
-                        elif quantity == "Voltage":
-                            unit = "V"
-                        elif quantity == "Capacity":
-                            unit = "Ah"
-                        elif quantity == "Charge Capacity":
-                            unit = "Ah"
-                        elif quantity == "Discharge Capacity":
-                            unit = "Ah"
-                        elif quantity == "Temperature":
-                            unit = "C"
+                    default_units = {
+                        "Time": "s",
+                        "Current": "A",
+                        "Voltage": "V",
+                        "Capacity": "Ah",
+                        "Charge Capacity": "Ah",
+                        "Discharge Capacity": "Ah",
+                        "Temperature": "C",
+                    }
+
+                    if quantity == "Temperature" and unit != "K":
+                        unit = "C"
+                    elif unit == "" and quantity in default_units:
+                        unit = default_units[quantity]
 
                     pyprobe_column_name = pyprobe_format.replace("*", unit)
 
@@ -166,6 +213,21 @@ class BaseCycler(BaseModel):
                     else:
                         column_map[quantity]["Type"] = pl.Float64
         return column_map
+
+    def _assign_instructions(self) -> None:
+        instruction_dict = {
+            "Date": self.date,
+            "Time": self.time,
+            "Current": self.current,
+            "Voltage": self.voltage,
+            "Capacity": self.capacity,
+            "Temperature": self.temperature,
+            "Step": self.step,
+            "Cycle": self.cycle,
+            "Event": self.event,
+        }
+        for quantity in self._column_map.keys():
+            self._column_map[quantity]["Instruction"] = instruction_dict[quantity]
 
     @staticmethod
     def _tabulate_column_map(

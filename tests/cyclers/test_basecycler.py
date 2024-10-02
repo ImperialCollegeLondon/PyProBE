@@ -1,6 +1,7 @@
 """Test the basecycler module."""
 import copy
 import os
+import re
 
 import polars as pl
 import polars.testing as pl_testing
@@ -148,6 +149,16 @@ def test_map_columns(column_dict, sample_column_map):
     column_list = ["DateTime", "T [s]", "V [V]", "I [mA]", "Q [Ah]", "Count"]
     expected_map.pop("Temperature")
     assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
+
+
+def test_check_missing_columns(sample_column_map, column_dict):
+    """Test the check missing columns method."""
+    sample_column_map.pop("Current")
+    expected_message = (
+        "PyProBE cannot find the following columns, please check your data: ['I [*]']."
+    )
+    with pytest.raises(ValueError, match=re.escape(expected_message)):
+        BaseCycler._check_missing_columns(column_dict, sample_column_map)
 
 
 def test_tabulate_column_map(sample_column_map):
