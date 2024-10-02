@@ -3,7 +3,9 @@ import copy
 import os
 
 import polars as pl
+import pybamm
 import pytest
+from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
 
 import pyprobe
@@ -141,3 +143,72 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     assert_frame_equal(
         cell_instance.procedure["Test_custom"].data, procedure_fixture.data
     )
+
+
+def test_import_pybamm_solution():
+    """Test the import_pybamm_solution method."""
+    parameter_values = pybamm.ParameterValues("Chen2020")
+    spm = pybamm.lithium_ion.SPM()
+    experiment = pybamm.Experiment(
+        [
+            (
+                "Discharge at C/10 for 10 hours or until 3.3 V",
+                "Rest for 1 hour",
+                "Charge at 1 A until 4.1 V",
+                "Hold at 4.1 V until 50 mA",
+                "Rest for 1 hour",
+            )
+        ]
+        * 3
+        + [
+            "Discharge at 1C until 3.3 V",
+        ]
+    )
+    sim = pybamm.Simulation(
+        spm, experiment=experiment, parameter_values=parameter_values
+    )
+    sol = sim.solve()
+    cell_instance = Cell(info={})
+    cell_instance.import_pybamm_solution(
+        procedure_name="PyBaMM",
+        pybamm_solution=sol,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].get("Voltage [V]"),
+        sol["Terminal voltage [V]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].get("Current [A]"), sol["Current [A]"].entries
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].get("Time [s]"), sol["Time [s]"].entries
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].get("Capacity [Ah]"),
+        sol["Discharge capacity [A.h]"].entries * -1,
+    )
+
+    # test filtering by cycle and step
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].cycle(1).get("Voltage [V]"),
+        sol.cycles[1]["Terminal voltage [V]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].cycle(1).step(3).get("Current [A]"),
+        sol.cycles[1].steps[3]["Current [A]"].entries,
+    )
+
+    # test reading and writing to parquet
+    cell_instance.import_pybamm_solution(
+        procedure_name="PyBaMM",
+        pybamm_solution=sol,
+        output_data_path="tests/sample_data/pybamm.parquet",
+    )
+    written_data = pl.read_parquet("tests/sample_data/pybamm.parquet")
+    assert_frame_equal(
+        cell_instance.procedure["PyBaMM"].data.drop(
+            ["Procedure Time [s]", "Procedure Capacity [Ah]"]
+        ),
+        written_data,
+    )
+    os.remove("tests/sample_data/pybamm.parquet")
