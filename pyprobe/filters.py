@@ -284,6 +284,7 @@ class Procedure(RawData):
         default_factory=lambda: default_column_definitions.copy()
     )
     step_descriptions: pl.LazyFrame = pl.LazyFrame({})
+    cycle_info: List[Tuple[int, int, int]] = []
 
     def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
@@ -321,6 +322,7 @@ class Procedure(RawData):
                 self.step_descriptions = pl.concat([self.step_descriptions, lf])
 
     step = _step
+    cycle = _cycle
     charge = _charge
     discharge = _discharge
     chargeordischarge = _chargeordischarge
