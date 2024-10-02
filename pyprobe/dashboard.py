@@ -115,7 +115,7 @@ if __name__ == "__main__":
     # Select an experiment
     if selected_raw_data is not None:
         experiment_names = (
-            cell_list[selected_indices[0]].procedure[selected_raw_data].titles
+            cell_list[selected_indices[0]].procedure[selected_raw_data].experiment_names
         )
         selected_experiment = st.sidebar.multiselect(
             "Select an experiment", experiment_names
@@ -201,7 +201,6 @@ if __name__ == "__main__":
         tabs = st.tabs(selected_names)
         columns = [
             "Time [s]",
-            "Cycle",
             "Step",
             "Current [A]",
             "Voltage [V]",
