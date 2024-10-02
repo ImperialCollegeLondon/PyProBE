@@ -356,7 +356,7 @@ class Procedure(RawData):
                 "Multiple experiments selected. Cycles will be inferred from "
                 "the step numbers."
             )
-        else:
+        elif "Cycles" in self.readme_dict[experiment_names[0]]:
             # ignore type on below line due to persistent mypy warnings about
             # incompatible types
             cycles_list = self.readme_dict[experiment_names[0]][

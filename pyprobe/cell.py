@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
-import pybamm.solvers.solution as pybamm_solution
+import pybamm.solvers.solution
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -288,7 +288,8 @@ class Cell(BaseModel):
     def import_pybamm_solution(
         self,
         procedure_name: str,
-        pybamm_solution: pybamm_solution,
+        experiment_names: List[str] | str,
+        pybamm_solutions: List[pybamm.solvers.solution] | pybamm.solvers.solution,
         output_data_path: Optional[str] = None,
         optional_variables: Optional[List[str]] = None,
     ) -> None:
@@ -297,6 +298,9 @@ class Cell(BaseModel):
         Filtering a PyBaMM solution object by cycle and step reflects the behaviour of
         the :code:`cycles` and :code:`steps` dictionaries of the PyBaMM solution object.
 
+        Multiple experiments can be imported into the same procedure. This is achieved
+        by providing multiple solution objects and experiment names.
+
         This method optionally writes the data to a parquet file, if a data path is
         provided.
 
@@ -304,27 +308,103 @@ class Cell(BaseModel):
             procedure_name (str):
                 A name to give the procedure. This will be used when calling
                 :code:`cell.procedure[procedure_name]`.
-            pybamm_solution (pybamm.solvers.solution.Solution):
-                The PyBaMM solution object to import.
+            pybamm_solutions (list or pybamm_solution):
+                A list of PyBaMM solution objects or a single PyBaMM solution object.
+            experiment_names (list or str):
+                A list of experiment names or a single experiment name to assign to the
+                PyBaMM solution object.
             output_data_path (str, optional):
                 The path to write the parquet file. Defaults to None.
             optional_variables (list, optional):
                 A list of variables to import from the PyBaMM solution object in
                 addition to the PyProBE required variables. Defaults to None.
         """
+        # the minimum required variables to import from the PyBaMM solution object
         required_variables = [
             "Time [s]",
             "Current [A]",
             "Terminal voltage [V]",
             "Discharge capacity [A.h]",
         ]
+
+        # get the list of variables to import from the PyBaMM solution object
         if optional_variables is not None:
-            imported_variables = required_variables + optional_variables
+            import_variables = required_variables + optional_variables
         else:
-            imported_variables = required_variables
-        pybamm_data = pybamm_solution.get_data_dict(imported_variables)
-        base_dataframe = pl.LazyFrame(pybamm_data)
-        base_dataframe = base_dataframe.select(
+            import_variables = required_variables
+
+        # check if the experiment names and PyBaMM solutions are lists
+        if isinstance(experiment_names, list) and isinstance(pybamm_solutions, list):
+            if len(experiment_names) != len(pybamm_solutions):
+                raise ValueError(
+                    "The number of experiment names and PyBaMM solutions must be equal."
+                )
+        elif isinstance(experiment_names, list) != isinstance(pybamm_solutions, list):
+            if isinstance(experiment_names, list):
+                raise ValueError(
+                    "A list of experiment names must be provided with a list of PyBaMM"
+                    " solutions."
+                )
+            else:
+                raise ValueError(
+                    "A single experiment name must be provided with a single PyBaMM"
+                    " solution."
+                )
+        else:
+            experiment_names = [str(experiment_names)]
+            pybamm_solutions = [pybamm_solutions]
+
+        all_solution_data = pl.LazyFrame({})
+        for experiment_name, pybamm_solution in zip(experiment_names, pybamm_solutions):
+            # get the data from the PyBaMM solution object
+            pybamm_data = pybamm_solution.get_data_dict(import_variables)
+            # convert the PyBaMM data to a polars dataframe and add the experiment name
+            # as a column
+            solution_data = pl.LazyFrame(pybamm_data).with_columns(
+                pl.lit(experiment_name).alias("Experiment")
+            )
+            if all_solution_data == pl.LazyFrame({}):
+                all_solution_data = solution_data
+            else:
+                # join the new solution data with the existing solution data, a right
+                # join is used to keep all the data
+                all_solution_data = all_solution_data.join(
+                    solution_data, on=import_variables + ["Cycle", "Step"], how="right"
+                )
+                # fill null values where the experiment has been extended with the newly
+                #  joined experiment name
+                all_solution_data = all_solution_data.with_columns(
+                    pl.col("Experiment").fill_null(pl.col("Experiment_right"))
+                )
+        # get the maximum step number for each experiment
+        max_steps = (
+            all_solution_data.group_by("Experiment")
+            .agg(pl.max("Step").alias("Max Step"))
+            .sort("Experiment")
+            .with_columns(pl.col("Max Step").cum_sum().shift())
+        )
+        # add the maximum step number from the previous experiment to the step number
+        all_solution_data = all_solution_data.join(
+            max_steps, on="Experiment", how="left"
+        ).with_columns(
+            (pl.col("Step") + pl.col("Max Step").fill_null(-1) + 1).alias("Step")
+        )
+        # get the range of step values for each experiment
+        step_ranges = all_solution_data.group_by("Experiment").agg(
+            pl.arange(pl.col("Step").min(), pl.col("Step").max() + 1).alias(
+                "Step Range"
+            )
+        )
+
+        # create a dictionary of the experiment names and the step ranges
+        experiment_dict = {}
+        for row in step_ranges.collect().iter_rows():
+            experiment = row[0]
+            experiment_dict[experiment] = {"Steps": row[1]}
+            experiment_dict[experiment]["Step Descriptions"] = []
+
+        # reformat the data to the PyProBE format
+        base_dataframe = all_solution_data.select(
             [
                 pl.col("Time [s]"),
                 pl.col("Current [A]"),
@@ -343,9 +423,13 @@ class Cell(BaseModel):
                 ),
             ]
         )
+
+        # create the procedure object
         self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe, info=self.info, readme_dict={}
+            base_dataframe=base_dataframe, info=self.info, readme_dict=experiment_dict
         )
+
+        # write the data to a parquet file if a path is provided
         if output_data_path is not None:
             if not output_data_path.endswith(".parquet"):
                 output_data_path += ".parquet"
