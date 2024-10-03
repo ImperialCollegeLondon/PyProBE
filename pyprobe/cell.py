@@ -354,7 +354,7 @@ class Cell(BaseModel):
             experiment_names = [str(experiment_names)]
             pybamm_solutions = [pybamm_solutions]
 
-        all_solution_data = pl.LazyFrame({})
+        lazyframe_created = False
         for experiment_name, pybamm_solution in zip(experiment_names, pybamm_solutions):
             # get the data from the PyBaMM solution object
             pybamm_data = pybamm_solution.get_data_dict(import_variables)
@@ -363,8 +363,9 @@ class Cell(BaseModel):
             solution_data = pl.LazyFrame(pybamm_data).with_columns(
                 pl.lit(experiment_name).alias("Experiment")
             )
-            if all_solution_data == pl.LazyFrame({}):
+            if lazyframe_created is False:
                 all_solution_data = solution_data
+                lazyframe_created = True
             else:
                 # join the new solution data with the existing solution data, a right
                 # join is used to keep all the data
