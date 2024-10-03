@@ -72,6 +72,7 @@ class BaseCycler(BaseModel):
                 else:
                     missing_columns.add("Charge Capacity")
                     missing_columns.add("Discharge Capacity")
+        if len(missing_columns) > 0:
             search_names = []
             for column in missing_columns:
                 if column != "Step":
