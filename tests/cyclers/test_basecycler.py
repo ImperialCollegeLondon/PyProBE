@@ -147,6 +147,27 @@ def test_input_data_path_validator():
     )
 
 
+def test_column_dict_validator(column_dict):
+    """Test the column dictionary validator."""
+    # test with missing columns
+    column_dict.pop("I [*]")
+    column_dict.pop("Q [*]")
+    expected_message = re.escape(
+        "The column dictionary is missing one or more required columns: "
+        "{'Current [*]'}."
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        BaseCycler._check_column_dict(column_dict)
+
+    column_dict.pop("Q_ch [*]")
+    column_dict.pop("Q_dis [*]")
+    with pytest.raises(
+        ValueError,
+    ):
+        BaseCycler._check_column_dict(column_dict)
+
+
 def test_map_columns(column_dict, sample_column_map):
     """Test initialising the basecycler."""
     # test with single file

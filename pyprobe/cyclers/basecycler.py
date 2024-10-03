@@ -44,6 +44,46 @@ class BaseCycler(BaseModel):
             raise ValueError(f"File not found: path {value} does not exist.")
         return value
 
+    @field_validator("column_dict")
+    @classmethod
+    def _check_column_dict(cls, value: Dict[str, str]) -> Dict[str, str]:
+        """Check if the column dictionary is valid.
+
+        Args:
+            value (Dict[str, str]): The column dictionary.
+
+        Returns:
+            Dict[str, str]: The column dictionary.
+        """
+        pyprobe_data_columns = {value for value in value.values()}
+        pyprobe_required_columns = {
+            "Time [*]",
+            "Current [*]",
+            "Voltage [*]",
+            "Step",
+            "Capacity [*]",
+        }
+        missing_columns = pyprobe_required_columns - pyprobe_data_columns
+        extra_error_message = ""
+        if "Capacity [*]" in missing_columns:
+            if {"Charge Capacity [*]", "Discharge Capacity [*]"}.issubset(
+                pyprobe_data_columns
+            ):
+                missing_columns.remove("Capacity [*]")
+            else:
+                missing_columns.add("Charge Capacity [*]")
+                missing_columns.add("Discharge Capacity [*]")
+                extra_error_message = (
+                    " Capacity can be specified as 'Capacity [*]' or "
+                    "'Charge Capacity [*]' and 'Discharge Capacity [*]'."
+                )
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f"The column dictionary is missing one or more required columns: "
+                f"{missing_columns}." + extra_error_message
+            )
+        return value
+
     @model_validator(mode="after")
     def import_and_validate_data(self) -> "BaseCycler":
         """Import the data and validate the column mapping."""
