@@ -127,6 +127,26 @@ def sample_column_map():
     }
 
 
+def test_input_data_path_validator():
+    """Test the input data path validator."""
+    # test with invalid path
+    path = "invalid_path"
+    with pytest.raises(ValueError, match=f"File not found: path {path} does not exist"):
+        BaseCycler._check_input_data_path(path)
+
+    path = "invalid_path*"
+    with pytest.raises(ValueError, match=f"No files found with the pattern {path}."):
+        BaseCycler._check_input_data_path(path)
+
+    # test with valid path
+    assert (
+        BaseCycler._check_input_data_path(
+            "tests/sample_data/neware/sample_data_neware.csv"
+        )
+        == "tests/sample_data/neware/sample_data_neware.csv"
+    )
+
+
 def test_map_columns(column_dict, sample_column_map):
     """Test initialising the basecycler."""
     # test with single file

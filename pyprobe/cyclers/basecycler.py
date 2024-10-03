@@ -6,7 +6,7 @@ import warnings
 from typing import Dict, List, Optional
 
 import polars as pl
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from pyprobe.units import Units
 
@@ -24,6 +24,25 @@ class BaseCycler(BaseModel):
     `chrono crate <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>`_
     documentation for more information on the format string.
     """
+
+    @field_validator("input_data_path")
+    @classmethod
+    def _check_input_data_path(cls, value: str) -> str:
+        """Check if the input data path is valid.
+
+        Args:
+            value (str): The input data path.
+
+        Returns:
+            str: The input data path.
+        """
+        if "*" in value:
+            files = glob.glob(value)
+            if len(files) == 0:
+                raise ValueError(f"No files found with the pattern {value}.")
+        elif not os.path.exists(value):
+            raise ValueError(f"File not found: path {value} does not exist.")
+        return value
 
     @model_validator(mode="after")
     def import_and_validate_data(self) -> "BaseCycler":
