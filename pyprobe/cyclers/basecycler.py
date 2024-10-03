@@ -178,7 +178,26 @@ class BaseCycler(BaseModel):
     def _map_columns(
         cls, column_dict: Dict[str, str], dataframe_columns: List[str]
     ) -> Dict[str, Dict[str, str | pl.DataType]]:
-        """Map the columns of the imported dataframe to the PyProBE format."""
+        """Map the columns of the imported dataframe to the PyProBE format.
+
+        Args:
+            column_dict (Dict[str, str]):
+                A dictionary mapping the column name format of the cycler to the PyProBE
+                format.
+            dataframe_columns (List[str]): The columns of the imported dataframe.
+
+        Returns:
+            Dict[str, Dict[str, str | pl.DataType]]:
+                A dictionary mapping the column name format of the cycler to the PyProBE
+                format.
+
+                Fields (for each quantity):
+                    Cycler column name (str): The name of the column in the cycler data.
+                    PyProBE column name (str):
+                        The name of the column in the PyProBE data.
+                    Unit (str): The unit of the column.
+                    Type (pl.DataType): The data type of the column.
+        """
         column_map: Dict[str, Dict[str, str | pl.DataType]] = {}
         for cycler_format, pyprobe_format in column_dict.items():
             for cycler_column_name in dataframe_columns:
