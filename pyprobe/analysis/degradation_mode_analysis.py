@@ -42,7 +42,8 @@ class DMA(BaseModel):
     ) -> Tuple[Result, Result]:
         """Fit half cell open circuit potential curves to full cell OCV data.
 
-        Based on the code from :footcite:t:`Kirkaldy_batteryDAT_2023`.
+        Based on the code from :footcite:t:`Kirkaldy_batteryDAT_2023`. The fitting
+        algorithm is based on the scipy.optimize.minimize function.
 
         Args:
             x_ne (NDArray[np.float64]): The anode stoichiometry data.
@@ -50,6 +51,13 @@ class DMA(BaseModel):
             ocp_ne (NDArray[np.float64]): The anode OCP data.
             ocp_pe (NDArray[np.float64]): The cathode OCP data.
             x_guess (NDArray[np.float64]): The initial guess for the fit.
+            fitting_target (str, optional):
+                The target for the curve fitting. Defaults to "OCV".
+            optimizer (str, optional):
+                The optimization algorithm to use. Defaults to None. If None, the
+                optimizer will be set to scipy.optimize.minimize for
+                fitting_target="OCV" and scipy.optimize.differential_evolution for
+                fitting_target="dQdV" or "dVdQ".
 
         Returns:
             Tuple[Result, Result]:
