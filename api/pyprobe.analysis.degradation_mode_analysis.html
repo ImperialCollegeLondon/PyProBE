@@ -444,7 +444,8 @@ document.write(`
 <dt class="sig sig-object py" id="pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv">
 <span class="sig-name descname"><span class="pre">fit_ocv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_ne</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_pe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_ne</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocp_pe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fitting_target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'OCV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv" title="Link to this definition">#</a></dt>
 <dd><p>Fit half cell open circuit potential curves to full cell OCV data.</p>
-<p>Based on the code from Kirkaldy<a class="footnote-reference brackets" href="#footcite-kirkaldy-batterydat-2023" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+<p>Based on the code from Kirkaldy<a class="footnote-reference brackets" href="#footcite-kirkaldy-batterydat-2023" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>. The fitting
+algorithm is based on the scipy.optimize.minimize function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -453,8 +454,11 @@ document.write(`
 <li><p><strong>ocp_ne</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The anode OCP data.</p></li>
 <li><p><strong>ocp_pe</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The cathode OCP data.</p></li>
 <li><p><strong>x_guess</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The initial guess for the fit.</p></li>
-<li><p><strong>fitting_target</strong> (<em>str</em>)</p></li>
-<li><p><strong>optimizer</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>fitting_target</strong> (<em>str</em><em>, </em><em>optional</em>) – The target for the curve fitting. Defaults to “OCV”.</p></li>
+<li><p><strong>optimizer</strong> (<em>str</em><em>, </em><em>optional</em>) – The optimization algorithm to use. Defaults to None. If None, the
+optimizer will be set to scipy.optimize.minimize for
+fitting_target=”OCV” and scipy.optimize.differential_evolution for
+fitting_target=”dQdV” or “dVdQ”.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
