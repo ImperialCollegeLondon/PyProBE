@@ -59,7 +59,7 @@ def ocv_curve_fit(
         return np.sum((model - fitting_target_data) ** 2)
 
     if optimizer == "minimize":
-        fitting_result = opt.minimize(cost_function, x_guess)
+        fitting_result = opt.minimize(cost_function, x_guess, bounds=[(0, 1)] * 4)
     elif optimizer == "differential_evolution":
         fitting_result = opt.differential_evolution(
             cost_function, bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)]
