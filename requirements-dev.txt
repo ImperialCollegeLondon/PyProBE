@@ -432,6 +432,8 @@ traitlets==5.14.3
     #   nbsphinx
 types-pyyaml==6.0.12.20240808
     # via PyProBE (pyproject.toml)
+types-toml==0.10.8.20240310
+    # via PyProBE (pyproject.toml)
 typing-extensions==4.12.2
     # via
     #   altair
