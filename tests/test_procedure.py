@@ -33,6 +33,11 @@ def test_experiment(procedure_fixture, steps_fixture, benchmark):
     assert experiment.cycle_info == []
 
 
+def test_init(procedure_fixture, step_descriptions_fixture):
+    """Test initialising a procedure."""
+    assert procedure_fixture.step_descriptions == step_descriptions_fixture
+
+
 def test_experiment_no_description():
     """Test creating a procedure with no step descriptions."""
     cell = Cell(info={})
@@ -42,14 +47,7 @@ def test_experiment_no_description():
         "sample_data_neware.xlsx",
         readme_name="README_total_steps.yaml",
     )
-    step_descriptions = (
-        cell.procedure["sample"]
-        .step_descriptions.select("Description")
-        .collect()
-        .to_numpy()
-        .flatten()
-    )
-    assert np.all(np.isnan(step_descriptions))
+    assert np.all(np.isnan(cell.procedure["sample"].step_descriptions["Description"]))
 
 
 def test_experiment_names(procedure_fixture, titles_fixture):
