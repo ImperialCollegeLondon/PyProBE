@@ -234,12 +234,11 @@ def generic_experiment():
         }
     )
     info = {}
-    step_descriptions = pl.LazyFrame(
-        {
-            "Step": [0, 1, 2, 3],
-            "Description": ["Charge", "Discharge", "Charge", "Discharge"],
-        }
-    )
+    step_descriptions = {
+        "Step": [0, 1, 2, 3],
+        "Description": ["Charge", "Discharge", "Charge", "Discharge"],
+    }
+
     cycle_info = [(0, 3, 2), (0, 1, 2)]
     return filters.Experiment(
         base_dataframe=dataframe,

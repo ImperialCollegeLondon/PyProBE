@@ -1,7 +1,7 @@
 """A module for the filtering classes."""
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import polars as pl
 from pydantic import Field
@@ -283,7 +283,7 @@ class Procedure(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
-    step_descriptions: pl.LazyFrame = pl.LazyFrame({})
+    step_descriptions: Dict[str, List[Optional[str | int]]] = {}
     cycle_info: List[Tuple[int, int, int]] = []
 
     def model_post_init(self, __context: Any) -> None:
@@ -299,27 +299,16 @@ class Procedure(RawData):
             "Procedure Capacity [Ah]",
             "The net charge passed since beginning of procedure.",
         )
+        self.step_descriptions = {"Step": [], "Description": []}
         for experiment in self.readme_dict:
-            if self.readme_dict[experiment]["Step Descriptions"] == []:
-                lf = pl.LazyFrame(
-                    {
-                        "Step": self.readme_dict[experiment]["Steps"],
-                    }
+            steps = cast(List[int], self.readme_dict[experiment]["Steps"])
+            descriptions: List[str | None] = [None] * len(steps)
+            if "Step Descriptions" in self.readme_dict[experiment]:
+                descriptions = cast(
+                    List[str | None], self.readme_dict[experiment]["Step Descriptions"]
                 )
-                lf = lf.with_columns(pl.lit(None).alias("Description"))
-            else:
-                lf = pl.LazyFrame(
-                    {
-                        "Step": self.readme_dict[experiment]["Steps"],
-                        "Description": self.readme_dict[experiment][
-                            "Step Descriptions"
-                        ],
-                    }
-                )
-            if len(self.step_descriptions.collect_schema().names()) == 0:
-                self.step_descriptions = lf
-            else:
-                self.step_descriptions = pl.concat([self.step_descriptions, lf])
+            self.step_descriptions["Step"].extend(steps)
+            self.step_descriptions["Description"].extend(descriptions)
 
     step = _step
     cycle = _cycle

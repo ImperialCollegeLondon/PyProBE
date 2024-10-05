@@ -6,7 +6,6 @@ import numpy as np
 import polars as pl
 import pybamm
 import pytest
-from polars.testing import assert_frame_equal
 
 from pyprobe.rawdata import RawData
 
@@ -26,7 +25,7 @@ def test_init(RawData_fixture, step_descriptions_fixture):
     assert isinstance(RawData_fixture, RawData)
     assert isinstance(RawData_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(RawData_fixture.info, dict)
-    assert_frame_equal(RawData_fixture.step_descriptions, step_descriptions_fixture)
+    assert RawData_fixture.step_descriptions == step_descriptions_fixture
 
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
@@ -41,24 +40,23 @@ def test_pybamm_experiment(RawData_fixture):
         RawData_fixture.pybamm_experiment.steps[-1].description == "Rest for 1.5 hours"
     )
 
-    RawData_fixture.step_descriptions = pl.LazyFrame(
-        {
-            "Step": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12],
-            "Description": [
-                "Rest for 4 hours",
-                "Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A",
-                "Rest for 2 hours",
-                "Discharge at 4 mA until 3 V",
-                None,
-                "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
-                "Rest for 2 hours",
-                "Rest for 10 seconds",
-                None,
-                "Rest for 30 minutes",
-                "Rest for 1.5 hours",
-            ],
-        }
-    )
+    RawData_fixture.step_descriptions = {
+        "Step": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12],
+        "Description": [
+            "Rest for 4 hours",
+            "Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A",
+            "Rest for 2 hours",
+            "Discharge at 4 mA until 3 V",
+            None,
+            "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
+            "Rest for 2 hours",
+            "Rest for 10 seconds",
+            None,
+            "Rest for 30 minutes",
+            "Rest for 1.5 hours",
+        ],
+    }
+
     with pytest.raises(ValueError):
         RawData_fixture.pybamm_experiment
 

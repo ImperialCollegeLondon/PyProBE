@@ -1,5 +1,5 @@
 """A module for the RawData class."""
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import polars as pl
 import pybamm
@@ -55,7 +55,7 @@ class RawData(Result):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
-    step_descriptions: pl.LazyFrame
+    step_descriptions: Dict[str, List[Optional[str | int]]] = {}
 
     @field_validator("base_dataframe")
     @classmethod
@@ -205,7 +205,8 @@ class RawData(Result):
         Returns:
             pybamm.Experiment: The PyBaMM experiment object.
         """
-        no_step_descriptions = self.step_descriptions.filter(
+        step_description_df = pl.LazyFrame(self.step_descriptions)
+        no_step_descriptions = step_description_df.filter(
             pl.col("Description").is_null()
         )
         missing_steps = (
@@ -226,7 +227,7 @@ class RawData(Result):
         ).select("Step")
         # match the step with its description
         all_steps_with_descriptions = only_steps.join(
-            self.step_descriptions, on="Step", how="left"
+            step_description_df, on="Step", how="left"
         )
         if isinstance(all_steps_with_descriptions, pl.LazyFrame):
             all_steps_with_descriptions = all_steps_with_descriptions.select(
