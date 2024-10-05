@@ -5,12 +5,12 @@ import shutil
 import time
 import warnings
 import zipfile
-from importlib.metadata import version
 from typing import Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
 import pybamm.solvers.solution
+import toml
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -453,7 +453,9 @@ class Cell(BaseModel):
         if not os.path.exists(path):
             os.makedirs(path)
         metadata = self.dict()
-        metadata["PyProBE Version"] = version("pyprobe")
+        pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+        pyproject_data = toml.load(pyproject_path)
+        metadata["PyProBE Version"] = pyproject_data["project"]["version"]
         for procedure_name, procedure in self.procedure.items():
             if isinstance(procedure.base_dataframe, pl.LazyFrame):
                 df = procedure.base_dataframe.collect()
@@ -501,12 +503,14 @@ def load_archive(path: str) -> Cell:
 
     with open(os.path.join(archive_path, "metadata.json"), "r") as f:
         metadata = json.load(f)
-
-    if metadata["PyProBE Version"] != version("pyprobe"):
+    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+    pyproject_data = toml.load(pyproject_path)
+    if metadata["PyProBE Version"] != pyproject_data["project"]["version"]:
         warnings.warn(
-            f"The PyProBE version used to archive the cell was"
+            f"The PyProBE version used to archive the cell was "
             f"{metadata['PyProBE Version']}, the current version is "
-            f"{version('pyprobe')}. There may be compatibility issues."
+            f"{pyproject_data['project']['version']}. There may be compatibility"
+            f" issues."
         )
     metadata.pop("PyProBE Version")
     for procedure in metadata["procedure"].values():
