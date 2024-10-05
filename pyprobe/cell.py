@@ -1,4 +1,5 @@
 """Module for the Cell class."""
+import json
 import os
 import time
 import warnings
@@ -434,6 +435,48 @@ class Cell(BaseModel):
             if not output_data_path.endswith(".parquet"):
                 output_data_path += ".parquet"
             base_dataframe.collect().write_parquet(output_data_path)
+
+    def archive(self, path: str) -> None:
+        """Archive the cell object.
+
+        Args:
+            path (str): The path to the archive directory.
+        """
+        if not os.path.exists(path):
+            os.makedirs(path)
+        metadata = self.dict()
+        for procedure_name, procedure in self.procedure.items():
+            if isinstance(procedure.base_dataframe, pl.LazyFrame):
+                df = procedure.base_dataframe.collect()
+            else:
+                df = procedure.base_dataframe
+            # write the dataframe to a parquet file
+            filename = procedure_name + ".parquet"
+            filepath = os.path.join(path, filename)
+            df.write_parquet(filepath)
+            # update the metadata with the filename
+            metadata["procedure"][procedure_name]["base_dataframe"] = filename
+        with open(os.path.join(path, "metadata.json"), "w") as f:
+            json.dump(metadata, f)
+
+
+def load_archive(path: str) -> Cell:
+    """Load a cell object from an archive.
+
+    Args:
+        path (str): The path to the archive directory.
+
+    Returns:
+        Cell: The cell object.
+    """
+    with open(os.path.join(path, "metadata.json"), "r") as f:
+        metadata = json.load(f)
+    for procedure in metadata["procedure"].values():
+        procedure["base_dataframe"] = os.path.join(path, procedure["base_dataframe"])
+    print(metadata)
+    cell = Cell(**metadata)
+
+    return cell
 
 
 def make_cell_list(

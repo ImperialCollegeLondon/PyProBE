@@ -1,6 +1,7 @@
 """Tests for the Cell class."""
 import copy
 import os
+import shutil
 
 import polars as pl
 import pybamm
@@ -279,3 +280,40 @@ def test_import_pybamm_solution(benchmark):
         written_data,
     )
     os.remove("tests/sample_data/pybamm.parquet")
+
+
+def test_archive(cell_instance):
+    """Test archiving and loading a cell."""
+    input_path = "tests/sample_data/neware/"
+    file_name = "sample_data_neware.parquet"
+    title = "Test"
+
+    cell_instance.add_procedure(title, input_path, file_name)
+    cell_instance.archive(input_path + "archive")
+    assert os.path.exists(input_path + "archive")
+
+    cell_from_file = pyprobe.load_archive(input_path + "archive")
+
+    assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
+    assert cell_instance.info == cell_from_file.info
+    assert (
+        cell_instance.procedure[title].readme_dict
+        == cell_from_file.procedure[title].readme_dict
+    )
+    assert (
+        cell_instance.procedure[title].column_definitions
+        == cell_from_file.procedure[title].column_definitions
+    )
+    assert (
+        cell_instance.procedure[title].step_descriptions
+        == cell_from_file.procedure[title].step_descriptions
+    )
+    assert (
+        cell_instance.procedure[title].cycle_info
+        == cell_from_file.procedure[title].cycle_info
+    )
+    assert_frame_equal(
+        cell_instance.procedure[title].base_dataframe,
+        cell_from_file.procedure[title].base_dataframe,
+    )
+    shutil.rmtree(input_path + "archive")
