@@ -3,6 +3,7 @@ import json
 import os
 import time
 import warnings
+from importlib.metadata import version
 from typing import Callable, Dict, List, Optional
 
 import distinctipy
@@ -445,6 +446,7 @@ class Cell(BaseModel):
         if not os.path.exists(path):
             os.makedirs(path)
         metadata = self.dict()
+        metadata["PyProBE Version"] = version("pyprobe")
         for procedure_name, procedure in self.procedure.items():
             if isinstance(procedure.base_dataframe, pl.LazyFrame):
                 df = procedure.base_dataframe.collect()
@@ -471,9 +473,15 @@ def load_archive(path: str) -> Cell:
     """
     with open(os.path.join(path, "metadata.json"), "r") as f:
         metadata = json.load(f)
+    if metadata["PyProBE Version"] != version("pyprobe"):
+        warnings.warn(
+            f"The PyProBE version used to archive the cell was"
+            f"{metadata['PyProBE Version']}, the current version is "
+            f"{version('pyprobe')}. There may be compatibility issues."
+        )
+    metadata.pop("PyProBE Version")
     for procedure in metadata["procedure"].values():
         procedure["base_dataframe"] = os.path.join(path, procedure["base_dataframe"])
-    print(metadata)
     cell = Cell(**metadata)
 
     return cell

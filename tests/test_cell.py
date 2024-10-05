@@ -1,5 +1,6 @@
 """Tests for the Cell class."""
 import copy
+import json
 import os
 import shutil
 
@@ -316,4 +317,14 @@ def test_archive(cell_instance):
         cell_instance.procedure[title].base_dataframe,
         cell_from_file.procedure[title].base_dataframe,
     )
+
+    # test loading an incorrect pyprobe version
+    with open(os.path.join(input_path, "archive", "metadata.json"), "r") as f:
+        metadata = json.load(f)
+    metadata["PyProBE Version"] = "0.0.0"
+    with open(os.path.join(input_path, "archive", "metadata.json"), "w") as f:
+        json.dump(metadata, f)
+    with pytest.warns(UserWarning):
+        cell_from_file = pyprobe.load_archive(input_path + "archive")
+
     shutil.rmtree(input_path + "archive")
