@@ -35,10 +35,10 @@ def test_experiment(procedure_fixture, steps_fixture, benchmark):
 
 def test_remove_experiment(procedure_fixture):
     """Test removing an experiment."""
-    reduced_experiment = procedure_fixture.remove_experiment("Break-in Cycles")
-    assert "Break-in Cycles" not in reduced_experiment.experiment_names
-    assert reduced_experiment.data["Step"].unique().to_list() == [2, 3, 9, 10, 11, 12]
-    assert reduced_experiment.step_descriptions["Step"] == [1, 2, 3, 9, 10, 11, 12]
+    procedure_fixture.remove_experiment("Break-in Cycles")
+    assert "Break-in Cycles" not in procedure_fixture.experiment_names
+    assert procedure_fixture.data["Step"].unique().to_list() == [2, 3, 9, 10, 11, 12]
+    assert procedure_fixture.step_descriptions["Step"] == [1, 2, 3, 9, 10, 11, 12]
 
 
 def test_init(procedure_fixture, step_descriptions_fixture):
