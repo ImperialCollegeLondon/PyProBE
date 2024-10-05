@@ -370,7 +370,7 @@ class Cell(BaseModel):
                 # join the new solution data with the existing solution data, a right
                 # join is used to keep all the data
                 all_solution_data = all_solution_data.join(
-                    solution_data, on=import_variables + ["Cycle", "Step"], how="right"
+                    solution_data, on=import_variables + ["Step"], how="right"
                 )
                 # fill null values where the experiment has been extended with the newly
                 #  joined experiment name
