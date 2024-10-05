@@ -1,4 +1,5 @@
 """A module for the filtering classes."""
+import copy
 import os
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
@@ -358,6 +359,40 @@ class Procedure(RawData):
             column_definitions=self.column_definitions,
             step_descriptions=self.step_descriptions,
             cycle_info=cycles_list,
+        )
+
+    def remove_experiment(self, *experiment_names: str) -> "Procedure":
+        """Remove an experiment from the procedure.
+
+        This method will remove the experiment from the procedure and return a new
+        procedure object. It does not modify the original procedure.
+
+        Args:
+            experiment_names (str):
+                Variable-length argument list of experiment names.
+
+        Returns:
+            Procedure: The procedure with the experiment removed.
+        """
+        steps_idx = []
+        for experiment_name in experiment_names:
+            if experiment_name not in self.experiment_names:
+                raise ValueError(f"{experiment_name} not in procedure.")
+            steps_idx.append(self.readme_dict[experiment_name]["Steps"])
+        flattened_steps = utils.flatten_list(steps_idx)
+
+        conditions = [
+            pl.col("Step").is_in(flattened_steps) is False,
+        ]
+        for experiment_name in experiment_names:
+            readme_dict = copy.deepcopy(self.readme_dict)
+            readme_dict.pop(experiment_name)
+
+        return Procedure(
+            base_dataframe=self.base_dataframe.filter(conditions),
+            info=self.info,
+            column_definitions=self.column_definitions,
+            readme_dict=readme_dict,
         )
 
     @property
