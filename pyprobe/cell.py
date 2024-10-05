@@ -1,8 +1,10 @@
 """Module for the Cell class."""
 import json
 import os
+import shutil
 import time
 import warnings
+import zipfile
 from importlib.metadata import version
 from typing import Callable, Dict, List, Optional
 
@@ -441,8 +443,13 @@ class Cell(BaseModel):
         """Archive the cell object.
 
         Args:
-            path (str): The path to the archive directory.
+            path (str): The path to the archive directory or zip file.
         """
+        if path.endswith(".zip"):
+            zip = True
+            path = path[:-4]
+        else:
+            zip = False
         if not os.path.exists(path):
             os.makedirs(path)
         metadata = self.dict()
@@ -461,6 +468,16 @@ class Cell(BaseModel):
         with open(os.path.join(path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
 
+        if zip:
+            with zipfile.ZipFile(path + ".zip", "w") as zipf:
+                for root, _, files in os.walk(path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, path)
+                        zipf.write(file_path, arcname)
+            # Delete the original directory
+            shutil.rmtree(path)
+
 
 def load_archive(path: str) -> Cell:
     """Load a cell object from an archive.
@@ -471,8 +488,20 @@ def load_archive(path: str) -> Cell:
     Returns:
         Cell: The cell object.
     """
-    with open(os.path.join(path, "metadata.json"), "r") as f:
+    if path.endswith(".zip"):
+        extract_path = path[:-4]
+        with zipfile.ZipFile(path, "r") as zipf:
+            with zipfile.ZipFile(path, "r") as zipf:
+                zipf.extractall(extract_path)
+            # Delete the original zip file
+            os.remove(path)
+            archive_path = extract_path
+    else:
+        archive_path = path
+
+    with open(os.path.join(archive_path, "metadata.json"), "r") as f:
         metadata = json.load(f)
+
     if metadata["PyProBE Version"] != version("pyprobe"):
         warnings.warn(
             f"The PyProBE version used to archive the cell was"
@@ -481,7 +510,9 @@ def load_archive(path: str) -> Cell:
         )
     metadata.pop("PyProBE Version")
     for procedure in metadata["procedure"].values():
-        procedure["base_dataframe"] = os.path.join(path, procedure["base_dataframe"])
+        procedure["base_dataframe"] = os.path.join(
+            archive_path, procedure["base_dataframe"]
+        )
     cell = Cell(**metadata)
 
     return cell

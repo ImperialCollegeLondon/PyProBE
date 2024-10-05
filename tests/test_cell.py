@@ -294,7 +294,6 @@ def test_archive(cell_instance):
     assert os.path.exists(input_path + "archive")
 
     cell_from_file = pyprobe.load_archive(input_path + "archive")
-
     assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
     assert cell_instance.info == cell_from_file.info
     assert (
@@ -326,5 +325,35 @@ def test_archive(cell_instance):
         json.dump(metadata, f)
     with pytest.warns(UserWarning):
         cell_from_file = pyprobe.load_archive(input_path + "archive")
+
+    shutil.rmtree(input_path + "archive")
+
+    # test with zip file
+    cell_instance.archive(input_path + "archive.zip")
+    assert os.path.exists(input_path + "archive.zip")
+    assert not os.path.exists(input_path + "archive")
+    cell_from_file = pyprobe.load_archive(input_path + "archive.zip")
+    assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
+    assert cell_instance.info == cell_from_file.info
+    assert (
+        cell_instance.procedure[title].readme_dict
+        == cell_from_file.procedure[title].readme_dict
+    )
+    assert (
+        cell_instance.procedure[title].column_definitions
+        == cell_from_file.procedure[title].column_definitions
+    )
+    assert (
+        cell_instance.procedure[title].step_descriptions
+        == cell_from_file.procedure[title].step_descriptions
+    )
+    assert (
+        cell_instance.procedure[title].cycle_info
+        == cell_from_file.procedure[title].cycle_info
+    )
+    assert_frame_equal(
+        cell_instance.procedure[title].base_dataframe,
+        cell_from_file.procedure[title].base_dataframe,
+    )
 
     shutil.rmtree(input_path + "archive")
