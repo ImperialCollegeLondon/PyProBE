@@ -180,7 +180,7 @@ def test_import_pybamm_solution(benchmark):
     )
     assert_array_equal(
         cell_instance.procedure["PyBaMM"].experiment("Test").get("Current [A]"),
-        sol["Current [A]"].entries,
+        sol["Current [A]"].entries * -1,
     )
     assert_array_equal(
         cell_instance.procedure["PyBaMM"].experiment("Test").get("Time [s]"),
@@ -205,7 +205,7 @@ def test_import_pybamm_solution(benchmark):
         .cycle(1)
         .step(3)
         .get("Current [A]"),
-        sol.cycles[1].steps[3]["Current [A]"].entries,
+        sol.cycles[1].steps[3]["Current [A]"].entries * -1,
     )
 
     assert cell_instance.procedure["PyBaMM"].readme_dict["Test"]["Steps"] == [
