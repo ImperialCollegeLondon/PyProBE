@@ -408,7 +408,7 @@ class Cell(BaseModel):
         base_dataframe = all_solution_data.select(
             [
                 pl.col("Time [s]"),
-                pl.col("Current [A]"),
+                pl.col("Current [A]") * -1,
                 pl.col("Terminal voltage [V]").alias("Voltage [V]"),
                 (pl.col("Discharge capacity [A.h]") * -1).alias("Capacity [Ah]"),
                 pl.col("Step"),
@@ -424,7 +424,6 @@ class Cell(BaseModel):
                 ),
             ]
         )
-
         # create the procedure object
         self.procedure[procedure_name] = Procedure(
             base_dataframe=base_dataframe, info=self.info, readme_dict=experiment_dict
