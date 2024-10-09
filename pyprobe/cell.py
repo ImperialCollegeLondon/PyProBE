@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 import warnings
+from typing import Callable, Dict, List, Literal, Optional
 import zipfile
 from typing import Any, Callable, Dict, List, Optional
 
@@ -69,6 +70,9 @@ class Cell(BaseModel):
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
+        compression_priority: Literal[
+            "performance", "file size", "uncompressed"
+        ] = "performance",
     ) -> None:
         """Convert cycler file into PyProBE format.
 
@@ -89,6 +93,12 @@ class Cell(BaseModel):
             filename_inputs (list):
                 The list of inputs to input_filename and output_filename, if they are
                 functions. These must be keys of the cell info.
+            compression_priority (str):
+                The priority of the compression algorithm to use on the resulting
+                parquet file. Available options are:
+                - 'performance': Use the 'lz4' compression algorithm (default).
+                - 'file size': Use the 'zstd' compression algorithm.
+                - 'uncompressed': Do not use compression.
         """
         input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_inputs
@@ -110,7 +120,16 @@ class Cell(BaseModel):
         }
         t1 = time.time()
         importer = cycler_dict[cycler](input_data_path=input_data_path)
-        self._write_parquet(importer, output_data_path)
+        compression_dict = {
+            "uncompressed": "uncompressed",
+            "performance": "lz4",
+            "file size": "zstd",
+        }
+        self._write_parquet(
+            importer,
+            output_data_path,
+            compression=compression_dict[compression_priority],
+        )
         print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @validate_call
@@ -121,6 +140,9 @@ class Cell(BaseModel):
         output_filename: str | Callable[[str], str],
         column_dict: Dict[str, str],
         filename_inputs: Optional[List[str]] = None,
+        compression_priority: Literal[
+            "performance", "file size", "uncompressed"
+        ] = "performance",
     ) -> None:
         """Convert generic file into PyProBE format.
 
@@ -142,6 +164,12 @@ class Cell(BaseModel):
             filename_inputs (list):
                 The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
+            compression_priority (str):
+                The priority of the compression algorithm to use on the resulting
+                parquet file. Available options are:
+                - 'performance': Use the 'lz4' compression algorithm (default).
+                - 'file size': Use the 'zstd' compression algorithm.
+                - 'uncompressed': Do not use compression.
         """
         input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_inputs
@@ -158,7 +186,16 @@ class Cell(BaseModel):
             input_data_path=input_data_path,
             column_dict=column_dict,
         )
-        self._write_parquet(importer, output_data_path)
+        compression_dict = {
+            "uncompressed": "uncompressed",
+            "performance": "lz4",
+            "file size": "zstd",
+        }
+        self._write_parquet(
+            importer,
+            output_data_path,
+            compression=compression_dict[compression_priority],
+        )
         print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
 
     @validate_call
@@ -226,17 +263,19 @@ class Cell(BaseModel):
         self,
         importer: basecycler.BaseCycler,
         output_data_path: str,
+        compression: str,
     ) -> None:
         """Import data from a cycler file and write to a PyProBE parquet file.
 
         Args:
             importer (BaseCycler): The cycler object to import the data.
             output_data_path (str): The path to write the parquet file.
+            compression (str): The compression algorithm to use.
         """
         dataframe = importer.pyprobe_dataframe
         if isinstance(dataframe, pl.LazyFrame):
             dataframe = dataframe.collect()
-        dataframe.write_parquet(output_data_path)
+        dataframe.write_parquet(output_data_path, compression=compression)
 
     @staticmethod
     def _get_filename(
