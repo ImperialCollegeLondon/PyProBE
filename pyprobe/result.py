@@ -44,7 +44,7 @@ class Result(BaseModel):
     @classmethod
     def _load_base_dataframe(cls, data: Any) -> Any:
         """Load the base dataframe from a file if provided as a string."""
-        if isinstance(data["base_dataframe"], str):
+        if "base_dataframe" in data and isinstance(data["base_dataframe"], str):
             data["base_dataframe"] = pl.scan_parquet(data["base_dataframe"])
         return data
 
