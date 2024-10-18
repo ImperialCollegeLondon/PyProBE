@@ -1,9 +1,14 @@
 """Tests for the Cell class."""
 import copy
+import json
 import os
+import shutil
 
 import polars as pl
+import pybamm
 import pytest
+import toml
+from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
 
 import pyprobe
@@ -110,7 +115,6 @@ def test_process_generic_file(cell_instance):
     expected_df = pl.DataFrame(
         {
             "Time [s]": [1.0, 2.0, 3.0],
-            "Cycle": [0, 0, 0],
             "Step": [1, 2, 3],
             "Event": [0, 1, 2],
             "Current [A]": [7.0, 8.0, 9.0],
@@ -142,3 +146,225 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     assert_frame_equal(
         cell_instance.procedure["Test_custom"].data, procedure_fixture.data
     )
+
+
+def test_import_pybamm_solution(benchmark):
+    """Test the import_pybamm_solution method."""
+    parameter_values = pybamm.ParameterValues("Chen2020")
+    spm = pybamm.lithium_ion.SPM()
+    experiment = pybamm.Experiment(
+        [
+            (
+                "Discharge at C/10 for 10 hours or until 3.3 V",
+                "Rest for 1 hour",
+                "Charge at 1 A until 4.1 V",
+                "Hold at 4.1 V until 50 mA",
+                "Rest for 1 hour",
+            )
+        ]
+        * 3
+        + [
+            "Discharge at 1C until 3.3 V",
+        ]
+    )
+    sim = pybamm.Simulation(
+        spm, experiment=experiment, parameter_values=parameter_values
+    )
+    sol = sim.solve()
+    cell_instance = Cell(info={})
+    cell_instance.import_pybamm_solution(
+        procedure_name="PyBaMM",
+        pybamm_solutions=sol,
+        experiment_names="Test",
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Voltage [V]"),
+        sol["Terminal voltage [V]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Current [A]"),
+        sol["Current [A]"].entries * -1,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Time [s]"),
+        sol["Time [s]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"].experiment("Test").get("Capacity [Ah]"),
+        sol["Discharge capacity [A.h]"].entries * -1,
+    )
+
+    # test filtering by cycle and step
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"]
+        .experiment("Test")
+        .cycle(1)
+        .get("Voltage [V]"),
+        sol.cycles[1]["Terminal voltage [V]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM"]
+        .experiment("Test")
+        .cycle(1)
+        .step(3)
+        .get("Current [A]"),
+        sol.cycles[1].steps[3]["Current [A]"].entries * -1,
+    )
+
+    assert cell_instance.procedure["PyBaMM"].readme_dict["Test"]["Steps"] == [
+        0,
+        1,
+        2,
+        3,
+        4,
+    ]
+
+    # test with multiple experiments from different simulations
+    experiment2 = pybamm.Experiment(
+        [
+            (
+                "Discharge at 1C for 10 hours or until 3.3 V",
+                "Rest for 1 hour",
+                "Charge at 1 A until 4.1 V",
+                "Hold at 4.1 V until 50 mA",
+                "Rest for 1 hour",
+            )
+        ]
+        * 5
+    )
+    sim2 = pybamm.Simulation(
+        spm, experiment=experiment2, parameter_values=parameter_values
+    )
+
+    sol2 = sim2.solve(starting_solution=sol)
+
+    def add_two_experiments():
+        return cell_instance.import_pybamm_solution(
+            procedure_name="PyBaMM two experiments",
+            pybamm_solutions=[sol, sol2],
+            experiment_names=["Test1", "Test2"],
+        )
+
+    benchmark(add_two_experiments)
+    assert set(
+        cell_instance.procedure["PyBaMM two experiments"].experiment_names
+    ) == set(["Test1", "Test2"])
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM two experiments"].get("Voltage [V]"),
+        sol2["Terminal voltage [V]"].entries,
+    )
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM two experiments"]
+        .experiment("Test1")
+        .get("Voltage [V]"),
+        sol["Terminal voltage [V]"].entries,
+    )
+    sol_length = len(sol["Terminal voltage [V]"].entries)
+    assert_array_equal(
+        cell_instance.procedure["PyBaMM two experiments"]
+        .experiment("Test2")
+        .get("Voltage [V]"),
+        sol2["Terminal voltage [V]"].entries[sol_length:],
+    )
+
+    # test reading and writing to parquet
+    cell_instance.import_pybamm_solution(
+        procedure_name="PyBaMM",
+        pybamm_solutions=sol,
+        experiment_names="Test",
+        output_data_path="tests/sample_data/pybamm.parquet",
+    )
+    written_data = pl.read_parquet("tests/sample_data/pybamm.parquet")
+    assert_frame_equal(
+        cell_instance.procedure["PyBaMM"].data.drop(
+            ["Procedure Time [s]", "Procedure Capacity [Ah]"]
+        ),
+        written_data,
+    )
+    os.remove("tests/sample_data/pybamm.parquet")
+
+
+def test_archive(cell_instance):
+    """Test archiving and loading a cell."""
+    input_path = "tests/sample_data/neware/"
+    file_name = "sample_data_neware.parquet"
+    title = "Test"
+
+    cell_instance.add_procedure(title, input_path, file_name)
+    cell_instance.archive(input_path + "archive")
+    assert os.path.exists(input_path + "archive")
+
+    cell_from_file = pyprobe.load_archive(input_path + "archive")
+    assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
+    assert cell_instance.info == cell_from_file.info
+    assert (
+        cell_instance.procedure[title].readme_dict
+        == cell_from_file.procedure[title].readme_dict
+    )
+    assert (
+        cell_instance.procedure[title].column_definitions
+        == cell_from_file.procedure[title].column_definitions
+    )
+    assert (
+        cell_instance.procedure[title].step_descriptions
+        == cell_from_file.procedure[title].step_descriptions
+    )
+    assert (
+        cell_instance.procedure[title].cycle_info
+        == cell_from_file.procedure[title].cycle_info
+    )
+    assert_frame_equal(
+        cell_instance.procedure[title].base_dataframe,
+        cell_from_file.procedure[title].base_dataframe,
+    )
+
+    # test loading an incorrect pyprobe version
+    with open(os.path.join(input_path, "archive", "metadata.json"), "r") as f:
+        metadata = json.load(f)
+    metadata["PyProBE Version"] = "0.0.0"
+    with open(os.path.join(input_path, "archive", "metadata.json"), "w") as f:
+        json.dump(metadata, f)
+    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+    pyproject_data = toml.load(pyproject_path)
+    with pytest.warns(
+        UserWarning,
+        match=(
+            f"The PyProBE version used to archive the cell was "
+            f"{metadata['PyProBE Version']}, the current version is "
+            f"{pyproject_data['project']['version']}. There may be compatibility"
+            f" issues."
+        ),
+    ):
+        cell_from_file = pyprobe.load_archive(input_path + "archive")
+
+    shutil.rmtree(input_path + "archive")
+
+    # test with zip file
+    cell_instance.archive(input_path + "archive.zip")
+    assert os.path.exists(input_path + "archive.zip")
+    assert not os.path.exists(input_path + "archive")
+    cell_from_file = pyprobe.load_archive(input_path + "archive.zip")
+    assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
+    assert cell_instance.info == cell_from_file.info
+    assert (
+        cell_instance.procedure[title].readme_dict
+        == cell_from_file.procedure[title].readme_dict
+    )
+    assert (
+        cell_instance.procedure[title].column_definitions
+        == cell_from_file.procedure[title].column_definitions
+    )
+    assert (
+        cell_instance.procedure[title].step_descriptions
+        == cell_from_file.procedure[title].step_descriptions
+    )
+    assert (
+        cell_instance.procedure[title].cycle_info
+        == cell_from_file.procedure[title].cycle_info
+    )
+    assert_frame_equal(
+        cell_instance.procedure[title].base_dataframe,
+        cell_from_file.procedure[title].base_dataframe,
+    )
+
+    shutil.rmtree(input_path + "archive")

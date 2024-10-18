@@ -1,12 +1,12 @@
 """A module for the Result class."""
 import warnings
 from pprint import pprint
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from pyprobe.units import unit_from_regexp
 
@@ -39,6 +39,14 @@ class Result(BaseModel):
     """Dictionary containing information about the cell."""
     column_definitions: Dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _load_base_dataframe(cls, data: Any) -> Any:
+        """Load the base dataframe from a file if provided as a string."""
+        if "base_dataframe" in data and isinstance(data["base_dataframe"], str):
+            data["base_dataframe"] = pl.scan_parquet(data["base_dataframe"])
+        return data
 
     def __call__(self, column_name: str) -> NDArray[np.float64]:
         """Return columns of the data as numpy arrays.

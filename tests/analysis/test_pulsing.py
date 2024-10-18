@@ -19,8 +19,12 @@ def Pulsing_fixture(procedure_fixture):
 def test_pulse(Pulsing_fixture):
     """Test the pulse method."""
     pulse = Pulsing_fixture.pulse(0)
+    assert pulse.data["Time [s]"][0] == 483572.397
     assert (pulse.data["Step"] == 10).all()
-    assert (pulse.data["Cycle"] == 4).all()
+
+    pulse = Pulsing_fixture.pulse(6)
+    assert pulse.data["Time [s]"][0] == 531149.401
+    assert (pulse.data["Step"] == 10).all()
 
 
 def test_pulse_summary(Pulsing_fixture):
