@@ -93,7 +93,7 @@ def test_read_and_process(benchmark, biologic_cycler, biologic_MB_cycler):
     steps = list(
         pyprobe_dataframe.select(pl.col("Step")).collect().unique().to_numpy().flatten()
     )
-    assert set(steps) == set([1, 2])
+    assert set(steps) == set([0, 1])
 
     pyprobe_dataframe = biologic_MB_cycler.pyprobe_dataframe
     expected_columns = [
@@ -121,7 +121,7 @@ def test_read_and_process(benchmark, biologic_cycler, biologic_MB_cycler):
     steps = list(
         pyprobe_dataframe.select(pl.col("Step")).collect().unique().to_numpy().flatten()
     )
-    assert set(steps) == set([1, 2, 3, 4, 5, 6])
+    assert set(steps) == set([0, 1, 2, 3, 4, 5])
 
 
 def test_process_dataframe(monkeypatch):
@@ -164,7 +164,7 @@ def test_process_dataframe(monkeypatch):
     expected_dataframe = pl.DataFrame(
         {
             "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "Step": [1, 1, 2, 2, 2, 1, 1],
+            "Step": [0, 0, 1, 1, 1, 0, 0],
             "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0, 0],
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
             "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],

@@ -3,10 +3,10 @@
 import glob
 import os
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import polars as pl
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 from pyprobe.units import Units
 
@@ -19,13 +19,132 @@ class BaseCycler(BaseModel):
     column_dict: Dict[str, str]
     """A dictionary mapping the column name format of the cycler to the PyProBE format.
     Units are indicated by an asterisk (*)."""
+    datetime_format: Optional[str] = None
+    """The string format of the date column if present. See the
+    `chrono crate <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>`_
+    documentation for more information on the format string.
+    """
 
-    def model_post_init(self, __context: Any) -> None:
-        """Post initialization method for the BaseModel."""
+    @field_validator("input_data_path")
+    @classmethod
+    def _check_input_data_path(cls, value: str) -> str:
+        """Check if the input data path is valid.
+
+        Args:
+            value (str): The input data path.
+
+        Returns:
+            str: The input data path.
+        """
+        if "*" in value:
+            files = glob.glob(value)
+            if len(files) == 0:
+                raise ValueError(f"No files found with the pattern {value}.")
+        elif not os.path.exists(value):
+            raise ValueError(f"File not found: path {value} does not exist.")
+        return value
+
+    @field_validator("column_dict")
+    @classmethod
+    def _check_column_dict(cls, value: Dict[str, str]) -> Dict[str, str]:
+        """Check if the column dictionary is valid.
+
+        Args:
+            value (Dict[str, str]): The column dictionary.
+
+        Returns:
+            Dict[str, str]: The column dictionary.
+        """
+        pyprobe_data_columns = {value for value in value.values()}
+        pyprobe_required_columns = {
+            "Time [*]",
+            "Current [*]",
+            "Voltage [*]",
+            "Step",
+            "Capacity [*]",
+        }
+        missing_columns = pyprobe_required_columns - pyprobe_data_columns
+        extra_error_message = ""
+        if "Capacity [*]" in missing_columns:
+            if {"Charge Capacity [*]", "Discharge Capacity [*]"}.issubset(
+                pyprobe_data_columns
+            ):
+                missing_columns.remove("Capacity [*]")
+            else:
+                missing_columns.add("Charge Capacity [*]")
+                missing_columns.add("Discharge Capacity [*]")
+                extra_error_message = (
+                    " Capacity can be specified as 'Capacity [*]' or "
+                    "'Charge Capacity [*]' and 'Discharge Capacity [*]'."
+                )
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f"The column dictionary is missing one or more required columns: "
+                f"{missing_columns}." + extra_error_message
+            )
+        return value
+
+    @model_validator(mode="after")
+    def import_and_validate_data(self) -> "BaseCycler":
+        """Import the data and validate the column mapping."""
         dataframe_list = self._get_dataframe_list()
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
-        self._dataframe_columns = self._imported_dataframe.collect_schema().names()
-        self._column_map = self._map_columns(self.column_dict, self._dataframe_columns)
+        self._column_map = self._map_columns(
+            self.column_dict, self._imported_dataframe.collect_schema().names()
+        )
+        self._check_missing_columns(self.column_dict, self._column_map)
+        return self
+
+    @staticmethod
+    def _check_missing_columns(
+        column_dict: Dict[str, str], column_map: Dict[str, Dict[str, str | pl.DataType]]
+    ) -> None:
+        """Check for missing columns in the imported data.
+
+        Args:
+            column_map (Dict[str, Dict[str, str | pl.DataType]]):
+                A dictionary mapping the column name format of the cycler to the PyProBE
+                format.
+
+        Raises:
+            ValueError:
+                If any of ["Time", "Current", "Voltage", "Capacity", "Step"]
+                are missing.
+        """
+        pyprobe_required_columns = set(
+            [
+                "Time",
+                "Current",
+                "Voltage",
+                "Capacity",
+                "Step",
+            ]
+        )
+        missing_columns = pyprobe_required_columns - set(column_map.keys())
+        if missing_columns:
+            if "Capacity" in missing_columns:
+                if (
+                    "Charge Capacity" in column_map.keys()
+                    and "Discharge Capacity" in column_map.keys()
+                ):
+                    missing_columns.remove("Capacity")
+                else:
+                    missing_columns.add("Charge Capacity")
+                    missing_columns.add("Discharge Capacity")
+        if len(missing_columns) > 0:
+            search_names = []
+            for column in missing_columns:
+                if column != "Step":
+                    full_name = column + " [*]"
+                else:
+                    full_name = column
+                for cycler_name, pyprobe_name in column_dict.items():
+                    if pyprobe_name == full_name:
+                        search_names.append(cycler_name)
+            raise ValueError(
+                f"PyProBE cannot find the following columns, please check your data: "
+                f"{search_names}."
+            )
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -119,16 +238,47 @@ class BaseCycler(BaseModel):
     def _map_columns(
         cls, column_dict: Dict[str, str], dataframe_columns: List[str]
     ) -> Dict[str, Dict[str, str | pl.DataType]]:
-        """Map the columns of the imported dataframe to the PyProBE format."""
+        """Map the columns of the imported dataframe to the PyProBE format.
+
+        Args:
+            column_dict (Dict[str, str]):
+                A dictionary mapping the column name format of the cycler to the PyProBE
+                format.
+            dataframe_columns (List[str]): The columns of the imported dataframe.
+
+        Returns:
+            Dict[str, Dict[str, str | pl.DataType]]:
+                A dictionary mapping the column name format of the cycler to the PyProBE
+                format.
+
+                Fields (for each quantity):
+                    Cycler column name (str): The name of the column in the cycler data.
+                    PyProBE column name (str):
+                        The name of the column in the PyProBE data.
+                    Unit (str): The unit of the column.
+                    Type (pl.DataType): The data type of the column.
+        """
         column_map: Dict[str, Dict[str, str | pl.DataType]] = {}
         for cycler_format, pyprobe_format in column_dict.items():
             for cycler_column_name in dataframe_columns:
                 unit = cls._match_unit(cycler_column_name, cycler_format)
                 if unit is not None:
                     quantity = pyprobe_format.replace(" [*]", "")
-                    if quantity == "Temperature":
-                        if unit != "K":
-                            unit = "C"
+                    default_units = {
+                        "Time": "s",
+                        "Current": "A",
+                        "Voltage": "V",
+                        "Capacity": "Ah",
+                        "Charge Capacity": "Ah",
+                        "Discharge Capacity": "Ah",
+                        "Temperature": "C",
+                    }
+
+                    if quantity == "Temperature" and unit != "K":
+                        unit = "C"
+                    elif unit == "" and quantity in default_units:
+                        unit = default_units[quantity]
+
                     pyprobe_column_name = pyprobe_format.replace("*", unit)
 
                     column_map[quantity] = {}
@@ -142,6 +292,37 @@ class BaseCycler(BaseModel):
                     else:
                         column_map[quantity]["Type"] = pl.Float64
         return column_map
+
+    def _assign_instructions(self) -> None:
+        instruction_dict = {
+            "Date": self.date,
+            "Time": self.time,
+            "Current": self.current,
+            "Voltage": self.voltage,
+            "Capacity": self.capacity,
+            "Temperature": self.temperature,
+            "Step": self.step,
+            "Cycle": self.cycle,
+            "Event": self.event,
+        }
+        for quantity in self._column_map.keys():
+            self._column_map[quantity]["Instruction"] = instruction_dict[quantity]
+
+    @staticmethod
+    def _tabulate_column_map(
+        column_map: Dict[str, Dict[str, str | pl.DataType]]
+    ) -> str:
+        data = {
+            "Quantity": list(column_map.keys()),
+            "Cycler column name": [
+                v["Cycler column name"] for v in column_map.values()
+            ],
+            "PyProBE column name": [
+                v["PyProBE column name"] for v in column_map.values()
+            ],
+        }
+
+        return pl.DataFrame(data)
 
     def _convert_names(self, quantity: str) -> pl.Expr:
         """Write a column in the PyProBE column name format and convert its type.
@@ -170,15 +351,17 @@ class BaseCycler(BaseModel):
             pl.DataFrame: The DataFrame.
         """
         required_columns = [
-            self.date,
+            self.date if "Date" in self._column_map.keys() else None,
             self.time,
             self.cycle,
             self.step,
             self.event,
             self.current,
             self.voltage,
-            self.capacity,
-            self.temperature,
+            self.capacity
+            if "Capacity" in self._column_map.keys()
+            else self.capacity_from_ch_dch,
+            self.temperature if "Temperature" in self._column_map.keys() else None,
         ]
         name_converters = [
             self._convert_names(quantity) for quantity in self._column_map.keys()
@@ -188,16 +371,15 @@ class BaseCycler(BaseModel):
         return imported_dataframe.select(required_columns)
 
     @property
-    def date(self) -> Optional[pl.Expr]:
+    def date(self) -> pl.Expr:
         """Identify and format the date column.
 
         Returns:
-            Optional[pl.Expr]: A polars expression for the date column.
+            pl.Expr: A polars expression for the date column.
         """
-        if "Date" in self._column_map.keys():
-            return pl.col("Date").str.to_datetime(time_unit="us")
-        else:
-            return None
+        return pl.col("Date").str.to_datetime(
+            format=self.datetime_format, time_unit="us"
+        )
 
     @property
     def time(self) -> pl.Expr:
@@ -276,28 +458,18 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the capacity column.
         """
-        if "Capacity" in self._column_map.keys():
-            return Units(
-                "Capacity", self._column_map["Capacity"]["Unit"]
-            ).to_default_unit()
-        else:
-            return self.capacity_from_ch_dch
+        return Units("Capacity", self._column_map["Capacity"]["Unit"]).to_default_unit()
 
     @property
-    def temperature(self) -> Optional[pl.Expr]:
+    def temperature(self) -> pl.Expr:
         """Identify and format the temperature column.
 
-        An optional column, if not found, a column of None values is returned.
-
         Returns:
-            Optional[pl.Expr]: A polars expression for the temperature column.
+            pl.Expr: A polars expression for the temperature column.
         """
-        if "Temperature" in self._column_map.keys():
-            return Units(
-                "Temperature", self._column_map["Temperature"]["Unit"]
-            ).to_default_unit()
-        else:
-            return None
+        return Units(
+            "Temperature", self._column_map["Temperature"]["Unit"]
+        ).to_default_unit()
 
     @property
     def step(self) -> pl.Expr:
