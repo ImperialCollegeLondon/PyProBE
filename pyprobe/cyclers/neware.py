@@ -68,7 +68,7 @@ class Neware(BaseCycler):
         Returns:
             pl.Expr: A polars expression for the time column.
         """
-        if self.date is not None:
+        if "Date" in self._column_map.keys():
             return (
                 (self.date.diff().dt.total_microseconds().cum_sum() / 1e6)
                 .fill_null(strategy="zero")
