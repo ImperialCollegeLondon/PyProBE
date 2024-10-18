@@ -93,7 +93,7 @@ def test_charge_capacity(sample_dataframe):
     charge_capacity = maccor_cycler.charge_capacity
     assert_frame_equal(
         sample_dataframe.select(charge_capacity),
-        pl.DataFrame({"Charge Capacity [Ah]": [1, 2, 0, 0, 0, 0]}),
+        pl.DataFrame({"Charge Capacity [Ah]": [1.0, 2.0, 0.0, 0.0, 0.0, 0.0]}),
     )
 
 
@@ -105,7 +105,7 @@ def test_discharge_capacity(sample_dataframe):
     discharge_capacity = maccor_cycler.discharge_capacity
     assert_frame_equal(
         sample_dataframe.select(discharge_capacity),
-        pl.DataFrame({"Discharge Capacity [Ah]": [0, 0, 0, 4, 5, 0]}),
+        pl.DataFrame({"Discharge Capacity [Ah]": [0.0, 0.0, 0.0, 4.0, 5.0, 0.0]}),
     )
 
 
