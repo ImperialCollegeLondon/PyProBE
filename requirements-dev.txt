@@ -8,7 +8,7 @@ accessible-pygments==0.0.5
     # via pydata-sphinx-theme
 alabaster==1.0.0
     # via sphinx
-altair==5.4.0
+altair==5.4.1
     # via streamlit
 annotated-types==0.7.0
     # via pydantic
