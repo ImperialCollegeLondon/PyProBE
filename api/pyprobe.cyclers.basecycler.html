@@ -46,8 +46,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.cyclers.basecycler';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyprobe.cyclers.biologic module" href="pyprobe.cyclers.biologic.html" />
-    <link rel="prev" title="pyprobe.cyclers package" href="pyprobe.cyclers.html" />
+    <link rel="next" title="pyprobe.cyclers.basytec module" href="pyprobe.cyclers.basytec.html" />
+    <link rel="prev" title="pyprobe.cyclers.arbin module" href="pyprobe.cyclers.arbin.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -310,8 +310,11 @@ document.write(`
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="pyprobe.html">pyprobe package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.html">pyprobe.analysis package</a></li>
 <li class="toctree-l2 current active has-children"><a class="reference internal" href="pyprobe.cyclers.html">pyprobe.cyclers package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.arbin.html">pyprobe.cyclers.arbin module</a></li>
 <li class="toctree-l3 current active"><a class="current reference internal" href="#">pyprobe.cyclers.basecycler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basytec.html">pyprobe.cyclers.basytec module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html">pyprobe.cyclers.biologic module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html">pyprobe.cyclers.maccor module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html">pyprobe.cyclers.neware module</a></li>
 </ul>
 </details></li>
@@ -396,24 +399,40 @@ document.write(`
 <p>A module to load and process battery cycler data.</p>
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.basecycler.</span></span><span class="sig-name descname"><span class="pre">BaseCycler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.basecycler.</span></span><span class="sig-name descname"><span class="pre">BaseCycler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datetime_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A class to load and process battery cycler data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Validators<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
-<li><p><strong>column_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_column_dict</span></code> » <a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.column_dict" title="pyprobe.cyclers.basecycler.BaseCycler.column_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">column_dict</span></code></a></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_input_data_path</span></code> » <a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.input_data_path" title="pyprobe.cyclers.basecycler.BaseCycler.input_data_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_data_path</span></code></a></p></li>
+<li><p><a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a> » <code class="xref py py-obj docutils literal notranslate"><span class="pre">all</span> <span class="pre">fields</span></code></p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>column_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+<li><p><strong>datetime_format</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 <dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.input_data_path">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.input_data_path" title="Link to this definition">#</a></dt>
 <dd><p>The path to the input data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_input_data_path</span></code></p></li>
+<li><p><a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
@@ -421,6 +440,40 @@ document.write(`
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.column_dict" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary mapping the column name format of the cycler to the PyProBE format.
 Units are indicated by an asterisk (*).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_column_dict</span></code></p></li>
+<li><p><a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.datetime_format">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datetime_format</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.datetime_format" title="Link to this definition">#</a></dt>
+<dd><p>The string format of the date column if present. See the
+<a class="reference external" href="https://docs.rs/chrono/latest/chrono/format/strftime/index.html">chrono crate</a>
+documentation for more information on the format string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method pydantic_validator">
+<dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data">
+<em class="property"><span class="pre">validator</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">import_and_validate_data</span></span><em class="autodoc_pydantic_validator_arrow property">&#160; <span class="pre">»</span>&#160; </em><em class="xref py py-obj"><span class="pre">all</span> <span class="pre">fields</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="Link to this definition">#</a></dt>
+<dd><p>Import the data and validate the column mapping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><em>BaseCycler</em></a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -473,14 +526,14 @@ Units are indicated by an asterisk (*).</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.date">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.date" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.date" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the date column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A polars expression for the date column.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Optional[pl.Expr]</p>
+<dd class="field-even"><p>pl.Expr</p>
 </dd>
 </dl>
 </dd></dl>
@@ -585,15 +638,14 @@ Units are indicated by an asterisk (*).</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.temperature">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the temperature column.</p>
-<p>An optional column, if not found, a column of None values is returned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A polars expression for the temperature column.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Optional[pl.Expr]</p>
+<dd class="field-even"><p>pl.Expr</p>
 </dd>
 </dl>
 </dd></dl>
@@ -658,20 +710,20 @@ in the step number.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyprobe.cyclers.html"
+       href="pyprobe.cyclers.arbin.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyprobe.cyclers package</p>
+        <p class="prev-next-title">pyprobe.cyclers.arbin module</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyprobe.cyclers.biologic.html"
+       href="pyprobe.cyclers.basytec.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyprobe.cyclers.biologic module</p>
+        <p class="prev-next-title">pyprobe.cyclers.basytec module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -696,6 +748,8 @@ in the step number.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler"><code class="docutils literal notranslate"><span class="pre">BaseCycler</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.input_data_path"><code class="docutils literal notranslate"><span class="pre">BaseCycler.input_data_path</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.column_dict"><code class="docutils literal notranslate"><span class="pre">BaseCycler.column_dict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.datetime_format"><code class="docutils literal notranslate"><span class="pre">BaseCycler.datetime_format</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="docutils literal notranslate"><span class="pre">BaseCycler.import_and_validate_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.read_file"><code class="docutils literal notranslate"><span class="pre">BaseCycler.read_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe"><code class="docutils literal notranslate"><span class="pre">BaseCycler.get_imported_dataframe()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.pyprobe_dataframe"><code class="docutils literal notranslate"><span class="pre">BaseCycler.pyprobe_dataframe</span></code></a></li>

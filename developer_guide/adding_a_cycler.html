@@ -399,11 +399,11 @@ indicated by an asterisk <code class="code docutils literal notranslate"><span c
 <span class="linenos"> 7</span>        <span class="s2">&quot;time/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Time [*]&quot;</span><span class="p">,</span>
 <span class="linenos"> 8</span>        <span class="s2">&quot;Ns&quot;</span><span class="p">:</span> <span class="s2">&quot;Step&quot;</span><span class="p">,</span>
 <span class="linenos"> 9</span>        <span class="s2">&quot;I/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
-<span class="linenos">10</span>        <span class="s2">&quot;Ecell/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Voltage [*]&quot;</span><span class="p">,</span>
-<span class="linenos">11</span>        <span class="s2">&quot;Q charge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Charge Capacity [*]&quot;</span><span class="p">,</span>
-<span class="linenos">12</span>        <span class="s2">&quot;Q discharge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Discharge Capacity [*]&quot;</span><span class="p">,</span>
-<span class="linenos">13</span>        <span class="s2">&quot;Temperature/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Temperature [*]&quot;</span><span class="p">,</span>
-<span class="linenos">14</span>    <span class="p">}</span>
+<span class="linenos">10</span>        <span class="s2">&quot;&lt;I&gt;/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
+<span class="linenos">11</span>        <span class="s2">&quot;Ecell/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Voltage [*]&quot;</span><span class="p">,</span>
+<span class="linenos">12</span>        <span class="s2">&quot;Q charge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Charge Capacity [*]&quot;</span><span class="p">,</span>
+<span class="linenos">13</span>        <span class="s2">&quot;Q discharge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Discharge Capacity [*]&quot;</span><span class="p">,</span>
+<span class="linenos">14</span>        <span class="s2">&quot;Temperature/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Temperature [*]&quot;</span><span class="p">,</span>
 </pre></div>
 </div>
 </li>
@@ -429,7 +429,7 @@ and another begins.</p>
 <p>The <a class="reference internal" href="../api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a>
 includes properties for reading each column of the data. If any of these need adjusting,
 re-define them in your new cycler class. For example, the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class
-overrides the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.step" title="pyprobe.cyclers.biologic.Biologic.step"><code class="xref py py-attr docutils literal notranslate"><span class="pre">step</span></code></a> property, to add one
+overrides the <code class="xref py py-attr docutils literal notranslate"><span class="pre">step</span></code> property, to add one
 to the step number to change from 0-indexing to 1-indexing.</p>
 </li>
 </ol>

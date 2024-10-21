@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyprobe.cyclers package &#8212; PyProBE  documentation</title>
+    <title>pyprobe.cyclers.arbin module &#8212; PyProBE  documentation</title>
   
   
   
@@ -43,11 +43,11 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.cyclers';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.cyclers.arbin';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyprobe.cyclers.arbin module" href="pyprobe.cyclers.arbin.html" />
-    <link rel="prev" title="pyprobe.analysis.utils module" href="pyprobe.analysis.utils.html" />
+    <link rel="next" title="pyprobe.cyclers.basecycler module" href="pyprobe.cyclers.basecycler.html" />
+    <link rel="prev" title="pyprobe.cyclers package" href="pyprobe.cyclers.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -309,8 +309,8 @@ document.write(`
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="pyprobe.html">pyprobe package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.html">pyprobe.analysis package</a></li>
-<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">pyprobe.cyclers package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.arbin.html">pyprobe.cyclers.arbin module</a></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="pyprobe.cyclers.html">pyprobe.cyclers package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">pyprobe.cyclers.arbin module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html">pyprobe.cyclers.basecycler module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basytec.html">pyprobe.cyclers.basytec module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html">pyprobe.cyclers.biologic module</a></li>
@@ -358,6 +358,8 @@ document.write(`
 
 
 
+
+
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -370,7 +372,10 @@ document.write(`
     <li class="breadcrumb-item"><a href="modules.html" class="nav-link">pyprobe</a></li>
     
     
-    <li class="breadcrumb-item"><a href="pyprobe.html" class="nav-link">pyprobe package</a></li>
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="pyprobe.cyclers.html" class="nav-link">pyprobe.cyclers package</a></li>
     
     <li class="breadcrumb-item active" aria-current="page">pyprobe.cycl...</li>
   </ul>
@@ -389,100 +394,78 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-pyprobe.cyclers">
-<span id="pyprobe-cyclers-package"></span><h1>pyprobe.cyclers package<a class="headerlink" href="#module-pyprobe.cyclers" title="Link to this heading">#</a></h1>
-<p>Module for cycler import functions.</p>
-<section id="submodules">
-<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="pyprobe.cyclers.arbin.html">pyprobe.cyclers.arbin module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.arbin.html#pyprobe.cyclers.arbin.Arbin"><code class="docutils literal notranslate"><span class="pre">Arbin</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.arbin.html#pyprobe.cyclers.arbin.Arbin.input_data_path"><code class="docutils literal notranslate"><span class="pre">Arbin.input_data_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.arbin.html#pyprobe.cyclers.arbin.Arbin.column_dict"><code class="docutils literal notranslate"><span class="pre">Arbin.column_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.arbin.html#pyprobe.cyclers.arbin.Arbin.datetime_format"><code class="docutils literal notranslate"><span class="pre">Arbin.datetime_format</span></code></a></li>
+  <section id="module-pyprobe.cyclers.arbin">
+<span id="pyprobe-cyclers-arbin-module"></span><h1>pyprobe.cyclers.arbin module<a class="headerlink" href="#module-pyprobe.cyclers.arbin" title="Link to this heading">#</a></h1>
+<p>A module to load and process Arbin battery cycler data.</p>
+<dl class="py class pydantic_model">
+<dt class="sig sig-object py" id="pyprobe.cyclers.arbin.Arbin">
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.arbin.</span></span><span class="sig-name descname"><span class="pre">Arbin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Aux_Temperature_1</span> <span class="pre">(*)':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">(*)':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current</span> <span class="pre">(*)':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Date</span> <span class="pre">Time':</span> <span class="pre">'Date',</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">(*)':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Step</span> <span class="pre">Index':</span> <span class="pre">'Step',</span> <span class="pre">'Test</span> <span class="pre">Time</span> <span class="pre">(*)':</span> <span class="pre">'Time</span> <span class="pre">[*]',</span> <span class="pre">'Voltage</span> <span class="pre">(*)':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datetime_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%d/%m/%Y</span> <span class="pre">%H:%M:%S%.f'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.arbin.Arbin" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a></p>
+<p>A class to load and process Neware battery cycler data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validators<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_column_dict</span></code> » <a class="reference internal" href="#pyprobe.cyclers.arbin.Arbin.column_dict" title="pyprobe.cyclers.arbin.Arbin.column_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">column_dict</span></code></a></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_input_data_path</span></code> » <a class="reference internal" href="#pyprobe.cyclers.arbin.Arbin.input_data_path" title="pyprobe.cyclers.arbin.Arbin.input_data_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_data_path</span></code></a></p></li>
 </ul>
-</li>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>column_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+<li><p><strong>datetime_format</strong> (<em>str</em>)</p></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="pyprobe.cyclers.basecycler.html">pyprobe.cyclers.basecycler module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler"><code class="docutils literal notranslate"><span class="pre">BaseCycler</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.input_data_path"><code class="docutils literal notranslate"><span class="pre">BaseCycler.input_data_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.column_dict"><code class="docutils literal notranslate"><span class="pre">BaseCycler.column_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.datetime_format"><code class="docutils literal notranslate"><span class="pre">BaseCycler.datetime_format</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="docutils literal notranslate"><span class="pre">BaseCycler.import_and_validate_data</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.read_file"><code class="docutils literal notranslate"><span class="pre">BaseCycler.read_file()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe"><code class="docutils literal notranslate"><span class="pre">BaseCycler.get_imported_dataframe()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.pyprobe_dataframe"><code class="docutils literal notranslate"><span class="pre">BaseCycler.pyprobe_dataframe</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.date"><code class="docutils literal notranslate"><span class="pre">BaseCycler.date</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.time"><code class="docutils literal notranslate"><span class="pre">BaseCycler.time</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.current"><code class="docutils literal notranslate"><span class="pre">BaseCycler.current</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.voltage"><code class="docutils literal notranslate"><span class="pre">BaseCycler.voltage</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.charge_capacity"><code class="docutils literal notranslate"><span class="pre">BaseCycler.charge_capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.discharge_capacity"><code class="docutils literal notranslate"><span class="pre">BaseCycler.discharge_capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.capacity_from_ch_dch"><code class="docutils literal notranslate"><span class="pre">BaseCycler.capacity_from_ch_dch</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.capacity"><code class="docutils literal notranslate"><span class="pre">BaseCycler.capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.temperature"><code class="docutils literal notranslate"><span class="pre">BaseCycler.temperature</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.step"><code class="docutils literal notranslate"><span class="pre">BaseCycler.step</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.cycle"><code class="docutils literal notranslate"><span class="pre">BaseCycler.cycle</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.event"><code class="docutils literal notranslate"><span class="pre">BaseCycler.event</span></code></a></li>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.cyclers.arbin.Arbin.input_data_path">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cyclers.arbin.Arbin.input_data_path" title="Link to this definition">#</a></dt>
+<dd><p>The path to the input data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_input_data_path</span></code></p></li>
+<li><p><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
 </ul>
-</li>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.cyclers.arbin.Arbin.column_dict">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'Aux_Temperature_1</span> <span class="pre">(*)':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">(*)':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current</span> <span class="pre">(*)':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'Date</span> <span class="pre">Time':</span> <span class="pre">'Date',</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">(*)':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Step</span> <span class="pre">Index':</span> <span class="pre">'Step',</span> <span class="pre">'Test</span> <span class="pre">Time</span> <span class="pre">(*)':</span> <span class="pre">'Time</span> <span class="pre">[*]',</span> <span class="pre">'Voltage</span> <span class="pre">(*)':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></em><a class="headerlink" href="#pyprobe.cyclers.arbin.Arbin.column_dict" title="Link to this definition">#</a></dt>
+<dd><p>A dictionary mapping the column name format of the cycler to the PyProBE format.
+Units are indicated by an asterisk (*).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_column_dict</span></code></p></li>
+<li><p><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="pyprobe.cyclers.basytec.html">pyprobe.cyclers.basytec module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.basytec.html#pyprobe.cyclers.basytec.Basytec"><code class="docutils literal notranslate"><span class="pre">Basytec</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basytec.html#pyprobe.cyclers.basytec.Basytec.input_data_path"><code class="docutils literal notranslate"><span class="pre">Basytec.input_data_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basytec.html#pyprobe.cyclers.basytec.Basytec.column_dict"><code class="docutils literal notranslate"><span class="pre">Basytec.column_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basytec.html#pyprobe.cyclers.basytec.Basytec.read_file"><code class="docutils literal notranslate"><span class="pre">Basytec.read_file()</span></code></a></li>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.cyclers.arbin.Arbin.datetime_format">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datetime_format</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'%d/%m/%Y</span> <span class="pre">%H:%M:%S%.f'</span></em><a class="headerlink" href="#pyprobe.cyclers.arbin.Arbin.datetime_format" title="Link to this definition">#</a></dt>
+<dd><p>The string format of the date column if present. See the
+<a class="reference external" href="https://docs.rs/chrono/latest/chrono/format/strftime/index.html">chrono crate</a>
+documentation for more information on the format string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
 </ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="pyprobe.cyclers.biologic.html">pyprobe.cyclers.biologic module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic"><code class="docutils literal notranslate"><span class="pre">Biologic</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.input_data_path"><code class="docutils literal notranslate"><span class="pre">Biologic.input_data_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.column_dict"><code class="docutils literal notranslate"><span class="pre">Biologic.column_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic.read_file"><code class="docutils literal notranslate"><span class="pre">Biologic.read_file()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB"><code class="docutils literal notranslate"><span class="pre">BiologicMB</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB.get_imported_dataframe"><code class="docutils literal notranslate"><span class="pre">BiologicMB.get_imported_dataframe()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB.apply_step_correction"><code class="docutils literal notranslate"><span class="pre">BiologicMB.apply_step_correction()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="pyprobe.cyclers.maccor.html">pyprobe.cyclers.maccor module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor"><code class="docutils literal notranslate"><span class="pre">Maccor</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.input_data_path"><code class="docutils literal notranslate"><span class="pre">Maccor.input_data_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.column_dict"><code class="docutils literal notranslate"><span class="pre">Maccor.column_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.datetime_format"><code class="docutils literal notranslate"><span class="pre">Maccor.datetime_format</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.read_file"><code class="docutils literal notranslate"><span class="pre">Maccor.read_file()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.date"><code class="docutils literal notranslate"><span class="pre">Maccor.date</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.charge_capacity"><code class="docutils literal notranslate"><span class="pre">Maccor.charge_capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.discharge_capacity"><code class="docutils literal notranslate"><span class="pre">Maccor.discharge_capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html#pyprobe.cyclers.maccor.Maccor.capacity"><code class="docutils literal notranslate"><span class="pre">Maccor.capacity</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="pyprobe.cyclers.neware.html">pyprobe.cyclers.neware module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware"><code class="docutils literal notranslate"><span class="pre">Neware</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.input_data_path"><code class="docutils literal notranslate"><span class="pre">Neware.input_data_path</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.column_dict"><code class="docutils literal notranslate"><span class="pre">Neware.column_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.read_file"><code class="docutils literal notranslate"><span class="pre">Neware.read_file()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.time"><code class="docutils literal notranslate"><span class="pre">Neware.time</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.charge_capacity"><code class="docutils literal notranslate"><span class="pre">Neware.charge_capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.discharge_capacity"><code class="docutils literal notranslate"><span class="pre">Neware.discharge_capacity</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html#pyprobe.cyclers.neware.Neware.capacity"><code class="docutils literal notranslate"><span class="pre">Neware.capacity</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</div>
-</section>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -496,20 +479,20 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyprobe.analysis.utils.html"
+       href="pyprobe.cyclers.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyprobe.analysis.utils module</p>
+        <p class="prev-next-title">pyprobe.cyclers package</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyprobe.cyclers.arbin.html"
+       href="pyprobe.cyclers.basecycler.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyprobe.cyclers.arbin module</p>
+        <p class="prev-next-title">pyprobe.cyclers.basecycler module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -531,14 +514,19 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.arbin.Arbin"><code class="docutils literal notranslate"><span class="pre">Arbin</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.arbin.Arbin.input_data_path"><code class="docutils literal notranslate"><span class="pre">Arbin.input_data_path</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.arbin.Arbin.column_dict"><code class="docutils literal notranslate"><span class="pre">Arbin.column_dict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.arbin.Arbin.datetime_format"><code class="docutils literal notranslate"><span class="pre">Arbin.datetime_format</span></code></a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/api/pyprobe.cyclers.rst.txt">
+    <a href="../_sources/api/pyprobe.cyclers.arbin.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

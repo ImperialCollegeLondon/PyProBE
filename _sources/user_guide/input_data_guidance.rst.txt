@@ -16,6 +16,19 @@ PyProBE is able to import data from the following cyclers:
   - .mpt
   - .txt
 
+* Arbin: :code:`'arbin'`
+  
+  - .csv
+  - .xlsx
+
+* Maccor: :code:`'maccor'`
+
+  - .csv
+
+* Basytec: :code:`'basytec'`
+
+  - .txt
+
 
 PyProBE data columns
 --------------------
@@ -42,34 +55,83 @@ Once converted into the standard PyProBE format, the data columns stored in
    current is passed and decreases when discharge current is passed.
 
 The table below summarises the data columns in the PyProBE format and the corresponding
-column names of of data from supported cyclers:
+column names that are required in data from supported cyclers:
+
+.. raw:: html
+
+   <style>
+      .scrollable-table-container {
+           position: relative;
+           overflow-x: auto;
+           white-space: nowrap;
+      }
+      .scrollable-table {
+           border-collapse: collapse;
+           width: 100%;
+      }
+      .scrollable-table th, .scrollable-table td {
+           padding: 8px;
+           text-align: left;
+           border: 1px solid #ddd;
+      }
+      .scrollable-table th {
+           background-color: #f2f2f2;
+           position: sticky;
+           top: 0;
+           z-index: 1;
+      }
+      .scrollable-table th:first-child, .scrollable-table td:first-child {
+           position: sticky;
+           left: 0;
+           z-index: 2;
+           background-color: #f2f2f2;
+      }
+      .scrollable-table th:nth-child(2), .scrollable-table td:nth-child(2) {
+           position: sticky;
+           left: 115px; /* Adjust this value based on the width of the first column */
+           z-index: 2;
+           background-color: #f2f2f2;
+      }
+   </style>
+
+   <div class="scrollable-table-container">
 
 .. table::
-   :widths: 20 20 20 20
+   :widths: 20 20 20 20 20 20 20
+   :class: scrollable-table
+   
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | PyProBE              | Required? | Neware                 | BioLogic                    | Arbin                       | Maccor                      | Basytec                     |
+   +======================+===========+========================+=============================+=============================+=============================+=============================+
+   | ``Date``             | No        | ``Date``               | ``Acquisition started on``  | ``Date Time``               | ``DPT Time``                | ``~Start of Test``          |
+   |                      |           |                        | in header                   |                             |                             | in header                   |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Time [s]``         | Yes       | *Auto from Date*       | ``time/*``                  | ``Test Time (*)``           | ``Test Time (sec)``         | ``~Time[*]``                |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Step``             | Yes       | ``Step Index``         | ``Ns``                      | ``Step Index``              | ``Step``                    | ``Line``                    |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Cycle``            | Yes       | *Auto from Step*       | *Auto from Step*            | *Auto from Step*            | *Auto from Step*            | *Auto from Step*            |
+   |                      |           |                        |                             |                             |                             |                             |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Event``            | Yes       | *Auto from Step*       | *Auto from Step*            | *Auto from Step*            | *Auto from Step*            | *Auto from Step*            |
+   |                      |           |                        |                             |                             |                             |                             |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Current [A]``      | Yes       | ``Current(*)``         | ``I/*``                     | ``Current (*)``             | ``Current``                 | ``I[*]``                    |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Voltage [V]``      | Yes       | ``Voltage(*)``         | ``Ecell/*``                 | ``Voltage (*)``             | ``Voltage``                 | ``U[*]``                    |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Capacity [Ah]``    | Yes       | ``Chg. Cap.(*)``,      | ``Q charge/*``,             | ``Charge Capacity (*)``,    | ``Capacity``                | ``Ah[*]``                   |
+   |                      |           | ``DChg. Cap.(*)``      | ``Q discharge/*``           | ``Discharge Capacity (*)``  |                             |                             |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+   | ``Temperature [C]``  | No        | ``T1(*)``              | ``Temperature/*``           | ``Aux_Temperature_1 (*)``   | ``Temp 1``                  | ``T1[*]``                   |
+   +----------------------+-----------+------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+
 
-   +----------------+-----------+------------------------+-----------------------------+
-   | PyProBE        | Required? | Neware                 | BioLogic                    |
-   +================+===========+========================+=============================+
-   | Date           | No        | Date                   | "Acquisition started on"    |
-   |                |           |                        | in header                   |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Time [s]       | Yes       | *Auto from Date*       | time/*                      |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Step           | Yes       | Step Index             | Ns                          |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Cycle          | Yes       | *Auto from Step*       | *Auto from Step*            |
-   |                |           |                        |                             |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Event          | Yes       | *Auto from Step*       | *Auto from Step*            |
-   |                |           |                        |                             |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Current [A]    | Yes       | Current(*)             | I/*                         |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Voltage [V]    | Yes       | Voltage(*)             | Ecell/*                     |
-   +----------------+-----------+------------------------+-----------------------------+
-   | Capacity [Ah]  | Yes       | Chg. Cap.(*),          | Q charge/\*,                |
-   |                |           | DChg. Cap.(*)          | Q discharge/*               |
-   +----------------+-----------+------------------------+-----------------------------+
+.. raw:: html
+
+   </div>
+
+Where no units are provided (as is the case with Maccor), the PyProBE default units are
+assumed.
 
 The columns marked with *Auto from ...* are automatically generated by the PyProBE 
 data import process. This process includes automatic unit conversion to the PyProBE

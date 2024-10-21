@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyprobe.cyclers.neware module &#8212; PyProBE  documentation</title>
+    <title>pyprobe.cyclers.maccor module &#8212; PyProBE  documentation</title>
   
   
   
@@ -43,11 +43,11 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.cyclers.neware';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.cyclers.maccor';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyprobe.cell module" href="pyprobe.cell.html" />
-    <link rel="prev" title="pyprobe.cyclers.maccor module" href="pyprobe.cyclers.maccor.html" />
+    <link rel="next" title="pyprobe.cyclers.neware module" href="pyprobe.cyclers.neware.html" />
+    <link rel="prev" title="pyprobe.cyclers.biologic module" href="pyprobe.cyclers.biologic.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -314,8 +314,8 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basecycler.html">pyprobe.cyclers.basecycler module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.basytec.html">pyprobe.cyclers.basytec module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.biologic.html">pyprobe.cyclers.biologic module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.maccor.html">pyprobe.cyclers.maccor module</a></li>
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">pyprobe.cyclers.neware module</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">pyprobe.cyclers.maccor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.cyclers.neware.html">pyprobe.cyclers.neware module</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.cell.html">pyprobe.cell module</a></li>
@@ -394,26 +394,26 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-pyprobe.cyclers.neware">
-<span id="pyprobe-cyclers-neware-module"></span><h1>pyprobe.cyclers.neware module<a class="headerlink" href="#module-pyprobe.cyclers.neware" title="Link to this heading">#</a></h1>
-<p>A module to load and process Neware battery cycler data.</p>
+  <section id="module-pyprobe.cyclers.maccor">
+<span id="pyprobe-cyclers-maccor-module"></span><h1>pyprobe.cyclers.maccor module<a class="headerlink" href="#module-pyprobe.cyclers.maccor" title="Link to this heading">#</a></h1>
+<p>A module to load and process Maccor battery cycler data.</p>
 <dl class="py class pydantic_model">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.neware.</span></span><span class="sig-name descname"><span class="pre">Neware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Capacity(*)':</span> <span class="pre">'Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Chg.</span> <span class="pre">Cap.(*)':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current(*)':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'DChg.</span> <span class="pre">Cap.(*)':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Step</span> <span class="pre">Index':</span> <span class="pre">'Step',</span> <span class="pre">'T1(*)':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Total</span> <span class="pre">Time':</span> <span class="pre">'Time</span> <span class="pre">[*]',</span> <span class="pre">'Voltage(*)':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datetime_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.neware.Neware" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor">
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.cyclers.maccor.</span></span><span class="sig-name descname"><span class="pre">Maccor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'Capacity':</span> <span class="pre">'Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'DPT</span> <span class="pre">Time':</span> <span class="pre">'Date',</span> <span class="pre">'Step':</span> <span class="pre">'Step',</span> <span class="pre">'Temp</span> <span class="pre">1':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Test</span> <span class="pre">Time</span> <span class="pre">(sec)':</span> <span class="pre">'Time</span> <span class="pre">[*]',</span> <span class="pre">'Voltage':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datetime_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%d-%b-%y</span> <span class="pre">%I:%M:%S</span> <span class="pre">%p'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler" title="pyprobe.cyclers.basecycler.BaseCycler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCycler</span></code></a></p>
 <p>A class to load and process Neware battery cycler data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Validators<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_column_dict</span></code> » <a class="reference internal" href="#pyprobe.cyclers.neware.Neware.column_dict" title="pyprobe.cyclers.neware.Neware.column_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">column_dict</span></code></a></p></li>
-<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_input_data_path</span></code> » <a class="reference internal" href="#pyprobe.cyclers.neware.Neware.input_data_path" title="pyprobe.cyclers.neware.Neware.input_data_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_data_path</span></code></a></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_column_dict</span></code> » <a class="reference internal" href="#pyprobe.cyclers.maccor.Maccor.column_dict" title="pyprobe.cyclers.maccor.Maccor.column_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">column_dict</span></code></a></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_check_input_data_path</span></code> » <a class="reference internal" href="#pyprobe.cyclers.maccor.Maccor.input_data_path" title="pyprobe.cyclers.maccor.Maccor.input_data_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">input_data_path</span></code></a></p></li>
 </ul>
 </dd>
 <dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
 <li><p><strong>column_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
-<li><p><strong>datetime_format</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>datetime_format</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -421,8 +421,8 @@ document.write(`
 </dd>
 </dl>
 <dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.input_data_path">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.input_data_path" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.input_data_path">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_data_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.input_data_path" title="Link to this definition">#</a></dt>
 <dd><p>The path to the input data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
@@ -435,8 +435,8 @@ document.write(`
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.column_dict">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'Capacity(*)':</span> <span class="pre">'Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Chg.</span> <span class="pre">Cap.(*)':</span> <span class="pre">'Charge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current(*)':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'DChg.</span> <span class="pre">Cap.(*)':</span> <span class="pre">'Discharge</span> <span class="pre">Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Date':</span> <span class="pre">'Date',</span> <span class="pre">'Step</span> <span class="pre">Index':</span> <span class="pre">'Step',</span> <span class="pre">'T1(*)':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Total</span> <span class="pre">Time':</span> <span class="pre">'Time</span> <span class="pre">[*]',</span> <span class="pre">'Voltage(*)':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.column_dict" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.column_dict">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'Capacity':</span> <span class="pre">'Capacity</span> <span class="pre">[*]',</span> <span class="pre">'Current':</span> <span class="pre">'Current</span> <span class="pre">[*]',</span> <span class="pre">'DPT</span> <span class="pre">Time':</span> <span class="pre">'Date',</span> <span class="pre">'Step':</span> <span class="pre">'Step',</span> <span class="pre">'Temp</span> <span class="pre">1':</span> <span class="pre">'Temperature</span> <span class="pre">[*]',</span> <span class="pre">'Test</span> <span class="pre">Time</span> <span class="pre">(sec)':</span> <span class="pre">'Time</span> <span class="pre">[*]',</span> <span class="pre">'Voltage':</span> <span class="pre">'Voltage</span> <span class="pre">[*]'}</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.column_dict" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary mapping the column name format of the cycler to the PyProBE format.
 Units are indicated by an asterisk (*).</p>
 <dl class="field-list simple">
@@ -449,9 +449,24 @@ Units are indicated by an asterisk (*).</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.datetime_format">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datetime_format</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'%d-%b-%y</span> <span class="pre">%I:%M:%S</span> <span class="pre">%p'</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.datetime_format" title="Link to this definition">#</a></dt>
+<dd><p>The string format of the date column if present. See the
+<a class="reference external" href="https://docs.rs/chrono/latest/chrono/format/strftime/index.html">chrono crate</a>
+documentation for more information on the format string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.read_file">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.read_file" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.read_file">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.read_file" title="Link to this definition">#</a></dt>
 <dd><p>Read a battery cycler file into a DataFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -467,14 +482,14 @@ Units are indicated by an asterisk (*).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.time">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.time" title="Link to this definition">#</a></dt>
-<dd><p>Identify and format the time column.</p>
-<p>For Neware data, by default the time column is calculated from the “Date”
-column if it exists.</p>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.date">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">date</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.date" title="Link to this definition">#</a></dt>
+<dd><p>Identify and format the date column.</p>
+<p>For the Maccor cycler, this takes the first date in the file and adds the time
+column to it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A polars expression for the time column.</p>
+<dd class="field-odd"><p>A polars expression for the date column.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>pl.Expr</p>
@@ -483,11 +498,10 @@ column if it exists.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.charge_capacity">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">charge_capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.charge_capacity" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.charge_capacity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">charge_capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.charge_capacity" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the charge capacity column.</p>
-<p>For the Neware cycler, this is either the “Chg. Cap.(*)” column or the
-“Capacity(*)” column when the current is positive.</p>
+<p>For the Maccor cycler, this is the capacity column when the current is positive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A polars expression for the charge capacity column.</p>
@@ -499,11 +513,10 @@ column if it exists.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.discharge_capacity">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">discharge_capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.discharge_capacity" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.discharge_capacity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">discharge_capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.discharge_capacity" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the discharge capacity column.</p>
-<p>For the Neware cycler, this is either the “DChg. Cap.(*)” column or the
-“Capacity(*)” column when the current is negative.</p>
+<p>For the Maccor cycler, this is the capacity column when the current is negative.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A polars expression for the discharge capacity column.</p>
@@ -515,10 +528,10 @@ column if it exists.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pyprobe.cyclers.neware.Neware.capacity">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.neware.Neware.capacity" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="pyprobe.cyclers.maccor.Maccor.capacity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">capacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.maccor.Maccor.capacity" title="Link to this definition">#</a></dt>
 <dd><p>Identify and format the capacity column.</p>
-<p>For the Neware cycler remove the option to calculate the capacity from a single
+<p>For the Maccor cycler remove the option to calculate the capacity from a single
 capacity column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -545,20 +558,20 @@ capacity column.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyprobe.cyclers.maccor.html"
+       href="pyprobe.cyclers.biologic.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyprobe.cyclers.maccor module</p>
+        <p class="prev-next-title">pyprobe.cyclers.biologic module</p>
       </div>
     </a>
     <a class="right-next"
-       href="pyprobe.cell.html"
+       href="pyprobe.cyclers.neware.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyprobe.cell module</p>
+        <p class="prev-next-title">pyprobe.cyclers.neware module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -580,14 +593,15 @@ capacity column.</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware"><code class="docutils literal notranslate"><span class="pre">Neware</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.input_data_path"><code class="docutils literal notranslate"><span class="pre">Neware.input_data_path</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.column_dict"><code class="docutils literal notranslate"><span class="pre">Neware.column_dict</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.read_file"><code class="docutils literal notranslate"><span class="pre">Neware.read_file()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.time"><code class="docutils literal notranslate"><span class="pre">Neware.time</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.charge_capacity"><code class="docutils literal notranslate"><span class="pre">Neware.charge_capacity</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.discharge_capacity"><code class="docutils literal notranslate"><span class="pre">Neware.discharge_capacity</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.neware.Neware.capacity"><code class="docutils literal notranslate"><span class="pre">Neware.capacity</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor"><code class="docutils literal notranslate"><span class="pre">Maccor</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.input_data_path"><code class="docutils literal notranslate"><span class="pre">Maccor.input_data_path</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.column_dict"><code class="docutils literal notranslate"><span class="pre">Maccor.column_dict</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.datetime_format"><code class="docutils literal notranslate"><span class="pre">Maccor.datetime_format</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.read_file"><code class="docutils literal notranslate"><span class="pre">Maccor.read_file()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.date"><code class="docutils literal notranslate"><span class="pre">Maccor.date</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.charge_capacity"><code class="docutils literal notranslate"><span class="pre">Maccor.charge_capacity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.discharge_capacity"><code class="docutils literal notranslate"><span class="pre">Maccor.discharge_capacity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.maccor.Maccor.capacity"><code class="docutils literal notranslate"><span class="pre">Maccor.capacity</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -596,7 +610,7 @@ capacity column.</p>
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/api/pyprobe.cyclers.neware.rst.txt">
+    <a href="../_sources/api/pyprobe.cyclers.maccor.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

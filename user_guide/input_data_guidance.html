@@ -391,6 +391,22 @@ document.write(`
 <li><p>.txt</p></li>
 </ul>
 </li>
+<li><p>Arbin: <code class="code docutils literal notranslate"><span class="pre">'arbin'</span></code></p>
+<ul>
+<li><p>.csv</p></li>
+<li><p>.xlsx</p></li>
+</ul>
+</li>
+<li><p>Maccor: <code class="code docutils literal notranslate"><span class="pre">'maccor'</span></code></p>
+<ul>
+<li><p>.csv</p></li>
+</ul>
+</li>
+<li><p>Basytec: <code class="code docutils literal notranslate"><span class="pre">'basytec'</span></code></p>
+<ul>
+<li><p>.txt</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="pyprobe-data-columns">
@@ -441,68 +457,145 @@ current is passed and decreases when discharge current is passed.</p>
 </li>
 </ul>
 <p>The table below summarises the data columns in the PyProBE format and the corresponding
-column names of of data from supported cyclers:</p>
-<div class="pst-scrollable-table-container"><table class="table">
+column names that are required in data from supported cyclers:</p>
+<style>
+   .scrollable-table-container {
+        position: relative;
+        overflow-x: auto;
+        white-space: nowrap;
+   }
+   .scrollable-table {
+        border-collapse: collapse;
+        width: 100%;
+   }
+   .scrollable-table th, .scrollable-table td {
+        padding: 8px;
+        text-align: left;
+        border: 1px solid #ddd;
+   }
+   .scrollable-table th {
+        background-color: #f2f2f2;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+   }
+   .scrollable-table th:first-child, .scrollable-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background-color: #f2f2f2;
+   }
+   .scrollable-table th:nth-child(2), .scrollable-table td:nth-child(2) {
+        position: sticky;
+        left: 115px; /* Adjust this value based on the width of the first column */
+        z-index: 2;
+        background-color: #f2f2f2;
+   }
+</style>
+
+<div class="scrollable-table-container"><div class="pst-scrollable-table-container"><table class="scrollable-table table">
 <colgroup>
-<col style="width: 25.0%" />
-<col style="width: 25.0%" />
-<col style="width: 25.0%" />
-<col style="width: 25.0%" />
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>PyProBE</p></th>
 <th class="head"><p>Required?</p></th>
 <th class="head"><p>Neware</p></th>
 <th class="head"><p>BioLogic</p></th>
+<th class="head"><p>Arbin</p></th>
+<th class="head"><p>Maccor</p></th>
+<th class="head"><p>Basytec</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Date</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Date</span></code></p></td>
 <td><p>No</p></td>
-<td><p>Date</p></td>
-<td><p>“Acquisition started on”
+<td><p><code class="docutils literal notranslate"><span class="pre">Date</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Acquisition</span> <span class="pre">started</span> <span class="pre">on</span></code>
+in header</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Date</span> <span class="pre">Time</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DPT</span> <span class="pre">Time</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">~Start</span> <span class="pre">of</span> <span class="pre">Test</span></code>
 in header</p></td>
 </tr>
-<tr class="row-odd"><td><p>Time [s]</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Time</span> <span class="pre">[s]</span></code></p></td>
 <td><p>Yes</p></td>
 <td><p><em>Auto from Date</em></p></td>
-<td><p>time/*</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">time/*</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Test</span> <span class="pre">Time</span> <span class="pre">(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Test</span> <span class="pre">Time</span> <span class="pre">(sec)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">~Time[*]</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p>Step</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Step</span></code></p></td>
 <td><p>Yes</p></td>
-<td><p>Step Index</p></td>
-<td><p>Ns</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Step</span> <span class="pre">Index</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ns</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Step</span> <span class="pre">Index</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Step</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Line</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p>Cycle</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Cycle</span></code></p></td>
 <td><p>Yes</p></td>
 <td><p><em>Auto from Step</em></p></td>
 <td><p><em>Auto from Step</em></p></td>
-</tr>
-<tr class="row-even"><td><p>Event</p></td>
-<td><p>Yes</p></td>
+<td><p><em>Auto from Step</em></p></td>
 <td><p><em>Auto from Step</em></p></td>
 <td><p><em>Auto from Step</em></p></td>
 </tr>
-<tr class="row-odd"><td><p>Current [A]</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Event</span></code></p></td>
 <td><p>Yes</p></td>
-<td><p>Current(*)</p></td>
-<td><p>I/*</p></td>
+<td><p><em>Auto from Step</em></p></td>
+<td><p><em>Auto from Step</em></p></td>
+<td><p><em>Auto from Step</em></p></td>
+<td><p><em>Auto from Step</em></p></td>
+<td><p><em>Auto from Step</em></p></td>
 </tr>
-<tr class="row-even"><td><p>Voltage [V]</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Current</span> <span class="pre">[A]</span></code></p></td>
 <td><p>Yes</p></td>
-<td><p>Voltage(*)</p></td>
-<td><p>Ecell/*</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Current(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">I/*</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Current</span> <span class="pre">(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Current</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">I[*]</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p>Capacity [Ah]</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Voltage</span> <span class="pre">[V]</span></code></p></td>
 <td><p>Yes</p></td>
-<td><p>Chg. Cap.(*),
-DChg. Cap.(*)</p></td>
-<td><p>Q charge/*,
-Q discharge/*</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Voltage(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ecell/*</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Voltage</span> <span class="pre">(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Voltage</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">U[*]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Capacity</span> <span class="pre">[Ah]</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Chg.</span> <span class="pre">Cap.(*)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DChg.</span> <span class="pre">Cap.(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Q</span> <span class="pre">charge/*</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Q</span> <span class="pre">discharge/*</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Charge</span> <span class="pre">Capacity</span> <span class="pre">(*)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">Discharge</span> <span class="pre">Capacity</span> <span class="pre">(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Capacity</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Ah[*]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Temperature</span> <span class="pre">[C]</span></code></p></td>
+<td><p>No</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">T1(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Temperature/*</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Aux_Temperature_1</span> <span class="pre">(*)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Temp</span> <span class="pre">1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">T1[*]</span></code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
+</div><p>Where no units are provided (as is the case with Maccor), the PyProBE default units are
+assumed.</p>
 <p>The columns marked with <em>Auto from …</em> are automatically generated by the PyProBE
 data import process. This process includes automatic unit conversion to the PyProBE
 base units using the <a class="reference internal" href="../api/pyprobe.units.html#pyprobe.units.Units" title="pyprobe.units.Units"><code class="xref py py-class docutils literal notranslate"><span class="pre">Units</span></code></a> class.</p>
