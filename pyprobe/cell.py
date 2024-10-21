@@ -1,16 +1,22 @@
 """Module for the Cell class."""
+import json
 import os
+import shutil
 import time
 import warnings
+import zipfile
 from typing import Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
+import pybamm.solvers.solution
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
+
+__version__ = "1.0.3"
 
 
 class Cell(BaseModel):
@@ -193,12 +199,9 @@ class Cell(BaseModel):
         readme = process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
-            titles=readme.titles,
-            steps_idx=readme.step_numbers,
+            readme_dict=readme.experiment_dict,
             base_dataframe=base_dataframe,
             info=self.info,
-            pybamm_experiment=readme.pybamm_experiment,
-            pybamm_experiment_list=readme.pybamm_experiment_list,
         )
 
     @staticmethod
@@ -286,6 +289,234 @@ class Cell(BaseModel):
 
         data_path = os.path.join(folder_path, filename_str)
         return data_path
+
+    def import_pybamm_solution(
+        self,
+        procedure_name: str,
+        experiment_names: List[str] | str,
+        pybamm_solutions: List[pybamm.solvers.solution] | pybamm.solvers.solution,
+        output_data_path: Optional[str] = None,
+        optional_variables: Optional[List[str]] = None,
+    ) -> None:
+        """Import a PyBaMM solution object into a procedure of the cell.
+
+        Filtering a PyBaMM solution object by cycle and step reflects the behaviour of
+        the :code:`cycles` and :code:`steps` dictionaries of the PyBaMM solution object.
+
+        Multiple experiments can be imported into the same procedure. This is achieved
+        by providing multiple solution objects and experiment names.
+
+        This method optionally writes the data to a parquet file, if a data path is
+        provided.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            pybamm_solutions (list or pybamm_solution):
+                A list of PyBaMM solution objects or a single PyBaMM solution object.
+            experiment_names (list or str):
+                A list of experiment names or a single experiment name to assign to the
+                PyBaMM solution object.
+            output_data_path (str, optional):
+                The path to write the parquet file. Defaults to None.
+            optional_variables (list, optional):
+                A list of variables to import from the PyBaMM solution object in
+                addition to the PyProBE required variables. Defaults to None.
+        """
+        # the minimum required variables to import from the PyBaMM solution object
+        required_variables = [
+            "Time [s]",
+            "Current [A]",
+            "Terminal voltage [V]",
+            "Discharge capacity [A.h]",
+        ]
+
+        # get the list of variables to import from the PyBaMM solution object
+        if optional_variables is not None:
+            import_variables = required_variables + optional_variables
+        else:
+            import_variables = required_variables
+
+        # check if the experiment names and PyBaMM solutions are lists
+        if isinstance(experiment_names, list) and isinstance(pybamm_solutions, list):
+            if len(experiment_names) != len(pybamm_solutions):
+                raise ValueError(
+                    "The number of experiment names and PyBaMM solutions must be equal."
+                )
+        elif isinstance(experiment_names, list) != isinstance(pybamm_solutions, list):
+            if isinstance(experiment_names, list):
+                raise ValueError(
+                    "A list of experiment names must be provided with a list of PyBaMM"
+                    " solutions."
+                )
+            else:
+                raise ValueError(
+                    "A single experiment name must be provided with a single PyBaMM"
+                    " solution."
+                )
+        else:
+            experiment_names = [str(experiment_names)]
+            pybamm_solutions = [pybamm_solutions]
+
+        lazyframe_created = False
+        for experiment_name, pybamm_solution in zip(experiment_names, pybamm_solutions):
+            # get the data from the PyBaMM solution object
+            pybamm_data = pybamm_solution.get_data_dict(import_variables)
+            # convert the PyBaMM data to a polars dataframe and add the experiment name
+            # as a column
+            solution_data = pl.LazyFrame(pybamm_data).with_columns(
+                pl.lit(experiment_name).alias("Experiment")
+            )
+            if lazyframe_created is False:
+                all_solution_data = solution_data
+                lazyframe_created = True
+            else:
+                # join the new solution data with the existing solution data, a right
+                # join is used to keep all the data
+                all_solution_data = all_solution_data.join(
+                    solution_data, on=import_variables + ["Step"], how="right"
+                )
+                # fill null values where the experiment has been extended with the newly
+                #  joined experiment name
+                all_solution_data = all_solution_data.with_columns(
+                    pl.col("Experiment").fill_null(pl.col("Experiment_right"))
+                )
+        # get the maximum step number for each experiment
+        max_steps = (
+            all_solution_data.group_by("Experiment")
+            .agg(pl.max("Step").alias("Max Step"))
+            .sort("Experiment")
+            .with_columns(pl.col("Max Step").cum_sum().shift())
+        )
+        # add the maximum step number from the previous experiment to the step number
+        all_solution_data = all_solution_data.join(
+            max_steps, on="Experiment", how="left"
+        ).with_columns(
+            (pl.col("Step") + pl.col("Max Step").fill_null(-1) + 1).alias("Step")
+        )
+        # get the range of step values for each experiment
+        step_ranges = all_solution_data.group_by("Experiment").agg(
+            pl.arange(pl.col("Step").min(), pl.col("Step").max() + 1).alias(
+                "Step Range"
+            )
+        )
+
+        # create a dictionary of the experiment names and the step ranges
+        experiment_dict = {}
+        for row in step_ranges.collect().iter_rows():
+            experiment = row[0]
+            experiment_dict[experiment] = {"Steps": row[1]}
+            experiment_dict[experiment]["Step Descriptions"] = []
+
+        # reformat the data to the PyProBE format
+        base_dataframe = all_solution_data.select(
+            [
+                pl.col("Time [s]"),
+                pl.col("Current [A]") * -1,
+                pl.col("Terminal voltage [V]").alias("Voltage [V]"),
+                (pl.col("Discharge capacity [A.h]") * -1).alias("Capacity [Ah]"),
+                pl.col("Step"),
+                (
+                    (
+                        pl.col("Step").cast(pl.Int64)
+                        - pl.col("Step").cast(pl.Int64).shift()
+                        != 0
+                    )
+                    .fill_null(strategy="zero")
+                    .cum_sum()
+                    .alias("Event")
+                ),
+            ]
+        )
+        # create the procedure object
+        self.procedure[procedure_name] = Procedure(
+            base_dataframe=base_dataframe, info=self.info, readme_dict=experiment_dict
+        )
+
+        # write the data to a parquet file if a path is provided
+        if output_data_path is not None:
+            if not output_data_path.endswith(".parquet"):
+                output_data_path += ".parquet"
+            base_dataframe.collect().write_parquet(output_data_path)
+
+    def archive(self, path: str) -> None:
+        """Archive the cell object.
+
+        Args:
+            path (str): The path to the archive directory or zip file.
+        """
+        if path.endswith(".zip"):
+            zip = True
+            path = path[:-4]
+        else:
+            zip = False
+        if not os.path.exists(path):
+            os.makedirs(path)
+        metadata = self.dict()
+        metadata["PyProBE Version"] = __version__
+        for procedure_name, procedure in self.procedure.items():
+            if isinstance(procedure.base_dataframe, pl.LazyFrame):
+                df = procedure.base_dataframe.collect()
+            else:
+                df = procedure.base_dataframe
+            # write the dataframe to a parquet file
+            filename = procedure_name + ".parquet"
+            filepath = os.path.join(path, filename)
+            df.write_parquet(filepath)
+            # update the metadata with the filename
+            metadata["procedure"][procedure_name]["base_dataframe"] = filename
+        with open(os.path.join(path, "metadata.json"), "w") as f:
+            json.dump(metadata, f)
+
+        if zip:
+            with zipfile.ZipFile(path + ".zip", "w") as zipf:
+                for root, _, files in os.walk(path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, path)
+                        zipf.write(file_path, arcname)
+            # Delete the original directory
+            shutil.rmtree(path)
+
+
+def load_archive(path: str) -> Cell:
+    """Load a cell object from an archive.
+
+    Args:
+        path (str): The path to the archive directory.
+
+    Returns:
+        Cell: The cell object.
+    """
+    if path.endswith(".zip"):
+        extract_path = path[:-4]
+        with zipfile.ZipFile(path, "r") as zipf:
+            with zipfile.ZipFile(path, "r") as zipf:
+                zipf.extractall(extract_path)
+            # Delete the original zip file
+            os.remove(path)
+            archive_path = extract_path
+    else:
+        archive_path = path
+
+    with open(os.path.join(archive_path, "metadata.json"), "r") as f:
+        metadata = json.load(f)
+    if metadata["PyProBE Version"] != __version__:
+        warnings.warn(
+            f"The PyProBE version used to archive the cell was "
+            f"{metadata['PyProBE Version']}, the current version is "
+            f"{__version__}. There may be compatibility"
+            f" issues."
+        )
+    metadata.pop("PyProBE Version")
+    for procedure in metadata["procedure"].values():
+        procedure["base_dataframe"] = os.path.join(
+            archive_path, procedure["base_dataframe"]
+        )
+    cell = Cell(**metadata)
+
+    return cell
 
 
 def make_cell_list(

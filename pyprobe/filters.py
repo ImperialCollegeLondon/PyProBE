@@ -1,18 +1,18 @@
 """A module for the filtering classes."""
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import polars as pl
-from pybamm import Experiment as PybammExperiment
 from pydantic import Field
 
+from pyprobe import utils
 from pyprobe.rawdata import RawData, default_column_definitions
 
 if TYPE_CHECKING:
     from pyprobe.typing import (  # , FilterToStepType
+        ExperimentOrCycleType,
         FilterToCycleType,
-        FilterToExperimentType,
     )
 
 
@@ -84,10 +84,48 @@ def _step(
         base_dataframe=base_dataframe,
         info=filter.info,
         column_definitions=filter.column_definitions,
+        step_descriptions=filter.step_descriptions,
     )
 
 
-def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cycle":
+def get_cycle_column(filter: "ExperimentOrCycleType") -> pl.DataFrame | pl.LazyFrame:
+    """Adds a cycle column to the data.
+
+    If cycle details have been provided in the README, the cycle column will be created
+    by checking for the last step of the cycle. For nested cycles, the "outer" cycle
+    will be created first. Subsequent filtering with the cycle method will then allow
+    for filtering on the "inner" cycles.
+
+    If no cycle details have been provided, the cycle column will be created by
+    identifying the last step of the cycle by checking for a decrease in the step
+    number.
+
+    Args:
+        filter (ExperimentOrCycleType): The experiment or cycle object.
+
+    Returns:
+        pl.DataFrame | pl.LazyFrame: The data with a cycle column.
+    """
+    if len(filter.cycle_info) > 0:
+        cycle_ends = ((pl.col("Step").shift() == filter.cycle_info[0][1])) & (
+            pl.col("Step") != filter.cycle_info[0][1]
+        ).fill_null(strategy="zero").cast(pl.Int16)
+        cycle_column = cycle_ends.cum_sum().fill_null(strategy="zero").alias("Cycle")
+    else:
+        warnings.warn(
+            "No cycle information provided. Cycles will be inferred from the step "
+            "numbers."
+        )
+        cycle_column = (
+            (pl.col("Step").cast(pl.Int64) - pl.col("Step").cast(pl.Int64).shift() < 0)
+            .fill_null(strategy="zero")
+            .cum_sum()
+            .alias("Cycle")
+        )
+    return filter.base_dataframe.with_columns(cycle_column)
+
+
+def _cycle(filter: "ExperimentOrCycleType", *cycle_numbers: Union[int]) -> "Cycle":
     """Return a cycle object. Filters on the Cycle column.
 
     Args:
@@ -98,12 +136,21 @@ def _cycle(filter: "FilterToExperimentType", *cycle_numbers: Union[int]) -> "Cyc
     Returns:
         Cycle: A cycle object.
     """
-    lf_filtered = _filter_numerical(filter.base_dataframe, "Cycle", cycle_numbers)
+    df = get_cycle_column(filter)
+
+    if len(filter.cycle_info) > 1:
+        next_cycle_info = filter.cycle_info[1:]
+    else:
+        next_cycle_info = []
+
+    lf_filtered = _filter_numerical(df, "Cycle", cycle_numbers)
 
     return Cycle(
         base_dataframe=lf_filtered,
         info=filter.info,
         column_definitions=filter.column_definitions,
+        step_descriptions=filter.step_descriptions,
+        cycle_info=next_cycle_info,
     )
 
 
@@ -229,20 +276,15 @@ def _constant_voltage(
 class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
-    titles: List[str]
-    """The titles of the experiments in the procedure."""
-    steps_idx: List[List[int]]
-    """The indices of the steps in each experiment."""
-    pybamm_experiment: Optional[PybammExperiment]
-    """A PyBaMM experiment object for the whole procedure."""
-    pybamm_experiment_list: List[Optional[PybammExperiment]]
-    """A list of PyBaMM experiment objects for each experiment in the procedure."""
+    readme_dict: Dict[str, Dict[str, List[str | int | Tuple[int, int, int]]]]
 
     base_dataframe: pl.LazyFrame | pl.DataFrame
     info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    step_descriptions: Dict[str, List[Optional[str | int]]] = {}
+    cycle_info: List[Tuple[int, int, int]] = []
 
     def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
@@ -257,6 +299,16 @@ class Procedure(RawData):
             "Procedure Capacity [Ah]",
             "The net charge passed since beginning of procedure.",
         )
+        self.step_descriptions = {"Step": [], "Description": []}
+        for experiment in self.readme_dict:
+            steps = cast(List[int], self.readme_dict[experiment]["Steps"])
+            descriptions: List[str | None] = [None] * len(steps)
+            if "Step Descriptions" in self.readme_dict[experiment]:
+                descriptions = cast(
+                    List[str | None], self.readme_dict[experiment]["Step Descriptions"]
+                )
+            self.step_descriptions["Step"].extend(steps)
+            self.step_descriptions["Description"].extend(descriptions)
 
     step = _step
     cycle = _cycle
@@ -279,20 +331,56 @@ class Procedure(RawData):
         """
         steps_idx = []
         for experiment_name in experiment_names:
-            if experiment_name not in self.titles:
+            if experiment_name not in self.experiment_names:
                 raise ValueError(f"{experiment_name} not in procedure.")
-            experiment_number = self.titles.index(experiment_name)
-            steps_idx.append(self.steps_idx[experiment_number])
-        flattened_steps = self._flatten(steps_idx)
+            steps_idx.append(self.readme_dict[experiment_name]["Steps"])
+        flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self.base_dataframe.filter(conditions)
+        cycles_list: List[Tuple[int, int, int]] = []
+        if len(experiment_names) > 1:
+            warnings.warn(
+                "Multiple experiments selected. Cycles will be inferred from "
+                "the step numbers."
+            )
+        elif "Cycles" in self.readme_dict[experiment_names[0]]:
+            # ignore type on below line due to persistent mypy warnings about
+            # incompatible types
+            cycles_list = self.readme_dict[experiment_names[0]][
+                "Cycles"
+            ]  # type: ignore
+
         return Experiment(
             base_dataframe=lf_filtered,
             info=self.info,
             column_definitions=self.column_definitions,
+            step_descriptions=self.step_descriptions,
+            cycle_info=cycles_list,
         )
+
+    def remove_experiment(self, *experiment_names: str) -> None:
+        """Remove an experiment from the procedure.
+
+        Args:
+            experiment_names (str):
+                Variable-length argument list of experiment names.
+        """
+        steps_idx = []
+        for experiment_name in experiment_names:
+            if experiment_name not in self.experiment_names:
+                raise ValueError(f"{experiment_name} not in procedure.")
+            steps_idx.append(self.readme_dict[experiment_name]["Steps"])
+        flattened_steps = utils.flatten_list(steps_idx)
+        conditions = [
+            pl.col("Step").is_in(flattened_steps).not_(),
+        ]
+
+        self.base_dataframe = self.base_dataframe.filter(conditions)
+        for experiment_name in experiment_names:
+            self.readme_dict.pop(experiment_name)
+        self.model_post_init(self)
 
     @property
     def experiment_names(self) -> List[str]:
@@ -301,7 +389,7 @@ class Procedure(RawData):
         Returns:
             List[str]: The names of the experiments in the procedure.
         """
-        return list(self.titles)
+        return list(self.readme_dict.keys())
 
     def add_external_data(
         self,
@@ -357,21 +445,6 @@ class Procedure(RawData):
             case _:
                 raise ValueError(f"Unsupported file type: {file_ext}")
 
-    @classmethod
-    def _flatten(cls, lst: int | List[Any]) -> List[int]:
-        """Flatten a list of lists into a single list.
-
-        Args:
-            lst (list): The list of lists to flatten.
-
-        Returns:
-            list: The flattened list.
-        """
-        if not isinstance(lst, list):
-            return [lst]
-        else:
-            return [item for sublist in lst for item in cls._flatten(sublist)]
-
 
 class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure."""
@@ -381,6 +454,7 @@ class Experiment(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    cycle_info: List[Tuple[int, int, int]]
 
     def model_post_init(self, __context: Any) -> None:
         """Create an experiment class."""
@@ -414,6 +488,7 @@ class Cycle(RawData):
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
+    cycle_info: List[Tuple[int, int, int]]
 
     def model_post_init(self, __context: Any) -> None:
         """Create a cycle class."""

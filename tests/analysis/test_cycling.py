@@ -10,9 +10,14 @@ from pyprobe.result import Result
 
 
 @pytest.fixture
-def Cycling_fixture(lazyframe_fixture, info_fixture):
+def Cycling_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Cycling instance."""
-    input_data = Experiment(base_dataframe=lazyframe_fixture, info=info_fixture)
+    input_data = Experiment(
+        base_dataframe=lazyframe_fixture,
+        info=info_fixture,
+        step_descriptions=step_descriptions_fixture,
+        cycle_info=[],
+    )
     return Cycling(input_data=input_data)
 
 

@@ -15,3 +15,5 @@ PyProBERawDataType = Union[RawData, FilterToStepType]
 """Type alias for raw data in PyProbe."""
 PyProBEDataType = Union[PyProBERawDataType, Result]
 """Type alias for data in PyProbe."""
+ExperimentOrCycleType = Union[Experiment, Cycle]
+"""Type alias for an experiment or cycle."""

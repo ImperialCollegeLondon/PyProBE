@@ -5,45 +5,62 @@ import os
 import numpy as np
 import pandas as pd
 import polars as pl
+import pytest
+
+from pyprobe.cell import Cell
 
 
-def test_experiment(procedure_fixture, cycles_fixture, steps_fixture, benchmark):
+def test_experiment(procedure_fixture, steps_fixture, benchmark):
     """Test creating an experiment."""
 
     def make_experiment():
         return procedure_fixture.experiment("Break-in Cycles")
 
     experiment = benchmark(make_experiment)
-    assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[1]
     assert experiment.data["Step"].unique().to_list() == steps_fixture[1]
+    assert experiment.cycle_info == [(4, 7, 5)]
 
     experiment = procedure_fixture.experiment("Discharge Pulses")
-    assert experiment.data["Cycle"].unique().to_list() == cycles_fixture[2]
     assert experiment.data["Step"].unique().to_list() == steps_fixture[2]
+    assert experiment.cycle_info == [(9, 12, 10)]
 
     """Test filtering by multiple experiment names."""
-    experiment = procedure_fixture.experiment("Break-in Cycles", "Discharge Pulses")
-    assert set(experiment.data["Cycle"].unique().to_list()) == set(
-        cycles_fixture[1] + cycles_fixture[2]
-    )
-    assert set(experiment.data["Step"].unique().to_list()) == set(
-        steps_fixture[1] + steps_fixture[2]
-    )
+    with pytest.warns(UserWarning):
+        experiment = procedure_fixture.experiment("Break-in Cycles", "Discharge Pulses")
 
     assert experiment.data["Experiment Time [s]"][0] == 0
     assert experiment.data["Experiment Capacity [Ah]"][0] == 0
+    assert experiment.cycle_info == []
+
+
+def test_remove_experiment(procedure_fixture):
+    """Test removing an experiment."""
+    procedure_fixture.remove_experiment("Break-in Cycles")
+    assert "Break-in Cycles" not in procedure_fixture.experiment_names
+    assert procedure_fixture.data["Step"].unique().to_list() == [2, 3, 9, 10, 11, 12]
+    assert procedure_fixture.step_descriptions["Step"] == [1, 2, 3, 9, 10, 11, 12]
+
+
+def test_init(procedure_fixture, step_descriptions_fixture):
+    """Test initialising a procedure."""
+    assert procedure_fixture.step_descriptions == step_descriptions_fixture
+
+
+def test_experiment_no_description():
+    """Test creating a procedure with no step descriptions."""
+    cell = Cell(info={})
+    cell.add_procedure(
+        "sample",
+        "tests/sample_data/neware/",
+        "sample_data_neware.xlsx",
+        readme_name="README_total_steps.yaml",
+    )
+    assert np.all(np.isnan(cell.procedure["sample"].step_descriptions["Description"]))
 
 
 def test_experiment_names(procedure_fixture, titles_fixture):
     """Test the experiment_names method."""
     assert procedure_fixture.experiment_names == titles_fixture
-
-
-def test_flatten(procedure_fixture):
-    """Test flattening lists."""
-    lst = [[1, 2, 3], [4, 5], 6]
-    flat_list = procedure_fixture._flatten(lst)
-    assert flat_list == [1, 2, 3, 4, 5, 6]
 
 
 def test_zero_columns(procedure_fixture):

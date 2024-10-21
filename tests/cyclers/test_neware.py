@@ -181,7 +181,6 @@ def test_read_and_process(benchmark, neware_cycler):
         "Date",
         "Time [s]",
         "Step",
-        "Cycle",
         "Event",
         "Current [A]",
         "Voltage [V]",

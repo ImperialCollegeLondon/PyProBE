@@ -305,13 +305,6 @@ def test_calculate_dma_parameters(
         info={},
     )
 
-    with pytest.raises(ValidationError):
-        eol_result_fixture.quantify_degradation_modes(bol_result_fixture.fitted_OCV)
-
-    eol_result_fixture.stoichiometry_limits = result
-    with pytest.raises(ValidationError):
-        eol_result_fixture.quantify_degradation_modes(bol_result_fixture)
-
 
 def test_average_ocvs(BreakinCycles_fixture):
     """Test the average_ocvs method."""

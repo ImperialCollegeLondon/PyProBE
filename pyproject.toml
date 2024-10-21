@@ -44,10 +44,11 @@ dev = [
     "pytest-mypy", # type checking
     "pytest-mock", # mock objects
     "pytest-benchmark", # benchmarking
+    "types-PyYAML",
+    "types-toml",
     # documentation
     "sphinx",
     "sphinx-tabs",
-    "types-PyYAML",
     "sphinxcontrib-bibtex", # for references
     "sphinx-design",
     "pydata-sphinx-theme", # for theme

@@ -224,10 +224,10 @@ class DMA(BaseModel):
         self.dma_result = electrode_capacity_results[0].clean_copy(
             pl.DataFrame(
                 {
-                    "SOH": SOH,
-                    "LAM_pe": LAM_pe,
-                    "LAM_ne": LAM_ne,
-                    "LLI": LLI,
+                    "SOH": SOH[:, 0],
+                    "LAM_pe": LAM_pe[:, 0],
+                    "LAM_ne": LAM_ne[:, 0],
+                    "LLI": LLI[:, 0],
                 }
             )
         )

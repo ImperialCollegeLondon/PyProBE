@@ -18,7 +18,6 @@ def test_read_and_process_maccor():
         "Date",
         "Time [s]",
         "Step",
-        "Cycle",
         "Event",
         "Current [A]",
         "Voltage [V]",
@@ -30,7 +29,6 @@ def test_read_and_process_maccor():
         {
             "Date": datetime(2023, 11, 23, 15, 56, 24, 60000),
             "Time [s]": [13.06],
-            "Cycle": [0],
             "Step": [2],
             "Event": [1],
             "Current [A]": [28.798],

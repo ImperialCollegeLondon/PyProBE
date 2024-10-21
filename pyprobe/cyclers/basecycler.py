@@ -302,7 +302,6 @@ class BaseCycler(BaseModel):
             "Capacity": self.capacity,
             "Temperature": self.temperature,
             "Step": self.step,
-            "Cycle": self.cycle,
             "Event": self.event,
         }
         for quantity in self._column_map.keys():
@@ -353,7 +352,6 @@ class BaseCycler(BaseModel):
         required_columns = [
             self.date if "Date" in self._column_map.keys() else None,
             self.time,
-            self.cycle,
             self.step,
             self.event,
             self.current,
@@ -479,24 +477,6 @@ class BaseCycler(BaseModel):
             pl.Expr: A polars expression for the step number.
         """
         return pl.col("Step")
-
-    @property
-    def cycle(self) -> pl.Expr:
-        """Identify the cycle number.
-
-        Cycles are defined by repetition of steps. They are identified by a decrease
-        in the step number.
-
-        Returns:
-            pl.Expr: A polars expression for the cycle number.
-        """
-        return (
-            (pl.col("Step").cast(pl.Int64) - pl.col("Step").cast(pl.Int64).shift() < 0)
-            .fill_null(strategy="zero")
-            .cum_sum()
-            .alias("Cycle")
-            .cast(pl.Int64)
-        )
 
     @property
     def event(self) -> pl.Expr:
