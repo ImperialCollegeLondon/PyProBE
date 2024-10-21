@@ -18,6 +18,7 @@ class Biologic(BaseCycler):
         "time/*": "Time [*]",
         "Ns": "Step",
         "I/*": "Current [*]",
+        "<I>/*": "Current [*]",
         "Ecell/*": "Voltage [*]",
         "Q charge/*": "Charge Capacity [*]",
         "Q discharge/*": "Discharge Capacity [*]",
@@ -59,15 +60,6 @@ class Biologic(BaseCycler):
             .alias("Date")
         )
         return dataframe
-
-    @property
-    def step(self) -> pl.Expr:
-        """Identify the step number.
-
-        Returns:
-            pl.Expr: A polars expression for the step number.
-        """
-        return pl.col("Step") + 1
 
 
 class BiologicMB(Biologic):

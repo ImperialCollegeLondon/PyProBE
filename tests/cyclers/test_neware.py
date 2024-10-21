@@ -22,6 +22,19 @@ def test_read_file(neware_cycler):
     )
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
+    # Test that Time and Total time are read correctly
+    expected_start = pl.DataFrame(
+        {
+            "Time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            "Total Time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        }
+    )
+    pl_testing.assert_frame_equal(
+        neware_cycler._imported_dataframe.select("Time", "Total Time").head(6),
+        expected_start,
+    )
+    assert neware_cycler._imported_dataframe["Total Time"][-1] == 562784.5
+
 
 def test_sort_files(neware_cycler):
     """Test the _sort_files method."""
@@ -46,7 +59,7 @@ def test_read_multiple_files(neware_cycler):
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
 
 
-def test_process_dataframe(monkeypatch):
+def test_process_dataframe():
     """Test the neware method."""
     mock_dataframe = pl.DataFrame(
         {
@@ -56,10 +69,18 @@ def test_process_dataframe(monkeypatch):
                 datetime(2022, 2, 2, 2, 2, 2),
                 datetime(2022, 2, 2, 2, 2, 3),
                 datetime(2022, 2, 2, 2, 2, 4),
+                datetime(2022, 2, 2, 2, 2, 5, 100000),
+            ],
+            "Total Time": [
+                datetime(2022, 2, 2, 2, 2, 0),
+                datetime(2022, 2, 2, 2, 2, 1),
+                datetime(2022, 2, 2, 2, 2, 2),
+                datetime(2022, 2, 2, 2, 2, 3),
+                datetime(2022, 2, 2, 2, 2, 4, 100000),
                 datetime(2022, 2, 2, 2, 2, 5),
             ],
             "Step Index": [1, 2, 1, 2, 4, 5],
-            "Current(mA)": [1, 2, 3, 4, 0, 0],
+            "Current(mA)": [1, 2, -3, -4, 0, 0],
             "Voltage(V)": [4, 5, 6, 7, 8, 9],
             "Chg. Cap.(mAh)": [
                 0,
@@ -69,13 +90,13 @@ def test_process_dataframe(monkeypatch):
                 0,
                 0,
             ],
-            "DChg. Cap.(mAh)": [0, 0, 10, 20, 20, 20],
+            "DChg. Cap.(mAh)": [0, 0, 10, 20, 0, 0],
+            "Capacity(mAh)": [0, 20, 10, 20, 0, 0],
             "T1(℃)": [25, 25, 25, 25, 25, 25],
         }
     )
     mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
     neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
-
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
 
     pyprobe_dataframe = pyprobe_dataframe.select(
@@ -90,9 +111,55 @@ def test_process_dataframe(monkeypatch):
     )
     expected_dataframe = pl.DataFrame(
         {
-            "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.0, 5.1],
             "Step": [1, 2, 1, 2, 4, 5],
-            "Current [A]": [1e-3, 2e-3, 3e-3, 4e-3, 0, 0],
+            "Current [A]": [1e-3, 2e-3, -3e-3, -4e-3, 0, 0],
+            "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
+            "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
+            "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
+        }
+    )
+    pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
+    os.remove("tests/sample_data/mock_dataframe.xlsx")
+
+    # Test with a dataframe that does not contain a Charge or Discharge Capacity column
+    mock_dataframe = mock_dataframe.drop("Chg. Cap.(mAh)")
+    mock_dataframe = mock_dataframe.drop("DChg. Cap.(mAh)")
+    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
+    neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
+    pyprobe_dataframe = neware_cycler.pyprobe_dataframe
+    pyprobe_dataframe = pyprobe_dataframe.select(
+        [
+            "Time [s]",
+            "Step",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+            "Temperature [C]",
+        ]
+    )
+    pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
+
+    # Test with a dataframe that does not contain a "Date" column
+    mock_dataframe = mock_dataframe.drop("Date")
+    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
+    neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
+    pyprobe_dataframe = neware_cycler.pyprobe_dataframe
+    pyprobe_dataframe = pyprobe_dataframe.select(
+        [
+            "Time [s]",
+            "Step",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+            "Temperature [C]",
+        ]
+    )
+    expected_dataframe = pl.DataFrame(
+        {
+            "Time [s]": [0.0, 1.0, 2.0, 3.0, 4.1, 5.0],
+            "Step": [1, 2, 1, 2, 4, 5],
+            "Current [A]": [1e-3, 2e-3, -3e-3, -4e-3, 0, 0],
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
             "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],

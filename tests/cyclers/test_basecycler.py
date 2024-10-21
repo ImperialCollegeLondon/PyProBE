@@ -1,6 +1,7 @@
 """Test the basecycler module."""
 import copy
 import os
+import re
 
 import polars as pl
 import polars.testing as pl_testing
@@ -77,21 +78,10 @@ def sample_cycler_instance(sample_dataframe, column_dict):
     )
 
 
-def test_map_columns(column_dict):
-    """Test initialising the basecycler."""
-    # test with single file
-    dict_with_extra = copy.deepcopy(column_dict)
-    dict_with_extra["Ecell [*]"] = "Voltage [*]"
-    column_list = [
-        "DateTime",
-        "T [s]",
-        "V [V]",
-        "I [mA]",
-        "Q [Ah]",
-        "Count",
-        "Temp [C]",
-    ]
-    expected_map = {
+@pytest.fixture
+def sample_column_map():
+    """A sample column map."""
+    return {
         "Date": {
             "Cycler column name": "DateTime",
             "PyProBE column name": "Date",
@@ -136,12 +126,117 @@ def test_map_columns(column_dict):
         },
     }
 
+
+def test_input_data_path_validator():
+    """Test the input data path validator."""
+    # test with invalid path
+    path = "invalid_path"
+    with pytest.raises(ValueError, match=f"File not found: path {path} does not exist"):
+        BaseCycler._check_input_data_path(path)
+
+    path = "invalid_path*"
+    with pytest.raises(ValueError, match=f"No files found with the pattern {path}."):
+        BaseCycler._check_input_data_path(path)
+
+    # test with valid path
+    assert (
+        BaseCycler._check_input_data_path(
+            "tests/sample_data/neware/sample_data_neware.csv"
+        )
+        == "tests/sample_data/neware/sample_data_neware.csv"
+    )
+
+
+def test_column_dict_validator(column_dict):
+    """Test the column dictionary validator."""
+    # test with missing columns
+    column_dict.pop("I [*]")
+    column_dict.pop("Q [*]")
+    expected_message = re.escape(
+        "The column dictionary is missing one or more required columns: "
+        "{'Current [*]'}."
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        BaseCycler._check_column_dict(column_dict)
+
+    column_dict.pop("Q_ch [*]")
+    column_dict.pop("Q_dis [*]")
+    with pytest.raises(
+        ValueError,
+    ):
+        BaseCycler._check_column_dict(column_dict)
+
+
+def test_map_columns(column_dict, sample_column_map):
+    """Test initialising the basecycler."""
+    # test with single file
+    dict_with_extra = copy.deepcopy(column_dict)
+    dict_with_extra["Ecell [*]"] = "Voltage [*]"
+    column_list = [
+        "DateTime",
+        "T [s]",
+        "V [V]",
+        "I [mA]",
+        "Q [Ah]",
+        "Count",
+        "Temp [C]",
+    ]
+    expected_map = sample_column_map
+
     assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
 
     # missing columns
     column_list = ["DateTime", "T [s]", "V [V]", "I [mA]", "Q [Ah]", "Count"]
     expected_map.pop("Temperature")
     assert BaseCycler._map_columns(dict_with_extra, column_list) == expected_map
+
+
+def test_check_missing_columns(sample_column_map, column_dict):
+    """Test the check missing columns method."""
+    sample_column_map.pop("Current")
+    expected_message = (
+        "PyProBE cannot find the following columns, please check your data: ['I [*]']."
+    )
+    with pytest.raises(ValueError, match=re.escape(expected_message)):
+        BaseCycler._check_missing_columns(column_dict, sample_column_map)
+
+
+def test_tabulate_column_map(sample_column_map):
+    """Test tabulating the column map."""
+    column_map_table = BaseCycler._tabulate_column_map(sample_column_map)
+    expected_dataframe = pl.DataFrame(
+        {
+            "Quantity": [
+                "Date",
+                "Time",
+                "Voltage",
+                "Current",
+                "Capacity",
+                "Step",
+                "Temperature",
+            ],
+            "Cycler column name": [
+                "DateTime",
+                "T [s]",
+                "V [V]",
+                "I [mA]",
+                "Q [Ah]",
+                "Count",
+                "Temp [C]",
+            ],
+            "PyProBE column name": [
+                "Date",
+                "Time [s]",
+                "Voltage [V]",
+                "Current [mA]",
+                "Capacity [Ah]",
+                "Step",
+                "Temperature [C]",
+            ],
+        }
+    )
+    pl_testing.assert_frame_equal(column_map_table, expected_dataframe)
 
 
 def test_init(sample_cycler_instance, sample_dataframe):
