@@ -28,7 +28,6 @@ def test_read_and_process_basytec():
         "Date",
         "Time [s]",
         "Step",
-        "Cycle",
         "Event",
         "Current [A]",
         "Voltage [V]",
@@ -40,7 +39,6 @@ def test_read_and_process_basytec():
         {
             "Date": datetime(2023, 6, 19, 17, 58, 3, 235803),
             "Time [s]": [70.235804],
-            "Cycle": [0],
             "Step": [4],
             "Event": [1],
             "Current [A]": [0.449602],

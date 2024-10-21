@@ -3,7 +3,7 @@
 from pyprobe.cyclers.arbin import Arbin
 
 
-def test_read_and_process(benchmark):
+def test_read_and_process_arbin(benchmark):
     """Test the full process of reading and processing a file."""
     arbin_cycler = Arbin(
         input_data_path="tests/sample_data/arbin/sample_data_arbin.csv"
@@ -17,7 +17,6 @@ def test_read_and_process(benchmark):
         "Date",
         "Time [s]",
         "Step",
-        "Cycle",
         "Event",
         "Current [A]",
         "Voltage [V]",

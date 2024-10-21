@@ -302,7 +302,6 @@ class BaseCycler(BaseModel):
             "Capacity": self.capacity,
             "Temperature": self.temperature,
             "Step": self.step,
-            "Cycle": self.cycle,
             "Event": self.event,
         }
         for quantity in self._column_map.keys():
