@@ -30,6 +30,7 @@ Submodules
    pyprobe.result
    pyprobe.typing
    pyprobe.units
+   pyprobe.utils
 
 
 .. footbibliography::

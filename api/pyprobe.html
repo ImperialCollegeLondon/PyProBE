@@ -321,6 +321,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.result.html">pyprobe.result module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html">pyprobe.typing module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.utils.html">pyprobe.utils module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -471,8 +472,11 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.Cell.process_cycler_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_cycler_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.Cell.process_generic_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_generic_file()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.Cell.import_pybamm_solution"><code class="docutils literal notranslate"><span class="pre">Cell.import_pybamm_solution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.Cell.archive"><code class="docutils literal notranslate"><span class="pre">Cell.archive()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.load_archive"><code class="docutils literal notranslate"><span class="pre">load_archive()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.cell.html#pyprobe.cell.make_cell_list"><code class="docutils literal notranslate"><span class="pre">make_cell_list()</span></code></a></li>
 </ul>
 </li>
@@ -481,14 +485,14 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.filters.html">pyprobe.filters module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.get_cycle_column"><code class="docutils literal notranslate"><span class="pre">get_cycle_column()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure"><code class="docutils literal notranslate"><span class="pre">Procedure</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.titles"><code class="docutils literal notranslate"><span class="pre">Procedure.titles</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.steps_idx"><code class="docutils literal notranslate"><span class="pre">Procedure.steps_idx</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.pybamm_experiment</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.pybamm_experiment_list"><code class="docutils literal notranslate"><span class="pre">Procedure.pybamm_experiment_list</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.readme_dict"><code class="docutils literal notranslate"><span class="pre">Procedure.readme_dict</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Procedure.base_dataframe</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.info"><code class="docutils literal notranslate"><span class="pre">Procedure.info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.column_definitions"><code class="docutils literal notranslate"><span class="pre">Procedure.column_definitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.step_descriptions"><code class="docutils literal notranslate"><span class="pre">Procedure.step_descriptions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.cycle_info"><code class="docutils literal notranslate"><span class="pre">Procedure.cycle_info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.step"><code class="docutils literal notranslate"><span class="pre">Procedure.step()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.cycle"><code class="docutils literal notranslate"><span class="pre">Procedure.cycle()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.charge"><code class="docutils literal notranslate"><span class="pre">Procedure.charge()</span></code></a></li>
@@ -498,6 +502,7 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.constant_current"><code class="docutils literal notranslate"><span class="pre">Procedure.constant_current()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.constant_voltage"><code class="docutils literal notranslate"><span class="pre">Procedure.constant_voltage()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.remove_experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.remove_experiment()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.experiment_names"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment_names</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.add_external_data"><code class="docutils literal notranslate"><span class="pre">Procedure.add_external_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure.load_external_file"><code class="docutils literal notranslate"><span class="pre">Procedure.load_external_file()</span></code></a></li>
@@ -507,6 +512,7 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Experiment.base_dataframe</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.info"><code class="docutils literal notranslate"><span class="pre">Experiment.info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.column_definitions"><code class="docutils literal notranslate"><span class="pre">Experiment.column_definitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.cycle_info"><code class="docutils literal notranslate"><span class="pre">Experiment.cycle_info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.step"><code class="docutils literal notranslate"><span class="pre">Experiment.step()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.cycle"><code class="docutils literal notranslate"><span class="pre">Experiment.cycle()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment.charge"><code class="docutils literal notranslate"><span class="pre">Experiment.charge()</span></code></a></li>
@@ -521,6 +527,7 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Cycle.base_dataframe</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.info"><code class="docutils literal notranslate"><span class="pre">Cycle.info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.column_definitions"><code class="docutils literal notranslate"><span class="pre">Cycle.column_definitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.cycle_info"><code class="docutils literal notranslate"><span class="pre">Cycle.cycle_info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.step"><code class="docutils literal notranslate"><span class="pre">Cycle.step()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.charge"><code class="docutils literal notranslate"><span class="pre">Cycle.charge()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle.discharge"><code class="docutils literal notranslate"><span class="pre">Cycle.discharge()</span></code></a></li>
@@ -565,31 +572,19 @@ document.write(`
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.base_dataframe"><code class="docutils literal notranslate"><span class="pre">RawData.base_dataframe</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.info"><code class="docutils literal notranslate"><span class="pre">RawData.info</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.column_definitions"><code class="docutils literal notranslate"><span class="pre">RawData.column_definitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.step_descriptions"><code class="docutils literal notranslate"><span class="pre">RawData.step_descriptions</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.check_required_columns"><code class="docutils literal notranslate"><span class="pre">RawData.check_required_columns</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.zero_column"><code class="docutils literal notranslate"><span class="pre">RawData.zero_column()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.capacity"><code class="docutils literal notranslate"><span class="pre">RawData.capacity</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.set_SOC"><code class="docutils literal notranslate"><span class="pre">RawData.set_SOC()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.set_reference_capacity"><code class="docutils literal notranslate"><span class="pre">RawData.set_reference_capacity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">RawData.pybamm_experiment</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.readme_processor.html">pyprobe.readme_processor module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel"><code class="docutils literal notranslate"><span class="pre">ReadmeModel</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.readme_dict"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.readme_dict</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.readme_type"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.readme_type</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.number_of_experiments"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.number_of_experiments</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.titles"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.titles</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.step_numbers"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.step_numbers</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.step_indices"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.step_indices</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.step_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.step_descriptions</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.cycle_details"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.cycle_details</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_descriptions"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment_descriptions</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.pybamm_experiment_list"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment_list</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.pybamm_experiment</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel.check_readme_dict"><code class="docutils literal notranslate"><span class="pre">ReadmeModel.check_readme_dict</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.ReadmeModel"><code class="docutils literal notranslate"><span class="pre">ReadmeModel</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.readme_processor.html#pyprobe.readme_processor.process_readme"><code class="docutils literal notranslate"><span class="pre">process_readme()</span></code></a></li>
 </ul>
 </li>
@@ -620,6 +615,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html#pyprobe.typing.FilterToStepType"><code class="docutils literal notranslate"><span class="pre">FilterToStepType</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html#pyprobe.typing.PyProBERawDataType"><code class="docutils literal notranslate"><span class="pre">PyProBERawDataType</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html#pyprobe.typing.PyProBEDataType"><code class="docutils literal notranslate"><span class="pre">PyProBEDataType</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html#pyprobe.typing.ExperimentOrCycleType"><code class="docutils literal notranslate"><span class="pre">ExperimentOrCycleType</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a><ul>
@@ -632,6 +628,10 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html#pyprobe.units.unit_from_regexp"><code class="docutils literal notranslate"><span class="pre">unit_from_regexp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pyprobe.utils.html">pyprobe.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.utils.html#pyprobe.utils.flatten_list"><code class="docutils literal notranslate"><span class="pre">flatten_list()</span></code></a></li>
 </ul>
 </li>
 </ul>

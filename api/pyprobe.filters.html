@@ -319,6 +319,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.result.html">pyprobe.result module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html">pyprobe.typing module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.utils.html">pyprobe.utils module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -384,9 +385,33 @@ document.write(`
   <section id="module-pyprobe.filters">
 <span id="pyprobe-filters-module"></span><h1>pyprobe.filters module<a class="headerlink" href="#module-pyprobe.filters" title="Link to this heading">#</a></h1>
 <p>A module for the filtering classes.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.filters.get_cycle_column">
+<span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">get_cycle_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.get_cycle_column" title="Link to this definition">#</a></dt>
+<dd><p>Adds a cycle column to the data.</p>
+<p>If cycle details have been provided in the README, the cycle column will be created
+by checking for the last step of the cycle. For nested cycles, the “outer” cycle
+will be created first. Subsequent filtering with the cycle method will then allow
+for filtering on the “inner” cycles.</p>
+<p>If no cycle details have been provided, the cycle column will be created by
+identifying the last step of the cycle by checking for a decrease in the step
+number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filter</strong> (<em>ExperimentOrCycleType</em>) – The experiment or cycle object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The data with a cycle column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pl.DataFrame | pl.LazyFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.filters.Procedure">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Procedure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_experiment_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Procedure" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Procedure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readme_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Procedure" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a></p>
 <p>A class for a procedure in a battery experiment.</p>
 <dl class="field-list simple">
@@ -400,10 +425,9 @@ document.write(`
 <li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
-<li><p><strong>titles</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p></li>
-<li><p><strong>steps_idx</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>int</em><em>]</em><em>]</em>)</p></li>
-<li><p><strong>pybamm_experiment</strong> (<em>Experiment</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>pybamm_experiment_list</strong> (<em>List</em><em>[</em><em>Experiment</em><em> | </em><em>None</em><em>]</em>)</p></li>
+<li><p><strong>step_descriptions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>readme_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em><em>]</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>cycle_info</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -411,27 +435,15 @@ document.write(`
 </dd>
 </dl>
 <dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.filters.Procedure.titles">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">titles</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.titles" title="Link to this definition">#</a></dt>
-<dd><p>The titles of the experiments in the procedure.</p>
-</dd></dl>
-
-<dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.filters.Procedure.steps_idx">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">steps_idx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.steps_idx" title="Link to this definition">#</a></dt>
-<dd><p>The indices of the steps in each experiment.</p>
-</dd></dl>
-
-<dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.filters.Procedure.pybamm_experiment">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pybamm_experiment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Experiment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.pybamm_experiment" title="Link to this definition">#</a></dt>
-<dd><p>A PyBaMM experiment object for the whole procedure.</p>
-</dd></dl>
-
-<dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.filters.Procedure.pybamm_experiment_list">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pybamm_experiment_list</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Experiment</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.pybamm_experiment_list" title="Link to this definition">#</a></dt>
-<dd><p>A list of PyBaMM experiment objects for each experiment in the procedure.</p>
+<dt class="sig sig-object py" id="pyprobe.filters.Procedure.readme_dict">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">readme_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.readme_dict" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
@@ -441,6 +453,7 @@ document.write(`
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
 <li><p><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.check_required_columns" title="pyprobe.rawdata.RawData.check_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_required_columns</span></code></a></p></li>
 </ul>
 </dd>
@@ -451,12 +464,50 @@ document.write(`
 <dt class="sig sig-object py" id="pyprobe.filters.Procedure.info">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.info" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing information about the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.filters.Procedure.column_definitions">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.column_definitions" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the definitions of the columns in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.filters.Procedure.step_descriptions">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">step_descriptions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.step_descriptions" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.filters.Procedure.cycle_info">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cycle_info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#pyprobe.filters.Procedure.cycle_info" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -640,6 +691,20 @@ object.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.filters.Procedure.remove_experiment">
+<span class="sig-name descname"><span class="pre">remove_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">experiment_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Procedure.remove_experiment" title="Link to this definition">#</a></dt>
+<dd><p>Remove an experiment from the procedure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>experiment_names</strong> (<em>str</em>) – Variable-length argument list of experiment names.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.filters.Procedure.experiment_names">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">experiment_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.filters.Procedure.experiment_names" title="Link to this definition">#</a></dt>
@@ -698,7 +763,7 @@ it to CSV before loading.</p>
 
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.filters.Experiment">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Experiment" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Experiment" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a></p>
 <p>A class for an experiment in a battery experimental procedure.</p>
 <dl class="field-list simple">
@@ -712,6 +777,8 @@ it to CSV before loading.</p>
 <li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+<li><p><strong>step_descriptions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>cycle_info</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -725,6 +792,7 @@ it to CSV before loading.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
 <li><p><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.check_required_columns" title="pyprobe.rawdata.RawData.check_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_required_columns</span></code></a></p></li>
 </ul>
 </dd>
@@ -735,12 +803,38 @@ it to CSV before loading.</p>
 <dt class="sig sig-object py" id="pyprobe.filters.Experiment.info">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Experiment.info" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing information about the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.filters.Experiment.column_definitions">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.filters.Experiment.column_definitions" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the definitions of the columns in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.filters.Experiment.cycle_info">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cycle_info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Experiment.cycle_info" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -911,7 +1005,7 @@ object.</p></li>
 
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.filters.Cycle">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Cycle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Cycle" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Cycle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Cycle" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a></p>
 <p>A class for a cycle in a battery experimental procedure.</p>
 <dl class="field-list simple">
@@ -925,6 +1019,8 @@ object.</p></li>
 <li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+<li><p><strong>step_descriptions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>cycle_info</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -938,6 +1034,7 @@ object.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
 <li><p><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.check_required_columns" title="pyprobe.rawdata.RawData.check_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_required_columns</span></code></a></p></li>
 </ul>
 </dd>
@@ -948,12 +1045,38 @@ object.</p></li>
 <dt class="sig sig-object py" id="pyprobe.filters.Cycle.info">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Cycle.info" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing information about the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.filters.Cycle.column_definitions">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.filters.Cycle.column_definitions" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the definitions of the columns in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.filters.Cycle.cycle_info">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cycle_info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Cycle.cycle_info" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1104,7 +1227,7 @@ object.</p></li>
 
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.filters.Step">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Step" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.filters.</span></span><span class="sig-name descname"><span class="pre">Step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_descriptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.filters.Step" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a></p>
 <p>A class for a step in a battery experimental procedure.</p>
 <dl class="field-list simple">
@@ -1118,6 +1241,7 @@ object.</p></li>
 <li><p><strong>base_dataframe</strong> (<em>LazyFrame</em><em> | </em><em>DataFrame</em>)</p></li>
 <li><p><strong>info</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>None</em><em>]</em>)</p></li>
 <li><p><strong>column_definitions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
+<li><p><strong>step_descriptions</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>]</em><em>]</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -1131,6 +1255,7 @@ object.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
 <li><p><a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData.check_required_columns" title="pyprobe.rawdata.RawData.check_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_required_columns</span></code></a></p></li>
 </ul>
 </dd>
@@ -1141,12 +1266,26 @@ object.</p></li>
 <dt class="sig sig-object py" id="pyprobe.filters.Step.info">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.filters.Step.info" title="Link to this definition">#</a></dt>
 <dd><p>Dictionary containing information about the cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute pydantic_field">
 <dt class="sig sig-object py" id="pyprobe.filters.Step.column_definitions">
 <em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">column_definitions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">[Optional]</span></em><a class="headerlink" href="#pyprobe.filters.Step.column_definitions" title="Link to this definition">#</a></dt>
 <dd><p>A dictionary containing the definitions of the columns in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">_load_base_dataframe</span></code></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1262,14 +1401,14 @@ Defaults to None.</p></li>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.get_cycle_column"><code class="docutils literal notranslate"><span class="pre">get_cycle_column()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure"><code class="docutils literal notranslate"><span class="pre">Procedure</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.titles"><code class="docutils literal notranslate"><span class="pre">Procedure.titles</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.steps_idx"><code class="docutils literal notranslate"><span class="pre">Procedure.steps_idx</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.pybamm_experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.pybamm_experiment</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.pybamm_experiment_list"><code class="docutils literal notranslate"><span class="pre">Procedure.pybamm_experiment_list</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.readme_dict"><code class="docutils literal notranslate"><span class="pre">Procedure.readme_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Procedure.base_dataframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.info"><code class="docutils literal notranslate"><span class="pre">Procedure.info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.column_definitions"><code class="docutils literal notranslate"><span class="pre">Procedure.column_definitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.step_descriptions"><code class="docutils literal notranslate"><span class="pre">Procedure.step_descriptions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.cycle_info"><code class="docutils literal notranslate"><span class="pre">Procedure.cycle_info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.step"><code class="docutils literal notranslate"><span class="pre">Procedure.step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.cycle"><code class="docutils literal notranslate"><span class="pre">Procedure.cycle()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.charge"><code class="docutils literal notranslate"><span class="pre">Procedure.charge()</span></code></a></li>
@@ -1279,6 +1418,7 @@ Defaults to None.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.constant_current"><code class="docutils literal notranslate"><span class="pre">Procedure.constant_current()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.constant_voltage"><code class="docutils literal notranslate"><span class="pre">Procedure.constant_voltage()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.remove_experiment"><code class="docutils literal notranslate"><span class="pre">Procedure.remove_experiment()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.experiment_names"><code class="docutils literal notranslate"><span class="pre">Procedure.experiment_names</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.add_external_data"><code class="docutils literal notranslate"><span class="pre">Procedure.add_external_data()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Procedure.load_external_file"><code class="docutils literal notranslate"><span class="pre">Procedure.load_external_file()</span></code></a></li>
@@ -1288,6 +1428,7 @@ Defaults to None.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Experiment.base_dataframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.info"><code class="docutils literal notranslate"><span class="pre">Experiment.info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.column_definitions"><code class="docutils literal notranslate"><span class="pre">Experiment.column_definitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.cycle_info"><code class="docutils literal notranslate"><span class="pre">Experiment.cycle_info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.step"><code class="docutils literal notranslate"><span class="pre">Experiment.step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.cycle"><code class="docutils literal notranslate"><span class="pre">Experiment.cycle()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Experiment.charge"><code class="docutils literal notranslate"><span class="pre">Experiment.charge()</span></code></a></li>
@@ -1302,6 +1443,7 @@ Defaults to None.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Cycle.base_dataframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.info"><code class="docutils literal notranslate"><span class="pre">Cycle.info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.column_definitions"><code class="docutils literal notranslate"><span class="pre">Cycle.column_definitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.cycle_info"><code class="docutils literal notranslate"><span class="pre">Cycle.cycle_info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.step"><code class="docutils literal notranslate"><span class="pre">Cycle.step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.charge"><code class="docutils literal notranslate"><span class="pre">Cycle.charge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.filters.Cycle.discharge"><code class="docutils literal notranslate"><span class="pre">Cycle.discharge()</span></code></a></li>

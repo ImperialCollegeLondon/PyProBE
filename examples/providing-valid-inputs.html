@@ -428,7 +428,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&#39;Time [s]&#39;, &#39;Step&#39;, &#39;Cycle&#39;, &#39;Event&#39;, &#39;Current [A]&#39;, &#39;Voltage [V]&#39;, &#39;Capacity [Ah]&#39;]
+[&#39;Time [s]&#39;, &#39;Step&#39;, &#39;Event&#39;, &#39;Current [A]&#39;, &#39;Voltage [V]&#39;, &#39;Capacity [Ah]&#39;]
 </pre></div></div>
 </div>
 <p>Whenever a RawData class (or any of the filters module classes, that inherit from it) are created, the dataframe is checked against these required columns. We will create an example dataframe that is missing columns, which will be identified by the error that is returned.</p>
@@ -467,7 +467,7 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/pyt
 
 <span class="ansi-red-fg">ValidationError</span>: 1 validation error for RawData
 base_dataframe
-  Value error, Missing required columns: [&#39;Step&#39;, &#39;Cycle&#39;, &#39;Event&#39;, &#39;Capacity [Ah]&#39;] [type=value_error, input_value=shape: (3, 3)
+  Value error, Missing required columns: [&#39;Step&#39;, &#39;Event&#39;, &#39;Capacity [Ah]&#39;] [type=value_error, input_value=shape: (3, 3)
 ┌──...───────┘, input_type=DataFrame]
     For further information visit https://errors.pydantic.dev/2.8/v/value_error
 </pre></div></div>
@@ -573,7 +573,7 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/pyt
 
 <span class="ansi-red-fg">ValidationError</span>: 1 validation error for Cycling
 input_data
-  Input should be a valid dictionary or instance of Experiment [type=model_type, input_value=Cycle(base_dataframe=&lt;Laz...e beginning of cycle.&#39;}), input_type=Cycle]
+  Input should be a valid dictionary or instance of Experiment [type=model_type, input_value=Cycle(base_dataframe=&lt;Laz...hours&#39;]}, cycle_info=[]), input_type=Cycle]
     For further information visit https://errors.pydantic.dev/2.8/v/model_type
 </pre></div></div>
 </div>

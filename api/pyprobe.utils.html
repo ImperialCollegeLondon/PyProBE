@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>pyprobe.analysis.cycling module &#8212; PyProBE  documentation</title>
+    <title>pyprobe.utils module &#8212; PyProBE  documentation</title>
   
   
   
@@ -43,11 +43,10 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.analysis.cycling';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/pyprobe.utils';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="pyprobe.analysis.degradation_mode_analysis module" href="pyprobe.analysis.degradation_mode_analysis.html" />
-    <link rel="prev" title="pyprobe.analysis.base.differentiation_functions module" href="pyprobe.analysis.base.differentiation_functions.html" />
+    <link rel="prev" title="pyprobe.units module" href="pyprobe.units.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -308,16 +307,7 @@ document.write(`
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="pyprobe.html">pyprobe package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2 current active has-children"><a class="reference internal" href="pyprobe.analysis.html">pyprobe.analysis package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.base.html">pyprobe.analysis.base package</a></li>
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">pyprobe.analysis.cycling module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html">pyprobe.analysis.degradation_mode_analysis module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html">pyprobe.analysis.differentiation module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html">pyprobe.analysis.pulsing module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html">pyprobe.analysis.smoothing module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html">pyprobe.analysis.utils module</a></li>
-</ul>
-</details></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.html">pyprobe.analysis package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.cyclers.html">pyprobe.cyclers package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.cell.html">pyprobe.cell module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.dashboard.html">pyprobe.dashboard module</a></li>
@@ -328,7 +318,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.result.html">pyprobe.result module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html">pyprobe.typing module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.utils.html">pyprobe.utils module</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">pyprobe.utils module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -360,8 +350,6 @@ document.write(`
 
 
 
-
-
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -374,12 +362,9 @@ document.write(`
     <li class="breadcrumb-item"><a href="modules.html" class="nav-link">pyprobe</a></li>
     
     
-    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    <li class="breadcrumb-item"><a href="pyprobe.html" class="nav-link">pyprobe package</a></li>
     
-    
-    <li class="breadcrumb-item"><a href="pyprobe.analysis.html" class="nav-link">pyprobe.analysis package</a></li>
-    
-    <li class="breadcrumb-item active" aria-current="page">pyprobe.anal...</li>
+    <li class="breadcrumb-item active" aria-current="page">pyprobe.utils module</li>
   </ul>
 </nav>
 </div>
@@ -396,46 +381,24 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-pyprobe.analysis.cycling">
-<span id="pyprobe-analysis-cycling-module"></span><h1>pyprobe.analysis.cycling module<a class="headerlink" href="#module-pyprobe.analysis.cycling" title="Link to this heading">#</a></h1>
-<p>A module for the Cycling class.</p>
-<dl class="py class pydantic_model">
-<dt class="sig sig-object py" id="pyprobe.analysis.cycling.Cycling">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.analysis.cycling.</span></span><span class="sig-name descname"><span class="pre">Cycling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.cycling.Cycling" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>A cycling experiment in a battery procedure.</p>
+  <section id="module-pyprobe.utils">
+<span id="pyprobe-utils-module"></span><h1>pyprobe.utils module<a class="headerlink" href="#module-pyprobe.utils" title="Link to this heading">#</a></h1>
+<p>A collection of utility functions for PyProBE.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.utils.flatten_list">
+<span class="sig-prename descclassname"><span class="pre">pyprobe.utils.</span></span><span class="sig-name descname"><span class="pre">flatten_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lst</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.utils.flatten_list" title="Link to this definition">#</a></dt>
+<dd><p>Flatten a list of lists into a single list.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a>)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-<dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.analysis.cycling.Cycling.input_data">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><span class="pre">Experiment</span></a></em><em class="property"> <span class="pre">[Required]</span></em><a class="headerlink" href="#pyprobe.analysis.cycling.Cycling.input_data" title="Link to this definition">#</a></dt>
-<dd><p>The input data for the cycling experiment.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.analysis.cycling.Cycling.summary">
-<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dchg_before_chg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.cycling.Cycling.summary" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the state of health of the battery.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dchg_before_chg</strong> (<em>bool</em>) – Whether the discharge comes before the
-charge in the cycle loop. Default is True.</p>
+<dd class="field-odd"><p><strong>lst</strong> (<em>list</em>) – The list of lists to flatten.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A result object for the capacity SOH of the cell.</p>
+<dd class="field-even"><p>The flattened list.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
+<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
-</dd></dl>
-
 </dd></dl>
 
 </section>
@@ -451,22 +414,13 @@ charge in the cycle loop. Default is True.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="pyprobe.analysis.base.differentiation_functions.html"
+       href="pyprobe.units.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">pyprobe.analysis.base.differentiation_functions module</p>
+        <p class="prev-next-title">pyprobe.units module</p>
       </div>
-    </a>
-    <a class="right-next"
-       href="pyprobe.analysis.degradation_mode_analysis.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">pyprobe.analysis.degradation_mode_analysis module</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -486,18 +440,14 @@ charge in the cycle loop. Default is True.</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.Cycling"><code class="docutils literal notranslate"><span class="pre">Cycling</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.Cycling.input_data"><code class="docutils literal notranslate"><span class="pre">Cycling.input_data</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.Cycling.summary"><code class="docutils literal notranslate"><span class="pre">Cycling.summary()</span></code></a></li>
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.utils.flatten_list"><code class="docutils literal notranslate"><span class="pre">flatten_list()</span></code></a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/api/pyprobe.analysis.cycling.rst.txt">
+    <a href="../_sources/api/pyprobe.utils.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

@@ -456,6 +456,12 @@ document.write(`
             <span class="n">csv_time</span><span class="p">[</span><span class="n">repeat</span><span class="p">]</span><span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">file</span><span class="p">)</span>
+        <span class="c1"># Add a column to identify the cycle number</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Cycle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Step&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Step&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">shift</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+        <span class="p">)</span>
         <span class="n">cumulative_time</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">repeat</span><span class="p">]</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
 
         <span class="n">experiment</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Step&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">])]</span>
@@ -533,7 +539,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 2.17 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 2.23 times faster than Pandas.
 </pre></div></div>
 </div>
 <p>Confirm that the same data has been retrieved:</p>
@@ -558,7 +564,7 @@ The median execution time for the filtering query in PyProBE is 2.17 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fbc1764ae50&gt;
+&lt;matplotlib.legend.Legend at 0x7fee536b6fd0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -595,7 +601,7 @@ The median execution time for the filtering query in PyProBE is 2.17 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Reading from .parquet is on average 23.60 times faster than reading from .csv
+Reading from .parquet is on average 20.63 times faster than reading from .csv
 </pre></div></div>
 </div>
 <p>The sample dataset is not large, covering only around a week of testing. Battery degradation experiments can last for years, so the test below demonstrates the scalability of PyProBE to large data sets. We will now repeat our battery experiment multiple times and save the new dataset:</p>
@@ -611,20 +617,18 @@ Reading from .parquet is on average 23.60 times faster than reading from .csv
 <span class="n">repeated_data</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_repeats</span><span class="p">)</span>
 
 <span class="c1"># Repeat the &#39;Cycle&#39; and &#39;Event&#39; columns to match the length of the repeated data</span>
-<span class="n">cycle_repeated</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Cycle&#39;</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_repeats</span><span class="p">)</span>
 <span class="n">event_repeated</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Event&#39;</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_repeats</span><span class="p">)</span>
 <span class="n">step_repeated</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Step&#39;</span><span class="p">]]</span> <span class="o">*</span> <span class="n">n_repeats</span><span class="p">)</span>
 <span class="n">time_repeated</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">]]</span><span class="o">*</span> <span class="n">n_repeats</span><span class="p">)</span>
 
 <span class="c1"># Increment the &#39;Cycle&#39; and &#39;Event&#39; columns</span>
-<span class="n">cycle_increment</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Cycle&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
 <span class="n">event_increment</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Event&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
 <span class="n">step_increment</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Step&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
 <span class="n">time_increment</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
 
 <span class="n">repeated_data</span> <span class="o">=</span> <span class="n">repeated_data</span><span class="o">.</span><span class="n">with_columns</span><span class="p">([</span>
-    <span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">repeated_data</span><span class="p">))</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">cycle_increment</span> <span class="o">+</span> <span class="n">cycle_repeated</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;Cycle&#39;</span><span class="p">),</span>
+    <span class="c1"># (pl.arange(0, len(repeated_data)) // len(data) * cycle_increment + cycle_repeated).alias(&#39;Cycle&#39;),</span>
     <span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">repeated_data</span><span class="p">))</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">event_increment</span> <span class="o">+</span> <span class="n">event_repeated</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;Event&#39;</span><span class="p">),</span>
     <span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">repeated_data</span><span class="p">))</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">event_increment</span> <span class="o">+</span> <span class="n">step_repeated</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;Step&#39;</span><span class="p">),</span>
     <span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">repeated_data</span><span class="p">))</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">time_increment</span> <span class="o">+</span> <span class="n">time_repeated</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">),</span>
@@ -649,7 +653,7 @@ Reading from .parquet is on average 23.60 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fbc175d2e50&gt;
+&lt;matplotlib.legend.Legend at 0x7fee4f7cefd0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -705,12 +709,12 @@ Reading from .parquet is on average 23.60 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 8.85 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 11.68 times faster than Pandas.
 Execution time breakdown:
             Period   PyProBE    Pandas
-0           1 week  0.023979  0.052115
-1         12 weeks  0.033062  0.292593
-2  Increase Factor  1.378779  5.614419
+0           1 week  0.028794  0.064291
+1         12 weeks  0.038842  0.453507
+2  Increase Factor  1.348964  7.054032
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -742,7 +746,7 @@ Execution time breakdown:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7fbc17c08ed0&gt;
+&lt;matplotlib.legend.Legend at 0x7fee4f769ad0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

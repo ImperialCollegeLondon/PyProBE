@@ -319,6 +319,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.result.html">pyprobe.result module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html">pyprobe.typing module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.utils.html">pyprobe.utils module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -520,6 +521,66 @@ that the readme file is in the same folder as the data file.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.Cell.import_pybamm_solution">
+<span class="sig-name descname"><span class="pre">import_pybamm_solution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">procedure_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pybamm_solutions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_data_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optional_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.import_pybamm_solution" title="Link to this definition">#</a></dt>
+<dd><p>Import a PyBaMM solution object into a procedure of the cell.</p>
+<p>Filtering a PyBaMM solution object by cycle and step reflects the behaviour of
+the <code class="code docutils literal notranslate"><span class="pre">cycles</span></code> and <code class="code docutils literal notranslate"><span class="pre">steps</span></code> dictionaries of the PyBaMM solution object.</p>
+<p>Multiple experiments can be imported into the same procedure. This is achieved
+by providing multiple solution objects and experiment names.</p>
+<p>This method optionally writes the data to a parquet file, if a data path is
+provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>procedure_name</strong> (<em>str</em>) – A name to give the procedure. This will be used when calling
+<code class="code docutils literal notranslate"><span class="pre">cell.procedure[procedure_name]</span></code>.</p></li>
+<li><p><strong>pybamm_solutions</strong> (<em>list</em><em> or </em><em>pybamm_solution</em>) – A list of PyBaMM solution objects or a single PyBaMM solution object.</p></li>
+<li><p><strong>experiment_names</strong> (<em>list</em><em> or </em><em>str</em>) – A list of experiment names or a single experiment name to assign to the
+PyBaMM solution object.</p></li>
+<li><p><strong>output_data_path</strong> (<em>str</em><em>, </em><em>optional</em>) – The path to write the parquet file. Defaults to None.</p></li>
+<li><p><strong>optional_variables</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of variables to import from the PyBaMM solution object in
+addition to the PyProBE required variables. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.Cell.archive">
+<span class="sig-name descname"><span class="pre">archive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.archive" title="Link to this definition">#</a></dt>
+<dd><p>Archive the cell object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – The path to the archive directory or zip file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.cell.load_archive">
+<span class="sig-prename descclassname"><span class="pre">pyprobe.cell.</span></span><span class="sig-name descname"><span class="pre">load_archive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.load_archive" title="Link to this definition">#</a></dt>
+<dd><p>Load a cell object from an archive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – The path to the archive directory.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The cell object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.cell.Cell" title="pyprobe.cell.Cell">Cell</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -597,8 +658,11 @@ that the readme file is in the same folder as the data file.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_cycler_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_cycler_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_generic_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_generic_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.import_pybamm_solution"><code class="docutils literal notranslate"><span class="pre">Cell.import_pybamm_solution()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.archive"><code class="docutils literal notranslate"><span class="pre">Cell.archive()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.load_archive"><code class="docutils literal notranslate"><span class="pre">load_archive()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.make_cell_list"><code class="docutils literal notranslate"><span class="pre">make_cell_list()</span></code></a></li>
 </ul>
   </nav></div>

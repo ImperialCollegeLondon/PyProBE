@@ -327,6 +327,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.result.html">pyprobe.result module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.typing.html">pyprobe.typing module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.units.html">pyprobe.units module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.utils.html">pyprobe.utils module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -665,22 +666,6 @@ documentation for more information on the format string.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.cycle">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cycle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.cycle" title="Link to this definition">#</a></dt>
-<dd><p>Identify the cycle number.</p>
-<p>Cycles are defined by repetition of steps. They are identified by a decrease
-in the step number.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A polars expression for the cycle number.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>pl.Expr</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.event">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">event</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Expr</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.event" title="Link to this definition">#</a></dt>
 <dd><p>Identify the event number.</p>
@@ -763,7 +748,6 @@ in the step number.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.capacity"><code class="docutils literal notranslate"><span class="pre">BaseCycler.capacity</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.temperature"><code class="docutils literal notranslate"><span class="pre">BaseCycler.temperature</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.step"><code class="docutils literal notranslate"><span class="pre">BaseCycler.step</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.cycle"><code class="docutils literal notranslate"><span class="pre">BaseCycler.cycle</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.event"><code class="docutils literal notranslate"><span class="pre">BaseCycler.event</span></code></a></li>
 </ul>
 </li>
