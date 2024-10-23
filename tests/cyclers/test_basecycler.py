@@ -6,6 +6,7 @@ import re
 import polars as pl
 import polars.testing as pl_testing
 import pytest
+from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.basecycler import BaseCycler
 
@@ -124,6 +125,42 @@ def sample_column_map():
             "Type": pl.Float64,
         },
     }
+
+
+def helper_read_and_process(
+    benchmark,
+    cycler_instance,
+    expected_final_row,
+    expected_events,
+    expected_columns=[
+        "Date",
+        "Time [s]",
+        "Step",
+        "Event",
+        "Current [A]",
+        "Voltage [V]",
+        "Capacity [Ah]",
+        "Temperature [C]",
+    ],
+):
+    """A helper function for other cyclers to test processing raw data files."""
+
+    def read_and_process():
+        result = cycler_instance.pyprobe_dataframe
+        if isinstance(result, pl.LazyFrame):
+            return result.collect()
+        else:
+            return result
+
+    pyprobe_dataframe = benchmark(read_and_process)
+    print(pyprobe_dataframe.tail(1))
+    assert set(pyprobe_dataframe.columns) == set(expected_columns)
+    assert (
+        set(pyprobe_dataframe.select("Event").unique().to_series().to_list())
+        == expected_events
+    )
+    assert_frame_equal(expected_final_row, pyprobe_dataframe.tail(1))
+    return pyprobe_dataframe
 
 
 def test_input_data_path_validator():

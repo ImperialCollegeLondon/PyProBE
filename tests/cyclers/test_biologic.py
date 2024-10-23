@@ -7,6 +7,8 @@ import pytest
 
 from pyprobe.cyclers.biologic import Biologic, BiologicMB
 
+from .test_basecycler import helper_read_and_process
+
 
 @pytest.fixture
 def biologic_MB_cycler():
@@ -60,25 +62,26 @@ def test_sort_files():
     ]
 
 
-def test_read_and_process(benchmark, biologic_cycler, biologic_MB_cycler):
+def test_read_and_process_biologic(benchmark, biologic_cycler):
     """Test the full process of reading and processing a file."""
-
-    def read_and_process():
-        return biologic_cycler.pyprobe_dataframe
-
-    pyprobe_dataframe = benchmark(read_and_process)
-
-    expected_columns = [
-        "Date",
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Temperature [C]",
-    ]
-    assert set(pyprobe_dataframe.columns) == set(expected_columns)
+    last_row = pl.DataFrame(
+        {
+            "Date": [datetime(2024, 5, 13, 11, 19, 51, 602139)],
+            "Time [s]": [139.524007],
+            "Step": [1],
+            "Event": [1],
+            "Current [A]": [-0.899826],
+            "Voltage [V]": [3.4854481],
+            "Capacity [Ah]": [-0.03237135133365209],
+            "Temperature [C]": [23.029291],
+        }
+    )
+    pyprobe_dataframe = helper_read_and_process(
+        benchmark,
+        biologic_cycler,
+        expected_final_row=last_row,
+        expected_events=set([0, 1]),
+    )
     pyprobe_dataframe = pyprobe_dataframe.with_columns(
         [
             pl.col("Time [s]").diff().fill_null(strategy="zero").alias("dt"),
@@ -86,26 +89,31 @@ def test_read_and_process(benchmark, biologic_cycler, biologic_MB_cycler):
             pl.col("Step").diff().fill_null(strategy="zero").alias("ds"),
         ]
     )
-    assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).collect().to_numpy())
-    assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).collect().to_numpy())
-    assert not any(pyprobe_dataframe.select(pl.col("ds") < 0).collect().to_numpy())
-    steps = list(
-        pyprobe_dataframe.select(pl.col("Step")).collect().unique().to_numpy().flatten()
-    )
-    assert set(steps) == set([0, 1])
+    assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).to_numpy())
+    assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).to_numpy())
+    assert not any(pyprobe_dataframe.select(pl.col("ds") < 0).to_numpy())
 
-    pyprobe_dataframe = biologic_MB_cycler.pyprobe_dataframe
-    expected_columns = [
-        "Date",
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Temperature [C]",
-    ]
-    assert set(pyprobe_dataframe.columns) == set(expected_columns)
+
+def test_read_and_process_biologic_MB(benchmark, biologic_MB_cycler):
+    """Test the full process of reading and processing modulo bat files."""
+    last_row = pl.DataFrame(
+        {
+            "Date": [datetime(2024, 5, 13, 11, 19, 51, 858016)],
+            "Time [s]": [256016.11344],
+            "Step": [5],
+            "Event": [5],
+            "Current [A]": [0.450135],
+            "Voltage [V]": [3.062546],
+            "Capacity [Ah]": [0.307727],
+            "Temperature [C]": [22.989878],
+        }
+    )
+    pyprobe_dataframe = helper_read_and_process(
+        benchmark,
+        biologic_MB_cycler,
+        expected_final_row=last_row,
+        expected_events=set([0, 1, 2, 3, 4, 5]),
+    )
     pyprobe_dataframe = pyprobe_dataframe.with_columns(
         [
             pl.col("Time [s]").diff().fill_null(strategy="zero").alias("dt"),
@@ -113,13 +121,9 @@ def test_read_and_process(benchmark, biologic_cycler, biologic_MB_cycler):
             pl.col("Step").diff().fill_null(strategy="zero").alias("ds"),
         ]
     )
-    assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).collect().to_numpy())
-    assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).collect().to_numpy())
-    assert not any(pyprobe_dataframe.select(pl.col("ds") < 0).collect().to_numpy())
-    steps = list(
-        pyprobe_dataframe.select(pl.col("Step")).collect().unique().to_numpy().flatten()
-    )
-    assert set(steps) == set([0, 1, 2, 3, 4, 5])
+    assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).to_numpy())
+    assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).to_numpy())
+    assert not any(pyprobe_dataframe.select(pl.col("ds") < 0).to_numpy())
 
 
 def test_process_dataframe(monkeypatch):

@@ -7,28 +7,14 @@ from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.maccor import Maccor
 
+from .test_basecycler import helper_read_and_process
+
 
 def test_read_and_process_maccor(benchmark):
     """Test reading and processing a sample Maccor file."""
     maccor_cycler = Maccor(
         input_data_path="tests/sample_data/maccor/sample_data_maccor.csv"
     )
-
-    def read_and_process_maccor():
-        return maccor_cycler.pyprobe_dataframe.collect()
-
-    pyprobe_dataframe = benchmark(read_and_process_maccor)
-    expected_columns = [
-        "Date",
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Temperature [C]",
-    ]
-    assert set(pyprobe_dataframe.columns) == set(expected_columns)
     last_row = pl.DataFrame(
         {
             "Date": datetime(2023, 11, 23, 15, 56, 24, 60000),
@@ -41,7 +27,12 @@ def test_read_and_process_maccor(benchmark):
             "Temperature [C]": [22.2591],
         }
     )
-    assert_frame_equal(pyprobe_dataframe.tail(1), last_row)
+    helper_read_and_process(
+        benchmark,
+        maccor_cycler,
+        expected_final_row=last_row,
+        expected_events=set([0, 1]),
+    )
 
 
 @pytest.fixture
