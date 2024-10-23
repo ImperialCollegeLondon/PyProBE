@@ -50,12 +50,15 @@ class RawData(Result):
     This defines the PyProBE format.
     """
 
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Optional[str | int | float]]
     column_definitions: Dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
     step_descriptions: Dict[str, List[Optional[str | int]]] = {}
+    """A dictionary containing the fields 'Step' and 'Description'.
+
+    - 'Step' is a list of step numbers.
+    - 'Description' is a list of corresponding descriptions in PyBaMM Experiment format.
+    """
 
     @field_validator("base_dataframe")
     @classmethod
