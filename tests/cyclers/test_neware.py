@@ -8,6 +8,8 @@ import pytest
 
 from pyprobe.cyclers.neware import Neware
 
+from .test_basecycler import helper_read_and_process
+
 
 @pytest.fixture
 def neware_cycler():
@@ -169,14 +171,20 @@ def test_process_dataframe():
     os.remove("tests/sample_data/mock_dataframe.xlsx")
 
 
-def test_read_and_process(benchmark, neware_cycler):
+def test_read_and_process_neware(benchmark, neware_cycler):
     """Test the full process of reading and processing a file."""
-
-    def read_and_process():
-        return neware_cycler.pyprobe_dataframe
-
-    pyprobe_dataframe = benchmark(read_and_process)
-    rows = pyprobe_dataframe.shape[0]
+    last_row = pl.DataFrame(
+        {
+            "Date": [datetime(2024, 3, 6, 21, 39, 38, 591000)],
+            "Time [s]": [562749.497],
+            "Step": [12],
+            "Event": [61],
+            "Current [A]": [0.0],
+            "Voltage [V]": [3.4513],
+            "Capacity [Ah]": [0.022805],
+        }
+    )
+    expected_events = set(range(62))
     expected_columns = [
         "Date",
         "Time [s]",
@@ -186,12 +194,38 @@ def test_read_and_process(benchmark, neware_cycler):
         "Voltage [V]",
         "Capacity [Ah]",
     ]
-    assert isinstance(pyprobe_dataframe, pl.DataFrame)
-    assert set(pyprobe_dataframe.columns) == set(expected_columns)
+    helper_read_and_process(
+        benchmark, neware_cycler, last_row, expected_events, expected_columns
+    )
 
+
+def test_read_and_process_neware_multi_file(benchmark):
+    """Test the full process of reading and processing multiple Neware files."""
     neware_cycler = Neware(
         input_data_path="tests/sample_data/neware/sample_data_neware*.xlsx"
     )
-    pyprobe_dataframe = neware_cycler.pyprobe_dataframe
-    assert pyprobe_dataframe.shape[0] == rows * 2
-    assert set(pyprobe_dataframe.columns) == set(expected_columns)
+
+    last_row = pl.DataFrame(
+        {
+            "Date": [datetime(2024, 3, 6, 21, 39, 38, 591000)],
+            "Time [s]": [562749.497],
+            "Step": [12],
+            "Event": [123],
+            "Current [A]": [0.0],
+            "Voltage [V]": [3.4513],
+            "Capacity [Ah]": [0.004219859999949997],
+        }
+    )
+    expected_events = set(range(124))
+    expected_columns = [
+        "Date",
+        "Time [s]",
+        "Step",
+        "Event",
+        "Current [A]",
+        "Voltage [V]",
+        "Capacity [Ah]",
+    ]
+    helper_read_and_process(
+        benchmark, neware_cycler, last_row, expected_events, expected_columns
+    )

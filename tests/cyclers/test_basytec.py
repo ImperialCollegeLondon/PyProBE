@@ -3,9 +3,10 @@
 from datetime import datetime
 
 import polars as pl
-from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.basytec import Basytec
+
+from .test_basecycler import helper_read_and_process
 
 
 def test_read_file_basytec():
@@ -18,24 +19,12 @@ def test_read_file_basytec():
     assert dataframe["Date"][2] == "2023-06-19 17:56:54.002823"
 
 
-def test_read_and_process_basytec():
+def test_read_and_process_basytec(benchmark):
     """Test the full process of reading and processing a file."""
     basytec_cycler = Basytec(
         input_data_path="tests/sample_data/basytec/sample_data_basytec.txt"
     )
-    pyprobe_dataframe = basytec_cycler.pyprobe_dataframe
-    expected_columns = [
-        "Date",
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Temperature [C]",
-    ]
-    assert set(pyprobe_dataframe.columns) == set(expected_columns)
-    last_row = pl.LazyFrame(
+    last_row = pl.DataFrame(
         {
             "Date": datetime(2023, 6, 19, 17, 58, 3, 235803),
             "Time [s]": [70.235804],
@@ -47,4 +36,9 @@ def test_read_and_process_basytec():
             "Temperature [C]": [25.47953],
         }
     )
-    assert_frame_equal(pyprobe_dataframe.tail(1), last_row)
+    helper_read_and_process(
+        benchmark,
+        basytec_cycler,
+        expected_final_row=last_row,
+        expected_events=set([0, 1]),
+    )
