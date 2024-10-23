@@ -5,7 +5,7 @@ import shutil
 import time
 import warnings
 import zipfile
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import distinctipy
 import polars as pl
@@ -22,7 +22,7 @@ __version__ = "1.0.3"
 class Cell(BaseModel):
     """A class for a cell in a battery experiment."""
 
-    info: Dict[str, Optional[str | int | float]]
+    info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
     """Dictionary containing information about the cell.
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
@@ -32,8 +32,8 @@ class Cell(BaseModel):
 
     @field_validator("info")
     def check_and_set_name(
-        cls, info: Dict[str, Optional[str | int | float]]
-    ) -> Dict[str, Optional[str | int | float]]:
+        cls, info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
+    ) -> Dict[str, Optional[str | int | float | Dict[Any, Any]]]:
         """Validate the `info` field.
 
         Checks that a `Name` field is present in the `info` dictionary, if not it is
@@ -240,7 +240,7 @@ class Cell(BaseModel):
 
     @staticmethod
     def _get_filename(
-        info: Dict[str, Optional[str | int | float]],
+        info: Dict[str, Optional[str | int | float | Dict[Any, Any]]],
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
     ) -> str:
