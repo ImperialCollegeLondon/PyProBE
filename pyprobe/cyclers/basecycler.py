@@ -375,8 +375,10 @@ class BaseCycler(BaseModel):
         Returns:
             pl.Expr: A polars expression for the date column.
         """
-        return pl.col("Date").str.to_datetime(
-            format=self.datetime_format, time_unit="us"
+        return (
+            pl.col("Date")
+            .str.strip_chars()
+            .str.to_datetime(format=self.datetime_format, time_unit="us")
         )
 
     @property
