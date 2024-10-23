@@ -18,4 +18,4 @@ class Arbin(BaseCycler):
         "Discharge Capacity (*)": "Discharge Capacity [*]",
         "Aux_Temperature_1 (*)": "Temperature [*]",
     }
-    datetime_format: str = "%d/%m/%Y %H:%M:%S%.f"
+    datetime_format: str = "%m/%d/%Y %H:%M:%S%.f"
