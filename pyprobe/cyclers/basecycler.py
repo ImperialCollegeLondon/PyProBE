@@ -158,7 +158,7 @@ class BaseCycler(BaseModel):
         """
         file = os.path.basename(filepath)
         file_ext = os.path.splitext(file)[1]
-        match file_ext:
+        match file_ext.lower():
             case ".xlsx":
                 return pl.read_excel(filepath, engine="calamine", infer_schema_length=0)
             case ".csv":
