@@ -4,10 +4,9 @@ import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import polars as pl
-from pydantic import Field
 
 from pyprobe import utils
-from pyprobe.rawdata import RawData, default_column_definitions
+from pyprobe.rawdata import RawData
 
 if TYPE_CHECKING:
     from pyprobe.typing import (  # , FilterToStepType
@@ -277,14 +276,14 @@ class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
     readme_dict: Dict[str, Dict[str, List[str | int | Tuple[int, int, int]]]]
+    """A dictionary representing the data contained in the README yaml file."""
 
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Optional[str | int | float]]
-    column_definitions: Dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy()
-    )
-    step_descriptions: Dict[str, List[Optional[str | int]]] = {}
     cycle_info: List[Tuple[int, int, int]] = []
+    """A list of tuples representing the cycle information from the README yaml file.
+
+    The tuple format is
+    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
+    """
 
     def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
@@ -449,12 +448,12 @@ class Procedure(RawData):
 class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure."""
 
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Optional[str | int | float]]
-    column_definitions: Dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy()
-    )
-    cycle_info: List[Tuple[int, int, int]]
+    cycle_info: List[Tuple[int, int, int]] = []
+    """A list of tuples representing the cycle information from the README yaml file.
+
+    The tuple format is
+    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
+    """
 
     def model_post_init(self, __context: Any) -> None:
         """Create an experiment class."""
@@ -483,12 +482,12 @@ class Experiment(RawData):
 class Cycle(RawData):
     """A class for a cycle in a battery experimental procedure."""
 
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Optional[str | int | float]]
-    column_definitions: Dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy()
-    )
-    cycle_info: List[Tuple[int, int, int]]
+    cycle_info: List[Tuple[int, int, int]] = []
+    """A list of tuples representing the cycle information from the README yaml file.
+
+    The tuple format is
+    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
+    """
 
     def model_post_init(self, __context: Any) -> None:
         """Create a cycle class."""
@@ -515,12 +514,6 @@ class Cycle(RawData):
 
 class Step(RawData):
     """A class for a step in a battery experimental procedure."""
-
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    info: Dict[str, Optional[str | int | float]]
-    column_definitions: Dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy()
-    )
 
     def model_post_init(self, __context: Any) -> None:
         """Create a step class."""
