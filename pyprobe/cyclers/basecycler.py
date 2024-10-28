@@ -201,7 +201,7 @@ class BaseCycler(BaseModel):
         Returns:
             DataFrame: A single DataFrame.
         """
-        return pl.concat(dataframe_list, how="vertical", rechunk=True)
+        return pl.concat(dataframe_list, how="diagonal", rechunk=True)
 
     @staticmethod
     def _match_unit(column_name: str, pattern: str) -> Optional[str]:
