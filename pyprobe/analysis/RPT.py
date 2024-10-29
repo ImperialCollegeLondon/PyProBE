@@ -28,6 +28,15 @@ class RPT(BaseModel):
         )
         self._summary_df = copy.deepcopy(self._base_summary_df)
 
+    @property
+    def rpt_summary(self) -> Result:
+        """Summarize the RPTs.
+
+        Returns:
+            Result: A result object for the RPT summary.
+        """
+        return self.input_data[0].clean_copy(self._summary_df)
+
     def process_cell_capacity(self, filter: str, name: str = "Capacity [Ah]") -> Result:
         """Calculate the capacity for a particular experiment step across the RPTs.
 
