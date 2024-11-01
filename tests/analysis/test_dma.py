@@ -319,3 +319,54 @@ def test_average_ocvs(BreakinCycles_fixture):
     # test invalid input
     with pytest.raises(ValueError):
         DMA.average_ocvs(input_data=break_in.charge(0))
+
+
+def test_calc_full_cell_ocv_composite():
+    """Test the composite_full_cell_ocv method."""
+    # Sample data
+    n_points = 10
+    params = [0.05, 0.01, 0.95, 0.9, 0.85]
+
+    # Create data arrays
+    z = np.linspace(0, 1, n_points)
+    x_c1, ocp_c1 = z, np.linspace(1.5, 0.05, n_points)
+    x_c2, ocp_c2 = z, np.linspace(2.3, 0.15, n_points)
+    x_pe, ocp_pe = z, np.linspace(4, 2, n_points)
+    cell_SOC = np.linspace(0, 1, n_points)
+
+    # Run the function
+    soc, y_pred = dma_functions.calc_full_cell_OCV_composite(
+        SOC=cell_SOC,
+        z_pe_lo=params[0],
+        z_pe_hi=params[2],
+        z_ne_lo=params[1],
+        z_ne_hi=params[3],
+        x_pe=x_pe,
+        ocp_pe=ocp_pe,
+        x_c1=x_c1,
+        ocp_c1=ocp_c1,
+        x_c2=x_c2,
+        ocp_c2=ocp_c2,
+        comp1_frac=params[4],
+    )
+
+    # Expected outcomes
+    expected_soc = np.linspace(0, 1, n_points)
+    expected_y_pred = np.array(
+        [
+            2.4,
+            2.28091008,
+            2.23166123,
+            2.18241239,
+            2.13316354,
+            2.0839147,
+            2.03466585,
+            1.98541701,
+            1.93616816,
+            1.88691932,
+        ]
+    )
+
+    # Assertions
+    np.testing.assert_array_almost_equal(soc, expected_soc, decimal=8)
+    np.testing.assert_array_almost_equal(y_pred, expected_y_pred, decimal=8)
