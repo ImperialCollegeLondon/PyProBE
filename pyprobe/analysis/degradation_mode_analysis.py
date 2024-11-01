@@ -1,6 +1,6 @@
 """Module for degradation mode analysis methods."""
 
-from typing import Optional, Tuple
+from typing import Callable, List, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
@@ -29,6 +29,32 @@ class DMA(BaseModel):
     """The fitted OCV data."""
     dma_result: Optional[Result] = None
     """The degradation mode analysis results."""
+
+    NE_ocp: List[None | Callable[[NDArray], NDArray]] = []
+    """A list of functions for the negative electrode OCP."""
+
+    PE_ocp: List[None | Callable[[NDArray], NDArray]] = []
+    """A list of functions for the positive electrode OCP."""
+
+    def set_ocp_from_data(
+        self,
+        stoichiometry: NDArray[np.float64],
+        ocp: NDArray[np.float64],
+        electrode: Literal["pe", "ne"],
+        interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
+        component_index: int = 0,
+        total_electrode_components: int = 1,
+    ) -> None:
+        """Provide the OCP data for a given electrode."""
+        interpolator = utils.interpolators[interpolation_method](x=stoichiometry, y=ocp)
+        if electrode == "pe":
+            if len(self.PE_ocp) == 0:
+                self.PE_ocp = [None] * total_electrode_components
+            self.PE_ocp[component_index] = interpolator
+        elif electrode == "ne":
+            if len(self.NE_ocp) == 0:
+                self.NE_ocp = [None] * total_electrode_components
+            self.NE_ocp[component_index] = interpolator
 
     def fit_ocv(
         self,

@@ -11,6 +11,85 @@ from pyprobe.analysis.degradation_mode_analysis import DMA
 from pyprobe.result import Result
 
 
+@pytest.fixture
+def stoichiometry_data():
+    """Sample stoichiometry data."""
+    return np.linspace(0, np.pi, 1000)
+
+
+@pytest.fixture
+def ocp_data():
+    """Sample ocp data."""
+    return np.sin(np.linspace(0, np.pi, 1000))
+
+
+def test_set_ocp_from_data_pe(stoichiometry_data, ocp_data):
+    """Test the set_ocp_from_data method."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.set_ocp_from_data(
+        stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
+    )
+    assert dma.PE_ocp[0] is not None
+    assert callable(dma.PE_ocp[0])
+    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+
+
+def test_set_ocp_from_data_ne(stoichiometry_data, ocp_data):
+    """Test the set_ocp_from_data method."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.set_ocp_from_data(stoichiometry_data, ocp_data, electrode="ne")
+    assert dma.NE_ocp[0] is not None
+    assert callable(dma.NE_ocp[0])
+    assert np.isclose(dma.NE_ocp[0](0.1), np.sin(0.1))
+
+
+def test_set_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
+    """Test the set_ocp_from_data method with linear interpolation."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.set_ocp_from_data(
+        stoichiometry_data, ocp_data, electrode="pe", interpolation_method="linear"
+    )
+    assert dma.PE_ocp[0] is not None
+    assert callable(dma.PE_ocp[0])
+    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+
+
+def test_set_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
+    """Test the set_ocp_from_data method with cubic interpolation."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.set_ocp_from_data(
+        stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
+    )
+    assert dma.PE_ocp[0] is not None
+    assert callable(dma.PE_ocp[0])
+    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+
+
+def test_set_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
+    """Test the set_ocp_from_data method with multiple components."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.set_ocp_from_data(
+        stoichiometry_data,
+        ocp_data,
+        electrode="pe",
+        component_index=0,
+        total_electrode_components=2,
+    )
+    assert dma.PE_ocp[0] is not None
+    assert callable(dma.PE_ocp[0])
+    assert len(dma.PE_ocp) == 2
+    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+    assert dma.PE_ocp[1] is None
+    dma.set_ocp_from_data(
+        stoichiometry_data,
+        ocp_data,
+        electrode="pe",
+        component_index=1,
+        total_electrode_components=2,
+    )
+    assert np.isclose(dma.PE_ocp[1](0.8), np.sin(0.8))
+
+
 def graphite_LGM50_ocp_Chen2020(sto):
     """Chen2020 graphite ocp fit."""
     u_eq = (
