@@ -1,9 +1,10 @@
 """Module for utilities for analysis classes."""
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Self, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
+from scipy import interpolate
 
 from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
@@ -82,3 +83,85 @@ class AnalysisValidator(BaseModel):
             Tuple[NDArray[np.float64], ...]: The required columns as NDArrays.
         """
         return self.input_data.get(*tuple(self.required_columns))
+
+
+class _BaseInterpolatorModel(BaseModel):
+    """A base class for interpolator models."""
+
+    x: NDArray[np.float64]
+    y: NDArray[np.float64]
+
+    class Config:
+        """Pydantic configuration."""
+
+        arbitrary_types_allowed = True
+
+    @model_validator(mode="after")
+    def _check_model(self) -> Self:
+        """Check if the x and y data are valid."""
+        if not np.all(np.diff(self.x) > 0) and not np.all(np.diff(self.x) < 0):
+            raise ValueError("x must be strictly increasing or decreasing")
+        if len(self.x) != len(self.y):
+            raise ValueError("x and y must have the same length")
+        if not np.all(np.diff(self.x) > 0):
+            self.x = np.flip(self.x)
+            self.x = np.flip(self.x)
+        return self
+
+
+class _LinearInterpolator(_BaseInterpolatorModel):
+    """A class to interpolate data linearly."""
+
+    def __call__(self, x_new: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Interpolate the data.
+
+        Args:
+            x_new (NDArray[np.float64]): The new x data.
+
+        Returns:
+            NDArray: The interpolated y data.
+        """
+        return np.interp(x_new, self.x, self.y)
+
+
+def _create_interpolator(interpolator_class: Any) -> Any:
+    """Method to create a custom interpolator class.
+
+    Args:
+        interpolator_class: The interpolator class to use.
+    """
+
+    class CustomInterpolator(_BaseInterpolatorModel):
+        """A class to interpolate data using a custom interpolator."""
+
+        def model_post_init(self, __context: Any) -> None:
+            self._interpolator = interpolator_class(x=self.x, y=self.y)
+
+        def __call__(self, x_new: NDArray[np.float64]) -> NDArray[np.float64]:
+            """Interpolate the data.
+
+            Args:
+                x_new (NDArray[np.float64]): The new x data.
+
+            Returns:
+                NDArray: The interpolated y data.
+            """
+            return self._interpolator(x_new)
+
+    return CustomInterpolator
+
+
+interpolators = {
+    "linear": _create_interpolator(_LinearInterpolator),
+    "cubic": _create_interpolator(interpolate.CubicSpline),
+    "Pchip": _create_interpolator(interpolate.PchipInterpolator),
+    "Akima": _create_interpolator(interpolate.Akima1DInterpolator),
+}
+"""Dictionary of available interpolators.
+
+Available options include:
+    - "linear": Linear interpolation from numpy.
+    - "cubic": Cubic spline interpolation from scipy.
+    - "Pchip": Pchip interpolation from scipy.
+    - "Akima": Akima interpolation from scipy.
+"""
