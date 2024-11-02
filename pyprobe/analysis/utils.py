@@ -1,5 +1,5 @@
 """Module for utilities for analysis classes."""
-from typing import Any, List, Optional, Self, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -85,77 +85,62 @@ class AnalysisValidator(BaseModel):
         return self.input_data.get(*tuple(self.required_columns))
 
 
-class _BaseInterpolatorModel(BaseModel):
-    """A base class for interpolator models."""
-
-    x: NDArray[np.float64]
-    y: NDArray[np.float64]
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-    @model_validator(mode="after")
-    def _check_model(self) -> Self:
-        """Check if the x and y data are valid."""
-        if not np.all(np.diff(self.x) > 0) and not np.all(np.diff(self.x) < 0):
-            raise ValueError("x must be strictly increasing or decreasing")
-        if len(self.x) != len(self.y):
-            raise ValueError("x and y must have the same length")
-        if not np.all(np.diff(self.x) > 0):
-            self.x = np.flip(self.x)
-            self.x = np.flip(self.x)
-        return self
-
-
-class _LinearInterpolator(_BaseInterpolatorModel):
+class _LinearInterpolator(interpolate.PPoly):
     """A class to interpolate data linearly."""
 
-    def __call__(self, x_new: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Interpolate the data.
-
-        Args:
-            x_new (NDArray[np.float64]): The new x data.
-
-        Returns:
-            NDArray: The interpolated y data.
-        """
-        return np.interp(x_new, self.x, self.y)
+    def __init__(self, x: NDArray[np.float64], y: NDArray[np.float64]) -> None:
+        """Initialize the interpolator."""
+        slopes = np.diff(y) / np.diff(x)
+        coefficients = np.vstack([slopes, y[:-1]])
+        super().__init__(coefficients, x)
 
 
-def _create_interpolator(interpolator_class: Any) -> Any:
-    """Method to create a custom interpolator class.
+def _validate_interp_input_vectors(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Validate the input vectors x and y.
 
     Args:
-        interpolator_class: The interpolator class to use.
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Raises:
+        ValueError: If the input vectors are not valid.
     """
+    if not np.all(np.diff(x) > 0) and not np.all(np.diff(x) < 0):
+        raise ValueError("x must be strictly increasing or decreasing")
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length")
+    if not np.all(np.diff(x) > 0):
+        x = np.flip(x)
+        y = np.flip(y)
+    return x, y
 
-    class CustomInterpolator(_BaseInterpolatorModel):
-        """A class to interpolate data using a custom interpolator."""
 
-        def model_post_init(self, __context: Any) -> None:
-            self._interpolator = interpolator_class(x=self.x, y=self.y)
+def _create_interpolator(
+    interpolator_class: Callable[..., Any],
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create an interpolator after validating the input vectors.
 
-        def __call__(self, x_new: NDArray[np.float64]) -> NDArray[np.float64]:
-            """Interpolate the data.
+    Args:
+        interpolator_class (Callable[..., Any]): The interpolator class to use.
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
 
-            Args:
-                x_new (NDArray[np.float64]): The new x data.
-
-            Returns:
-                NDArray: The interpolated y data.
-            """
-            return self._interpolator(x_new)
-
-    return CustomInterpolator
+    Returns:
+        Any: The interpolator object.
+    """
+    x, y = _validate_interp_input_vectors(x, y)
+    return interpolator_class(x, y)
 
 
 interpolators = {
-    "linear": _create_interpolator(_LinearInterpolator),
-    "cubic": _create_interpolator(interpolate.CubicSpline),
-    "Pchip": _create_interpolator(interpolate.PchipInterpolator),
-    "Akima": _create_interpolator(interpolate.Akima1DInterpolator),
+    "linear": lambda x, y: _create_interpolator(_LinearInterpolator, x, y),
+    "cubic": lambda x, y: _create_interpolator(interpolate.CubicSpline, x, y),
+    "Pchip": lambda x, y: _create_interpolator(interpolate.PchipInterpolator, x, y),
+    "Akima": lambda x, y: _create_interpolator(interpolate.Akima1DInterpolator, x, y),
 }
 """Dictionary of available interpolators.
 
