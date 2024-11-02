@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
+from pyprobe.analysis import utils
 from pyprobe.analysis.degradation_mode_analysis import DMA
 from pyprobe.result import Result
 
@@ -29,18 +30,18 @@ def test_set_ocp_from_data_pe(stoichiometry_data, ocp_data):
     dma.set_ocp_from_data(
         stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
     )
-    assert dma.PE_ocp[0] is not None
-    assert callable(dma.PE_ocp[0])
-    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+    assert dma.ocp_pe[0] is not None
+    assert callable(dma.ocp_pe[0])
+    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
 
 
 def test_set_ocp_from_data_ne(stoichiometry_data, ocp_data):
     """Test the set_ocp_from_data method."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
     dma.set_ocp_from_data(stoichiometry_data, ocp_data, electrode="ne")
-    assert dma.NE_ocp[0] is not None
-    assert callable(dma.NE_ocp[0])
-    assert np.isclose(dma.NE_ocp[0](0.1), np.sin(0.1))
+    assert dma.ocp_ne[0] is not None
+    assert callable(dma.ocp_ne[0])
+    assert np.isclose(dma.ocp_ne[0](0.1), np.sin(0.1))
 
 
 def test_set_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
@@ -49,9 +50,9 @@ def test_set_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
     dma.set_ocp_from_data(
         stoichiometry_data, ocp_data, electrode="pe", interpolation_method="linear"
     )
-    assert dma.PE_ocp[0] is not None
-    assert callable(dma.PE_ocp[0])
-    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+    assert dma.ocp_pe[0] is not None
+    assert callable(dma.ocp_pe[0])
+    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
 
 
 def test_set_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
@@ -60,9 +61,9 @@ def test_set_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
     dma.set_ocp_from_data(
         stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
     )
-    assert dma.PE_ocp[0] is not None
-    assert callable(dma.PE_ocp[0])
-    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
+    assert dma.ocp_pe[0] is not None
+    assert callable(dma.ocp_pe[0])
+    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
 
 
 def test_set_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
@@ -75,11 +76,11 @@ def test_set_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
         component_index=0,
         total_electrode_components=2,
     )
-    assert dma.PE_ocp[0] is not None
-    assert callable(dma.PE_ocp[0])
-    assert len(dma.PE_ocp) == 2
-    assert np.isclose(dma.PE_ocp[0](0.4), np.sin(0.4))
-    assert dma.PE_ocp[1] is None
+    assert dma.ocp_pe[0] is not None
+    assert callable(dma.ocp_pe[0])
+    assert len(dma.ocp_pe) == 2
+    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
+    assert dma.ocp_pe[1] is None
     dma.set_ocp_from_data(
         stoichiometry_data,
         ocp_data,
@@ -87,7 +88,7 @@ def test_set_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
         component_index=1,
         total_electrode_components=2,
     )
-    assert np.isclose(dma.PE_ocp[1](0.8), np.sin(0.8))
+    assert np.isclose(dma.ocp_pe[1](0.8), np.sin(0.8))
 
 
 def graphite_LGM50_ocp_Chen2020(sto):
@@ -114,6 +115,154 @@ def nmc_LGM50_ocp_Chen2020(sto):
     )
 
     return u_eq
+
+
+def test_f_OCV():
+    """Test the f_OCV method."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.ocp_ne = [graphite_LGM50_ocp_Chen2020]
+    dma.ocp_pe = [nmc_LGM50_ocp_Chen2020]
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.7
+    soc = np.linspace(0, 1, 100)
+    ocv = dma._f_OCV(soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 100)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 100)
+    ocv_expected = nmc_LGM50_ocp_Chen2020(x_pe) - graphite_LGM50_ocp_Chen2020(x_ne)
+    np.testing.assert_allclose(ocv, ocv_expected)
+
+
+def test_f_grad_OCV():
+    """Test the f_grad_OCV method."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    x_pts = np.linspace(0, 1, 100)
+    ocp_pe_pts = 2 * x_pts**2
+    ocp_pe = utils.interpolators["cubic"](x=x_pts, y=ocp_pe_pts)
+    ocp_ne_pts = 3 * x_pts**3
+    ocp_ne = utils.interpolators["cubic"](x=x_pts, y=ocp_ne_pts)
+    dma.ocp_ne = [ocp_ne]
+    dma.ocp_pe = [ocp_pe]
+    x_pe_lo = 0
+    x_pe_hi = 1
+    x_ne_lo = 0
+    x_ne_hi = 1
+    d_ocv = dma._f_grad_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 100)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 100)
+    d_ocv_expected = 4 * x_pe - 9 * x_ne**2
+    np.testing.assert_allclose(d_ocv, d_ocv_expected, atol=1e-12)
+
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.7
+    d_ocv = dma._f_grad_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    ocv_pts = dma._f_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    numerical_d_ocv = np.gradient(ocv_pts, x_pts)
+    np.testing.assert_allclose(d_ocv, numerical_d_ocv, rtol=1e-3, atol=0.02)
+
+
+def test_curve_fit_ocv():
+    """Test the curve_fit_ocv method."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    dma.ocp_ne = [graphite_LGM50_ocp_Chen2020]
+    dma.ocp_pe = [nmc_LGM50_ocp_Chen2020]
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.7
+    soc = np.linspace(0, 1, 100)
+    ocv_target = dma._f_OCV(soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    fit = dma._curve_fit_ocv(
+        soc,
+        ocv_target,
+        "OCV",
+        optimizer="minimize",
+        optimizer_options={"x0": [0.8, 0.4, 0.2, 0.6]},
+    )
+    np.testing.assert_allclose(fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=1e-6)
+
+
+def test_curve_fit_ocv_target_dVdQ():
+    """Test the curve_fit_ocv method with target dVdQ."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.7
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    ocv_target = ocv_pe - ocv_ne
+    soc = np.linspace(0, 1, 10000)
+    d_ocv_target = np.gradient(ocv_target, soc)
+
+    fit = dma._curve_fit_ocv(
+        soc,
+        d_ocv_target,
+        "dVdQ",
+        optimizer="minimize",
+        optimizer_options={
+            "x0": [0.8, 0.1, 0.1, 0.7],
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+        },
+    )
+    np.testing.assert_allclose(fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=5e-6)
+
+    fit = dma._curve_fit_ocv(
+        soc,
+        d_ocv_target,
+        "dVdQ",
+        optimizer="differential_evolution",
+        optimizer_options={
+            "bounds": [(0.75, 0.85), (0.05, 15), (0.05, 0.15), (0.65, 0.75)]
+        },
+    )
+    np.testing.assert_allclose(
+        fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=5e-4, atol=2e-4
+    )
+
+
+def test_curve_fit_ocv_target_dQdV():
+    """Test the curve_fit_ocv method with target dQdV."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.6
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    ocv_target = ocv_pe - ocv_ne
+    soc = np.linspace(0, 1, 10000)
+    d_ocv_target = np.gradient(ocv_target, soc)
+
+    fit = dma._curve_fit_ocv(
+        soc,
+        1 / d_ocv_target,
+        "dQdV",
+        optimizer="differential_evolution",
+        optimizer_options={
+            "bounds": [
+                (x_pe_lo - 0.05, x_pe_lo + 0.05),
+                (x_pe_hi - 0.05, x_pe_hi + 0.05),
+                (x_ne_lo - 0.05, x_ne_lo + 0.05),
+                (x_ne_hi - 0.05, x_ne_hi + 0.05),
+            ]
+        },
+    )
+    np.testing.assert_allclose(
+        fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=5e-4, atol=1e-5
+    )
 
 
 n_points = 1000

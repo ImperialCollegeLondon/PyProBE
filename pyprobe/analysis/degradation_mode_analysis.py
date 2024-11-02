@@ -1,11 +1,13 @@
 """Module for degradation mode analysis methods."""
 
-from typing import Callable, List, Literal, Optional, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 from pydantic import BaseModel
+from scipy import optimize
+from scipy.interpolate import PPoly
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import utils
@@ -30,10 +32,10 @@ class DMA(BaseModel):
     dma_result: Optional[Result] = None
     """The degradation mode analysis results."""
 
-    NE_ocp: List[None | Callable[[NDArray], NDArray]] = []
+    ocp_ne: List[None | Callable[[NDArray], NDArray]] = []
     """A list of functions for the negative electrode OCP."""
 
-    PE_ocp: List[None | Callable[[NDArray], NDArray]] = []
+    ocp_pe: List[None | Callable[[NDArray], NDArray]] = []
     """A list of functions for the positive electrode OCP."""
 
     def set_ocp_from_data(
@@ -45,16 +47,169 @@ class DMA(BaseModel):
         component_index: int = 0,
         total_electrode_components: int = 1,
     ) -> None:
-        """Provide the OCP data for a given electrode."""
+        """Provide the OCP data for a given electrode.
+
+        Args:
+            stoichiometry (NDArray[np.float64]): The stoichiometry data.
+            ocp (NDArray[np.float64]): The OCP data.
+            electrode (Literal["pe", "ne"]): The electrode to set the OCP data for.
+            interpolation_method
+                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
+                The interpolation method to use. Defaults to "linear".
+            component_index (int, optional):
+                The index of the electrode component to set the OCP data for.
+                Defaults to 0.
+            total_electrode_components (int, optional):
+                The total number of electrode components. Defaults to 1.
+        """
         interpolator = utils.interpolators[interpolation_method](x=stoichiometry, y=ocp)
         if electrode == "pe":
-            if len(self.PE_ocp) == 0:
-                self.PE_ocp = [None] * total_electrode_components
-            self.PE_ocp[component_index] = interpolator
+            if len(self.ocp_pe) == 0:
+                self.ocp_pe = [None] * total_electrode_components
+            self.ocp_pe[component_index] = interpolator
         elif electrode == "ne":
-            if len(self.NE_ocp) == 0:
-                self.NE_ocp = [None] * total_electrode_components
-            self.NE_ocp[component_index] = interpolator
+            if len(self.ocp_ne) == 0:
+                self.ocp_ne = [None] * total_electrode_components
+            self.ocp_ne[component_index] = interpolator
+
+    def _f_OCV(
+        self,
+        SOC: NDArray[np.float64],
+        x_pe_lo: NDArray[np.float64],
+        x_pe_hi: NDArray[np.float64],
+        x_ne_lo: NDArray[np.float64],
+        x_ne_hi: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Calculate the full cell OCV as a function of SOC.
+
+        Args:
+            SOC (NDArray[np.float64]): The full cell SOC.
+            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
+            x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
+
+        Returns:
+            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+                A function to calculate the full cell OCV as a function of SOC.
+        """
+        if self.ocp_pe[0] is None:
+            raise ValueError("Positive electrode OCP data not provided.")
+        if self.ocp_ne[0] is None:
+            raise ValueError("Negative electrode OCP data not provided.")
+        # Calculate the stoichiometry at the given SOC for each electrode
+        z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
+        z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
+
+        # Return the full cell OCV
+        return self.ocp_pe[0](z_pe) - self.ocp_ne[0](z_ne)
+
+    def _f_grad_OCV(
+        self,
+        SOC: NDArray[np.float64],
+        x_pe_lo: NDArray[np.float64],
+        x_pe_hi: NDArray[np.float64],
+        x_ne_lo: NDArray[np.float64],
+        x_ne_hi: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Calculate the full cell OCV gradient as a function of SOC.
+
+        Derivative is calculated using the chain rule:
+        d(OCV)/d(SOC) = d(OCV)/d(z_pe) * d(z_pe)/d(SOC)
+                        - d(OCV)/d(z_ne) * d(z_ne)/d(SOC)
+        Args:
+            SOC (NDArray[np.float64]): The full cell SOC.
+            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
+            x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
+            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
+
+        Returns:
+            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+                A function to calculate the full cell OCV gradient as a function of SOC.
+        """
+        if self.ocp_pe[0] is None:
+            raise ValueError("Positive electrode OCP data not provided.")
+        if self.ocp_ne[0] is None:
+            raise ValueError("Negative electrode OCP data not provided.")
+        # Calculate the stoichiometry at the given SOC for each electrode
+        z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
+        z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
+
+        # Calculate the gradient of electrode stoichiometry with respect to SOC
+        d_z_pe = x_pe_hi - x_pe_lo
+        d_z_ne = x_ne_hi - x_ne_lo
+
+        # Calculate the gradient of the OCP functions with respect to stoichiometry
+        if isinstance(self.ocp_pe[0], PPoly):
+            d_ocp_pe = self.ocp_pe[0].derivative()
+        if isinstance(self.ocp_ne[0], PPoly):
+            d_ocp_ne = self.ocp_ne[0].derivative()
+
+        # Calculate the full cell OCV gradient using the chain rule
+        return d_ocp_pe(z_pe) * d_z_pe - d_ocp_ne(z_ne) * d_z_ne
+
+    def _curve_fit_ocv(
+        self,
+        SOC: NDArray[np.float64],
+        fitting_target_data: NDArray[np.float64],
+        fitting_target: Literal["OCV", "dQdV", "dVdQ"],
+        optimizer: Literal["minimize", "differential_evolution"],
+        optimizer_options: Dict[str, Any],
+    ) -> NDArray[np.float64]:
+        """Fit half cell open circuit potential curves to full cell OCV data.
+
+        Args:
+            SOC (NDArray[np.float64]): The full cell SOC.
+            fitting_target_data (NDArray[np.float64]): The data to fit.
+            fitting_target (Literal["OCV", "dQdV", "dVdQ"]):
+                The target for the curve fitting.
+            optimizer (Literal["minimize", "differential_evolution"]):
+                The optimization algorithm to use from the scipy.optimize package.
+            optimizer_options (Dict[str, Any]):
+                The options for the optimization algorithm. See the documentation for
+                scipy.optimize.minimize and scipy.optimize.differential_evolution.
+
+        Returns:
+            NDArray[np.float64]:
+                The fitted stoichiometry limits - [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi].
+        """
+
+        def _ocv_curve_fit_objective(
+            params: NDArray[np.float64],
+        ) -> NDArray[np.float64]:
+            """Objective function for the OCV curve fitting.
+
+            Args:
+                params (NDArray[np.float64]): The fitting parameters.
+
+            Returns:
+                NDArray[np.float64]: The residuals between the data and the fit.
+            """
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
+            match fitting_target:
+                case "OCV":
+                    model = self._f_OCV(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+                case "dVdQ":
+                    model = self._f_grad_OCV(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+                case "dQdV":
+                    with np.errstate(divide="ignore", invalid="ignore"):
+                        model = 1 / self._f_grad_OCV(
+                            SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+                        )
+                        model[
+                            ~np.isfinite(model)
+                        ] = np.inf  # Set infinities and NaNs to zero
+                case _:
+                    raise ValueError(f"Invalid fitting target: {fitting_target}")
+            return np.sum((model - fitting_target_data) ** 2)
+
+        selected_optimizer = {
+            "minimize": optimize.minimize,
+            "differential_evolution": optimize.differential_evolution,
+        }[optimizer]
+
+        return selected_optimizer(_ocv_curve_fit_objective, **optimizer_options).x
 
     def fit_ocv(
         self,
