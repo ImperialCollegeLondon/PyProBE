@@ -218,3 +218,30 @@ def test_validate_interp_input_vectors_flip():
         pytest.fail("Unexpected ValueError raised")
     np.testing.assert_array_equal(x, np.array([1, 2, 3]))
     np.testing.assert_array_equal(y, np.array([4, 5, 6]))
+
+
+def test_downsample_df():
+    """Test _downsample_df with different occurrences."""
+    times = np.linspace(0, 100, 101)
+    values = times
+    min_distance = 10
+    df = pl.DataFrame({"Time [s]": times, "values": values})
+    resampled_first = smoothing._downsample_df(
+        df, "values", min_distance, occurrence="first"
+    )["values"].to_numpy()
+    resampled_last = smoothing._downsample_df(
+        df, "values", min_distance, occurrence="last"
+    )["values"].to_numpy()
+    resampled_middle = smoothing._downsample_df(
+        df, "values", min_distance, occurrence="middle"
+    )["values"].to_numpy()
+
+    np.testing.assert_array_equal(
+        resampled_first, np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+    )
+    np.testing.assert_array_equal(
+        resampled_last, np.array([9, 19, 29, 39, 49, 59, 69, 79, 89, 99, 100])
+    )
+    np.testing.assert_array_equal(
+        resampled_middle, np.array([5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 100])
+    )

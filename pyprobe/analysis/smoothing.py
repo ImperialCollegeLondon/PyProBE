@@ -1,7 +1,7 @@
 """Module containing methods for smoothing noisy experimental data."""
 
 import copy
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
@@ -125,6 +125,72 @@ def akima_interpolator(
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Akima interpolator.
     """
     return _create_interpolator(interpolate.Akima1DInterpolator, x, y)
+
+
+def _downsample_df(
+    df: pl.DataFrame | pl.LazyFrame,
+    target: str,
+    sampling_interval: float,
+    occurrence: Literal["first", "last", "middle"] = "first",
+    time_column: str = "Time [s]",
+) -> pl.DataFrame | pl.LazyFrame:
+    """Resample a DataFrame to a specified interval.
+
+    Args:
+        df (pl.DataFrame | pl.LazyFrame):
+            The DataFrame to downsample.
+        target (str):
+            The target column to downsample.
+        sampling_interval (float):
+            The desired minimum interval between points.
+        occurrence (Literal['first', 'last', 'middle'], optional):
+            The occurrence to take when downsampling. Default is 'first'.
+
+    Returns:
+        pl.DataFrame | pl.LazyFrame:
+            The downsampled DataFrame.
+    """
+    # Calculate the absolute difference between consecutive values
+    df = df.with_columns(
+        [
+            (pl.col(target) - pl.col(target).shift(1))
+            .abs()
+            .fill_null(0)
+            .alias("target_diff")
+        ]
+    )
+
+    # Calculate cumulative sum of value differences
+    df = df.with_columns([pl.col("target_diff").cum_sum().alias("target_cumsum")])
+
+    # Create groups based on min_distance
+    df = df.with_columns(
+        [
+            (pl.col("target_cumsum") / sampling_interval)
+            .floor()
+            .cast(pl.Int64)
+            .alias("group")
+        ]
+    )
+
+    # Group by 'group' and select the desired occurrence
+    if occurrence == "first":
+        resampled_times = df.group_by("group").agg(
+            [pl.col(time_column).first().alias(time_column)]
+        )
+    elif occurrence == "last":
+        resampled_times = df.group_by("group").agg(
+            [
+                pl.col(time_column).last().alias(time_column),
+            ]
+        )
+    elif occurrence == "middle":
+        resampled_times = (
+            df.group_by("group")
+            .agg(pl.col(time_column).quantile(0.5, "nearest").alias(time_column))
+            .sort(time_column)
+        )
+    return resampled_times.join(df, on=time_column)
 
 
 class Smoothing(BaseModel):
