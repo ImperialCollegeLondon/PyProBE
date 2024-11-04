@@ -8,7 +8,7 @@ import sympy as sp
 from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
-from pyprobe.analysis import utils
+from pyprobe.analysis import smoothing
 from pyprobe.analysis.degradation_mode_analysis import DMA
 from pyprobe.result import Result
 
@@ -108,7 +108,7 @@ def test_ocp_derivative_ppoly():
     """Test _ocp_derivative with a PPoly object."""
     x = np.array([0, 1, 2, 3])
     y = np.array([0, 1, 0, -1])
-    ppoly_ocp = utils.linear_interpolator(x, y)
+    ppoly_ocp = smoothing.linear_interpolator(x, y)
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
     derivative = dma._ocp_derivative([ppoly_ocp])[0]
     assert callable(derivative)
@@ -183,9 +183,9 @@ def test_f_grad_OCV():
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
     x_pts = np.linspace(0, 1, 100)
     ocp_pe_pts = 2 * x_pts**2
-    ocp_pe = utils.cubic_interpolator(x=x_pts, y=ocp_pe_pts)
+    ocp_pe = smoothing.cubic_interpolator(x=x_pts, y=ocp_pe_pts)
     ocp_ne_pts = 3 * x_pts**3
-    ocp_ne = utils.cubic_interpolator(x=x_pts, y=ocp_ne_pts)
+    ocp_ne = smoothing.cubic_interpolator(x=x_pts, y=ocp_ne_pts)
     dma.ocp_ne = [ocp_ne]
     dma.ocp_pe = [ocp_pe]
     x_pe_lo = 0

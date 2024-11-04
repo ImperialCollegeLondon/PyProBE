@@ -1,16 +1,130 @@
 """Module containing methods for smoothing noisy experimental data."""
 
 import copy
-from typing import Optional
+from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
 import polars as pl
+from numpy.typing import NDArray
 from pydantic import BaseModel
+from scipy import interpolate
 from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
+
+
+class _LinearInterpolator(interpolate.PPoly):
+    """A class to interpolate data linearly."""
+
+    def __init__(self, x: NDArray[np.float64], y: NDArray[np.float64]) -> None:
+        """Initialize the interpolator."""
+        slopes = np.diff(y) / np.diff(x)
+        coefficients = np.vstack([slopes, y[:-1]])
+        super().__init__(coefficients, x)
+
+
+def _validate_interp_input_vectors(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Validate the input vectors x and y.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Raises:
+        ValueError: If the input vectors are not valid.
+    """
+    if not np.all(np.diff(x) > 0) and not np.all(np.diff(x) < 0):
+        raise ValueError("x must be strictly increasing or decreasing")
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length")
+    if not np.all(np.diff(x) > 0):
+        x = np.flip(x)
+        y = np.flip(y)
+    return x, y
+
+
+def _create_interpolator(
+    interpolator_class: Callable[..., Any],
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create an interpolator after validating the input vectors.
+
+    Args:
+        interpolator_class (Callable[..., Any]): The interpolator class to use.
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Any: The interpolator object.
+    """
+    x, y = _validate_interp_input_vectors(x, y)
+    return interpolator_class(x, y)
+
+
+def linear_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a linear interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The linear interpolator.
+    """
+    return _create_interpolator(_LinearInterpolator, x, y)
+
+
+def cubic_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy cubic spline interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+            The cubic spline interpolator.
+    """
+    return _create_interpolator(interpolate.CubicSpline, x, y)
+
+
+def pchip_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy Pchip interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Pchip interpolator.
+    """
+    return _create_interpolator(interpolate.PchipInterpolator, x, y)
+
+
+def akima_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy Akima interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Akima interpolator.
+    """
+    return _create_interpolator(interpolate.Akima1DInterpolator, x, y)
 
 
 class Smoothing(BaseModel):

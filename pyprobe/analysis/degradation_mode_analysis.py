@@ -11,7 +11,7 @@ from scipy import optimize
 from scipy.interpolate import PPoly
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
-from pyprobe.analysis import utils
+from pyprobe.analysis import smoothing, utils
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
 from pyprobe.typing import FilterToCycleType, PyProBEDataType
@@ -118,10 +118,10 @@ class DMA(BaseModel):
                 The total number of electrode components. Defaults to 1.
         """
         interpolator = {
-            "linear": utils.linear_interpolator,
-            "cubic": utils.cubic_interpolator,
-            "Pchip": utils.pchip_interpolator,
-            "Akima": utils.akima_interpolator,
+            "linear": smoothing.linear_interpolator,
+            "cubic": smoothing.cubic_interpolator,
+            "Pchip": smoothing.pchip_interpolator,
+            "Akima": smoothing.akima_interpolator,
         }[interpolation_method](stoichiometry, ocp)
         if electrode == "pe":
             if not hasattr(self, "_ocp_pe"):

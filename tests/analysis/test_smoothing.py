@@ -3,7 +3,9 @@ import numpy as np
 import polars as pl
 import polars.testing as pl_testing
 import pytest
+from scipy import interpolate
 
+from pyprobe.analysis import smoothing
 from pyprobe.analysis.smoothing import Smoothing
 from pyprobe.result import Result
 
@@ -115,3 +117,104 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
 
     np.testing.assert_allclose(result.get_only("y"), expected_y, rtol=0.2)
     assert set(result.column_list) == set(noisy_data.column_list)
+
+
+def test_linear_interpolator():
+    """Test _LinearInterpolator initialization with valid x and y."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5, 6])
+    interpolator = smoothing._LinearInterpolator(x, y)
+    x_new = np.array([1.5, 2.5])
+    y_new = interpolator(x_new)
+    np.testing.assert_array_equal(y_new, np.array([4.5, 5.5]))
+
+
+def test_create_interpolator_linear():
+    """Test _create_interpolator with linear interpolation."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5, 6])
+    interpolator = smoothing._create_interpolator(smoothing._LinearInterpolator, x, y)
+    assert type(interpolator) == smoothing._LinearInterpolator
+    assert isinstance(interpolator, interpolate.PPoly)
+    x_new = np.array([1.5, 2.5])
+    y_new = interpolator(x_new)
+    assert y_new.shape == x_new.shape
+
+
+def test_create_interpolator_cubic():
+    """Test _create_interpolator with cubic interpolation."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5, 6])
+    interpolator = smoothing._create_interpolator(interpolate.CubicSpline, x, y)
+    assert type(interpolator) == interpolate.CubicSpline
+    x_new = np.array([1.5, 2.5])
+    y_new = interpolator(x_new)
+    assert y_new.shape == x_new.shape
+
+
+def test_create_interpolator_pchip():
+    """Test _create_interpolator with Pchip interpolation."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5, 6])
+    interpolator = smoothing._create_interpolator(interpolate.PchipInterpolator, x, y)
+    assert type(interpolator) == interpolate.PchipInterpolator
+    x_new = np.array([1.5, 2.5])
+    y_new = interpolator(x_new)
+    assert y_new.shape == x_new.shape
+
+
+def test_create_interpolator_akima():
+    """Test _create_interpolator with Akima interpolation."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5, 6])
+    interpolator = smoothing._create_interpolator(interpolate.Akima1DInterpolator, x, y)
+    assert type(interpolator) == interpolate.Akima1DInterpolator
+    x_new = np.array([1.5, 2.5])
+    y_new = interpolator(x_new)
+    assert y_new.shape == x_new.shape
+
+
+def test_validate_interp_input_vectors_valid():
+    """Test _validate_interp_input_vectors with valid input vectors."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5, 6])
+    try:
+        x, y = smoothing._validate_interp_input_vectors(x, y)
+    except ValueError:
+        pytest.fail("Unexpected ValueError raised")
+
+
+def test_validate_interp_input_vectors_invalid_length():
+    """Test _validate_interp_input_vectors with vectors of different lengths."""
+    x = np.array([1, 2, 3])
+    y = np.array([4, 5])
+    with pytest.raises(ValueError, match="x and y must have the same length"):
+        x, y = smoothing._validate_interp_input_vectors(x, y)
+
+
+def test_validate_interp_input_vectors_non_strictly_increasing():
+    """Test _validate_interp_input_vectors with non-strictly increasing x."""
+    x = np.array([1, 2, 2])
+    y = np.array([4, 5, 6])
+    with pytest.raises(ValueError, match="x must be strictly increasing or decreasing"):
+        x, y = smoothing._validate_interp_input_vectors(x, y)
+
+
+def test_validate_interp_input_vectors_non_strictly_decreasing():
+    """Test _validate_interp_input_vectors with non-strictly decreasing x."""
+    x = np.array([3, 2, 2])
+    y = np.array([6, 5, 4])
+    with pytest.raises(ValueError, match="x must be strictly increasing or decreasing"):
+        x, y = smoothing._validate_interp_input_vectors(x, y)
+
+
+def test_validate_interp_input_vectors_flip():
+    """Test _validate_interp_input_vectors with decreasing x."""
+    x = np.array([3, 2, 1])
+    y = np.array([6, 5, 4])
+    try:
+        x, y = smoothing._validate_interp_input_vectors(x, y)
+    except ValueError:
+        pytest.fail("Unexpected ValueError raised")
+    np.testing.assert_array_equal(x, np.array([1, 2, 3]))
+    np.testing.assert_array_equal(y, np.array([4, 5, 6]))
