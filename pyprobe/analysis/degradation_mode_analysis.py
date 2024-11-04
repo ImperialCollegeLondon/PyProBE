@@ -33,65 +33,6 @@ class DMA(BaseModel):
     dma_result: Optional[Result] = None
     """The degradation mode analysis results."""
 
-    def _ocp_derivative(
-        self, ocp_list: List[None | Callable[[NDArray], NDArray]]
-    ) -> List[Callable[[NDArray], NDArray]]:
-        """Calculate the derivative of each OCP.
-
-        Args:
-            ocp (Callable[[NDArray], NDArray]):
-                The OCP function. Must be a differentiable function. Currently supported
-                formats are scipy.interpolate.PPoly objects (from utils.interpolators)
-                or sympy expressions.
-
-        Returns:
-            Callable[[NDArray], NDArray]: The derivative of the OCP.
-        """
-
-        def _check_free_symbols(free_symbols: set[sp.Symbol]) -> sp.Symbol:
-            if len(free_symbols) == 1:
-                return free_symbols.pop()
-            else:
-                raise ValueError(
-                    "OCP must be a function of a single variable, " "the stoichiometry."
-                )
-
-        derivatives = []
-        for ocp in ocp_list:
-            if isinstance(ocp, PPoly):
-                derivatives.append(ocp.derivative())
-            elif isinstance(ocp, sp.Expr):
-                free_symbols = ocp.free_symbols
-                sto = _check_free_symbols(free_symbols)
-                gradient = sp.diff(ocp, sto)
-                derivatives.append(sp.lambdify(sto, gradient, "numpy"))
-            else:
-                raise ValueError(
-                    "OCP is not in a differentiable format. OCP must be a"
-                    " PPoly object or a sympy expression."
-                )
-        return derivatives
-
-    @property
-    def d_ocp_pe(self) -> List[Callable[[NDArray], NDArray]]:
-        """Return the derivative of the positive electrode OCP.
-
-        Returns:
-            List[Callable[[NDArray], NDArray]]: The derivative of the positive
-            electrode OCP.
-        """
-        return self._ocp_derivative(self._ocp_pe)
-
-    @property
-    def d_ocp_ne(self) -> List[Callable[[NDArray], NDArray]]:
-        """Return the derivative of the negative electrode OCP.
-
-        Returns:
-            List[Callable[[NDArray], NDArray]]: The derivative of the negative
-            electrode OCP.
-        """
-        return self._ocp_derivative(self._ocp_ne)
-
     @property
     def ocp_pe(
         self,
@@ -213,6 +154,65 @@ class DMA(BaseModel):
             if not hasattr(self, "_ocp_ne"):
                 self._ocp_ne = [None] * total_electrode_components
             self._ocp_ne[component_index] = ocp
+
+    def _ocp_derivative(
+        self, ocp_list: List[None | Callable[[NDArray], NDArray]]
+    ) -> List[Callable[[NDArray], NDArray]]:
+        """Calculate the derivative of each OCP.
+
+        Args:
+            ocp (Callable[[NDArray], NDArray]):
+                The OCP function. Must be a differentiable function. Currently supported
+                formats are scipy.interpolate.PPoly objects (from utils.interpolators)
+                or sympy expressions.
+
+        Returns:
+            Callable[[NDArray], NDArray]: The derivative of the OCP.
+        """
+
+        def _check_free_symbols(free_symbols: set[sp.Symbol]) -> sp.Symbol:
+            if len(free_symbols) == 1:
+                return free_symbols.pop()
+            else:
+                raise ValueError(
+                    "OCP must be a function of a single variable, " "the stoichiometry."
+                )
+
+        derivatives = []
+        for ocp in ocp_list:
+            if isinstance(ocp, PPoly):
+                derivatives.append(ocp.derivative())
+            elif isinstance(ocp, sp.Expr):
+                free_symbols = ocp.free_symbols
+                sto = _check_free_symbols(free_symbols)
+                gradient = sp.diff(ocp, sto)
+                derivatives.append(sp.lambdify(sto, gradient, "numpy"))
+            else:
+                raise ValueError(
+                    "OCP is not in a differentiable format. OCP must be a"
+                    " PPoly object or a sympy expression."
+                )
+        return derivatives
+
+    @property
+    def d_ocp_pe(self) -> List[Callable[[NDArray], NDArray]]:
+        """Return the derivative of the positive electrode OCP.
+
+        Returns:
+            List[Callable[[NDArray], NDArray]]: The derivative of the positive
+            electrode OCP.
+        """
+        return self._ocp_derivative(self._ocp_pe)
+
+    @property
+    def d_ocp_ne(self) -> List[Callable[[NDArray], NDArray]]:
+        """Return the derivative of the negative electrode OCP.
+
+        Returns:
+            List[Callable[[NDArray], NDArray]]: The derivative of the negative
+            electrode OCP.
+        """
+        return self._ocp_derivative(self._ocp_ne)
 
     def _f_OCV(
         self,
