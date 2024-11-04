@@ -308,6 +308,65 @@ def test_curve_fit_ocv_target_dQdV():
     )
 
 
+def test_run_ocv_curve_fit():
+    """Test the run_ocv_curve_fit method."""
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.7
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    soc = np.linspace(0, 1, 10000)
+    ocv_target = ocv_pe - ocv_ne
+    dma = DMA(
+        input_data=Result(
+            base_dataframe=pl.DataFrame(
+                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
+            ),
+            info={},
+        )
+    )
+    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+
+    d_ocv_target = np.gradient(ocv_target, soc)
+
+    limits, fit = dma.run_ocv_curve_fit(
+        fitting_target="OCV",
+        optimizer="differential_evolution",
+        optimizer_options={
+            "bounds": [
+                (x_pe_lo - 0.05, x_pe_lo + 0.05),
+                (x_pe_hi - 0.05, x_pe_hi + 0.05),
+                (x_ne_lo - 0.05, x_ne_lo + 0.05),
+                (x_ne_hi - 0.05, x_ne_hi + 0.05),
+            ]
+        },
+    )
+    assert isinstance(limits, Result)
+    assert limits.data.columns == [
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
+        "Cell Capacity [Ah]",
+        "Cathode Capacity [Ah]",
+        "Anode Capacity [Ah]",
+        "Li Inventory [Ah]",
+    ]
+    np.testing.assert_allclose(limits.data["x_pe low SOC"].to_numpy()[0], x_pe_lo)
+    np.testing.assert_allclose(limits.data["x_pe high SOC"].to_numpy()[0], x_pe_hi)
+    np.testing.assert_allclose(limits.data["x_ne low SOC"].to_numpy()[0], x_ne_lo)
+    np.testing.assert_allclose(limits.data["x_ne high SOC"].to_numpy()[0], x_ne_hi)
+
+    np.testing.assert_allclose(fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target)
+    np.testing.assert_allclose(
+        fit.data["Fitted dVdSOC [V]"].to_numpy(), d_ocv_target, rtol=0.005, atol=0.005
+    )
+
+
 n_points = 1000
 z = np.linspace(0, 1, 1000)
 

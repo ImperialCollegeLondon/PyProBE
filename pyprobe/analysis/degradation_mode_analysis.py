@@ -347,6 +347,137 @@ class DMA(BaseModel):
 
         return selected_optimizer(_ocv_curve_fit_objective, **optimizer_options).x
 
+    def run_ocv_curve_fit(
+        self,
+        fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
+        optimizer: Literal["minimize", "differential_evolution"] = "minimize",
+        optimizer_options: Dict[str, Any] = {
+            "x0": np.array([0.9, 0.1, 0.1, 0.9]),
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+        },
+    ) -> Tuple[Result, Result]:
+        """Fit half cell open circuit potential curves to full cell OCV data.
+
+        Args:
+            fitting_target (Literal["OCV", "dQdV", "dVdQ"], optional):
+                The target for the curve fitting. Defaults to "OCV".
+            optimizer (Literal["minimize", "differential_evolution"], optional):
+                The optimization algorithm to use. Defaults to "minimize".
+            optimizer_options (Dict[str, Any], optional):
+                The options for the optimization algorithm. Defaults to
+                {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
+                 "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+                Where x0 is the initial guess for the fit and bounds are the
+                limits for the fit. The fitting parameters are ordered [x_pe_lo,
+                x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
+                limits at low and high full-cell SOC respectively.
+
+        Returns:
+            Tuple[Result, Result]:
+                - Result: The stoichiometry limits and electrode capacities.
+                - Result: The fitted OCV data.
+        """
+        if "SOC" in self.input_data.column_list:
+            required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
+            validator = AnalysisValidator(
+                input_data=self.input_data, required_columns=required_columns
+            )
+            voltage, capacity, SOC = validator.variables
+            cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
+        else:
+            required_columns = ["Voltage [V]", "Capacity [Ah]"]
+            validator = AnalysisValidator(
+                input_data=self.input_data, required_columns=required_columns
+            )
+            voltage, capacity = validator.variables
+            cell_capacity = np.abs(np.ptp(capacity))
+            SOC = (capacity - capacity.min()) / cell_capacity
+
+        dVdSOC = np.gradient(voltage, SOC)
+        dSOCdV = np.gradient(SOC, voltage)
+
+        fitting_target_data = {
+            "OCV": voltage,
+            "dQdV": dSOCdV,
+            "dVdQ": dVdSOC,
+        }[fitting_target]
+
+        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = self._curve_fit_ocv(
+            SOC,
+            fitting_target_data,
+            fitting_target,
+            optimizer,
+            optimizer_options,
+        )
+
+        (
+            pe_capacity,
+            ne_capacity,
+            li_inventory,
+        ) = dma_functions.calc_electrode_capacities(
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
+        )
+
+        self.stoichiometry_limits = self.input_data.clean_copy(
+            pl.DataFrame(
+                {
+                    "x_pe low SOC": np.array([x_pe_lo]),
+                    "x_pe high SOC": np.array([x_pe_hi]),
+                    "x_ne low SOC": np.array([x_ne_lo]),
+                    "x_ne high SOC": np.array([x_ne_hi]),
+                    "Cell Capacity [Ah]": np.array([cell_capacity]),
+                    "Cathode Capacity [Ah]": np.array([pe_capacity]),
+                    "Anode Capacity [Ah]": np.array([ne_capacity]),
+                    "Li Inventory [Ah]": np.array([li_inventory]),
+                }
+            )
+        )
+        self.stoichiometry_limits.column_definitions = {
+            "x_pe low SOC": "Positive electrode stoichiometry at lowest SOC point.",
+            "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
+            "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
+            "x_ne high SOC": "Negative electrode stoichiometry at highest SOC point.",
+            "Cell Capacity [Ah]": "Total cell capacity.",
+            "Cathode Capacity [Ah]": "Cathode capacity.",
+            "Anode Capacity [Ah]": "Anode capacity.",
+            "Li Inventory [Ah]": "Lithium inventory.",
+        }
+
+        fitted_voltage = self._f_OCV(
+            SOC,
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
+        )
+        fitted_dVdSOC = self._f_grad_OCV(
+            SOC,
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
+        )
+        self.fitted_OCV = self.input_data.clean_copy(
+            pl.DataFrame(
+                {
+                    "Capacity [Ah]": capacity,
+                    "SOC": SOC,
+                    "Input Voltage [V]": voltage,
+                    "Fitted Voltage [V]": fitted_voltage,
+                    "Input dSOCdV [1/V]": dSOCdV,
+                    "Fitted dSOCdV [1/V]": 1 / fitted_dVdSOC,
+                    "Input dVdSOC [V]": dVdSOC,
+                    "Fitted dVdSOC [V]": fitted_dVdSOC,
+                }
+            )
+        )
+        self.fitted_OCV.column_definitions = {
+            "SOC": "Cell state of charge.",
+            "Voltage [V]": "Fitted OCV values.",
+        }
+
+        return self.stoichiometry_limits, self.fitted_OCV
+
     def fit_ocv(
         self,
         x_ne: NDArray[np.float64],
