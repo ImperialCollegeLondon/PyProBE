@@ -4,6 +4,7 @@ import math
 import numpy as np
 import polars as pl
 import pytest
+import sympy as sp
 from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
@@ -89,6 +90,48 @@ def test_set_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
         total_electrode_components=2,
     )
     assert np.isclose(dma.ocp_pe[1](0.8), np.sin(0.8))
+
+
+def test_set_ocp_from_expression():
+    """Test the set_ocp_from_expression method."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    x = sp.symbols("x")
+    expression = 2 * x**2 + 3 * x + 1
+    dma.set_ocp_from_expression(expression, electrode="pe")
+    assert dma._ocp_pe[0] == expression
+    assert dma.ocp_pe[0] is not None
+    assert callable(dma.ocp_pe[0])
+    assert np.isclose(dma.ocp_pe[0](0.4), 2 * 0.4**2 + 3 * 0.4 + 1)
+
+
+def test_ocp_derivative_ppoly():
+    """Test _ocp_derivative with a PPoly object."""
+    x = np.array([0, 1, 2, 3])
+    y = np.array([0, 1, 0, -1])
+    ppoly_ocp = utils.interpolators["linear"](x, y)
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    derivative = dma._ocp_derivative([ppoly_ocp])[0]
+    assert callable(derivative)
+    x = np.array([0, 1, 2, 3])
+    np.testing.assert_allclose(derivative(x), np.array([1, -1, -1, -1]))
+
+
+def test_ocp_derivative_sympy():
+    """Test _ocp_derivative with a sympy expression."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    x = sp.symbols("x")
+    sympy_ocp = 2 * x**2 + 3 * x + 1
+    derivative = dma._ocp_derivative([sympy_ocp])[0]
+    assert callable(derivative)
+    x = np.array([0, 1, 2, 3])
+    np.testing.assert_allclose(derivative(x), np.array([3, 7, 11, 15]))
+
+
+def test_ocp_derivative_invalid():
+    """Test _ocp_derivative with an invalid input."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+    with pytest.raises(ValueError, match="OCP is not in a differentiable format."):
+        dma._ocp_derivative("invalid_ocp")
 
 
 def graphite_LGM50_ocp_Chen2020(sto):

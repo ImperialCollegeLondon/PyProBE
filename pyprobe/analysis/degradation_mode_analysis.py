@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
+import sympy as sp
 from numpy.typing import NDArray
 from pydantic import BaseModel
 from scipy import optimize
@@ -32,11 +33,124 @@ class DMA(BaseModel):
     dma_result: Optional[Result] = None
     """The degradation mode analysis results."""
 
-    ocp_ne: List[None | Callable[[NDArray], NDArray]] = []
-    """A list of functions for the negative electrode OCP."""
+    def _ocp_derivative(
+        self, ocp_list: List[None | Callable[[NDArray], NDArray]]
+    ) -> List[Callable[[NDArray], NDArray]]:
+        """Calculate the derivative of each OCP.
 
-    ocp_pe: List[None | Callable[[NDArray], NDArray]] = []
-    """A list of functions for the positive electrode OCP."""
+        Args:
+            ocp (Callable[[NDArray], NDArray]):
+                The OCP function. Must be a differentiable function. Currently supported
+                formats are scipy.interpolate.PPoly objects (from utils.interpolators)
+                or sympy expressions.
+
+        Returns:
+            Callable[[NDArray], NDArray]: The derivative of the OCP.
+        """
+
+        def _check_free_symbols(free_symbols: set[sp.Symbol]) -> sp.Symbol:
+            if len(free_symbols) == 1:
+                return free_symbols.pop()
+            else:
+                raise ValueError(
+                    "OCP must be a function of a single variable, " "the stoichiometry."
+                )
+
+        derivatives = []
+        for ocp in ocp_list:
+            if isinstance(ocp, PPoly):
+                derivatives.append(ocp.derivative())
+            elif isinstance(ocp, sp.Expr):
+                free_symbols = ocp.free_symbols
+                sto = _check_free_symbols(free_symbols)
+                gradient = sp.diff(ocp, sto)
+                derivatives.append(sp.lambdify(sto, gradient, "numpy"))
+            else:
+                raise ValueError(
+                    "OCP is not in a differentiable format. OCP must be a"
+                    " PPoly object or a sympy expression."
+                )
+        return derivatives
+
+    @property
+    def d_ocp_pe(self) -> List[Callable[[NDArray], NDArray]]:
+        """Return the derivative of the positive electrode OCP.
+
+        Returns:
+            List[Callable[[NDArray], NDArray]]: The derivative of the positive
+            electrode OCP.
+        """
+        return self._ocp_derivative(self._ocp_pe)
+
+    @property
+    def d_ocp_ne(self) -> List[Callable[[NDArray], NDArray]]:
+        """Return the derivative of the negative electrode OCP.
+
+        Returns:
+            List[Callable[[NDArray], NDArray]]: The derivative of the negative
+            electrode OCP.
+        """
+        return self._ocp_derivative(self._ocp_ne)
+
+    @property
+    def ocp_pe(
+        self,
+    ) -> List[Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]]]:
+        """Return a list of positive electrode OCPs as a function of stoichiometry.
+
+        Returns:
+            List[Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]]]:
+                A list of positive electrode OCPs as a function of stoichiometry.
+        """
+        if not hasattr(self, "_f_ocp_pe"):
+            self._f_ocp_pe = []
+            for ocp in self._ocp_pe:
+                if isinstance(ocp, sp.Expr):
+                    self._f_ocp_pe.append(
+                        sp.lambdify(ocp.free_symbols.pop(), ocp, "numpy")
+                    )
+                else:
+                    self._f_ocp_pe.append(ocp)
+        return self._f_ocp_pe
+
+    @ocp_pe.setter
+    def ocp_pe(
+        self,
+        value: List[Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]]],
+    ) -> None:
+        """Set the OCP data for the positive electrode."""
+        self._f_ocp_pe = value
+        self._ocp_pe = value
+
+    @property
+    def ocp_ne(
+        self,
+    ) -> List[Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]]]:
+        """Return a list of negative electrode OCPs as a function of stoichiometry.
+
+        Returns:
+            List[Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]]]:
+                A list of negative electrode OCPs as a function of stoichiometry.
+        """
+        if not hasattr(self, "_f_ocp_ne"):
+            self._f_ocp_ne = []
+            for ocp in self._ocp_ne:
+                if isinstance(ocp, sp.Expr):
+                    self._f_ocp_ne.append(
+                        sp.lambdify(ocp.free_symbols.pop(), ocp, "numpy")
+                    )
+                else:
+                    self._f_ocp_ne.append(ocp)
+        return self._f_ocp_ne
+
+    @ocp_ne.setter
+    def ocp_ne(
+        self,
+        value: List[Optional[Callable[[NDArray[np.float64]], NDArray[np.float64]]]],
+    ) -> None:
+        """Set the OCP data for the negative electrode."""
+        self._f_ocp_ne = value
+        self._ocp_ne = value
 
     def set_ocp_from_data(
         self,
@@ -64,13 +178,41 @@ class DMA(BaseModel):
         """
         interpolator = utils.interpolators[interpolation_method](x=stoichiometry, y=ocp)
         if electrode == "pe":
-            if len(self.ocp_pe) == 0:
-                self.ocp_pe = [None] * total_electrode_components
-            self.ocp_pe[component_index] = interpolator
+            if not hasattr(self, "_ocp_pe"):
+                self._ocp_pe = [None] * total_electrode_components
+            self._ocp_pe[component_index] = interpolator
+            if hasattr(self, "_f_ocp_pe"):
+                del self._f_ocp_pe
         elif electrode == "ne":
-            if len(self.ocp_ne) == 0:
-                self.ocp_ne = [None] * total_electrode_components
-            self.ocp_ne[component_index] = interpolator
+            if not hasattr(self, "_ocp_ne"):
+                self._ocp_ne = [None] * total_electrode_components
+            self._ocp_ne[component_index] = interpolator
+            if hasattr(self, "_f_ocp_ne"):
+                del self._f_ocp_ne
+
+    def set_ocp_from_expression(
+        self,
+        ocp: sp.Expr,
+        electrode: Literal["pe", "ne"],
+        component_index: int = 0,
+        total_electrode_components: int = 1,
+    ) -> None:
+        """Provide the OCP data for a given electrode.
+
+        Args:
+            ocp (sp.Expr): _description_
+            electrode (Literal[&quot;pe&quot;, &quot;ne&quot;]): _description_
+            component_index (int, optional): _description_. Defaults to 0.
+            total_electrode_components (int, optional): _description_. Defaults to 1.
+        """
+        if electrode == "pe":
+            if not hasattr(self, "_ocp_pe"):
+                self._ocp_pe = [None] * total_electrode_components
+            self._ocp_pe[component_index] = ocp
+        elif electrode == "ne":
+            if not hasattr(self, "_ocp_ne"):
+                self._ocp_ne = [None] * total_electrode_components
+            self._ocp_ne[component_index] = ocp
 
     def _f_OCV(
         self,
@@ -128,9 +270,9 @@ class DMA(BaseModel):
             Callable[[NDArray[np.float64]], NDArray[np.float64]]:
                 A function to calculate the full cell OCV gradient as a function of SOC.
         """
-        if self.ocp_pe[0] is None:
+        if self._ocp_pe[0] is None:
             raise ValueError("Positive electrode OCP data not provided.")
-        if self.ocp_ne[0] is None:
+        if self._ocp_ne[0] is None:
             raise ValueError("Negative electrode OCP data not provided.")
         # Calculate the stoichiometry at the given SOC for each electrode
         z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
@@ -140,14 +282,8 @@ class DMA(BaseModel):
         d_z_pe = x_pe_hi - x_pe_lo
         d_z_ne = x_ne_hi - x_ne_lo
 
-        # Calculate the gradient of the OCP functions with respect to stoichiometry
-        if isinstance(self.ocp_pe[0], PPoly):
-            d_ocp_pe = self.ocp_pe[0].derivative()
-        if isinstance(self.ocp_ne[0], PPoly):
-            d_ocp_ne = self.ocp_ne[0].derivative()
-
         # Calculate the full cell OCV gradient using the chain rule
-        return d_ocp_pe(z_pe) * d_z_pe - d_ocp_ne(z_ne) * d_z_ne
+        return self.d_ocp_pe[0](z_pe) * d_z_pe - self.d_ocp_ne[0](z_ne) * d_z_ne
 
     def _curve_fit_ocv(
         self,
