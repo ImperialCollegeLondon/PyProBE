@@ -136,17 +136,62 @@ def _create_interpolator(
     return interpolator_class(x, y)
 
 
-interpolators = {
-    "linear": lambda x, y: _create_interpolator(_LinearInterpolator, x, y),
-    "cubic": lambda x, y: _create_interpolator(interpolate.CubicSpline, x, y),
-    "Pchip": lambda x, y: _create_interpolator(interpolate.PchipInterpolator, x, y),
-    "Akima": lambda x, y: _create_interpolator(interpolate.Akima1DInterpolator, x, y),
-}
-"""Dictionary of available interpolators.
+def linear_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a linear interpolator.
 
-Available options include:
-    - "linear": Linear interpolation from numpy.
-    - "cubic": Cubic spline interpolation from scipy.
-    - "Pchip": Pchip interpolation from scipy.
-    - "Akima": Akima interpolation from scipy.
-"""
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The linear interpolator.
+    """
+    return _create_interpolator(_LinearInterpolator, x, y)
+
+
+def cubic_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy cubic spline interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+            The cubic spline interpolator.
+    """
+    return _create_interpolator(interpolate.CubicSpline, x, y)
+
+
+def pchip_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy Pchip interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Pchip interpolator.
+    """
+    return _create_interpolator(interpolate.PchipInterpolator, x, y)
+
+
+def akima_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy Akima interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Akima interpolator.
+    """
+    return _create_interpolator(interpolate.Akima1DInterpolator, x, y)

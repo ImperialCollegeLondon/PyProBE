@@ -117,7 +117,12 @@ class DMA(BaseModel):
             total_electrode_components (int, optional):
                 The total number of electrode components. Defaults to 1.
         """
-        interpolator = utils.interpolators[interpolation_method](x=stoichiometry, y=ocp)
+        interpolator = {
+            "linear": utils.linear_interpolator,
+            "cubic": utils.cubic_interpolator,
+            "Pchip": utils.pchip_interpolator,
+            "Akima": utils.akima_interpolator,
+        }[interpolation_method](stoichiometry, ocp)
         if electrode == "pe":
             if not hasattr(self, "_ocp_pe"):
                 self._ocp_pe = [None] * total_electrode_components
@@ -163,8 +168,7 @@ class DMA(BaseModel):
         Args:
             ocp (Callable[[NDArray], NDArray]):
                 The OCP function. Must be a differentiable function. Currently supported
-                formats are scipy.interpolate.PPoly objects (from utils.interpolators)
-                or sympy expressions.
+                formats are scipy.interpolate.PPoly objects or sympy expressions.
 
         Returns:
             Callable[[NDArray], NDArray]: The derivative of the OCP.
