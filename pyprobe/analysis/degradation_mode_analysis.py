@@ -351,6 +351,40 @@ class DMA(BaseModel):
 
         return selected_optimizer(_ocv_curve_fit_objective, **optimizer_options).x
 
+    def downsample_ocv(
+        self,
+        sampling_interval: float,
+        occurrence: Literal["first", "last", "middle"] = "first",
+        time_column: str = "Time [s]",
+    ) -> Result:
+        """Downsample the OCV data to a specified sampling interval.
+
+        This method updates the input_data attribute with the downsampled data, and
+        returns a Result object. The logic is based on
+        :func:`pyprobe.analysis.smoothing.downsample_data`, which also provides the
+        logic for the :func:`pyprobe.analysis.smoothing.Smoothing.downsample` method.
+
+        Args:
+            sampling_interval (float): The sampling interval for the downsampled data.
+            occurrence (Literal["first", "last", "middle"], optional):
+                The occurrence to use when downsampling. Defaults to "first".
+            time_column (str, optional):
+                The column containing the time data. Defaults to "Time [s]".
+
+        Returns:
+            Result: A result object containing the downsampled OCV data.
+        """
+        required_columns = ["Voltage [V]", time_column]
+        AnalysisValidator(input_data=self.input_data, required_columns=required_columns)
+        self.input_data.base_dataframe = smoothing.downsample_data(
+            df=self.input_data.base_dataframe,
+            target="Voltage [V]",
+            sampling_interval=sampling_interval,
+            occurrence=occurrence,
+            time_column=time_column,
+        )
+        return self.input_data
+
     def run_ocv_curve_fit(
         self,
         fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",

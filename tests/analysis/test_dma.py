@@ -649,3 +649,18 @@ def test_average_ocvs(BreakinCycles_fixture):
     # test invalid input
     with pytest.raises(ValueError):
         DMA.average_ocvs(input_data=break_in.charge(0))
+
+
+def test_downsample_ocv():
+    """Test the downsample_ocv method."""
+    times = np.linspace(0, 100, 101)
+    values = times
+    min_distance = 10
+    df = pl.DataFrame({"Time [s]": times, "Voltage [V]": values})
+    dma = DMA(input_data=Result(base_dataframe=df, info={}))
+    downsampled = dma.downsample_ocv(min_distance)
+    assert isinstance(downsampled, Result)
+    np.testing.assert_array_equal(
+        dma.input_data.data["Voltage [V]"].to_numpy(),
+        np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]),
+    )
