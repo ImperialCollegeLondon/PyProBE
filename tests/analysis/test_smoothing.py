@@ -220,15 +220,17 @@ def test_validate_interp_input_vectors_flip():
     np.testing.assert_array_equal(y, np.array([4, 5, 6]))
 
 
-def test_downsample_df():
+def test_downsample_df(benchmark):
     """Test downsample_data with different occurrences."""
     times = np.linspace(0, 100, 101)
     values = times
     min_distance = 10
     df = pl.DataFrame({"Time [s]": times, "values": values})
-    resampled_first = smoothing.downsample_data(
-        df, "values", min_distance, occurrence="first"
-    )["values"].to_numpy()
+
+    def smooth_data():
+        return smoothing.downsample_data(df, "values", min_distance, occurrence="first")
+
+    resampled_first = benchmark(smooth_data)["values"].to_numpy()
     resampled_last = smoothing.downsample_data(
         df, "values", min_distance, occurrence="last"
     )["values"].to_numpy()
