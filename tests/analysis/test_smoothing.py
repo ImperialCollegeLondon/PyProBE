@@ -221,18 +221,18 @@ def test_validate_interp_input_vectors_flip():
 
 
 def test_downsample_df():
-    """Test _downsample_df with different occurrences."""
+    """Test downsample_data with different occurrences."""
     times = np.linspace(0, 100, 101)
     values = times
     min_distance = 10
     df = pl.DataFrame({"Time [s]": times, "values": values})
-    resampled_first = smoothing._downsample_df(
+    resampled_first = smoothing.downsample_data(
         df, "values", min_distance, occurrence="first"
     )["values"].to_numpy()
-    resampled_last = smoothing._downsample_df(
+    resampled_last = smoothing.downsample_data(
         df, "values", min_distance, occurrence="last"
     )["values"].to_numpy()
-    resampled_middle = smoothing._downsample_df(
+    resampled_middle = smoothing.downsample_data(
         df, "values", min_distance, occurrence="middle"
     )["values"].to_numpy()
 
@@ -244,4 +244,105 @@ def test_downsample_df():
     )
     np.testing.assert_array_equal(
         resampled_middle, np.array([5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 100])
+    )
+
+    # Test with non-monotonic data
+    times = np.append(times, np.linspace(101, 200, 100))
+    values = np.append(values, np.linspace(99, 0, 100))
+    df = pl.DataFrame({"Time [s]": times, "values": values})
+    resampled_first = smoothing.downsample_data(
+        df, "values", min_distance, occurrence="first"
+    )["values"].to_numpy()
+    resampled_last = smoothing.downsample_data(
+        df, "values", min_distance, occurrence="last"
+    )["values"].to_numpy()
+    resampled_middle = smoothing.downsample_data(
+        df, "values", min_distance, occurrence="middle"
+    )["values"].to_numpy()
+
+    np.testing.assert_array_equal(
+        resampled_first,
+        np.array(
+            [
+                0,
+                10,
+                20,
+                30,
+                40,
+                50,
+                60,
+                70,
+                80,
+                90,
+                100,
+                90,
+                80,
+                70,
+                60,
+                50,
+                40,
+                30,
+                20,
+                10,
+                0,
+            ]
+        ),
+    )
+
+    np.testing.assert_array_equal(
+        resampled_last,
+        np.array(
+            [
+                9,
+                19,
+                29,
+                39,
+                49,
+                59,
+                69,
+                79,
+                89,
+                99,
+                91,
+                81,
+                71,
+                61,
+                51,
+                41,
+                31,
+                21,
+                11,
+                1,
+                0,
+            ]
+        ),
+    )
+
+    np.testing.assert_array_equal(
+        resampled_middle,
+        np.array(
+            [
+                5,
+                15,
+                25,
+                35,
+                45,
+                55,
+                65,
+                75,
+                85,
+                95,
+                95,
+                85,
+                75,
+                65,
+                55,
+                45,
+                35,
+                25,
+                15,
+                5,
+                0,
+            ]
+        ),
     )

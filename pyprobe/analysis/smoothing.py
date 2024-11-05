@@ -127,7 +127,7 @@ def akima_interpolator(
     return _create_interpolator(interpolate.Akima1DInterpolator, x, y)
 
 
-def _downsample_df(
+def downsample_data(
     df: pl.DataFrame | pl.LazyFrame,
     target: str,
     sampling_interval: float,
@@ -262,6 +262,41 @@ class Smoothing(BaseModel):
         result.define_column(
             f"d({target_column})/d({x})",
             "The gradient of the smoothed data.",
+        )
+        return result
+
+    def downsample(
+        self,
+        target_column: str,
+        sampling_interval: float,
+        occurrence: Literal["first", "last", "middle"] = "first",
+        time_column: str = "Time [s]",
+    ) -> Result:
+        """Downsample a DataFrame to a specified interval.
+
+        Requires the target column to be monotonic.
+
+        Args:
+            target_column (str):
+                The target column to downsample.
+            sampling_interval (float):
+                The desired minimum interval between points.
+            occurrence (Literal['first', 'last', 'middle'], optional):
+                The occurrence to take when downsampling. Default is 'first'.
+            time_column (str, optional):
+                The time column to use for downsampling. Default is 'Time [s]'.
+
+        Returns:
+            Result:
+                A result object containing the downsampled DataFrame.
+        """
+        result = copy.deepcopy(self.input_data)
+        result.base_dataframe = downsample_data(
+            result.base_dataframe,
+            target_column,
+            sampling_interval,
+            occurrence,
+            time_column,
         )
         return result
 
