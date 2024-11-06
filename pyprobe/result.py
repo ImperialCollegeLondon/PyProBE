@@ -1,7 +1,7 @@
 """A module for the Result class."""
 import warnings
 from pprint import pprint
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import polars as pl
@@ -292,6 +292,39 @@ class Result(BaseModel):
             column_definitions=column_definitions,
         )
 
+    @staticmethod
+    def _verify_compatible_frames(
+        base_frame: Union[pl.DataFrame, pl.LazyFrame],
+        frames: List[Union[pl.DataFrame, pl.LazyFrame]],
+        mode: Literal["match 1", "collect all"] = "collect all",
+    ) -> Tuple[
+        Union[pl.DataFrame, pl.LazyFrame], List[Union[pl.DataFrame, pl.LazyFrame]]
+    ]:
+        """Verify that frames are compatible and return them as DataFrames.
+
+        Args:
+            base_frame (pl.DataFrame | pl.LazyFrame): The first frame to verify.
+            frames (List[pl.DataFrame | pl.LazyFrame]): The list of frames to verify.
+
+        Returns:
+            Tuple[pl.DataFrame | pl.LazyFrame, List[pl.DataFrame | pl.LazyFrame]]:
+                The first frame and the list of verified frames as DataFrames.
+        """
+        verified_frames = []
+        for frame in frames:
+            if isinstance(base_frame, pl.LazyFrame) and isinstance(frame, pl.DataFrame):
+                if mode == "match 1":
+                    frame = frame.lazy()
+                elif mode == "collect all":
+                    base_frame = base_frame.collect()
+            elif isinstance(base_frame, pl.DataFrame) and isinstance(
+                frame, pl.LazyFrame
+            ):
+                frame = frame.collect()
+            verified_frames.append(frame)
+
+        return base_frame, verified_frames
+
     def add_new_data_columns(
         self, new_data: pl.DataFrame | pl.LazyFrame, date_column_name: str
     ) -> None:
@@ -316,12 +349,10 @@ class Result(BaseModel):
         new_data_cols = new_data.collect_schema().names()
         new_data_cols.remove(date_column_name)
         # check if the new data is lazyframe or not
-        is_new_data_lazy = isinstance(new_data, pl.LazyFrame)
-        is_base_dataframe_lazy = isinstance(self.base_dataframe, pl.LazyFrame)
-        if is_new_data_lazy and not is_base_dataframe_lazy:
-            new_data = new_data.collect()
-        elif is_base_dataframe_lazy and not is_new_data_lazy:
-            new_data = new_data.lazy()
+        _, new_data = self._verify_compatible_frames(
+            self.base_dataframe, [new_data], mode="match 1"
+        )
+        new_data = new_data[0]
         if (
             new_data.dtypes[new_data.collect_schema().names().index(date_column_name)]
             != pl.Datetime
@@ -350,6 +381,68 @@ class Result(BaseModel):
         self.base_dataframe = self.base_dataframe.join(
             new_data, on="Date", how="left", coalesce=True
         )
+
+    def join(
+        self,
+        other: "Result",
+        on: Union[str, List[str]],
+        how: str = "inner",
+        coalesce: bool = True,
+    ) -> None:
+        """Join two Result objects on a column. A wrapper around the polars join method.
+
+        This will extend the data in the Result object horizontally. The column
+        definitions of the two Result objects are combined, if there are any conflicts
+        the column definitions of the calling Result object will take precedence.
+
+        Args:
+            other (Result): The other Result object to join with.
+            on (Union[str, List[str]]): The column(s) to join on.
+            how (str): The type of join to perform. Default is 'inner'.
+            coalesce (bool): Whether to coalesce the columns. Default is True.
+        """
+        _, other_frame = self._verify_compatible_frames(
+            self.base_dataframe, [other.base_dataframe], mode="match 1"
+        )
+        if isinstance(on, str):
+            on = [on]
+        self.base_dataframe = self.base_dataframe.join(
+            other_frame[0], on=on, how=how, coalesce=coalesce
+        )
+        self.column_definitions = {
+            **other.column_definitions,
+            **self.column_definitions,
+        }
+
+    def extend(
+        self, other: "Result" | List["Result"], concat_method: str = "diagonal"
+    ) -> None:
+        """Extend the data in this Result object with the data in another Result object.
+
+        This method will concatenate the data in the two Result objects, with the Result
+        object calling the method above the other Result object. The column definitions
+        of the two Result objects are combined, if there are any conflicts the column
+        definitions of the calling Result object will take precedence.
+
+        Args:
+            other (Result | List[Result]): The other Result object(s) to extend with.
+            concat_method (str):
+                The method to use for concatenation. Default is 'diagonal'. See the
+                polars.concat method documentation for more information.
+        """
+        if not isinstance(other, list):
+            other = [other]
+        other_frame_list = [other_result.base_dataframe for other_result in other]
+        self.base_dataframe, other_frame_list = self._verify_compatible_frames(
+            self.base_dataframe, other_frame_list, mode="collect all"
+        )
+        self.base_dataframe = pl.concat(
+            [self.base_dataframe] + other_frame_list, how=concat_method
+        )
+        original_column_definitions = self.column_definitions.copy()
+        for other_result in other:
+            self.column_definitions.update(other_result.column_definitions)
+        self.column_definitions.update(original_column_definitions)
 
     @classmethod
     def build(
