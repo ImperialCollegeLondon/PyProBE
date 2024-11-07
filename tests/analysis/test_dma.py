@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import smoothing
-from pyprobe.analysis.degradation_mode_analysis import DMA
+from pyprobe.analysis.degradation_mode_analysis import DMA, BatchDMA
 from pyprobe.result import Result
 
 
@@ -283,8 +283,9 @@ def test_curve_fit_ocv_target_dQdV():
     x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
     ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
     ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    z = np.linspace(0, 1, 10000)
+    dma.set_ocp_from_data(z, nmc_LGM50_ocp_Chen2020(z), electrode="pe")
+    dma.set_ocp_from_data(z, graphite_LGM50_ocp_Chen2020(z), electrode="ne")
     ocv_target = ocv_pe - ocv_ne
     soc = np.linspace(0, 1, 10000)
     d_ocv_target = np.gradient(ocv_target, soc)
@@ -364,6 +365,86 @@ def test_run_ocv_curve_fit():
     np.testing.assert_allclose(fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target)
     np.testing.assert_allclose(
         fit.data["Fitted dVdSOC [V]"].to_numpy(), d_ocv_target, rtol=0.005, atol=0.005
+    )
+
+
+def get_sample_ocv_data(sto_limits, n_points=1000):
+    """Get sample OCV data."""
+    x_pe_lo = sto_limits[0]
+    x_pe_hi = sto_limits[1]
+    x_ne_lo = sto_limits[2]
+    x_ne_hi = sto_limits[3]
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, n_points)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    return ocv_pe - ocv_ne
+
+
+def test_run_batch_dma():
+    """Test the run_batch_dma_parallel method."""
+    soc = np.linspace(0, 1, 1000)
+
+    ocv_target_list = [
+        get_sample_ocv_data([0.83, 0.1, 0.1, 0.73]),
+        get_sample_ocv_data([0.7, 0.2, 0.1, 0.70]),
+        get_sample_ocv_data([0.6, 0.3, 0.3, 0.65]),
+    ]
+    input_data_list = [
+        Result(
+            base_dataframe=pl.DataFrame(
+                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
+            ),
+            info={},
+            column_definitions={"Voltage [V]": "OCV", "Capacity [Ah]": "SOC"},
+        )
+        for ocv_target in ocv_target_list
+    ]
+    dma = BatchDMA(
+        input_data=input_data_list,
+    )
+    x_pe = np.linspace(0, 1, 1000)
+    x_ne = np.linspace(0, 1, 1000)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    dma_result, fitted_ocvs = dma.run_batch_dma_parallel(
+        fitting_target="OCV",
+        optimizer="differential_evolution",
+        optimizer_options={
+            "bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)]
+        },
+    )
+    np.testing.assert_allclose(dma_result.data["Index"], [0, 1, 2])
+    np.testing.assert_allclose(
+        dma_result.data["x_pe low SOC"], [0.83, 0.7, 0.6], rtol=1e-6
+    )
+    np.testing.assert_allclose(
+        dma_result.data["x_pe high SOC"], [0.1, 0.2, 0.3], rtol=1e-5, atol=1e-5
+    )
+    np.testing.assert_allclose(
+        dma_result.data["x_ne low SOC"], [0.1, 0.1, 0.3], rtol=1e-5, atol=5e-5
+    )
+    np.testing.assert_allclose(
+        dma_result.data["x_ne high SOC"], [0.73, 0.7, 0.65], rtol=1e-5, atol=1e-5
+    )
+    np.testing.assert_allclose(dma_result.data["Cell Capacity [Ah]"], [1, 1, 1])
+    np.testing.assert_allclose(
+        dma_result.data["Cathode Capacity [Ah]"], [1.3699, 2, 3.333], rtol=5e-4
+    )
+    np.testing.assert_allclose(
+        dma_result.data["LAM_pe"], [0, -0.45996, -1.43327], rtol=5e-4
+    )
+
+    np.testing.assert_allclose(
+        fitted_ocvs[0].data["Input Voltage [V]"], ocv_target_list[0]
+    )
+    np.testing.assert_allclose(
+        fitted_ocvs[1].data["Input Voltage [V]"], ocv_target_list[1]
+    )
+    np.testing.assert_allclose(
+        fitted_ocvs[2].data["Input Voltage [V]"], ocv_target_list[2]
     )
 
 

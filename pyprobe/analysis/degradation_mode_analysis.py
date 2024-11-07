@@ -1,5 +1,7 @@
 """Module for degradation mode analysis methods."""
 
+import concurrent.futures
+import copy
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
@@ -147,9 +149,13 @@ class DMA(BaseModel):
 
         Args:
             ocp (sp.Expr): _description_
-            electrode (Literal[&quot;pe&quot;, &quot;ne&quot;]): _description_
-            component_index (int, optional): _description_. Defaults to 0.
-            total_electrode_components (int, optional): _description_. Defaults to 1.
+            electrode (Literal["pe", "ne"]): Electrode to set the OCP data for.
+            component_index (int, optional):
+                Electrode component index in a composite electrode to set the OCP data
+                for. Defaults to 0.
+            total_electrode_components (int, optional):
+                Total number of electrode components in a composite electrode.
+                Defaults to 1.
         """
         if electrode == "pe":
             if not hasattr(self, "_ocp_pe"):
@@ -781,3 +787,276 @@ class DMA(BaseModel):
             )
         )
         return DMA(input_data=average_result)
+
+
+def _run_ocv_curve_fit_with_index(
+    index: int,
+    dma_object: DMA,
+    fitting_target: Literal["OCV", "dQdV", "dVdQ"],
+    optimizer: Literal["minimize", "differential_evolution"],
+    optimizer_options: Dict[str, Any],
+) -> Tuple[int, Tuple[Result, Result]]:
+    """Wrapper function for running the OCV curve fitting with an index."""
+    result = dma_object.run_ocv_curve_fit(
+        fitting_target=fitting_target,
+        optimizer=optimizer,
+        optimizer_options=optimizer_options,
+    )
+    return index, result
+
+
+def _quantify_degradation_modes_with_index(
+    index: int, dma_object: DMA, reference_stoichiometry_limits: Result
+) -> Tuple[int, Result]:
+    result = dma_object.quantify_degradation_modes(
+        reference_stoichiometry_limits=reference_stoichiometry_limits,
+    )
+    return index, result
+
+
+class BatchDMA(BaseModel):
+    """A class for running DMA analysis across multiple input data sets."""
+
+    input_data: List[PyProBEDataType]
+    """The a list of input data for the degradation mode analysis."""
+
+    fitted_OCV: Optional[List[Result]] = None
+    """A list of the fitted OCV data."""
+
+    batch_DMA_results: Optional[Result] = None
+    """The result of the DMA analysis across all provided input_data.
+
+    Contains the stoichiometry limits, SOH, LAM_pe, LAM_ne, and LLI for each of the
+    provided OCV fits.
+    """
+
+    @property
+    def dma_objects(self) -> List[DMA]:
+        """Return the DMA objects."""
+        if not hasattr(self, "_dma_objects"):
+            self._dma_objects = [DMA(input_data=data) for data in self.input_data]
+        return self._dma_objects
+
+    def downsample_ocv(
+        self,
+        sampling_interval: float,
+        occurrence: Literal["first", "last", "middle"] = "first",
+        time_column: str = "Time [s]",
+    ) -> List[Result]:
+        """Downsample the OCV data to a specified sampling interval.
+
+        This method updates the input_data attribute with the downsampled data, and
+        returns a Result object. The logic is based on
+        :func:`pyprobe.analysis.smoothing.downsample_data`, which also provides the
+        logic for the :func:`pyprobe.analysis.smoothing.Smoothing.downsample` method.
+
+        Args:
+            sampling_interval (float): The sampling interval for the downsampled data.
+            occurrence (Literal["first", "last", "middle"], optional):
+                The occurrence to use when downsampling. Defaults to "first".
+            time_column (str, optional):
+                The column containing the time data. Defaults to "Time [s]".
+
+        Returns:
+            List[Result]: A list of result objects containing the downsampled OCV data.
+        """
+        return [
+            dma_object.downsample_ocv(
+                sampling_interval=sampling_interval,
+                occurrence=occurrence,
+                time_column=time_column,
+            )
+            for dma_object in self.dma_objects
+        ]
+
+    def set_ocp_from_data(
+        self,
+        stoichiometry: NDArray[np.float64],
+        ocp: NDArray[np.float64],
+        electrode: Literal["pe", "ne"],
+        interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
+        component_index: int = 0,
+        total_electrode_components: int = 1,
+    ) -> None:
+        """Provide the OCP data for a given electrode.
+
+        Args:
+            stoichiometry (NDArray[np.float64]): The stoichiometry data.
+            ocp (NDArray[np.float64]): The OCP data.
+            electrode (Literal["pe", "ne"]): The electrode to set the OCP data for.
+            interpolation_method
+                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
+                The interpolation method to use. Defaults to "linear".
+            component_index (int, optional):
+                The index of the electrode component to set the OCP data for.
+                Defaults to 0.
+            total_electrode_components (int, optional):
+                The total number of electrode components. Defaults to 1.
+        """
+        for dma_object in self.dma_objects:
+            dma_object.set_ocp_from_data(
+                stoichiometry=stoichiometry,
+                ocp=ocp,
+                electrode=electrode,
+                interpolation_method=interpolation_method,
+                component_index=component_index,
+                total_electrode_components=total_electrode_components,
+            )
+
+    def set_ocp_from_expression(
+        self,
+        ocp: sp.Expr,
+        electrode: Literal["pe", "ne"],
+        component_index: int = 0,
+        total_electrode_components: int = 1,
+    ) -> None:
+        """Provide the OCP data for a given electrode.
+
+        Args:
+            ocp (sp.Expr): _description_
+            electrode (Literal["pe", "ne"]): Electrode to set the OCP data for.
+            component_index (int, optional):
+                Electrode component index in a composite electrode to set the OCP data
+                for. Defaults to 0.
+            total_electrode_components (int, optional):
+                Total number of electrode components in a composite electrode.
+                Defaults to 1.
+        """
+        for dma_object in self.dma_objects:
+            dma_object.set_ocp_from_expression(
+                ocp=ocp,
+                electrode=electrode,
+                component_index=component_index,
+                total_electrode_components=total_electrode_components,
+            )
+
+    def run_batch_dma_parallel(
+        self,
+        fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
+        optimizer: Literal["minimize", "differential_evolution"] = "minimize",
+        optimizer_options: Dict[str, Any] = {
+            "x0": np.array([0.9, 0.1, 0.1, 0.9]),
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+        },
+    ) -> Tuple[Result, List[Result]]:
+        """Fit half cell open circuit potential curves to full cell OCV data.
+
+        DMA analysis is run in parallel across all provided input_data.
+
+        Args:
+            fitting_target (Literal["OCV", "dQdV", "dVdQ"], optional):
+                The target for the curve fitting. Defaults to "OCV".
+            optimizer (Literal["minimize", "differential_evolution"], optional):
+                The optimization algorithm to use. Defaults to "minimize".
+            optimizer_options (Dict[str, Any], optional):
+                The options for the optimization algorithm. Defaults to
+                {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
+                 "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+                Where x0 is the initial guess for the fit and bounds are the
+                limits for the fit. The fitting parameters are ordered [x_pe_lo,
+                x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
+                limits at low and high full-cell SOC respectively.
+
+        Returns:
+            Tuple[Result, List[Result]]:
+                - Result: The stoichiometry limits, electrode capacities and
+                degradation modes.
+                - List[Result]: The fitted OCV data for each list item in input_data.
+        """
+        # Run the OCV curve fitting in parallel
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            fit_futures = [
+                executor.submit(
+                    _run_ocv_curve_fit_with_index,
+                    index,
+                    dma_object,
+                    fitting_target=fitting_target,
+                    optimizer=optimizer,
+                    optimizer_options=optimizer_options,
+                )
+                for index, dma_object in enumerate(self.dma_objects)
+            ]
+        # collate the results
+        fit_results = [
+            future.result() for future in concurrent.futures.as_completed(fit_futures)
+        ]
+
+        # Extract the results
+        fit_index = [result[0] for result in fit_results]
+        stoichiometry_limits = [result[1][0] for result in fit_results]
+        fitted_OCVs = [result[1][1] for result in fit_results]
+        sorted_fitted_ocvs = copy.deepcopy(fitted_OCVs)
+        fit_0_position = -1
+        # Update the DMA objects with the results
+        for position, index in enumerate(fit_index):
+            if index == 0:
+                fit_0_position = position
+            sorted_fitted_ocvs[index] = fitted_OCVs[position]
+            stoichiometry_limits[position].base_dataframe = stoichiometry_limits[
+                position
+            ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
+            self.dma_objects[index].stoichiometry_limits = stoichiometry_limits[
+                position
+            ]
+            self.dma_objects[index].fitted_OCV = fitted_OCVs[position]
+
+        # Run the DMA quantification in parallel
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            if self.dma_objects[0].stoichiometry_limits is None:
+                raise ValueError(
+                    "No stoichiometry limits have been calculated for the reference "
+                    "data point."
+                )
+            dma_futures = [
+                executor.submit(
+                    _quantify_degradation_modes_with_index,
+                    index,
+                    dma_object,
+                    reference_stoichiometry_limits=self.dma_objects[
+                        0
+                    ].stoichiometry_limits,
+                )
+                for index, dma_object in enumerate(self.dma_objects)
+            ]
+        # collate the results
+        all_results = [
+            future.result() for future in concurrent.futures.as_completed(dma_futures)
+        ]
+
+        # Extract the results
+        dma_index = [result[0] for result in all_results]
+        dma_results = [result[1] for result in all_results]
+
+        # Update the DMA objects with the results
+        for position, index in enumerate(dma_index):
+            if index == 0:
+                dma_0_position = position
+            dma_results[position].base_dataframe = dma_results[
+                position
+            ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
+            self.dma_objects[index].dma_result = dma_results[position]
+            # reduce the dataframe down to only the last row (the row relevant to the
+            # data point)
+            dma_results[position].base_dataframe = dma_results[
+                position
+            ].base_dataframe.tail(1)
+
+        # compile the results into single result objects
+        all_stoichiometry_limits = copy.deepcopy(stoichiometry_limits[fit_0_position])
+        all_dma_results = copy.deepcopy(dma_results[dma_0_position])
+        all_stoichiometry_limits.extend(
+            [item for i, item in enumerate(stoichiometry_limits) if i != fit_0_position]
+        )
+        all_dma_results.extend(
+            [item for i, item in enumerate(dma_results) if i != dma_0_position]
+        )
+        all_final_results = all_stoichiometry_limits
+        all_final_results.join(all_dma_results, on="Index", how="left")
+        all_final_results.base_dataframe = all_final_results.base_dataframe.sort(
+            "Index"
+        )
+        all_final_results.define_column(
+            "Index", "The index of the data point from the provided list of input data."
+        )
+        self.batch_DMA_results = all_final_results
+        return all_final_results, sorted_fitted_ocvs
