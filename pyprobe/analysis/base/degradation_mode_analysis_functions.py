@@ -6,6 +6,7 @@ import numpy as np
 import scipy.interpolate as interp
 import scipy.optimize as opt
 from numpy.typing import NDArray
+from scipy.interpolate import interp1d
 
 
 def ocv_curve_fit(
@@ -140,6 +141,95 @@ def calc_full_cell_OCV(
     # interpolate the final OCV curve with the original SOC vector
     OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
     return OCV
+
+
+def calc_full_cell_OCV_composite(
+    SOC: NDArray[np.float64],
+    z_pe_lo: float,
+    z_pe_hi: float,
+    z_ne_lo: float,
+    z_ne_hi: float,
+    x_pe: NDArray[np.float64],
+    ocp_pe: NDArray[np.float64],
+    x_c1: NDArray[np.float64],
+    ocp_c1: NDArray[np.float64],
+    x_c2: NDArray[np.float64],
+    ocp_c2: NDArray[np.float64],
+    comp1_frac: float,
+) -> NDArray[np.float64]:
+    """Calculate the full cell OCV.
+
+    Args:
+        SOC (NDArray[np.float64]): The full cell SOC.
+        z_pe_lo (float): The cathode stoichiometry at the lowest cell SOC.
+        z_pe_hi (float): The cathode stoichiometry at the highest cell SOC.
+        z_ne_lo (float): The anode stoichiometry at the lowest cell SOC.
+        z_ne_hi (float): The anode stoichiometry at the highest cell SOC.
+        x_pe (NDArray[np.float64]): The cathode stoichiometry data.
+        ocp_pe (NDArray[np.float64]): The cathode OCP data.
+        x_c1 (NDArray[np.float64]): The anode component 1 stoichiometry data.
+        ocp_c1 (NDArray[np.float64]): The anode component 1 OCP data.
+        x_c2 (NDArray[np.float64]): The anode component 2 stoichiometry data.
+        ocp_c2 (NDArray[np.float64]): The anode component 2 OCP data.
+        comp1_frac (float): The fraction of the first anode component.
+
+    Returns:
+        NDArray[np.float64]: The full cell OCV.
+    """
+    n_points = 10001
+
+    # Determine common voltage range for anode components
+    V_upper = min(ocp_c1.max(), ocp_c2.max())
+    V_lower = max(ocp_c1.min(), ocp_c2.min())
+
+    # Create a linearly spaced voltage series
+    ocp_composite = np.linspace(V_lower, V_upper, n_points)
+
+    # Filter valid indices for both components
+    valid_indices_c1 = (ocp_c1 >= V_lower) & (ocp_c1 <= V_upper)
+    valid_indices_c2 = (ocp_c2 >= V_lower) & (ocp_c2 <= V_upper)
+
+    # Create interpolating functions for the anode components
+    interp_c1 = interp1d(
+        ocp_c1[valid_indices_c1],
+        x_c1[valid_indices_c1] * comp1_frac,
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
+    interp_c2 = interp1d(
+        ocp_c2[valid_indices_c2],
+        x_c2[valid_indices_c2] * (1 - comp1_frac),
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
+
+    # Interpolate values for anode stoichiometry
+    x_c1_interp = interp_c1(ocp_composite)
+    x_c2_interp = interp_c2(ocp_composite)
+    x_composite = x_c1_interp + x_c2_interp
+
+    # Create linearly spaced values for stoichiometry
+    z_pe = np.linspace(z_pe_lo, z_pe_hi, n_points)
+    z_ne = np.linspace(z_ne_lo, z_ne_hi, n_points)
+    z_ne_clipped = np.clip(
+        z_ne, x_composite.min(), x_composite.max()
+    )  # Measured NE cap. is within the composite cap. range
+
+    # Interpolate the OCP data
+    OCP_pe = interp1d(x_pe, ocp_pe, fill_value="extrapolate")(z_pe)
+    OCP_ne = interp1d(x_composite, ocp_composite, fill_value="extrapolate")(
+        z_ne_clipped
+    )
+
+    # Calculate the full cell OCV
+    OCV = OCP_pe - OCP_ne
+
+    # Interpolate the final OCV with the original SOC vector
+    cell_ocv = interp1d(
+        np.linspace(0, 1, n_points), OCV, bounds_error=False, fill_value="extrapolate"
+    )(SOC)
+
+    return SOC, cell_ocv
 
 
 def calculate_dma_parameters(
