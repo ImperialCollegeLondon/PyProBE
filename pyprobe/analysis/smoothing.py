@@ -1,16 +1,196 @@
 """Module containing methods for smoothing noisy experimental data."""
 
 import copy
-from typing import Optional
+from typing import Any, Callable, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
+from numpy.typing import NDArray
 from pydantic import BaseModel
+from scipy import interpolate
 from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
+
+
+class _LinearInterpolator(interpolate.PPoly):
+    """A class to interpolate data linearly."""
+
+    def __init__(self, x: NDArray[np.float64], y: NDArray[np.float64]) -> None:
+        """Initialize the interpolator."""
+        slopes = np.diff(y) / np.diff(x)
+        coefficients = np.vstack([slopes, y[:-1]])
+        super().__init__(coefficients, x)
+
+
+def _validate_interp_input_vectors(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Validate the input vectors x and y.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Raises:
+        ValueError: If the input vectors are not valid.
+    """
+    if not np.all(np.diff(x) > 0) and not np.all(np.diff(x) < 0):
+        raise ValueError("x must be strictly increasing or decreasing")
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length")
+    if not np.all(np.diff(x) > 0):
+        x = np.flip(x)
+        y = np.flip(y)
+    return x, y
+
+
+def _create_interpolator(
+    interpolator_class: Callable[..., Any],
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create an interpolator after validating the input vectors.
+
+    Args:
+        interpolator_class (Callable[..., Any]): The interpolator class to use.
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Any: The interpolator object.
+    """
+    x, y = _validate_interp_input_vectors(x, y)
+    return interpolator_class(x, y)
+
+
+def linear_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a linear interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The linear interpolator.
+    """
+    return _create_interpolator(_LinearInterpolator, x, y)
+
+
+def cubic_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy cubic spline interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+            The cubic spline interpolator.
+    """
+    return _create_interpolator(interpolate.CubicSpline, x, y)
+
+
+def pchip_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy Pchip interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Pchip interpolator.
+    """
+    return _create_interpolator(interpolate.PchipInterpolator, x, y)
+
+
+def akima_interpolator(
+    x: NDArray[np.float64], y: NDArray[np.float64]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Create a Scipy Akima interpolator.
+
+    Args:
+        x (NDArray[np.float64]): The x data.
+        y (NDArray[np.float64]): The y data.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Akima interpolator.
+    """
+    return _create_interpolator(interpolate.Akima1DInterpolator, x, y)
+
+
+def downsample_data(
+    df: pl.DataFrame | pl.LazyFrame,
+    target: str,
+    sampling_interval: float,
+    occurrence: Literal["first", "last", "middle"] = "first",
+    time_column: str = "Time [s]",
+) -> pl.DataFrame | pl.LazyFrame:
+    """Resample a DataFrame to a specified interval.
+
+    Args:
+        df (pl.DataFrame | pl.LazyFrame):
+            The DataFrame to downsample.
+        target (str):
+            The target column to downsample.
+        sampling_interval (float):
+            The desired minimum interval between points.
+        occurrence (Literal['first', 'last', 'middle'], optional):
+            The occurrence to take when downsampling. Default is 'first'.
+
+    Returns:
+        pl.DataFrame | pl.LazyFrame:
+            The downsampled DataFrame.
+    """
+    # Calculate the absolute difference between consecutive values
+    df = df.with_columns(
+        [
+            (pl.col(target) - pl.col(target).shift(1))
+            .abs()
+            .fill_null(0)
+            .alias("target_diff")
+        ]
+    )
+
+    # Calculate cumulative sum of value differences
+    df = df.with_columns([pl.col("target_diff").cum_sum().alias("target_cumsum")])
+
+    # Create groups based on min_distance
+    df = df.with_columns(
+        [
+            (pl.col("target_cumsum") / sampling_interval)
+            .floor()
+            .cast(pl.Int64)
+            .alias("group")
+        ]
+    )
+
+    # Group by 'group' and select the desired occurrence
+    if occurrence == "first":
+        resampled_times = df.group_by("group").agg(
+            [pl.col(time_column).first().alias(time_column)]
+        )
+    elif occurrence == "last":
+        resampled_times = df.group_by("group").agg(
+            [
+                pl.col(time_column).last().alias(time_column),
+            ]
+        )
+    elif occurrence == "middle":
+        resampled_times = (
+            df.group_by("group")
+            .agg(pl.col(time_column).quantile(0.5, "nearest").alias(time_column))
+            .sort(time_column)
+        )
+    return resampled_times.join(df, on=time_column)
 
 
 class Smoothing(BaseModel):
@@ -82,6 +262,41 @@ class Smoothing(BaseModel):
         result.define_column(
             f"d({target_column})/d({x})",
             "The gradient of the smoothed data.",
+        )
+        return result
+
+    def downsample(
+        self,
+        target_column: str,
+        sampling_interval: float,
+        occurrence: Literal["first", "last", "middle"] = "first",
+        time_column: str = "Time [s]",
+    ) -> Result:
+        """Downsample a DataFrame to a specified interval.
+
+        Requires the target column to be monotonic.
+
+        Args:
+            target_column (str):
+                The target column to downsample.
+            sampling_interval (float):
+                The desired minimum interval between points.
+            occurrence (Literal['first', 'last', 'middle'], optional):
+                The occurrence to take when downsampling. Default is 'first'.
+            time_column (str, optional):
+                The time column to use for downsampling. Default is 'Time [s]'.
+
+        Returns:
+            Result:
+                A result object containing the downsampled DataFrame.
+        """
+        result = copy.deepcopy(self.input_data)
+        result.base_dataframe = downsample_data(
+            result.base_dataframe,
+            target_column,
+            sampling_interval,
+            occurrence,
+            time_column,
         )
         return result
 
