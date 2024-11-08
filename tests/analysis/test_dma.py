@@ -170,7 +170,15 @@ def test_f_OCV():
     x_ne_lo = 0.1
     x_ne_hi = 0.7
     soc = np.linspace(0, 1, 100)
-    ocv = dma._f_OCV(soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    ocv = dma._f_OCV(
+        soc,
+        nmc_LGM50_ocp_Chen2020,
+        graphite_LGM50_ocp_Chen2020,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+    )
 
     x_pe = np.linspace(x_pe_lo, x_pe_hi, 100)
     x_ne = np.linspace(x_ne_lo, x_ne_hi, 100)
@@ -203,7 +211,7 @@ def test_f_grad_OCV():
     x_ne_lo = 0.1
     x_ne_hi = 0.7
     d_ocv = dma._f_grad_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
-    ocv_pts = dma._f_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    ocv_pts = dma._f_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
     numerical_d_ocv = np.gradient(ocv_pts, x_pts)
     np.testing.assert_allclose(d_ocv, numerical_d_ocv, rtol=1e-3, atol=0.02)
 
@@ -218,7 +226,15 @@ def test_curve_fit_ocv():
     x_ne_lo = 0.1
     x_ne_hi = 0.7
     soc = np.linspace(0, 1, 100)
-    ocv_target = dma._f_OCV(soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    ocv_target = dma._f_OCV(
+        soc,
+        nmc_LGM50_ocp_Chen2020,
+        graphite_LGM50_ocp_Chen2020,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+    )
     fit = dma._curve_fit_ocv(
         soc,
         ocv_target,
@@ -732,7 +748,6 @@ def test_average_ocvs(BreakinCycles_fixture):
         DMA.average_ocvs(input_data=break_in.charge(0))
 
 
-
 def test_calc_full_cell_ocv_composite():
     """Test the composite_full_cell_ocv method."""
     # Sample data
@@ -782,6 +797,7 @@ def test_calc_full_cell_ocv_composite():
     # Assertions
     np.testing.assert_array_almost_equal(soc, expected_soc, decimal=8)
     np.testing.assert_array_almost_equal(y_pred, expected_y_pred, decimal=8)
+
 
 def test_downsample_ocv():
     """Test the downsample_ocv method."""

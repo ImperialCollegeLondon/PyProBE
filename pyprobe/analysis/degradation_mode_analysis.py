@@ -224,9 +224,11 @@ class DMA(BaseModel):
         """
         return self._ocp_derivative(self._ocp_ne)
 
+    @staticmethod
     def _f_OCV(
-        self,
         SOC: NDArray[np.float64],
+        ocp_pe: Callable[[NDArray[np.float64]], NDArray[np.float64]],
+        ocp_ne: Callable[[NDArray[np.float64]], NDArray[np.float64]],
         x_pe_lo: NDArray[np.float64],
         x_pe_hi: NDArray[np.float64],
         x_ne_lo: NDArray[np.float64],
@@ -245,16 +247,12 @@ class DMA(BaseModel):
             Callable[[NDArray[np.float64]], NDArray[np.float64]]:
                 A function to calculate the full cell OCV as a function of SOC.
         """
-        if self.ocp_pe[0] is None:
-            raise ValueError("Positive electrode OCP data not provided.")
-        if self.ocp_ne[0] is None:
-            raise ValueError("Negative electrode OCP data not provided.")
         # Calculate the stoichiometry at the given SOC for each electrode
         z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
         z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
 
         # Return the full cell OCV
-        return self.ocp_pe[0](z_pe) - self.ocp_ne[0](z_ne)
+        return ocp_pe(z_pe) - ocp_ne(z_ne)
 
     def _f_grad_OCV(
         self,
@@ -332,10 +330,23 @@ class DMA(BaseModel):
             Returns:
                 NDArray[np.float64]: The residuals between the data and the fit.
             """
+            if self.ocp_pe[0] is None:
+                raise ValueError("Positive electrode OCP data not provided.")
+            if self.ocp_ne[0] is None:
+                raise ValueError("Negative electrode OCP data not provided.")
+
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
             match fitting_target:
                 case "OCV":
-                    model = self._f_OCV(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+                    model = self._f_OCV(
+                        SOC,
+                        self.ocp_pe[0],
+                        self.ocp_ne[0],
+                        x_pe_lo,
+                        x_pe_hi,
+                        x_ne_lo,
+                        x_ne_hi,
+                    )
                 case "dVdQ":
                     model = self._f_grad_OCV(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
                 case "dQdV":
@@ -446,6 +457,11 @@ class DMA(BaseModel):
             "dVdQ": dVdSOC,
         }[fitting_target]
 
+        if self.ocp_pe[0] is None:
+            raise ValueError("Positive electrode OCP data not provided.")
+        if self.ocp_ne[0] is None:
+            raise ValueError("Negative electrode OCP data not provided.")
+
         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = self._curve_fit_ocv(
             SOC,
             fitting_target_data,
@@ -489,6 +505,8 @@ class DMA(BaseModel):
 
         fitted_voltage = self._f_OCV(
             SOC,
+            self.ocp_pe[0],
+            self.ocp_ne[0],
             x_pe_lo,
             x_pe_hi,
             x_ne_lo,
