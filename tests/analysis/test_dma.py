@@ -25,10 +25,10 @@ def ocp_data():
     return np.sin(np.linspace(0, np.pi, 1000))
 
 
-def test_set_ocp_from_data_pe(stoichiometry_data, ocp_data):
-    """Test the set_ocp_from_data method."""
+def test_add_ocp_from_data_pe(stoichiometry_data, ocp_data):
+    """Test the add_ocp_from_data method."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.set_ocp_from_data(
+    dma.add_ocp_from_data(
         stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
     )
     assert dma.ocp_pe[0] is not None
@@ -36,19 +36,19 @@ def test_set_ocp_from_data_pe(stoichiometry_data, ocp_data):
     assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
 
 
-def test_set_ocp_from_data_ne(stoichiometry_data, ocp_data):
-    """Test the set_ocp_from_data method."""
+def test_add_ocp_from_data_ne(stoichiometry_data, ocp_data):
+    """Test the add_ocp_from_data method."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.set_ocp_from_data(stoichiometry_data, ocp_data, electrode="ne")
+    dma.add_ocp_from_data(stoichiometry_data, ocp_data, electrode="ne")
     assert dma.ocp_ne[0] is not None
     assert callable(dma.ocp_ne[0])
     assert np.isclose(dma.ocp_ne[0](0.1), np.sin(0.1))
 
 
-def test_set_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
-    """Test the set_ocp_from_data method with linear interpolation."""
+def test_add_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
+    """Test the add_ocp_from_data method with linear interpolation."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.set_ocp_from_data(
+    dma.add_ocp_from_data(
         stoichiometry_data, ocp_data, electrode="pe", interpolation_method="linear"
     )
     assert dma.ocp_pe[0] is not None
@@ -56,10 +56,10 @@ def test_set_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
     assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
 
 
-def test_set_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
-    """Test the set_ocp_from_data method with cubic interpolation."""
+def test_add_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
+    """Test the add_ocp_from_data method with cubic interpolation."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.set_ocp_from_data(
+    dma.add_ocp_from_data(
         stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
     )
     assert dma.ocp_pe[0] is not None
@@ -67,40 +67,31 @@ def test_set_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
     assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
 
 
-def test_set_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
-    """Test the set_ocp_from_data method with multiple components."""
+def test_add_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
+    """Test the add_ocp_from_data method with multiple components."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.set_ocp_from_data(
+    dma.add_ocp_from_data(
         stoichiometry_data,
         ocp_data,
         electrode="pe",
-        component_index=0,
-        total_electrode_components=2,
     )
-    assert dma.ocp_pe[0] is not None
-    assert callable(dma.ocp_pe[0])
+    dma.add_ocp_from_data(
+        stoichiometry_data,
+        ocp_data,
+        electrode="pe",
+    )
     assert len(dma.ocp_pe) == 2
     assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
-    assert dma.ocp_pe[1] is None
-    dma.set_ocp_from_data(
-        stoichiometry_data,
-        ocp_data,
-        electrode="pe",
-        component_index=1,
-        total_electrode_components=2,
-    )
     assert np.isclose(dma.ocp_pe[1](0.8), np.sin(0.8))
 
 
-def test_set_ocp_from_expression():
-    """Test the set_ocp_from_expression method."""
+def test_add_ocp_from_expression():
+    """Test the add_ocp_from_expression method."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
     x = sp.symbols("x")
     expression = 2 * x**2 + 3 * x + 1
-    dma.set_ocp_from_expression(expression, electrode="pe")
+    dma.add_ocp_from_expression(expression, electrode="pe")
     assert dma._ocp_pe[0] == expression
-    assert dma.ocp_pe[0] is not None
-    assert callable(dma.ocp_pe[0])
     assert np.isclose(dma.ocp_pe[0](0.4), 2 * 0.4**2 + 3 * 0.4 + 1)
 
 
@@ -256,8 +247,8 @@ def test_curve_fit_ocv_target_dVdQ():
     x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
     ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
     ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne")
     ocv_target = ocv_pe - ocv_ne
     soc = np.linspace(0, 1, 10000)
     d_ocv_target = np.gradient(ocv_target, soc)
@@ -300,8 +291,8 @@ def test_curve_fit_ocv_target_dQdV():
     ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
     ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
     z = np.linspace(0, 1, 10000)
-    dma.set_ocp_from_data(z, nmc_LGM50_ocp_Chen2020(z), electrode="pe")
-    dma.set_ocp_from_data(z, graphite_LGM50_ocp_Chen2020(z), electrode="ne")
+    dma.add_ocp_from_data(z, nmc_LGM50_ocp_Chen2020(z), electrode="pe")
+    dma.add_ocp_from_data(z, graphite_LGM50_ocp_Chen2020(z), electrode="ne")
     ocv_target = ocv_pe - ocv_ne
     soc = np.linspace(0, 1, 10000)
     d_ocv_target = np.gradient(ocv_target, soc)
@@ -345,8 +336,8 @@ def test_run_ocv_curve_fit():
             info={},
         )
     )
-    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne")
 
     d_ocv_target = np.gradient(ocv_target, soc)
 
@@ -423,8 +414,8 @@ def test_run_batch_dma():
     x_ne = np.linspace(0, 1, 1000)
     ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
     ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    dma.set_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.set_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe")
+    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne")
     dma_result, fitted_ocvs = dma.run_batch_dma_parallel(
         fitting_target="OCV",
         optimizer="differential_evolution",

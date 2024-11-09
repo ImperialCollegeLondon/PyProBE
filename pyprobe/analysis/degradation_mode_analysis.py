@@ -95,16 +95,17 @@ class DMA(BaseModel):
         self._f_ocp_ne = value
         self._ocp_ne = value
 
-    def set_ocp_from_data(
+    def add_ocp_from_data(
         self,
         stoichiometry: NDArray[np.float64],
         ocp: NDArray[np.float64],
         electrode: Literal["pe", "ne"],
         interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-        component_index: int = 0,
-        total_electrode_components: int = 1,
     ) -> None:
-        """Provide the OCP data for a given electrode.
+        """Provide a OCP data for a given electrode.
+
+        Appends to the ocp list for the given electrode. Composite electrodes require
+        multiple calls to this method to provide the OCP data for each component.
 
         Args:
             stoichiometry (NDArray[np.float64]): The stoichiometry data.
@@ -113,11 +114,6 @@ class DMA(BaseModel):
             interpolation_method
                 (Literal["linear", "cubic", "Pchip", "Akima"], optional):
                 The interpolation method to use. Defaults to "linear".
-            component_index (int, optional):
-                The index of the electrode component to set the OCP data for.
-                Defaults to 0.
-            total_electrode_components (int, optional):
-                The total number of electrode components. Defaults to 1.
         """
         interpolator = {
             "linear": smoothing.linear_interpolator,
@@ -127,44 +123,35 @@ class DMA(BaseModel):
         }[interpolation_method](stoichiometry, ocp)
         if electrode == "pe":
             if not hasattr(self, "_ocp_pe"):
-                self._ocp_pe = [None] * total_electrode_components
-            self._ocp_pe[component_index] = interpolator
-            if hasattr(self, "_f_ocp_pe"):
-                del self._f_ocp_pe
+                self._ocp_pe = []
+            self._ocp_pe.append(interpolator)
         elif electrode == "ne":
             if not hasattr(self, "_ocp_ne"):
-                self._ocp_ne = [None] * total_electrode_components
-            self._ocp_ne[component_index] = interpolator
-            if hasattr(self, "_f_ocp_ne"):
-                del self._f_ocp_ne
+                self._ocp_ne = []
+            self._ocp_ne.append(interpolator)
 
-    def set_ocp_from_expression(
+    def add_ocp_from_expression(
         self,
         ocp: sp.Expr,
         electrode: Literal["pe", "ne"],
-        component_index: int = 0,
-        total_electrode_components: int = 1,
     ) -> None:
         """Provide the OCP data for a given electrode.
 
+        Appends to the ocp list for the given electrode. Composite electrodes require
+        multiple calls to this method to provide the OCP data for each component.
+
         Args:
-            ocp (sp.Expr): _description_
+            ocp (sp.Expr): A sympy expression for the OCP.
             electrode (Literal["pe", "ne"]): Electrode to set the OCP data for.
-            component_index (int, optional):
-                Electrode component index in a composite electrode to set the OCP data
-                for. Defaults to 0.
-            total_electrode_components (int, optional):
-                Total number of electrode components in a composite electrode.
-                Defaults to 1.
         """
         if electrode == "pe":
             if not hasattr(self, "_ocp_pe"):
-                self._ocp_pe = [None] * total_electrode_components
-            self._ocp_pe[component_index] = ocp
+                self._ocp_pe = []
+            self._ocp_pe.append(ocp)
         elif electrode == "ne":
             if not hasattr(self, "_ocp_ne"):
-                self._ocp_ne = [None] * total_electrode_components
-            self._ocp_ne[component_index] = ocp
+                self._ocp_ne = []
+            self._ocp_ne.append(ocp)
 
     def _ocp_derivative(
         self, ocp_list: List[None | Callable[[NDArray], NDArray]]
@@ -887,14 +874,12 @@ class BatchDMA(BaseModel):
             for dma_object in self.dma_objects
         ]
 
-    def set_ocp_from_data(
+    def add_ocp_from_data(
         self,
         stoichiometry: NDArray[np.float64],
         ocp: NDArray[np.float64],
         electrode: Literal["pe", "ne"],
         interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-        component_index: int = 0,
-        total_electrode_components: int = 1,
     ) -> None:
         """Provide the OCP data for a given electrode.
 
@@ -905,47 +890,30 @@ class BatchDMA(BaseModel):
             interpolation_method
                 (Literal["linear", "cubic", "Pchip", "Akima"], optional):
                 The interpolation method to use. Defaults to "linear".
-            component_index (int, optional):
-                The index of the electrode component to set the OCP data for.
-                Defaults to 0.
-            total_electrode_components (int, optional):
-                The total number of electrode components. Defaults to 1.
         """
         for dma_object in self.dma_objects:
-            dma_object.set_ocp_from_data(
+            dma_object.add_ocp_from_data(
                 stoichiometry=stoichiometry,
                 ocp=ocp,
                 electrode=electrode,
                 interpolation_method=interpolation_method,
-                component_index=component_index,
-                total_electrode_components=total_electrode_components,
             )
 
-    def set_ocp_from_expression(
+    def add_ocp_from_expression(
         self,
         ocp: sp.Expr,
         electrode: Literal["pe", "ne"],
-        component_index: int = 0,
-        total_electrode_components: int = 1,
     ) -> None:
         """Provide the OCP data for a given electrode.
 
         Args:
             ocp (sp.Expr): _description_
             electrode (Literal["pe", "ne"]): Electrode to set the OCP data for.
-            component_index (int, optional):
-                Electrode component index in a composite electrode to set the OCP data
-                for. Defaults to 0.
-            total_electrode_components (int, optional):
-                Total number of electrode components in a composite electrode.
-                Defaults to 1.
         """
         for dma_object in self.dma_objects:
-            dma_object.set_ocp_from_expression(
+            dma_object.add_ocp_from_expression(
                 ocp=ocp,
                 electrode=electrode,
-                component_index=component_index,
-                total_electrode_components=total_electrode_components,
             )
 
     def run_batch_dma_parallel(
