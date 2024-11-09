@@ -5,7 +5,6 @@ import numpy as np
 import polars as pl
 import pytest
 import sympy as sp
-from numpy.typing import NDArray
 from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
@@ -102,7 +101,7 @@ def test_ocp_derivative_ppoly():
     y = np.array([0, 1, 0, -1])
     ppoly_ocp = smoothing.linear_interpolator(x, y)
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    derivative = dma._ocp_derivative([ppoly_ocp])[0]
+    derivative = dma._ocp_derivative(ppoly_ocp)
     assert callable(derivative)
     x = np.array([0, 1, 2, 3])
     np.testing.assert_allclose(derivative(x), np.array([1, -1, -1, -1]))
@@ -113,7 +112,7 @@ def test_ocp_derivative_sympy():
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
     x = sp.symbols("x")
     sympy_ocp = 2 * x**2 + 3 * x + 1
-    derivative = dma._ocp_derivative([sympy_ocp])[0]
+    derivative = dma._ocp_derivative(sympy_ocp)
     assert callable(derivative)
     x = np.array([0, 1, 2, 3])
     np.testing.assert_allclose(derivative(x), np.array([3, 7, 11, 15]))
@@ -123,11 +122,11 @@ def test_ocp_derivative_function():
     """Test _ocp_derivative with a python function."""
     dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
 
-    def ocp(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    def ocp(x):
         """Sample OCP function."""
         return 2 * x**2 + 3 * x + 1
 
-    derivative = dma._ocp_derivative([ocp])[0]
+    derivative = dma._ocp_derivative(ocp)
     assert callable(derivative)
     x = np.linspace(0, 100, 100)
     np.testing.assert_allclose(derivative(x)[1:-1], (4 * x + 3)[1:-1])
@@ -200,13 +199,11 @@ def test_f_grad_OCV():
     ocp_pe = smoothing.cubic_interpolator(x=x_pts, y=ocp_pe_pts)
     ocp_ne_pts = 3 * x_pts**3
     ocp_ne = smoothing.cubic_interpolator(x=x_pts, y=ocp_ne_pts)
-    dma.ocp_ne = [ocp_ne]
-    dma.ocp_pe = [ocp_pe]
     x_pe_lo = 0
     x_pe_hi = 1
     x_ne_lo = 0
     x_ne_hi = 1
-    d_ocv = dma._f_grad_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    d_ocv = dma._f_grad_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
     x_pe = np.linspace(x_pe_lo, x_pe_hi, 100)
     x_ne = np.linspace(x_ne_lo, x_ne_hi, 100)
     d_ocv_expected = 4 * x_pe - 9 * x_ne**2
@@ -216,119 +213,10 @@ def test_f_grad_OCV():
     x_pe_hi = 0.1
     x_ne_lo = 0.1
     x_ne_hi = 0.7
-    d_ocv = dma._f_grad_OCV(x_pts, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    d_ocv = dma._f_grad_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
     ocv_pts = dma._f_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
     numerical_d_ocv = np.gradient(ocv_pts, x_pts)
     np.testing.assert_allclose(d_ocv, numerical_d_ocv, rtol=1e-3, atol=0.02)
-
-
-def test_curve_fit_ocv():
-    """Test the curve_fit_ocv method."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.ocp_ne = [graphite_LGM50_ocp_Chen2020]
-    dma.ocp_pe = [nmc_LGM50_ocp_Chen2020]
-    x_pe_lo = 0.8
-    x_pe_hi = 0.1
-    x_ne_lo = 0.1
-    x_ne_hi = 0.7
-    soc = np.linspace(0, 1, 100)
-    ocv_target = dma._f_OCV(
-        soc,
-        nmc_LGM50_ocp_Chen2020,
-        graphite_LGM50_ocp_Chen2020,
-        x_pe_lo,
-        x_pe_hi,
-        x_ne_lo,
-        x_ne_hi,
-    )
-    fit = dma._curve_fit_ocv(
-        soc,
-        ocv_target,
-        "OCV",
-        optimizer="minimize",
-        optimizer_options={"x0": [0.8, 0.4, 0.2, 0.6]},
-    )
-    np.testing.assert_allclose(fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=1e-6)
-
-
-def test_curve_fit_ocv_target_dVdQ():
-    """Test the curve_fit_ocv method with target dVdQ."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    x_pe_lo = 0.8
-    x_pe_hi = 0.1
-    x_ne_lo = 0.1
-    x_ne_hi = 0.7
-    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
-    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
-    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
-    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne")
-    ocv_target = ocv_pe - ocv_ne
-    soc = np.linspace(0, 1, 10000)
-    d_ocv_target = np.gradient(ocv_target, soc)
-
-    fit = dma._curve_fit_ocv(
-        soc,
-        d_ocv_target,
-        "dVdQ",
-        optimizer="minimize",
-        optimizer_options={
-            "x0": [0.8, 0.1, 0.1, 0.7],
-            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
-        },
-    )
-    np.testing.assert_allclose(fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=5e-6)
-
-    fit = dma._curve_fit_ocv(
-        soc,
-        d_ocv_target,
-        "dVdQ",
-        optimizer="differential_evolution",
-        optimizer_options={
-            "bounds": [(0.75, 0.85), (0.05, 15), (0.05, 0.15), (0.65, 0.75)]
-        },
-    )
-    np.testing.assert_allclose(
-        fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=5e-4, atol=2e-4
-    )
-
-
-def test_curve_fit_ocv_target_dQdV():
-    """Test the curve_fit_ocv method with target dQdV."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    x_pe_lo = 0.8
-    x_pe_hi = 0.1
-    x_ne_lo = 0.1
-    x_ne_hi = 0.6
-    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
-    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
-    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
-    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    z = np.linspace(0, 1, 10000)
-    dma.add_ocp_from_data(z, nmc_LGM50_ocp_Chen2020(z), electrode="pe")
-    dma.add_ocp_from_data(z, graphite_LGM50_ocp_Chen2020(z), electrode="ne")
-    ocv_target = ocv_pe - ocv_ne
-    soc = np.linspace(0, 1, 10000)
-    d_ocv_target = np.gradient(ocv_target, soc)
-
-    fit = dma._curve_fit_ocv(
-        soc,
-        1 / d_ocv_target,
-        "dQdV",
-        optimizer="differential_evolution",
-        optimizer_options={
-            "bounds": [
-                (x_pe_lo - 0.05, x_pe_lo + 0.05),
-                (x_pe_hi - 0.05, x_pe_hi + 0.05),
-                (x_ne_lo - 0.05, x_ne_lo + 0.05),
-                (x_ne_hi - 0.05, x_ne_hi + 0.05),
-            ]
-        },
-    )
-    np.testing.assert_allclose(
-        fit, [x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi], rtol=5e-4, atol=1e-5
-    )
 
 
 def test_run_ocv_curve_fit():
@@ -387,6 +275,136 @@ def test_run_ocv_curve_fit():
     np.testing.assert_allclose(fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target)
     np.testing.assert_allclose(
         fit.data["Fitted dVdSOC [V]"].to_numpy(), d_ocv_target, rtol=0.005, atol=0.005
+    )
+
+
+def test_run_ocv_curve_fit_dQdV():
+    """Test the run_ocv_curve_fit method with target dQdV."""
+    x_pe_lo = 0.9
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.6
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    soc = np.linspace(0, 1, 10000)
+    ocv_target = ocv_pe - ocv_ne
+    d_ocv_target = np.gradient(ocv_target, soc)
+    dQdV_target = 1 / d_ocv_target
+
+    dma = DMA(
+        input_data=Result(
+            base_dataframe=pl.DataFrame(
+                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
+            ),
+            info={},
+        )
+    )
+    dma.ocp_ne = [graphite_LGM50_ocp_Chen2020]
+    dma.ocp_pe = [nmc_LGM50_ocp_Chen2020]
+
+    limits, fit = dma.run_ocv_curve_fit(
+        fitting_target="dQdV",
+        optimizer="differential_evolution",
+        optimizer_options={
+            "bounds": [
+                (x_pe_lo - 0.05, x_pe_lo + 0.05),
+                (x_pe_hi - 0.05, x_pe_hi + 0.05),
+                (x_ne_lo - 0.05, x_ne_lo + 0.05),
+                (x_ne_hi - 0.05, x_ne_hi + 0.05),
+            ]
+        },
+    )
+    assert isinstance(limits, Result)
+    assert limits.data.columns == [
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
+        "Cell Capacity [Ah]",
+        "Cathode Capacity [Ah]",
+        "Anode Capacity [Ah]",
+        "Li Inventory [Ah]",
+    ]
+    np.testing.assert_allclose(
+        limits.data["x_pe low SOC"].to_numpy()[0], x_pe_lo, rtol=1e-5
+    )
+    np.testing.assert_allclose(
+        limits.data["x_pe high SOC"].to_numpy()[0], x_pe_hi, rtol=1e-5
+    )
+    np.testing.assert_allclose(
+        limits.data["x_ne low SOC"].to_numpy()[0], x_ne_lo, rtol=1e-5
+    )
+    np.testing.assert_allclose(
+        limits.data["x_ne high SOC"].to_numpy()[0], x_ne_hi, rtol=1e-5
+    )
+
+    np.testing.assert_allclose(
+        fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target, rtol=1e-6
+    )
+    np.testing.assert_allclose(
+        fit.data["Fitted dSOCdV [1/V]"].to_numpy(), dQdV_target, rtol=0.005, atol=0.005
+    )
+
+
+def test_run_ocv_curve_fit_dVdQ():
+    """Test the run_ocv_curve_fit method with target dVdQ."""
+    x_pe_lo = 0.8
+    x_pe_hi = 0.1
+    x_ne_lo = 0.1
+    x_ne_hi = 0.7
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 100000)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 100000)
+    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
+    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
+    soc = np.linspace(0, 1, 100000)
+    ocv_target = ocv_pe - ocv_ne
+    d_ocv_target = np.gradient(ocv_target, soc)
+    dVdQ_target = d_ocv_target
+
+    dma = DMA(
+        input_data=Result(
+            base_dataframe=pl.DataFrame(
+                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
+            ),
+            info={},
+        )
+    )
+    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe", interpolation_method="Pchip")
+    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne", interpolation_method="Pchip")
+
+    limits, fit = dma.run_ocv_curve_fit(
+        fitting_target="dVdQ",
+        optimizer="differential_evolution",
+        optimizer_options={
+            "bounds": [
+                (x_pe_lo - 0.05, x_pe_lo + 0.05),
+                (x_pe_hi - 0.05, x_pe_hi + 0.05),
+                (x_ne_lo - 0.05, x_ne_lo + 0.05),
+                (x_ne_hi - 0.05, x_ne_hi + 0.05),
+            ]
+        },
+    )
+    assert isinstance(limits, Result)
+    assert limits.data.columns == [
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
+        "Cell Capacity [Ah]",
+        "Cathode Capacity [Ah]",
+        "Anode Capacity [Ah]",
+        "Li Inventory [Ah]",
+    ]
+    np.testing.assert_allclose(limits.data["x_pe low SOC"].to_numpy()[0], x_pe_lo)
+    np.testing.assert_allclose(limits.data["x_pe high SOC"].to_numpy()[0], x_pe_hi)
+    np.testing.assert_allclose(limits.data["x_ne low SOC"].to_numpy()[0], x_ne_lo)
+    np.testing.assert_allclose(limits.data["x_ne high SOC"].to_numpy()[0], x_ne_hi)
+
+    np.testing.assert_allclose(fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target)
+    np.testing.assert_allclose(
+        fit.data["Fitted dVdSOC [V]"].to_numpy(), dVdQ_target, rtol=0.005, atol=0.005
     )
 
 
