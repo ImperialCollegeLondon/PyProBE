@@ -159,7 +159,7 @@ class DMA(BaseModel):
         """Calculate the derivative of each OCP.
 
         Args:
-            ocp (Callable[[NDArray], NDArray]):
+            ocp_list (Callable[[NDArray], NDArray]):
                 The OCP function. Must be a differentiable function. Currently supported
                 formats are scipy.interpolate.PPoly objects or sympy expressions.
 
@@ -184,6 +184,15 @@ class DMA(BaseModel):
                 sto = _check_free_symbols(free_symbols)
                 gradient = sp.diff(ocp, sto)
                 derivatives.append(sp.lambdify(sto, gradient, "numpy"))
+            elif callable(ocp):
+
+                def function_derivative(
+                    sto: NDArray[np.float64],
+                ) -> NDArray[np.float64]:
+                    """Numerically calculate the derivative."""
+                    return np.gradient(ocp(sto), sto)
+
+                derivatives.append(function_derivative)
             else:
                 raise ValueError(
                     "OCP is not in a differentiable format. OCP must be a"

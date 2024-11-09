@@ -5,6 +5,7 @@ import numpy as np
 import polars as pl
 import pytest
 import sympy as sp
+from numpy.typing import NDArray
 from pydantic import ValidationError
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
@@ -116,6 +117,20 @@ def test_ocp_derivative_sympy():
     assert callable(derivative)
     x = np.array([0, 1, 2, 3])
     np.testing.assert_allclose(derivative(x), np.array([3, 7, 11, 15]))
+
+
+def test_ocp_derivative_function():
+    """Test _ocp_derivative with a python function."""
+    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
+
+    def ocp(x: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Sample OCP function."""
+        return 2 * x**2 + 3 * x + 1
+
+    derivative = dma._ocp_derivative([ocp])[0]
+    assert callable(derivative)
+    x = np.linspace(0, 100, 100)
+    np.testing.assert_allclose(derivative(x)[1:-1], (4 * x + 3)[1:-1])
 
 
 def test_ocp_derivative_invalid():
