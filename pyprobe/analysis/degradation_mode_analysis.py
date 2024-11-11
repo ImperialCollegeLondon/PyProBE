@@ -19,16 +19,73 @@ from pyprobe.result import Result
 from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
 
-class OCP:
-    """A class for single-component electrode open circuit potential data."""
+def _get_gradient(
+    any_function: Union[
+        Callable[[NDArray[np.float64]], NDArray[np.float64]],
+        PPoly,
+        sp.Expr,
+    ]
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Retrieve the gradient of the OCP function.
 
-    def set_from_data(
+    Args:
+        any_function: The OCP function.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+            The gradient of the OCP.
+    """
+    if isinstance(any_function, PPoly):
+        return any_function.derivative()
+    elif isinstance(any_function, sp.Expr):
+        free_symbols = any_function.free_symbols
+        sto = free_symbols.pop()
+        gradient = sp.diff(any_function, sto)
+        return sp.lambdify(sto, gradient, "numpy")
+    elif callable(any_function):
+
+        def function_derivative(
+            sto: NDArray[np.float64],
+        ) -> NDArray[np.float64]:
+            """Numerically calculate the derivative."""
+            return np.gradient(any_function(sto), sto)
+
+        return function_derivative
+    else:
+        raise ValueError(
+            "OCP is not in a differentiable format. OCP must be a"
+            " PPoly object, a sympy expression or a callable function with a "
+            "single NDArray input and single NDArray output."
+        )
+
+
+class OCP:
+    """A class for single-component electrode open circuit potential data.
+
+    Args:
+        ocp_function (Union[Callable[[NDArray[np.float64]],
+            NDArray[np.float64]], PPoly, sp.Expr]):
+            The OCP function for the electrode.
+    """
+
+    def __init__(
         self,
+        ocp_function: Union[
+            Callable[[NDArray[np.float64]], NDArray[np.float64]],
+            PPoly,
+            sp.Expr,
+        ],
+    ) -> None:
+        """Initialize the OCP object."""
+        self.ocp_function = ocp_function
+
+    @staticmethod
+    def from_data(
         stoichiometry: NDArray[np.float64],
         ocp: NDArray[np.float64],
         interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-    ) -> None:
-        """Provide a OCP data for a given electrode.
+    ) -> "OCP":
+        """Create an OCP object from stoichiometry and OCP data.
 
         Appends to the ocp list for the given electrode. Composite electrodes require
         multiple calls to this method to provide the OCP data for each component.
@@ -39,6 +96,9 @@ class OCP:
             interpolation_method
                 (Literal["linear", "cubic", "Pchip", "Akima"], optional):
                 The interpolation method to use. Defaults to "linear".
+
+        Returns:
+            OCP: The OCP object.
         """
         interpolator = {
             "linear": smoothing.linear_interpolator,
@@ -46,91 +106,136 @@ class OCP:
             "Pchip": smoothing.pchip_interpolator,
             "Akima": smoothing.akima_interpolator,
         }[interpolation_method]
-        self.base_form = interpolator(stoichiometry, ocp)
+        return OCP(interpolator(stoichiometry, ocp))
 
-    def set_from_expression(self, sympy_expression: sp.Expr) -> None:
-        """Provide an OCP in analytical function form.
+    @staticmethod
+    def from_expression(sympy_expression: sp.Expr) -> "OCP":
+        """Create an OCP object from a sympy expression.
 
         Args:
             sympy_expression: A sympy expression for the OCP.
+
+        Returns:
+            OCP: The OCP object.
         """
-        self.base_form = sympy_expression
+        return OCP(sympy_expression)
 
     @property
     def eval(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
         """A callable function for ocp as a function of electrode stoichiometry."""
         if not hasattr(self, "_eval"):
-            self._eval = self._get_eval(self.base_form)
+            if isinstance(self.ocp_function, sp.Expr):
+                self._eval = sp.lambdify(
+                    self.ocp_function.free_symbols.pop(), self.ocp_function, "numpy"
+                )
+            else:
+                self._eval = self.ocp_function
         return self._eval
-
-    @staticmethod
-    def _get_eval(
-        ocp_function: Union[
-            Callable[[NDArray[np.float64]], NDArray[np.float64]],
-            PPoly,
-            sp.Expr,
-        ]
-    ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-        """Retrieve a callable ocp function.
-
-        Args:
-            ocp_function: The OCP function.
-
-        Returns:
-            Callable[[NDArray[np.float64]], NDArray[np.float64]]: A callable function
-            for the OCP as a function of electrode stoichiometry.
-        """
-        if isinstance(ocp_function, sp.Expr):
-            return sp.lambdify(ocp_function.free_symbols.pop(), ocp_function, "numpy")
-        else:
-            return ocp_function
 
     @property
     def grad(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
         """The gradient of the OCP function."""
         if not hasattr(self, "_grad"):
-            self._grad = self._get_gradient(self.base_form)
+            self._grad = _get_gradient(self.ocp_function)
         return self._grad
 
+
+class CompositeOCP:
+    """A class for composite electrode open circuit potential data.
+
+    Args:
+        ocp_list (List[Union[Callable[[NDArray[np.float64]],
+        NDArray[np.float64]], PPoly, sp.Expr]]):
+            A list of OCP functions for the composite electrode.
+
+        ocp_vector (NDArray[np.float64]): The OCP vector for the composite electrode.
+    """
+
+    def __init__(
+        self,
+        ocp_list: List[
+            Union[
+                Callable[[NDArray[np.float64]], NDArray[np.float64]],
+                PPoly,
+                sp.Expr,
+            ]
+        ],
+        ocp_vector: NDArray[np.float64],
+    ) -> None:
+        """Initialize the CompositeOCP object."""
+        self.ocp_list = ocp_list
+        self.ocp_vector = ocp_vector
+        self.comp_fraction = 0.5
+
     @staticmethod
-    def _get_gradient(
-        any_function: Union[
-            Callable[[NDArray[np.float64]], NDArray[np.float64]],
-            PPoly,
-            sp.Expr,
-        ]
-    ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-        """Retrieve the gradient of the OCP function.
+    def from_data(
+        stoichiometry_comp1: NDArray[np.float64],
+        ocp_comp1: NDArray[np.float64],
+        stoichiometry_comp2: NDArray[np.float64],
+        ocp_comp2: NDArray[np.float64],
+        interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
+    ) -> "CompositeOCP":
+        """Create a CompositeOCP object from stoichiometry and OCP data.
 
         Args:
-            any_function: The OCP function.
-
-        Returns:
-            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-                The gradient of the OCP.
+            stoichiometry_comp1 (NDArray[np.float64]):
+                The stoichiometry data for the first component.
+            ocp_comp1 (NDArray[np.float64]): The OCP data for the first component.
+            stoichiometry_comp2 (NDArray[np.float64]):
+                The stoichiometry data for the second component.
+            ocp_comp2 (NDArray[np.float64]): The OCP data for the second component.
+            interpolation_method
+                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
+                The interpolation method to use. Defaults to "linear".
         """
-        if isinstance(any_function, PPoly):
-            return any_function.derivative()
-        elif isinstance(any_function, sp.Expr):
-            free_symbols = any_function.free_symbols
-            sto = free_symbols.pop()
-            gradient = sp.diff(any_function, sto)
-            return sp.lambdify(sto, gradient, "numpy")
-        elif callable(any_function):
+        # Determine common voltage range for anode components
+        composite_voltage_limits = (
+            max(ocp_comp1.min(), ocp_comp2.min()),
+            min(ocp_comp1.max(), ocp_comp2.max()),
+        )
+        # Filter valid indices for both components
+        valid_indices_c1 = (ocp_comp1 >= composite_voltage_limits[0]) & (
+            ocp_comp1 <= composite_voltage_limits[1]
+        )
+        valid_indices_c2 = (ocp_comp2 >= composite_voltage_limits[0]) & (
+            ocp_comp2 <= composite_voltage_limits[1]
+        )
 
-            def function_derivative(
-                sto: NDArray[np.float64],
-            ) -> NDArray[np.float64]:
-                """Numerically calculate the derivative."""
-                return np.gradient(any_function(sto), sto)
+        # Create a linearly spaced voltage series
+        ocp_vector_composite = np.linspace(
+            composite_voltage_limits[0], composite_voltage_limits[1], 10001
+        )
 
-            return function_derivative
-        else:
-            raise ValueError(
-                "OCP is not in a differentiable format. OCP must be a"
-                " PPoly object, a sympy expression or a callable function with a "
-                "single NDArray input and single NDArray output."
-            )
+        interpolator = {
+            "linear": smoothing.linear_interpolator,
+            "cubic": smoothing.cubic_interpolator,
+            "Pchip": smoothing.pchip_interpolator,
+            "Akima": smoothing.akima_interpolator,
+        }[interpolation_method]
+
+        ocp_list = [
+            interpolator(
+                ocp_comp1[valid_indices_c1], stoichiometry_comp1[valid_indices_c1]
+            ),
+            interpolator(
+                ocp_comp2[valid_indices_c2], stoichiometry_comp2[valid_indices_c2]
+            ),
+        ]
+        return CompositeOCP(ocp_list=ocp_list, ocp_vector=ocp_vector_composite)
+
+    @property
+    def eval(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """A callable function for ocp as a function of electrode stoichiometry."""
+        # Calculate the electrode stoichiometry vector
+        x_composite = self.comp_fraction * self.ocp_list[0](self.ocp_vector) + (
+            1 - self.comp_fraction
+        ) * self.ocp_list[1](self.ocp_vector)
+        return smoothing.linear_interpolator(x_composite, self.ocp_vector)
+
+    @property
+    def grad(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """The gradient of the OCP function."""
+        return _get_gradient(self.eval)
 
 
 # 1. Define the class as a Pydantic BaseModel.
@@ -770,10 +875,10 @@ class DMA(BaseModel):
     @staticmethod
     def average_ocvs(
         input_data: FilterToCycleType,
+        ocp_pe: OCP,
+        ocp_ne: OCP,
         discharge_filter: Optional[str] = None,
         charge_filter: Optional[str] = None,
-        ocp_pe: OCP = OCP(),
-        ocp_ne: OCP = OCP(),
     ) -> "DMA":
         """Average the charge and discharge OCV curves.
 
@@ -871,6 +976,11 @@ class BatchDMA(BaseModel):
     Contains the stoichiometry limits, SOH, LAM_pe, LAM_ne, and LLI for each of the
     provided OCV fits.
     """
+
+    class Config:
+        """Pydantic configuration settings."""
+
+        arbitrary_types_allowed = True
 
     @property
     def dma_objects(self) -> List[DMA]:

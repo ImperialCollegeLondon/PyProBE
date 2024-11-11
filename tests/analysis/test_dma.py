@@ -10,7 +10,13 @@ from scipy.interpolate import PPoly
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import smoothing
-from pyprobe.analysis.degradation_mode_analysis import DMA, OCP, BatchDMA
+from pyprobe.analysis.degradation_mode_analysis import (
+    DMA,
+    OCP,
+    BatchDMA,
+    CompositeOCP,
+    _get_gradient,
+)
 from pyprobe.result import Result
 
 """Tests for the OCP class in the degradation mode analysis module."""
@@ -30,41 +36,39 @@ def ocp_data():
 
 def test_set_from_data(stoichiometry_data, ocp_data):
     """Test the set_from_data method."""
-    ocp = OCP()
-    ocp.set_from_data(stoichiometry_data, ocp_data)
+    ocp = OCP.from_data(stoichiometry_data, ocp_data)
 
     pts = [0, 1, 2]
-    assert isinstance(ocp.base_form, PPoly)
+    assert isinstance(ocp.ocp_function, PPoly)
     np.testing.assert_allclose(
-        ocp.base_form(pts),
+        ocp.ocp_function(pts),
         smoothing._LinearInterpolator(stoichiometry_data, ocp_data)(pts),
     )
 
 
-def test_set_from_expression():
+def test_from_expression():
     """Test the set_from_expression method."""
     x = sp.symbols("x")
     expression = 2 * x**2 + 3 * x + 1
-    ocp = OCP()
-    ocp.set_from_expression(expression)
-    assert ocp.base_form == expression
+    ocp = OCP.from_expression(expression)
+    assert ocp.ocp_function == expression
 
 
-def test_get_eval():
+def test_eval():
     """Test the _get_eval method."""
     # Test with sympy expression
     x = sp.symbols("x")
     expression = 2 * x**2 + 3 * x + 1
-    func = OCP._get_eval(expression)
+    ocp = OCP(ocp_function=expression)
     x_pts = np.linspace(0, 10, 10)
-    np.testing.assert_allclose(func(x_pts), 2 * x_pts**2 + 3 * x_pts + 1)
+    np.testing.assert_allclose(ocp.eval(x_pts), 2 * x_pts**2 + 3 * x_pts + 1)
 
     # Test with standard function
     def f_x(x):
         return 2 * x**2 + 3 * x + 1
 
-    func = OCP._get_eval(f_x)
-    np.testing.assert_allclose(func(x_pts), 2 * x_pts**2 + 3 * x_pts + 1)
+    ocp = OCP(ocp_function=f_x)
+    np.testing.assert_allclose(ocp.eval(x_pts), 2 * x_pts**2 + 3 * x_pts + 1)
 
 
 def test_get_gradient_ppoly():
@@ -73,7 +77,7 @@ def test_get_gradient_ppoly():
     c = np.array([[1, 2], [3, 4]])  # Coefficients
     x = np.array([0, 1, 2])  # Breakpoints
     ppoly = PPoly(c, x)
-    gradient = OCP._get_gradient(ppoly)
+    gradient = _get_gradient(ppoly)
     # Expected derivative
     expected_gradient = ppoly.derivative()
     # Test points
@@ -86,7 +90,7 @@ def test_get_gradient_sympy_expr():
     # Create a SymPy expression
     sto = sp.Symbol("x")
     expr = sto**3 + 2 * sto**2 + sto
-    gradient = OCP._get_gradient(expr)
+    gradient = _get_gradient(expr)
     # Expected derivative
     expected_gradient = sp.lambdify(sto, sp.diff(expr, sto), "numpy")
     test_x = np.linspace(-10, 10, 100)
@@ -101,7 +105,7 @@ def test_get_gradient_callable():
     def any_function(x):
         return np.sin(x)
 
-    gradient = OCP._get_gradient(any_function)
+    gradient = _get_gradient(any_function)
 
     # Expected derivative
     def expected_gradient(x):
@@ -113,7 +117,40 @@ def test_get_gradient_callable():
 def test_get_gradient_invalid_input():
     """Test the _get_gradient method with an invalid input."""
     with pytest.raises(ValueError):
-        OCP._get_gradient(42)
+        _get_gradient(42)
+
+
+def test_comp_from_data(stoichiometry_data):
+    """Test the from_data method."""
+    ocp_data = 2 * stoichiometry_data**2 + 3 * stoichiometry_data + 1
+    ocp = CompositeOCP.from_data(
+        stoichiometry_data, ocp_data, stoichiometry_data, ocp_data
+    )
+    assert isinstance(ocp.ocp_list, list)
+
+    assert len(ocp.ocp_list) == 2
+    pts = [0, 1, 2]
+    for ocp_i in ocp.ocp_list:
+        assert isinstance(ocp_i, PPoly)
+        np.testing.assert_allclose(
+            ocp_i(pts),
+            smoothing._LinearInterpolator(ocp_data, stoichiometry_data)(pts),
+        )
+
+
+def test_comp_eval_and_grad():
+    """Test the eval and grad methods."""
+    n_points = 10
+
+    # Create data arrays
+    z = np.linspace(0, 1, n_points)
+    x_c1, ocp_c1 = z, np.linspace(1.5, 0.05, n_points)
+    x_c2, ocp_c2 = z, np.linspace(2.3, 0.15, n_points)
+
+    ocp = CompositeOCP.from_data(x_c1, ocp_c1, x_c2, ocp_c2)
+
+    np.testing.assert_allclose(ocp.eval(0.5), 0.95625)
+    np.testing.assert_allclose(ocp.grad(0.5), -1.73194444)
 
 
 def graphite_LGM50_ocp_Chen2020(sto):
@@ -145,16 +182,14 @@ def nmc_LGM50_ocp_Chen2020(sto):
 @pytest.fixture
 def ne_ocp_fixture():
     """Fixture for the negative electrode OCP."""
-    ocp_ne = OCP()
-    ocp_ne.base_form = graphite_LGM50_ocp_Chen2020
+    ocp_ne = OCP(graphite_LGM50_ocp_Chen2020)
     return ocp_ne
 
 
 @pytest.fixture
 def pe_ocp_fixture():
     """Fixture for the positive electrode OCP."""
-    ocp_pe = OCP()
-    ocp_pe.base_form = nmc_LGM50_ocp_Chen2020
+    ocp_pe = OCP(nmc_LGM50_ocp_Chen2020)
     return ocp_pe
 
 
