@@ -371,11 +371,11 @@ def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
     x_pe_hi = 0.1
     x_ne_lo = 0.1
     x_ne_hi = 0.7
-    x_pe = np.linspace(x_pe_lo, x_pe_hi, 100000)
-    x_ne = np.linspace(x_ne_lo, x_ne_hi, 100000)
+    x_pe = np.linspace(x_pe_lo, x_pe_hi, 10000)
+    x_ne = np.linspace(x_ne_lo, x_ne_hi, 10000)
     ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
     ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    soc = np.linspace(0, 1, 100000)
+    soc = np.linspace(0, 1, 10000)
     ocv_target = ocv_pe - ocv_ne
     d_ocv_target = np.gradient(ocv_target, soc)
     dVdQ_target = d_ocv_target
@@ -701,7 +701,11 @@ def bol_result_fixture(bol_capacity_fixture):
         ),
         info={},
     )
-    dma = DMA(input_data=result)
+    dma = DMA(
+        input_data=result,
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+    )
     dma.stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
@@ -727,7 +731,11 @@ def eol_result_fixture(eol_capacity_fixture):
         ),
         info={},
     )
-    dma = DMA(input_data=result)
+    dma = DMA(
+        input_data=result,
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+    )
     dma.stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
@@ -846,7 +854,11 @@ def test_downsample_ocv():
     values = times
     min_distance = 10
     df = pl.DataFrame({"Time [s]": times, "Voltage [V]": values})
-    dma = DMA(input_data=Result(base_dataframe=df, info={}))
+    dma = DMA(
+        input_data=Result(base_dataframe=df, info={}),
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+    )
     downsampled = dma.downsample_ocv(min_distance)
     assert isinstance(downsampled, Result)
     np.testing.assert_array_equal(
