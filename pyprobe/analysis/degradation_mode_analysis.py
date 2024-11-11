@@ -2,7 +2,7 @@
 
 import concurrent.futures
 import copy
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
 import polars as pl
@@ -246,10 +246,10 @@ class DMA(BaseModel):
     input_data: PyProBEDataType
     """The input data for the degradation mode analysis."""
 
-    ocp_pe: OCP
+    ocp_pe: OCP | CompositeOCP
     """An object containing the positive electrode OCP functions."""
 
-    ocp_ne: OCP
+    ocp_ne: OCP | CompositeOCP
     """An object containing the negative electrode OCP functions."""
 
     # 3. Define the attributes that will be populated by the methods.
@@ -403,39 +403,37 @@ class DMA(BaseModel):
                     x_ne_hi,
                 )
 
-        # elif composite_pe and not composite_ne:
+        elif composite_pe and not composite_ne:
 
-        #     def unwrap_params(
-        #         params: Tuple[np.float64, ...]
-        #     ) -> Tuple[
-        #         np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-        #     ]:
-        #         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
-        #         ocp_pe = self._composite_ocp(self.ocp_pe, pe_frac)
-        #         return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, self.ocp_ne[0]
+            def unwrap_params(
+                params: Tuple[np.float64, ...]
+            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
+                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
+                self.ocp_pe = cast(CompositeOCP, self.ocp_pe)
+                self.ocp_pe.comp_fraction = pe_frac
+                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
 
-        # elif not composite_pe and composite_ne:
+        elif not composite_pe and composite_ne:
 
-        #     def unwrap_params(
-        #         params: Tuple[np.float64, ...]
-        #     ) -> Tuple[
-        #         np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-        #     ]:
-        #         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
-        #         ocp_ne = self._composite_ocp(self.ocp_ne, ne_frac)
-        #         return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, self.ocp_pe[0], ocp_ne
+            def unwrap_params(
+                params: Tuple[np.float64, ...]
+            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
+                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
+                self.ocp_ne = cast(CompositeOCP, self.ocp_ne)
+                self.ocp_ne.comp_fraction = ne_frac
+                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
 
-        # else:  # composite_pe and composite_ne are both True
+        else:  # composite_pe and composite_ne are both True
 
-        #     def unwrap_params(
-        #         params: Tuple[np.float64, ...]
-        #     ) -> Tuple[
-        #         np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-        #     ]:
-        #         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
-        #         ocp_pe = self._composite_ocp(self.ocp_pe, pe_frac)
-        #         ocp_ne = self._composite_ocp(self.ocp_ne, ne_frac)
-        #         return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, ocp_ne
+            def unwrap_params(
+                params: Tuple[np.float64, ...]
+            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
+                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
+                self.ocp_pe = cast(CompositeOCP, self.ocp_pe)
+                self.ocp_ne = cast(CompositeOCP, self.ocp_ne)
+                self.ocp_pe.comp_fraction = pe_frac
+                self.ocp_ne.comp_fraction = ne_frac
+                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
 
         # Define the model function based on the fitting target
         if fitting_target == "OCV":
@@ -559,8 +557,14 @@ class DMA(BaseModel):
             "dVdQ": dVdSOC,
         }[fitting_target]
 
-        composite_pe = False
-        composite_ne = False
+        if isinstance(self.ocp_pe, CompositeOCP):
+            composite_pe = True
+        else:
+            composite_pe = False
+        if isinstance(self.ocp_ne, CompositeOCP):
+            composite_ne = True
+        else:
+            composite_ne = False
 
         objective_function = self._build_objective_function(
             SOC, fitting_target_data, fitting_target, composite_pe, composite_ne
