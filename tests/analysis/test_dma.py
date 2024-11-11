@@ -458,13 +458,10 @@ def test_run_batch_dma():
     ]
     dma = BatchDMA(
         input_data=input_data_list,
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
     )
-    x_pe = np.linspace(0, 1, 1000)
-    x_ne = np.linspace(0, 1, 1000)
-    ocv_pe = nmc_LGM50_ocp_Chen2020(x_pe)
-    ocv_ne = graphite_LGM50_ocp_Chen2020(x_ne)
-    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne")
+
     dma_result, fitted_ocvs = dma.run_batch_dma_parallel(
         fitting_target="OCV",
         optimizer="differential_evolution",

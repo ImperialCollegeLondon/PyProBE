@@ -826,8 +826,10 @@ class BatchDMA(BaseModel):
     """The a list of input data for the degradation mode analysis."""
 
     ocp_pe: OCP
+    """An object containing the positive electrode OCP functions."""
 
     ocp_ne: OCP
+    """An object containing the negative electrode OCP functions."""
 
     fitted_OCV: Optional[List[Result]] = None
     """A list of the fitted OCV data."""
