@@ -19,6 +19,120 @@ from pyprobe.result import Result
 from pyprobe.typing import FilterToCycleType, PyProBEDataType
 
 
+class OCP:
+    """A class for single-component electrode open circuit potential data."""
+
+    def set_from_data(
+        self,
+        stoichiometry: NDArray[np.float64],
+        ocp: NDArray[np.float64],
+        interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
+    ) -> None:
+        """Provide a OCP data for a given electrode.
+
+        Appends to the ocp list for the given electrode. Composite electrodes require
+        multiple calls to this method to provide the OCP data for each component.
+
+        Args:
+            stoichiometry (NDArray[np.float64]): The stoichiometry data.
+            ocp (NDArray[np.float64]): The OCP data.
+            interpolation_method
+                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
+                The interpolation method to use. Defaults to "linear".
+        """
+        interpolator = {
+            "linear": smoothing.linear_interpolator,
+            "cubic": smoothing.cubic_interpolator,
+            "Pchip": smoothing.pchip_interpolator,
+            "Akima": smoothing.akima_interpolator,
+        }[interpolation_method]
+        self.base_form = interpolator(stoichiometry, ocp)
+
+    def set_from_expression(self, sympy_expression: sp.Expr) -> None:
+        """Provide an OCP in analytical function form.
+
+        Args:
+            sympy_expression: A sympy expression for the OCP.
+        """
+        self.base_form = sympy_expression
+
+    @property
+    def eval(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """A callable function for ocp as a function of electrode stoichiometry."""
+        if not hasattr(self, "_eval"):
+            self._eval = self._get_eval(self.base_form)
+        return self._eval
+
+    @staticmethod
+    def _get_eval(
+        ocp_function: Union[
+            Callable[[NDArray[np.float64]], NDArray[np.float64]],
+            PPoly,
+            sp.Expr,
+        ]
+    ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """Retrieve a callable ocp function.
+
+        Args:
+            ocp_function: The OCP function.
+
+        Returns:
+            Callable[[NDArray[np.float64]], NDArray[np.float64]]: A callable function
+            for the OCP as a function of electrode stoichiometry.
+        """
+        if isinstance(ocp_function, sp.Expr):
+            return sp.lambdify(ocp_function.free_symbols.pop(), ocp_function, "numpy")
+        else:
+            return ocp_function
+
+    @property
+    def grad(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """The gradient of the OCP function."""
+        if not hasattr(self, "_grad"):
+            self._grad = self._get_gradient(self.base_form)
+        return self._grad
+
+    @staticmethod
+    def _get_gradient(
+        any_function: Union[
+            Callable[[NDArray[np.float64]], NDArray[np.float64]],
+            PPoly,
+            sp.Expr,
+        ]
+    ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """Retrieve the gradient of the OCP function.
+
+        Args:
+            any_function: The OCP function.
+
+        Returns:
+            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+                The gradient of the OCP.
+        """
+        if isinstance(any_function, PPoly):
+            return any_function.derivative()
+        elif isinstance(any_function, sp.Expr):
+            free_symbols = any_function.free_symbols
+            sto = free_symbols.pop()
+            gradient = sp.diff(any_function, sto)
+            return sp.lambdify(sto, gradient, "numpy")
+        elif callable(any_function):
+
+            def function_derivative(
+                sto: NDArray[np.float64],
+            ) -> NDArray[np.float64]:
+                """Numerically calculate the derivative."""
+                return np.gradient(any_function(sto), sto)
+
+            return function_derivative
+        else:
+            raise ValueError(
+                "OCP is not in a differentiable format. OCP must be a"
+                " PPoly object, a sympy expression or a callable function with a "
+                "single NDArray input and single NDArray output."
+            )
+
+
 # 1. Define the class as a Pydantic BaseModel.
 class DMA(BaseModel):
     """A class for degradation mode analysis methods."""

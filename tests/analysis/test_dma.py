@@ -6,11 +6,14 @@ import polars as pl
 import pytest
 import sympy as sp
 from pydantic import ValidationError
+from scipy.interpolate import PPoly
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import smoothing
-from pyprobe.analysis.degradation_mode_analysis import DMA, BatchDMA
+from pyprobe.analysis.degradation_mode_analysis import DMA, OCP, BatchDMA
 from pyprobe.result import Result
+
+"""Tests for the OCP class in the degradation mode analysis module."""
 
 
 @pytest.fixture
@@ -23,6 +26,94 @@ def stoichiometry_data():
 def ocp_data():
     """Sample ocp data."""
     return np.sin(np.linspace(0, np.pi, 1000))
+
+
+def test_set_from_data(stoichiometry_data, ocp_data):
+    """Test the set_from_data method."""
+    ocp = OCP()
+    ocp.set_from_data(stoichiometry_data, ocp_data)
+
+    pts = [0, 1, 2]
+    assert isinstance(ocp.base_form, PPoly)
+    np.testing.assert_allclose(
+        ocp.base_form(pts),
+        smoothing._LinearInterpolator(stoichiometry_data, ocp_data)(pts),
+    )
+
+
+def test_set_from_expression():
+    """Test the set_from_expression method."""
+    x = sp.symbols("x")
+    expression = 2 * x**2 + 3 * x + 1
+    ocp = OCP()
+    ocp.set_from_expression(expression)
+    assert ocp.base_form == expression
+
+
+def test_get_eval():
+    """Test the _get_eval method."""
+    # Test with sympy expression
+    x = sp.symbols("x")
+    expression = 2 * x**2 + 3 * x + 1
+    func = OCP._get_eval(expression)
+    x_pts = np.linspace(0, 10, 10)
+    np.testing.assert_allclose(func(x_pts), 2 * x_pts**2 + 3 * x_pts + 1)
+
+    # Test with standard function
+    def f_x(x):
+        return 2 * x**2 + 3 * x + 1
+
+    func = OCP._get_eval(f_x)
+    np.testing.assert_allclose(func(x_pts), 2 * x_pts**2 + 3 * x_pts + 1)
+
+
+def test_get_gradient_ppoly():
+    """Test the _get_gradient method with a PPoly object."""
+    # Create a PPoly object
+    c = np.array([[1, 2], [3, 4]])  # Coefficients
+    x = np.array([0, 1, 2])  # Breakpoints
+    ppoly = PPoly(c, x)
+    gradient = OCP._get_gradient(ppoly)
+    # Expected derivative
+    expected_gradient = ppoly.derivative()
+    # Test points
+    test_x = np.linspace(0, 2, 50)
+    np.testing.assert_allclose(gradient(test_x), expected_gradient(test_x))
+
+
+def test_get_gradient_sympy_expr():
+    """Test the _get_gradient method with a SymPy expression."""
+    # Create a SymPy expression
+    sto = sp.Symbol("x")
+    expr = sto**3 + 2 * sto**2 + sto
+    gradient = OCP._get_gradient(expr)
+    # Expected derivative
+    expected_gradient = sp.lambdify(sto, sp.diff(expr, sto), "numpy")
+    test_x = np.linspace(-10, 10, 100)
+    np.testing.assert_allclose(gradient(test_x), expected_gradient(test_x))
+
+
+def test_get_gradient_callable():
+    """Test the _get_gradient method with a callable function."""
+    test_x = np.linspace(0, 2 * np.pi, 100)
+
+    # Define a callable function
+    def any_function(x):
+        return np.sin(x)
+
+    gradient = OCP._get_gradient(any_function)
+
+    # Expected derivative
+    def expected_gradient(x):
+        return np.cos(x)
+
+    np.testing.assert_allclose(gradient(test_x), expected_gradient(test_x), rtol=1e-3)
+
+
+def test_get_gradient_invalid_input():
+    """Test the _get_gradient method with an invalid input."""
+    with pytest.raises(ValueError):
+        OCP._get_gradient(42)
 
 
 def test_add_ocp_from_data_pe(stoichiometry_data, ocp_data):
