@@ -116,120 +116,6 @@ def test_get_gradient_invalid_input():
         OCP._get_gradient(42)
 
 
-def test_add_ocp_from_data_pe(stoichiometry_data, ocp_data):
-    """Test the add_ocp_from_data method."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.add_ocp_from_data(
-        stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
-    )
-    assert dma.ocp_pe[0] is not None
-    assert callable(dma.ocp_pe[0])
-    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
-
-
-def test_add_ocp_from_data_ne(stoichiometry_data, ocp_data):
-    """Test the add_ocp_from_data method."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.add_ocp_from_data(stoichiometry_data, ocp_data, electrode="ne")
-    assert dma.ocp_ne[0] is not None
-    assert callable(dma.ocp_ne[0])
-    assert np.isclose(dma.ocp_ne[0](0.1), np.sin(0.1))
-
-
-def test_add_ocp_from_data_linear_interpolation(stoichiometry_data, ocp_data):
-    """Test the add_ocp_from_data method with linear interpolation."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.add_ocp_from_data(
-        stoichiometry_data, ocp_data, electrode="pe", interpolation_method="linear"
-    )
-    assert dma.ocp_pe[0] is not None
-    assert callable(dma.ocp_pe[0])
-    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
-
-
-def test_add_ocp_from_data_cubic_interpolation(stoichiometry_data, ocp_data):
-    """Test the add_ocp_from_data method with cubic interpolation."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.add_ocp_from_data(
-        stoichiometry_data, ocp_data, electrode="pe", interpolation_method="cubic"
-    )
-    assert dma.ocp_pe[0] is not None
-    assert callable(dma.ocp_pe[0])
-    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
-
-
-def test_add_ocp_from_data_multiple_components(stoichiometry_data, ocp_data):
-    """Test the add_ocp_from_data method with multiple components."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.add_ocp_from_data(
-        stoichiometry_data,
-        ocp_data,
-        electrode="pe",
-    )
-    dma.add_ocp_from_data(
-        stoichiometry_data,
-        ocp_data,
-        electrode="pe",
-    )
-    assert len(dma.ocp_pe) == 2
-    assert np.isclose(dma.ocp_pe[0](0.4), np.sin(0.4))
-    assert np.isclose(dma.ocp_pe[1](0.8), np.sin(0.8))
-
-
-def test_add_ocp_from_expression():
-    """Test the add_ocp_from_expression method."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    x = sp.symbols("x")
-    expression = 2 * x**2 + 3 * x + 1
-    dma.add_ocp_from_expression(expression, electrode="pe")
-    assert dma._ocp_pe[0] == expression
-    assert np.isclose(dma.ocp_pe[0](0.4), 2 * 0.4**2 + 3 * 0.4 + 1)
-
-
-def test_ocp_derivative_ppoly():
-    """Test _ocp_derivative with a PPoly object."""
-    x = np.array([0, 1, 2, 3])
-    y = np.array([0, 1, 0, -1])
-    ppoly_ocp = smoothing.linear_interpolator(x, y)
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    derivative = dma._ocp_derivative(ppoly_ocp)
-    assert callable(derivative)
-    x = np.array([0, 1, 2, 3])
-    np.testing.assert_allclose(derivative(x), np.array([1, -1, -1, -1]))
-
-
-def test_ocp_derivative_sympy():
-    """Test _ocp_derivative with a sympy expression."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    x = sp.symbols("x")
-    sympy_ocp = 2 * x**2 + 3 * x + 1
-    derivative = dma._ocp_derivative(sympy_ocp)
-    assert callable(derivative)
-    x = np.array([0, 1, 2, 3])
-    np.testing.assert_allclose(derivative(x), np.array([3, 7, 11, 15]))
-
-
-def test_ocp_derivative_function():
-    """Test _ocp_derivative with a python function."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-
-    def ocp(x):
-        """Sample OCP function."""
-        return 2 * x**2 + 3 * x + 1
-
-    derivative = dma._ocp_derivative(ocp)
-    assert callable(derivative)
-    x = np.linspace(0, 100, 100)
-    np.testing.assert_allclose(derivative(x)[1:-1], (4 * x + 3)[1:-1])
-
-
-def test_ocp_derivative_invalid():
-    """Test _ocp_derivative with an invalid input."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    with pytest.raises(ValueError, match="OCP is not in a differentiable format."):
-        dma._ocp_derivative("invalid_ocp")
-
-
 def graphite_LGM50_ocp_Chen2020(sto):
     """Chen2020 graphite ocp fit."""
     u_eq = (
@@ -256,11 +142,29 @@ def nmc_LGM50_ocp_Chen2020(sto):
     return u_eq
 
 
-def test_f_OCV():
+@pytest.fixture
+def ne_ocp_fixture():
+    """Fixture for the negative electrode OCP."""
+    ocp_ne = OCP()
+    ocp_ne.base_form = graphite_LGM50_ocp_Chen2020
+    return ocp_ne
+
+
+@pytest.fixture
+def pe_ocp_fixture():
+    """Fixture for the positive electrode OCP."""
+    ocp_pe = OCP()
+    ocp_pe.base_form = nmc_LGM50_ocp_Chen2020
+    return ocp_pe
+
+
+def test_f_OCV(ne_ocp_fixture, pe_ocp_fixture):
     """Test the f_OCV method."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    dma.ocp_ne = [graphite_LGM50_ocp_Chen2020]
-    dma.ocp_pe = [nmc_LGM50_ocp_Chen2020]
+    dma = DMA(
+        input_data=Result(base_dataframe=pl.DataFrame({}), info={}),
+        ocp_ne=ne_ocp_fixture,
+        ocp_pe=pe_ocp_fixture,
+    )
     x_pe_lo = 0.8
     x_pe_hi = 0.1
     x_ne_lo = 0.1
@@ -268,8 +172,6 @@ def test_f_OCV():
     soc = np.linspace(0, 1, 100)
     ocv = dma._f_OCV(
         soc,
-        nmc_LGM50_ocp_Chen2020,
-        graphite_LGM50_ocp_Chen2020,
         x_pe_lo,
         x_pe_hi,
         x_ne_lo,
@@ -282,35 +184,25 @@ def test_f_OCV():
     np.testing.assert_allclose(ocv, ocv_expected)
 
 
-def test_f_grad_OCV():
+def test_f_grad_OCV(ne_ocp_fixture, pe_ocp_fixture):
     """Test the f_grad_OCV method."""
-    dma = DMA(input_data=Result(base_dataframe=pl.DataFrame({}), info={}))
-    x_pts = np.linspace(0, 1, 100)
-    ocp_pe_pts = 2 * x_pts**2
-    ocp_pe = smoothing.cubic_interpolator(x=x_pts, y=ocp_pe_pts)
-    ocp_ne_pts = 3 * x_pts**3
-    ocp_ne = smoothing.cubic_interpolator(x=x_pts, y=ocp_ne_pts)
-    x_pe_lo = 0
-    x_pe_hi = 1
-    x_ne_lo = 0
-    x_ne_hi = 1
-    d_ocv = dma._f_grad_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
-    x_pe = np.linspace(x_pe_lo, x_pe_hi, 100)
-    x_ne = np.linspace(x_ne_lo, x_ne_hi, 100)
-    d_ocv_expected = 4 * x_pe - 9 * x_ne**2
-    np.testing.assert_allclose(d_ocv, d_ocv_expected, atol=1e-12)
-
+    dma = DMA(
+        input_data=Result(base_dataframe=pl.DataFrame({}), info={}),
+        ocp_ne=ne_ocp_fixture,
+        ocp_pe=pe_ocp_fixture,
+    )
+    soc = np.linspace(0, 1, 1000)
     x_pe_lo = 0.8
     x_pe_hi = 0.1
     x_ne_lo = 0.1
     x_ne_hi = 0.7
-    d_ocv = dma._f_grad_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
-    ocv_pts = dma._f_OCV(x_pts, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
-    numerical_d_ocv = np.gradient(ocv_pts, x_pts)
-    np.testing.assert_allclose(d_ocv, numerical_d_ocv, rtol=1e-3, atol=0.02)
+    d_ocv = dma._f_grad_OCV(soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    ocv_pts = dma._f_OCV(soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
+    numerical_d_ocv = np.gradient(ocv_pts, soc)
+    np.testing.assert_allclose(d_ocv, numerical_d_ocv)
 
 
-def test_run_ocv_curve_fit():
+def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
     """Test the run_ocv_curve_fit method."""
     x_pe_lo = 0.8
     x_pe_hi = 0.1
@@ -328,13 +220,12 @@ def test_run_ocv_curve_fit():
                 {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
             ),
             info={},
-        )
+        ),
+        ocp_ne=ne_ocp_fixture,
+        ocp_pe=pe_ocp_fixture,
     )
-    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe")
-    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne")
 
     d_ocv_target = np.gradient(ocv_target, soc)
-
     limits, fit = dma.run_ocv_curve_fit(
         fitting_target="OCV",
         optimizer="differential_evolution",
@@ -369,7 +260,7 @@ def test_run_ocv_curve_fit():
     )
 
 
-def test_run_ocv_curve_fit_dQdV():
+def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
     """Test the run_ocv_curve_fit method with target dQdV."""
     x_pe_lo = 0.9
     x_pe_hi = 0.1
@@ -390,10 +281,10 @@ def test_run_ocv_curve_fit_dQdV():
                 {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
             ),
             info={},
-        )
+        ),
+        ocp_ne=ne_ocp_fixture,
+        ocp_pe=pe_ocp_fixture,
     )
-    dma.ocp_ne = [graphite_LGM50_ocp_Chen2020]
-    dma.ocp_pe = [nmc_LGM50_ocp_Chen2020]
 
     limits, fit = dma.run_ocv_curve_fit(
         fitting_target="dQdV",
@@ -439,7 +330,7 @@ def test_run_ocv_curve_fit_dQdV():
     )
 
 
-def test_run_ocv_curve_fit_dVdQ():
+def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
     """Test the run_ocv_curve_fit method with target dVdQ."""
     x_pe_lo = 0.8
     x_pe_hi = 0.1
@@ -460,10 +351,10 @@ def test_run_ocv_curve_fit_dVdQ():
                 {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
             ),
             info={},
-        )
+        ),
+        ocp_ne=ne_ocp_fixture,
+        ocp_pe=pe_ocp_fixture,
     )
-    dma.add_ocp_from_data(x_pe, ocv_pe, electrode="pe", interpolation_method="Pchip")
-    dma.add_ocp_from_data(x_ne, ocv_ne, electrode="ne", interpolation_method="Pchip")
 
     limits, fit = dma.run_ocv_curve_fit(
         fitting_target="dVdQ",

@@ -141,6 +141,12 @@ class DMA(BaseModel):
     input_data: PyProBEDataType
     """The input data for the degradation mode analysis."""
 
+    ocp_pe: OCP
+    """An object containing the positive electrode OCP functions."""
+
+    ocp_ne: OCP
+    """An object containing the negative electrode OCP functions."""
+
     # 3. Define the attributes that will be populated by the methods.
     stoichiometry_limits: Optional[Result] = None
     """The stoichiometry limits and electrode capacities."""
@@ -149,21 +155,10 @@ class DMA(BaseModel):
     dma_result: Optional[Result] = None
     """The degradation mode analysis results."""
 
-    _ocp_pe: List[
-        Union[
-            Callable[[NDArray[np.float64]], NDArray[np.float64]],
-            PPoly,
-            sp.Expr,
-        ]
-    ] = []
+    class Config:
+        """Pydantic configuration settings."""
 
-    _ocp_ne: List[
-        Union[
-            Callable[[NDArray[np.float64]], NDArray[np.float64]],
-            PPoly,
-            sp.Expr,
-        ]
-    ] = []
+        arbitrary_types_allowed = True
 
     def downsample_ocv(
         self,
@@ -199,176 +194,9 @@ class DMA(BaseModel):
         )
         return self.input_data
 
-    def _get_ocp_functions(
-        self,
-        ocp_list: List[Callable[[NDArray[np.float64]], NDArray[np.float64]]],
-    ) -> List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]:
-        """Helper method to initialize and return OCP functions."""
-        ocp_functions = []
-        for ocp in ocp_list:
-            if isinstance(ocp, sp.Expr):
-                ocp_functions.append(sp.lambdify(ocp.free_symbols.pop(), ocp, "numpy"))
-            else:
-                ocp_functions.append(ocp)
-        return ocp_functions
-
-    @property
-    def ocp_pe(
-        self,
-    ) -> List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]:
-        """Return a list of positive electrode OCPs as a function of stoichiometry.
-
-        Returns:
-            List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]:
-                A list of positive electrode OCPs as a function of stoichiometry.
-        """
-        if not hasattr(self, "_f_ocp_pe"):
-            self._f_ocp_pe = self._get_ocp_functions(self._ocp_pe)
-        return self._f_ocp_pe
-
-    @ocp_pe.setter
-    def ocp_pe(
-        self,
-        value: List[Callable[[NDArray[np.float64]], NDArray[np.float64]]],
-    ) -> None:
-        """Set the OCP data for the positive electrode.
-
-        Args:
-            value (List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]):
-                The OCP data for the positive electrode. Provide a list of functions
-                that take stoichiometry as input and return OCP as output.
-        """
-        self._f_ocp_pe = value
-        self._ocp_pe = value
-
-    @property
-    def ocp_ne(
-        self,
-    ) -> List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]:
-        """Return a list of negative electrode OCPs as a function of stoichiometry.
-
-        Returns:
-            List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]:
-                A list of negative electrode OCPs as a function of stoichiometry.
-        """
-        if not hasattr(self, "_f_ocp_ne"):
-            self._f_ocp_ne = self._get_ocp_functions(self._ocp_ne)
-        return self._f_ocp_ne
-
-    @ocp_ne.setter
-    def ocp_ne(
-        self,
-        value: List[Callable[[NDArray[np.float64]], NDArray[np.float64]]],
-    ) -> None:
-        """Set the OCP data for the negative electrode.
-
-        Args:
-            value (List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]):
-                The OCP data for the negative electrode. Provide a list of functions
-                that take stoichiometry as input and return OCP as output.
-        """
-        self._f_ocp_ne = value
-        self._ocp_ne = value
-
-    def add_ocp_from_data(
-        self,
-        stoichiometry: NDArray[np.float64],
-        ocp: NDArray[np.float64],
-        electrode: Literal["pe", "ne"],
-        interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-    ) -> None:
-        """Provide a OCP data for a given electrode.
-
-        Appends to the ocp list for the given electrode. Composite electrodes require
-        multiple calls to this method to provide the OCP data for each component.
-
-        Args:
-            stoichiometry (NDArray[np.float64]): The stoichiometry data.
-            ocp (NDArray[np.float64]): The OCP data.
-            electrode (Literal["pe", "ne"]): The electrode to set the OCP data for.
-            interpolation_method
-                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
-                The interpolation method to use. Defaults to "linear".
-        """
-        interpolator = {
-            "linear": smoothing.linear_interpolator,
-            "cubic": smoothing.cubic_interpolator,
-            "Pchip": smoothing.pchip_interpolator,
-            "Akima": smoothing.akima_interpolator,
-        }[interpolation_method](stoichiometry, ocp)
-        if electrode == "pe":
-            self._ocp_pe.append(interpolator)
-        elif electrode == "ne":
-            self._ocp_ne.append(interpolator)
-
-    def add_ocp_from_expression(
-        self,
-        ocp: sp.Expr,
-        electrode: Literal["pe", "ne"],
-    ) -> None:
-        """Provide the OCP data for a given electrode.
-
-        Appends to the ocp list for the given electrode. Composite electrodes require
-        multiple calls to this method to provide the OCP data for each component.
-
-        Args:
-            ocp (sp.Expr): A sympy expression for the OCP.
-            electrode (Literal["pe", "ne"]): Electrode to set the OCP data for.
-        """
-        if electrode == "pe":
-            self._ocp_pe.append(ocp)
-        elif electrode == "ne":
-            self._ocp_ne.append(ocp)
-
-    def _ocp_derivative(
-        self, ocp: Callable[[NDArray], NDArray]
-    ) -> Callable[[NDArray], NDArray]:
-        """Calculate the derivative of each OCP.
-
-        Args:
-            ocp_list (Callable[[NDArray], NDArray]):
-                The OCP function. Must be a differentiable function. Currently supported
-                formats are scipy.interpolate.PPoly objects or sympy expressions.
-
-        Returns:
-            Callable[[NDArray], NDArray]: The derivative of the OCP.
-        """
-
-        def _check_free_symbols(free_symbols: set[sp.Symbol]) -> sp.Symbol:
-            if len(free_symbols) == 1:
-                return free_symbols.pop()
-            else:
-                raise ValueError(
-                    "OCP must be a function of a single variable, " "the stoichiometry."
-                )
-
-        if isinstance(ocp, PPoly):
-            return ocp.derivative()
-        elif isinstance(ocp, sp.Expr):
-            free_symbols = ocp.free_symbols
-            sto = _check_free_symbols(free_symbols)
-            gradient = sp.diff(ocp, sto)
-            return sp.lambdify(sto, gradient, "numpy")
-        elif callable(ocp):
-
-            def function_derivative(
-                sto: NDArray[np.float64],
-            ) -> NDArray[np.float64]:
-                """Numerically calculate the derivative."""
-                return np.gradient(ocp(sto), sto)
-
-            return function_derivative
-        else:
-            raise ValueError(
-                "OCP is not in a differentiable format. OCP must be a"
-                " PPoly object or a sympy expression."
-            )
-
-    @staticmethod
     def _f_OCV(
+        self,
         SOC: NDArray[np.float64],
-        ocp_pe: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-        ocp_ne: Callable[[NDArray[np.float64]], NDArray[np.float64]],
         x_pe_lo: NDArray[np.float64],
         x_pe_hi: NDArray[np.float64],
         x_ne_lo: NDArray[np.float64],
@@ -396,13 +224,11 @@ class DMA(BaseModel):
         z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
 
         # Return the full cell OCV
-        return ocp_pe(z_pe) - ocp_ne(z_ne)
+        return self.ocp_pe.eval(z_pe) - self.ocp_ne.eval(z_ne)
 
     def _f_grad_OCV(
         self,
         SOC: NDArray[np.float64],
-        ocp_pe: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-        ocp_ne: Callable[[NDArray[np.float64]], NDArray[np.float64]],
         x_pe_lo: NDArray[np.float64],
         x_pe_hi: NDArray[np.float64],
         x_ne_lo: NDArray[np.float64],
@@ -428,8 +254,6 @@ class DMA(BaseModel):
             Callable[[NDArray[np.float64]], NDArray[np.float64]]:
                 A function to calculate the full cell OCV gradient as a function of SOC.
         """
-        d_ocp_pe = self._ocp_derivative(ocp_pe)
-        d_ocp_ne = self._ocp_derivative(ocp_ne)
         # Calculate the stoichiometry at the given SOC for each electrode
         z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
         z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
@@ -439,40 +263,7 @@ class DMA(BaseModel):
         d_z_ne = x_ne_hi - x_ne_lo
 
         # Calculate the full cell OCV gradient using the chain rule
-        return d_ocp_pe(z_pe) * d_z_pe - d_ocp_ne(z_ne) * d_z_ne
-
-    def _composite_ocp(
-        self,
-        ocp_list: List[Callable[[NDArray[np.float64]], NDArray[np.float64]]],
-        frac: float,
-    ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-        """Calculate the composite OCP for a given electrode.
-
-        Args:
-            ocp_list (List[Callable[[NDArray[np.float64]], NDArray[np.float64]]]):
-                The OCP function for each component of the composite electrode.
-            frac (float):
-                The fraction of the composite electrode capacity attributed to the first
-                component of the ocp list.
-
-        Returns:
-            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-                The composite OCP for the electrode as a function of stoichiometry.
-        """
-        n_points = 10001
-
-        # determine common voltage range for components
-        V_upper = min(ocp_list[0](0), ocp_list[1](0))
-        V_lower = max(ocp_list[0](1), ocp_list[1](1))
-
-        # Create a linearly spaced voltage series for electrode ocp
-        ocp_composite = np.linspace(V_lower, V_upper, n_points)
-
-        # Calculate the electrode stoichiometry vector
-        x_composite = frac * ocp_list[0](ocp_composite) + (1 - frac) * ocp_list[1](
-            ocp_composite
-        )
-        return smoothing.linear_interpolator(x_composite, ocp_composite)
+        return self.ocp_pe.grad(z_pe) * d_z_pe - self.ocp_ne.grad(z_ne) * d_z_ne
 
     def _build_objective_function(
         self,
@@ -498,60 +289,54 @@ class DMA(BaseModel):
 
             def unwrap_params(
                 params: Tuple[np.float64, ...]
-            ) -> Tuple[
-                np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-            ]:
+            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
                 x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
                 return (
                     x_pe_lo,
                     x_pe_hi,
                     x_ne_lo,
                     x_ne_hi,
-                    self.ocp_pe[0],
-                    self.ocp_ne[0],
                 )
 
-        elif composite_pe and not composite_ne:
+        # elif composite_pe and not composite_ne:
 
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[
-                np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-            ]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
-                ocp_pe = self._composite_ocp(self.ocp_pe, pe_frac)
-                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, self.ocp_ne[0]
+        #     def unwrap_params(
+        #         params: Tuple[np.float64, ...]
+        #     ) -> Tuple[
+        #         np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
+        #     ]:
+        #         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
+        #         ocp_pe = self._composite_ocp(self.ocp_pe, pe_frac)
+        #         return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, self.ocp_ne[0]
 
-        elif not composite_pe and composite_ne:
+        # elif not composite_pe and composite_ne:
 
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[
-                np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-            ]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
-                ocp_ne = self._composite_ocp(self.ocp_ne, ne_frac)
-                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, self.ocp_pe[0], ocp_ne
+        #     def unwrap_params(
+        #         params: Tuple[np.float64, ...]
+        #     ) -> Tuple[
+        #         np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
+        #     ]:
+        #         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
+        #         ocp_ne = self._composite_ocp(self.ocp_ne, ne_frac)
+        #         return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, self.ocp_pe[0], ocp_ne
 
-        else:  # composite_pe and composite_ne are both True
+        # else:  # composite_pe and composite_ne are both True
 
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[
-                np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
-            ]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
-                ocp_pe = self._composite_ocp(self.ocp_pe, pe_frac)
-                ocp_ne = self._composite_ocp(self.ocp_ne, ne_frac)
-                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, ocp_ne
+        #     def unwrap_params(
+        #         params: Tuple[np.float64, ...]
+        #     ) -> Tuple[
+        #         np.float64, np.float64, np.float64, np.float64, np.float64, np.float64
+        #     ]:
+        #         x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
+        #         ocp_pe = self._composite_ocp(self.ocp_pe, pe_frac)
+        #         ocp_ne = self._composite_ocp(self.ocp_ne, ne_frac)
+        #         return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, ocp_ne
 
         # Define the model function based on the fitting target
         if fitting_target == "OCV":
 
             def model_function(
                 SOC: NDArray[np.float64],
-                ocp_pe: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-                ocp_ne: Callable[[NDArray[np.float64]], NDArray[np.float64]],
                 x_pe_lo: float,
                 x_pe_hi: float,
                 x_ne_lo: float,
@@ -559,8 +344,6 @@ class DMA(BaseModel):
             ) -> NDArray[np.float64]:
                 return self._f_OCV(
                     SOC,
-                    ocp_pe,
-                    ocp_ne,
                     x_pe_lo,
                     x_pe_hi,
                     x_ne_lo,
@@ -571,23 +354,17 @@ class DMA(BaseModel):
 
             def model_function(
                 SOC: NDArray[np.float64],
-                ocp_pe: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-                ocp_ne: Callable[[NDArray[np.float64]], NDArray[np.float64]],
                 x_pe_lo: float,
                 x_pe_hi: float,
                 x_ne_lo: float,
                 x_ne_hi: float,
             ) -> NDArray[np.float64]:
-                return self._f_grad_OCV(
-                    SOC, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
-                )
+                return self._f_grad_OCV(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
 
         elif fitting_target == "dQdV":
 
             def model_function(
                 SOC: NDArray[np.float64],
-                ocp_pe: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-                ocp_ne: Callable[[NDArray[np.float64]], NDArray[np.float64]],
                 x_pe_lo: float,
                 x_pe_hi: float,
                 x_ne_lo: float,
@@ -595,7 +372,7 @@ class DMA(BaseModel):
             ) -> NDArray[np.float64]:
                 with np.errstate(divide="ignore", invalid="ignore"):
                     model = 1 / self._f_grad_OCV(
-                        SOC, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+                        SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
                     )
                     model[~np.isfinite(model)] = np.inf
                 return model
@@ -616,10 +393,8 @@ class DMA(BaseModel):
             Returns:
                 NDArray[np.float64]: The residuals between the data and the fit.
             """
-            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, ocp_ne = unwrap_params(params)
-            model = model_function(
-                SOC, ocp_pe, ocp_ne, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
-            )
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = unwrap_params(params)
+            model = model_function(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
             return np.sum((model - fitting_target_data) ** 2)
 
         return _objective_function
@@ -679,19 +454,8 @@ class DMA(BaseModel):
             "dVdQ": dVdSOC,
         }[fitting_target]
 
-        if len(self.ocp_pe) == 1:
-            composite_pe = False
-        elif len(self.ocp_pe) == 2:
-            composite_pe = True
-        else:
-            raise ValueError("Only two component composite electrodes are supported.")
-
-        if len(self.ocp_ne) == 1:
-            composite_ne = False
-        elif len(self.ocp_ne) == 2:
-            composite_ne = True
-        else:
-            raise ValueError("Only two component composite electrodes are supported.")
+        composite_pe = False
+        composite_ne = False
 
         objective_function = self._build_objective_function(
             SOC, fitting_target_data, fitting_target, composite_pe, composite_ne
@@ -761,8 +525,6 @@ class DMA(BaseModel):
 
         fitted_voltage = self._f_OCV(
             SOC,
-            self.ocp_pe[0],
-            self.ocp_ne[0],
             x_pe_lo,
             x_pe_hi,
             x_ne_lo,
@@ -770,8 +532,6 @@ class DMA(BaseModel):
         )
         fitted_dVdSOC = self._f_grad_OCV(
             SOC,
-            self.ocp_pe[0],
-            self.ocp_ne[0],
             x_pe_lo,
             x_pe_hi,
             x_ne_lo,
@@ -1012,6 +772,8 @@ class DMA(BaseModel):
         input_data: FilterToCycleType,
         discharge_filter: Optional[str] = None,
         charge_filter: Optional[str] = None,
+        ocp_pe: OCP = OCP(),
+        ocp_ne: OCP = OCP(),
     ) -> "DMA":
         """Average the charge and discharge OCV curves.
 
@@ -1062,7 +824,7 @@ class DMA(BaseModel):
                 }
             )
         )
-        return DMA(input_data=average_result)
+        return DMA(input_data=average_result, ocp_pe=ocp_pe, ocp_ne=ocp_ne)
 
 
 def _run_ocv_curve_fit_with_index(
@@ -1096,6 +858,10 @@ class BatchDMA(BaseModel):
     input_data: List[PyProBEDataType]
     """The a list of input data for the degradation mode analysis."""
 
+    ocp_pe: OCP
+
+    ocp_ne: OCP
+
     fitted_OCV: Optional[List[Result]] = None
     """A list of the fitted OCV data."""
 
@@ -1110,7 +876,10 @@ class BatchDMA(BaseModel):
     def dma_objects(self) -> List[DMA]:
         """Return the DMA objects."""
         if not hasattr(self, "_dma_objects"):
-            self._dma_objects = [DMA(input_data=data) for data in self.input_data]
+            self._dma_objects = [
+                DMA(input_data=data, ocp_ne=self.ocp_ne, ocp_pe=self.ocp_pe)
+                for data in self.input_data
+            ]
         return self._dma_objects
 
     def downsample_ocv(
@@ -1144,48 +913,6 @@ class BatchDMA(BaseModel):
             )
             for dma_object in self.dma_objects
         ]
-
-    def add_ocp_from_data(
-        self,
-        stoichiometry: NDArray[np.float64],
-        ocp: NDArray[np.float64],
-        electrode: Literal["pe", "ne"],
-        interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-    ) -> None:
-        """Provide the OCP data for a given electrode.
-
-        Args:
-            stoichiometry (NDArray[np.float64]): The stoichiometry data.
-            ocp (NDArray[np.float64]): The OCP data.
-            electrode (Literal["pe", "ne"]): The electrode to set the OCP data for.
-            interpolation_method
-                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
-                The interpolation method to use. Defaults to "linear".
-        """
-        for dma_object in self.dma_objects:
-            dma_object.add_ocp_from_data(
-                stoichiometry=stoichiometry,
-                ocp=ocp,
-                electrode=electrode,
-                interpolation_method=interpolation_method,
-            )
-
-    def add_ocp_from_expression(
-        self,
-        ocp: sp.Expr,
-        electrode: Literal["pe", "ne"],
-    ) -> None:
-        """Provide the OCP data for a given electrode.
-
-        Args:
-            ocp (sp.Expr): _description_
-            electrode (Literal["pe", "ne"]): Electrode to set the OCP data for.
-        """
-        for dma_object in self.dma_objects:
-            dma_object.add_ocp_from_expression(
-                ocp=ocp,
-                electrode=electrode,
-            )
 
     def run_batch_dma_parallel(
         self,
