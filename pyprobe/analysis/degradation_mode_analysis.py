@@ -886,7 +886,6 @@ def run_batch_dma_parallel(
         [item for i, item in enumerate(dma_results) if i != dma_0_position]
     )
     all_final_results = all_stoichiometry_limits
-    print(all_final_results)
     all_final_results.join(all_dma_results, on="Index", how="left")
     all_final_results.base_dataframe = all_final_results.base_dataframe.sort("Index")
     all_final_results.define_column(
