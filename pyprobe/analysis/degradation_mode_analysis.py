@@ -2,6 +2,7 @@
 
 import concurrent.futures
 import copy
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
@@ -59,7 +60,23 @@ def _get_gradient(
         )
 
 
-class OCP:
+class _AbstractOCP(ABC):
+    """An abstract class for open circuit potential data."""
+
+    @property
+    @abstractmethod
+    def eval(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """A callable function for ocp as a function of electrode stoichiometry."""
+        pass
+
+    @property
+    @abstractmethod
+    def grad(self) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+        """The gradient of the OCP function."""
+        pass
+
+
+class OCP(_AbstractOCP):
     """A class for single-component electrode open circuit potential data.
 
     Args:
@@ -140,7 +157,7 @@ class OCP:
         return self._grad
 
 
-class CompositeOCP:
+class CompositeOCP(_AbstractOCP):
     """A class for composite electrode open circuit potential data.
 
     Args:
