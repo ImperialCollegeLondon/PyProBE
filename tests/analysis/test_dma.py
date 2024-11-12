@@ -282,6 +282,17 @@ def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
         fit.data["Fitted dVdSOC [V]"].to_numpy(), d_ocv_target, rtol=0.005, atol=0.005
     )
 
+    # test with invalid input
+    with pytest.raises(ValueError):
+        dma.run_ocv_curve_fit(
+            input_data,
+            np.ones(10),
+            np.ones(10),
+            fitting_target="invalid",
+            optimizer="invalid",
+            optimizer_options={},
+        )
+
 
 def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
     """Test the run_ocv_curve_fit method with target dQdV."""
@@ -481,6 +492,17 @@ def test_run_batch_dma():
         fitted_ocvs[2].data["Input Voltage [V]"], ocv_target_list[2]
     )
 
+    # test with invalid input
+    with pytest.raises(ValueError):
+        dma.run_batch_dma_parallel(
+            input_data_list=[Result(base_dataframe=pl.DataFrame({}), info={})],
+            ocp_ne=np.ones(10),
+            ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+            fitting_target="OCV",
+            optimizer="differential_evolution",
+            optimizer_options={},
+        )
+
 
 n_points = 1000
 z = np.linspace(0, 1, 1000)
@@ -601,6 +623,9 @@ def test_calculate_dma_parameters(
         ),
         info={},
     )
+
+    with pytest.raises(ValueError):
+        dma.quantify_degradation_modes(result, bol_stoich_fixture)
 
 
 def test_calc_full_cell_ocv_composite():

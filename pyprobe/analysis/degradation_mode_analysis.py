@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 import sympy as sp
 from numpy.typing import NDArray
-from pydantic import validate_call
+from pydantic import ConfigDict, validate_call
 from scipy import optimize
 from scipy.interpolate import PPoly
 
@@ -494,6 +494,7 @@ def _build_objective_function(
     return _objective_function
 
 
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_ocv_curve_fit(
     input_data: PyProBEDataType,
     ocp_pe: Union[OCP, CompositeOCP],
@@ -672,6 +673,7 @@ def run_ocv_curve_fit(
     return input_stoichiometry_limits, fitted_OCV
 
 
+@validate_call
 def quantify_degradation_modes(
     input_stoichiometry_limits: Result, reference_stoichiometry_limits: Result
 ) -> Result:
@@ -770,6 +772,7 @@ def _quantify_degradation_modes_with_index(
     return index, result
 
 
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_parallel(
     input_data_list: List[PyProBEDataType],
     ocp_pe: Union[OCP, CompositeOCP],
