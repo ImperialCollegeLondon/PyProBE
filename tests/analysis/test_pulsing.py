@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+import pyprobe.analysis.pulsing as pulsing
 from pyprobe.analysis.pulsing import Pulsing
 from pyprobe.result import Result
 
@@ -37,3 +38,28 @@ def test_pulse_summary(Pulsing_fixture):
     assert np.isclose(
         pulse_summary.get("R_10s [Ohms]")[0], (4.1337 - 4.1919) / -0.0199936
     )
+
+
+def test_get_ocv_curve(procedure_fixture):
+    """Test the get_ocv_curve method."""
+    procedure_fixture.set_SOC(
+        reference_charge=procedure_fixture.experiment("Break-in Cycles").charge(-1)
+    )
+    input_data = procedure_fixture.experiment("Discharge Pulses")
+    result = pulsing.get_ocv_curve(input_data)
+    expected_ocv_points = [
+        4.1919,
+        4.0949,
+        3.9934,
+        3.8987,
+        3.8022,
+        3.7114,
+        3.665,
+        3.6334,
+        3.5866,
+        3.5164,
+        3.4513,
+    ]
+    assert isinstance(result, Result)
+    assert result.column_list == input_data.column_list
+    assert np.allclose(result.get("Voltage [V]"), expected_ocv_points)

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Experiment, Step
 from pyprobe.result import Result
+from pyprobe.typing import PyProBEDataType
 
 
 class Pulsing(BaseModel):
@@ -198,3 +199,62 @@ class Pulsing(BaseModel):
                 f"after the pulse.",
             )
         return result
+
+
+def _get_pulse_number(data: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame | pl.LazyFrame:
+    """Return the pulse number for each row in the input data.
+
+    Args:
+        data: The input data.
+
+    Returns:
+        The input data with a new column "Pulse Number".
+    """
+    return data.with_columns(
+        ((pl.col("Current [A]").shift() == 0) & (pl.col("Current [A]") != 0))
+        .cum_sum()
+        .alias("Pulse Number")
+    )
+
+
+def _get_end_of_rest_points(
+    data: pl.DataFrame | pl.LazyFrame,
+) -> pl.DataFrame | pl.LazyFrame:
+    """Return the last OCV point and timestamp before each pulse.
+
+    Args:
+        data: The input data.
+
+    Returns:
+        The input data with new columns "OCV [V]" and "Start Time [s]".
+    """
+    if "Pulse Number" not in data.columns:
+        data = _get_pulse_number(data)
+    return (
+        data.filter(pl.col("Current [A]") == 0)
+        .group_by("Pulse Number")
+        .last()
+        .with_columns(pl.col("Pulse Number") + 1)
+        .sort("Pulse Number")
+    )
+
+
+def get_ocv_curve(input_data: PyProBEDataType) -> Result:
+    """Filter down a pulsing experiment to the points representing the cell OCV.
+
+    Args:
+        input_data: The input data for the pulsing experiment.
+
+    Returns:
+        A new Result object containing the OCV curve.
+    """
+    AnalysisValidator(
+        input_data=input_data,
+        required_columns=["Current [A]", "Voltage [V]", "Time [s]", "SOC"],
+    )
+
+    all_data_df = input_data.base_dataframe
+    ocv_df = _get_end_of_rest_points(all_data_df).drop("Pulse Number")
+    return input_data.clean_copy(
+        ocv_df, column_definitions=input_data.column_definitions
+    )
