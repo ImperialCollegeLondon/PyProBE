@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 import sympy as sp
 from numpy.typing import NDArray
-from pydantic import BaseModel, validate_call
+from pydantic import validate_call
 from scipy import optimize
 from scipy.interpolate import PPoly
 
@@ -243,558 +243,516 @@ class CompositeOCP(_AbstractOCP):
         return _get_gradient(self.eval)
 
 
-# 1. Define the class as a Pydantic BaseModel.
-class DMA(BaseModel):
-    """A class for degradation mode analysis methods."""
+def _f_OCV(
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
+    SOC: NDArray[np.float64],
+    x_pe_lo: NDArray[np.float64],
+    x_pe_hi: NDArray[np.float64],
+    x_ne_lo: NDArray[np.float64],
+    x_ne_hi: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    """Calculate the full cell OCV as a function of SOC.
 
-    # 2. Define the input_data attribute, giving it a type
-    input_data: PyProBEDataType
-    """The input data for the degradation mode analysis."""
+    Args:
+        SOC: The full cell SOC.
+        ocp_pe: The positive electrode OCP as a function of stoichiometry.
+        ocp_ne: The negative electrode OCP as a function of stoichiometry.
+        x_pe_lo: The cathode stoichiometry at lowest cell SOC.
+        x_pe_hi: The cathode stoichiometry at highest cell SOC.
+        x_ne_lo: The cathode stoichiometry at lowest cell SOC.
+        x_ne_hi: The anode stoichiometry at highest cell SOC.
 
-    ocp_pe: OCP | CompositeOCP
-    """An object containing the positive electrode OCP functions."""
+    Returns:
+        A function to calculate the full cell OCV as a function of SOC.
+    """
+    # Calculate the stoichiometry at the given SOC for each electrode
+    z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
+    z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
 
-    ocp_ne: OCP | CompositeOCP
-    """An object containing the negative electrode OCP functions."""
+    # Return the full cell OCV
+    return ocp_pe.eval(z_pe) - ocp_ne.eval(z_ne)
 
-    # 3. Define the attributes that will be populated by the methods.
-    stoichiometry_limits: Optional[Result] = None
-    """The stoichiometry limits and electrode capacities."""
-    fitted_OCV: Optional[Result] = None
-    """The fitted OCV data."""
-    dma_result: Optional[Result] = None
-    """The degradation mode analysis results."""
 
-    class Config:
-        """Pydantic configuration settings."""
+def _f_grad_OCV(
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
+    SOC: NDArray[np.float64],
+    x_pe_lo: NDArray[np.float64],
+    x_pe_hi: NDArray[np.float64],
+    x_ne_lo: NDArray[np.float64],
+    x_ne_hi: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    """Calculate the full cell OCV gradient as a function of SOC.
 
-        arbitrary_types_allowed = True
+    Derivative is calculated using the chain rule:
+    d(OCV)/d(SOC) = d(OCV)/d(z_pe) * d(z_pe)/d(SOC)
+                    - d(OCV)/d(z_ne) * d(z_ne)/d(SOC)
+    Args:
+        SOC: The full cell SOC.
+        ocp_pe: The OCP function for the positive electrode.
+        ocp_ne: The OCP function for the negative electrode.
+        x_pe_lo: The cathode stoichiometry at lowest cell SOC.
+        x_pe_hi: The cathode stoichiometry at highest cell SOC.
+        x_ne_lo: The cathode stoichiometry at lowest cell SOC.
+        x_ne_hi: The anode stoichiometry at highest cell SOC.
 
-    def downsample_ocv(
-        self,
-        sampling_interval: float,
-        occurrence: Literal["first", "last", "middle"] = "first",
-        time_column: str = "Time [s]",
-    ) -> Result:
-        """Downsample the OCV data to a specified sampling interval.
+    Returns:
+        A function to calculate the full cell OCV gradient as a function of SOC.
+    """
+    # Calculate the stoichiometry at the given SOC for each electrode
+    z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
+    z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
 
-        This method updates the input_data attribute with the downsampled data, and
-        returns a Result object. The logic is based on
-        :func:`pyprobe.analysis.smoothing.downsample_data`, which also provides the
-        logic for the :func:`pyprobe.analysis.smoothing.Smoothing.downsample` method.
+    # Calculate the gradient of electrode stoichiometry with respect to SOC
+    d_z_pe = x_pe_hi - x_pe_lo
+    d_z_ne = x_ne_hi - x_ne_lo
 
-        Args:
-            sampling_interval: The sampling interval for the downsampled data.
-            occurrence: The occurrence to use when downsampling. Defaults to "first".
-            time_column: The column containing the time data. Defaults to "Time [s]".
+    # Calculate the full cell OCV gradient using the chain rule
+    return ocp_pe.grad(z_pe) * d_z_pe - ocp_ne.grad(z_ne) * d_z_ne
 
-        Returns:
-            A result object containing the downsampled OCV data.
-        """
-        required_columns = ["Voltage [V]", time_column]
-        AnalysisValidator(input_data=self.input_data, required_columns=required_columns)
-        self.input_data.base_dataframe = smoothing.downsample_data(
-            df=self.input_data.base_dataframe,
-            target="Voltage [V]",
-            sampling_interval=sampling_interval,
-            occurrence=occurrence,
-            time_column=time_column,
-        )
-        return self.input_data
 
-    def _f_OCV(
-        self,
-        SOC: NDArray[np.float64],
-        x_pe_lo: NDArray[np.float64],
-        x_pe_hi: NDArray[np.float64],
-        x_ne_lo: NDArray[np.float64],
-        x_ne_hi: NDArray[np.float64],
-    ) -> NDArray[np.float64]:
-        """Calculate the full cell OCV as a function of SOC.
+def _build_objective_function(
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
+    SOC: NDArray[np.float64],
+    fitting_target_data: NDArray[np.float64],
+    fitting_target: Literal["OCV", "dQdV", "dVdQ"],
+    composite_pe: bool,
+    composite_ne: bool,
+) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
+    """Get the objective function for the OCV curve fitting.
 
-        Args:
-            SOC: The full cell SOC.
-            ocp_pe: The positive electrode OCP as a function of stoichiometry.
-            ocp_ne: The negative electrode OCP as a function of stoichiometry.
-            x_pe_lo: The cathode stoichiometry at lowest cell SOC.
-            x_pe_hi: The cathode stoichiometry at highest cell SOC.
-            x_ne_lo: The cathode stoichiometry at lowest cell SOC.
-            x_ne_hi: The anode stoichiometry at highest cell SOC.
+    Args:
+        ocp_pe: An object representing the positive electrode OCP.
+        ocp_ne: An object representing the negative electrode OCP.
+        SOC: The full cell SOC.
+        fitting_target_data: The data to fit.
+        fitting_target: The target for the curve fitting.
+        composite_pe: Whether the positive electrode is composite.
+        composite_ne: Whether the negative electrode is composite.
+    """
+    # Define the unwrap_params function based on the values of composite_pe and
+    # composite_ne
+    if not composite_pe and not composite_ne:
 
-        Returns:
-            A function to calculate the full cell OCV as a function of SOC.
-        """
-        # Calculate the stoichiometry at the given SOC for each electrode
-        z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
-        z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
+        def unwrap_params(
+            params: Tuple[np.float64, ...]
+        ) -> Tuple[
+            float,
+            float,
+            float,
+            float,
+            Union[OCP, CompositeOCP],
+            Union[OCP, CompositeOCP],
+        ]:
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
+            return (
+                x_pe_lo,
+                x_pe_hi,
+                x_ne_lo,
+                x_ne_hi,
+                ocp_pe,
+                ocp_ne,
+            )
 
-        # Return the full cell OCV
-        return self.ocp_pe.eval(z_pe) - self.ocp_ne.eval(z_ne)
+    elif composite_pe and not composite_ne:
 
-    def _f_grad_OCV(
-        self,
-        SOC: NDArray[np.float64],
-        x_pe_lo: NDArray[np.float64],
-        x_pe_hi: NDArray[np.float64],
-        x_ne_lo: NDArray[np.float64],
-        x_ne_hi: NDArray[np.float64],
-    ) -> NDArray[np.float64]:
-        """Calculate the full cell OCV gradient as a function of SOC.
+        def unwrap_params(
+            params: Tuple[np.float64, ...]
+        ) -> Tuple[
+            float,
+            float,
+            float,
+            float,
+            Union[OCP, CompositeOCP],
+            Union[OCP, CompositeOCP],
+        ]:
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
+            updated_ocp_pe = cast(CompositeOCP, ocp_pe)
+            updated_ocp_pe.comp_fraction = pe_frac
+            return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, updated_ocp_pe, ocp_ne
 
-        Derivative is calculated using the chain rule:
-        d(OCV)/d(SOC) = d(OCV)/d(z_pe) * d(z_pe)/d(SOC)
-                        - d(OCV)/d(z_ne) * d(z_ne)/d(SOC)
-        Args:
-            SOC: The full cell SOC.
-            ocp_pe: The OCP function for the positive electrode.
-            ocp_ne: The OCP function for the negative electrode.
-            x_pe_lo: The cathode stoichiometry at lowest cell SOC.
-            x_pe_hi: The cathode stoichiometry at highest cell SOC.
-            x_ne_lo: The cathode stoichiometry at lowest cell SOC.
-            x_ne_hi: The anode stoichiometry at highest cell SOC.
+    elif not composite_pe and composite_ne:
 
-        Returns:
-            A function to calculate the full cell OCV gradient as a function of SOC.
-        """
-        # Calculate the stoichiometry at the given SOC for each electrode
-        z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
-        z_ne = x_ne_lo + (x_ne_hi - x_ne_lo) * SOC
+        def unwrap_params(
+            params: Tuple[np.float64, ...]
+        ) -> Tuple[
+            float,
+            float,
+            float,
+            float,
+            Union[OCP, CompositeOCP],
+            Union[OCP, CompositeOCP],
+        ]:
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
+            updated_ocp_ne = cast(CompositeOCP, ocp_ne)
+            updated_ocp_ne.comp_fraction = ne_frac
+            return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ocp_pe, updated_ocp_ne
 
-        # Calculate the gradient of electrode stoichiometry with respect to SOC
-        d_z_pe = x_pe_hi - x_pe_lo
-        d_z_ne = x_ne_hi - x_ne_lo
+    else:  # composite_pe and composite_ne are both True
 
-        # Calculate the full cell OCV gradient using the chain rule
-        return self.ocp_pe.grad(z_pe) * d_z_pe - self.ocp_ne.grad(z_ne) * d_z_ne
+        def unwrap_params(
+            params: Tuple[np.float64, ...]
+        ) -> Tuple[
+            float,
+            float,
+            float,
+            float,
+            Union[OCP, CompositeOCP],
+            Union[OCP, CompositeOCP],
+        ]:
+            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
+            updated_ocp_pe = cast(CompositeOCP, ocp_pe)
+            updated_ocp_ne = cast(CompositeOCP, ocp_ne)
+            updated_ocp_pe.comp_fraction = pe_frac
+            updated_ocp_ne.comp_fraction = ne_frac
+            return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, updated_ocp_pe, updated_ocp_ne
 
-    def _build_objective_function(
-        self,
-        SOC: NDArray[np.float64],
-        fitting_target_data: NDArray[np.float64],
-        fitting_target: Literal["OCV", "dQdV", "dVdQ"],
-        composite_pe: bool,
-        composite_ne: bool,
-    ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-        """Get the objective function for the OCV curve fitting.
+    # Define the model function based on the fitting target
+    if fitting_target == "OCV":
 
-        Args:
-            SOC: The full cell SOC.
-            fitting_target_data: The data to fit.
-            fitting_target: The target for the curve fitting.
-            composite_pe: Whether the positive electrode is composite.
-            composite_ne: Whether the negative electrode is composite.
-        """
-        # Define the unwrap_params function based on the values of composite_pe and
-        # composite_ne
-        if not composite_pe and not composite_ne:
-
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
-                return (
-                    x_pe_lo,
-                    x_pe_hi,
-                    x_ne_lo,
-                    x_ne_hi,
-                )
-
-        elif composite_pe and not composite_ne:
-
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
-                self.ocp_pe = cast(CompositeOCP, self.ocp_pe)
-                self.ocp_pe.comp_fraction = pe_frac
-                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
-
-        elif not composite_pe and composite_ne:
-
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
-                self.ocp_ne = cast(CompositeOCP, self.ocp_ne)
-                self.ocp_ne.comp_fraction = ne_frac
-                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
-
-        else:  # composite_pe and composite_ne are both True
-
-            def unwrap_params(
-                params: Tuple[np.float64, ...]
-            ) -> Tuple[np.float64, np.float64, np.float64, np.float64]:
-                x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
-                self.ocp_pe = cast(CompositeOCP, self.ocp_pe)
-                self.ocp_ne = cast(CompositeOCP, self.ocp_ne)
-                self.ocp_pe.comp_fraction = pe_frac
-                self.ocp_ne.comp_fraction = ne_frac
-                return x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
-
-        # Define the model function based on the fitting target
-        if fitting_target == "OCV":
-
-            def model_function(
-                SOC: NDArray[np.float64],
-                x_pe_lo: float,
-                x_pe_hi: float,
-                x_ne_lo: float,
-                x_ne_hi: float,
-            ) -> NDArray[np.float64]:
-                return self._f_OCV(
-                    SOC,
-                    x_pe_lo,
-                    x_pe_hi,
-                    x_ne_lo,
-                    x_ne_hi,
-                )
-
-        elif fitting_target == "dVdQ":
-
-            def model_function(
-                SOC: NDArray[np.float64],
-                x_pe_lo: float,
-                x_pe_hi: float,
-                x_ne_lo: float,
-                x_ne_hi: float,
-            ) -> NDArray[np.float64]:
-                return self._f_grad_OCV(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
-
-        elif fitting_target == "dQdV":
-
-            def model_function(
-                SOC: NDArray[np.float64],
-                x_pe_lo: float,
-                x_pe_hi: float,
-                x_ne_lo: float,
-                x_ne_hi: float,
-            ) -> NDArray[np.float64]:
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    model = 1 / self._f_grad_OCV(
-                        SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
-                    )
-                    model[~np.isfinite(model)] = np.inf
-                return model
-
-        else:
-            raise ValueError(f"Invalid fitting target: {fitting_target}")
-
-        # Define the objective function using the built functions for collecting the
-        # parameters and the model
-        def _objective_function(
-            params: NDArray[np.float64],
+        def model_function(
+            ocp_pe: Union[OCP, CompositeOCP],
+            ocp_ne: Union[OCP, CompositeOCP],
+            SOC: NDArray[np.float64],
+            x_pe_lo: float,
+            x_pe_hi: float,
+            x_ne_lo: float,
+            x_ne_hi: float,
         ) -> NDArray[np.float64]:
-            """Objective function for the OCV curve fitting.
+            return _f_OCV(
+                ocp_pe,
+                ocp_ne,
+                SOC,
+                x_pe_lo,
+                x_pe_hi,
+                x_ne_lo,
+                x_ne_hi,
+            )
 
-            Args:
-                params: The fitting parameters.
+    elif fitting_target == "dVdQ":
 
-            Returns:
-                The residuals between the data and the fit.
-            """
-            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = unwrap_params(params)
-            model = model_function(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
-            return np.sum((model - fitting_target_data) ** 2)
+        def model_function(
+            ocp_pe: Union[OCP, CompositeOCP],
+            ocp_ne: Union[OCP, CompositeOCP],
+            SOC: NDArray[np.float64],
+            x_pe_lo: float,
+            x_pe_hi: float,
+            x_ne_lo: float,
+            x_ne_hi: float,
+        ) -> NDArray[np.float64]:
+            return _f_grad_OCV(ocp_pe, ocp_ne, SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
 
-        return _objective_function
+    elif fitting_target == "dQdV":
 
-    def run_ocv_curve_fit(
-        self,
-        fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
-        optimizer: Literal["minimize", "differential_evolution"] = "minimize",
-        optimizer_options: Dict[str, Any] = {
-            "x0": np.array([0.9, 0.1, 0.1, 0.9]),
-            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
-        },
-    ) -> Tuple[Result, Result]:
-        """Fit half cell open circuit potential curves to full cell OCV data.
+        def model_function(
+            ocp_pe: Union[OCP, CompositeOCP],
+            ocp_ne: Union[OCP, CompositeOCP],
+            SOC: NDArray[np.float64],
+            x_pe_lo: float,
+            x_pe_hi: float,
+            x_ne_lo: float,
+            x_ne_hi: float,
+        ) -> NDArray[np.float64]:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                model = 1 / _f_grad_OCV(
+                    ocp_pe, ocp_ne, SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+                )
+                model[~np.isfinite(model)] = np.inf
+            return model
+
+    else:
+        raise ValueError(f"Invalid fitting target: {fitting_target}")
+
+    # Define the objective function using the built functions for collecting the
+    # parameters and the model
+    def _objective_function(
+        params: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Objective function for the OCV curve fitting.
 
         Args:
-            fitting_target: The target for the curve fitting. Defaults to "OCV".
-            optimizer: The optimization algorithm to use. Defaults to "minimize".
-            optimizer_options:
-                The options for the optimization algorithm. Defaults to
-                {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                 "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
-                Where x0 is the initial guess for the fit and bounds are the
-                limits for the fit. The fitting parameters are ordered [x_pe_lo,
-                x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
-                limits at low and high full-cell SOC respectively.
+            params: The fitting parameters.
 
         Returns:
-            - The stoichiometry limits and electrode capacities.
-            - The fitted OCV data.
+            The residuals between the data and the fit.
         """
-        if "SOC" in self.input_data.column_list:
-            required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
-            validator = AnalysisValidator(
-                input_data=self.input_data, required_columns=required_columns
-            )
-            voltage, capacity, SOC = validator.variables
-            cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
-        else:
-            required_columns = ["Voltage [V]", "Capacity [Ah]"]
-            validator = AnalysisValidator(
-                input_data=self.input_data, required_columns=required_columns
-            )
-            voltage, capacity = validator.variables
-            cell_capacity = np.abs(np.ptp(capacity))
-            SOC = (capacity - capacity.min()) / cell_capacity
-
-        dVdSOC = np.gradient(voltage, SOC)
-        dSOCdV = np.gradient(SOC, voltage)
-
-        fitting_target_data = {
-            "OCV": voltage,
-            "dQdV": dSOCdV,
-            "dVdQ": dVdSOC,
-        }[fitting_target]
-
-        if isinstance(self.ocp_pe, CompositeOCP):
-            composite_pe = True
-        else:
-            composite_pe = False
-        if isinstance(self.ocp_ne, CompositeOCP):
-            composite_ne = True
-        else:
-            composite_ne = False
-
-        objective_function = self._build_objective_function(
-            SOC, fitting_target_data, fitting_target, composite_pe, composite_ne
-        )
-
-        selected_optimizer = {
-            "minimize": optimize.minimize,
-            "differential_evolution": optimize.differential_evolution,
-        }[optimizer]
-
-        results = selected_optimizer(objective_function, **optimizer_options).x
-
-        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = results[:4]
-        if composite_pe:
-            pe_frac = results[4]
-            if composite_ne:
-                ne_frac = results[5]
-        elif composite_ne and not composite_pe:
-            ne_frac = results[4]
-        else:
-            pe_frac = None
-            ne_frac = None
-
         (
-            pe_capacity,
-            ne_capacity,
-            li_inventory,
-        ) = dma_functions.calc_electrode_capacities(
-            x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
-        )
-
-        data_dict = {
-            "x_pe low SOC": np.array([x_pe_lo]),
-            "x_pe high SOC": np.array([x_pe_hi]),
-            "x_ne low SOC": np.array([x_ne_lo]),
-            "x_ne high SOC": np.array([x_ne_hi]),
-            "Cell Capacity [Ah]": np.array([cell_capacity]),
-            "Cathode Capacity [Ah]": np.array([pe_capacity]),
-            "Anode Capacity [Ah]": np.array([ne_capacity]),
-            "Li Inventory [Ah]": np.array([li_inventory]),
-        }
-        if composite_pe:
-            data_dict["pe composite fraction"] = np.array([pe_frac])
-        if composite_ne:
-            data_dict["ne composite fraction"] = np.array([ne_frac])
-
-        self.stoichiometry_limits = self.input_data.clean_copy(pl.DataFrame(data_dict))
-        self.stoichiometry_limits.column_definitions = {
-            "x_pe low SOC": "Positive electrode stoichiometry at lowest SOC point.",
-            "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
-            "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
-            "x_ne high SOC": "Negative electrode stoichiometry at highest SOC point.",
-            "Cell Capacity [Ah]": "Total cell capacity.",
-            "Cathode Capacity [Ah]": "Cathode capacity.",
-            "Anode Capacity [Ah]": "Anode capacity.",
-            "Li Inventory [Ah]": "Lithium inventory.",
-        }
-
-        if composite_pe:
-            self.stoichiometry_limits.column_definitions[
-                "pe composite fraction"
-            ] = "Fraction of composite cathode capacity attributed to first component."
-        if composite_ne:
-            self.stoichiometry_limits.column_definitions[
-                "ne composite fraction"
-            ] = "Fraction of composite anode capacity attributed to first component."
-
-        fitted_voltage = self._f_OCV(
-            SOC,
             x_pe_lo,
             x_pe_hi,
             x_ne_lo,
             x_ne_hi,
+            updated_ocp_pe,
+            updated_ocp_ne,
+        ) = unwrap_params(params)
+        model = model_function(
+            updated_ocp_pe, updated_ocp_ne, SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
         )
-        fitted_dVdSOC = self._f_grad_OCV(
-            SOC,
-            x_pe_lo,
-            x_pe_hi,
-            x_ne_lo,
-            x_ne_hi,
-        )
-        self.fitted_OCV = self.input_data.clean_copy(
-            pl.DataFrame(
-                {
-                    "Capacity [Ah]": capacity,
-                    "SOC": SOC,
-                    "Input Voltage [V]": voltage,
-                    "Fitted Voltage [V]": fitted_voltage,
-                    "Input dSOCdV [1/V]": dSOCdV,
-                    "Fitted dSOCdV [1/V]": 1 / fitted_dVdSOC,
-                    "Input dVdSOC [V]": dVdSOC,
-                    "Fitted dVdSOC [V]": fitted_dVdSOC,
-                }
-            )
-        )
-        self.fitted_OCV.column_definitions = {
-            "SOC": "Cell state of charge.",
-            "Voltage [V]": "Fitted OCV values.",
-        }
+        return np.sum((model - fitting_target_data) ** 2)
 
-        return self.stoichiometry_limits, self.fitted_OCV
+    return _objective_function
 
-    def quantify_degradation_modes(
-        self, reference_stoichiometry_limits: Result
-    ) -> Result:
-        """Quantify the change in degradation modes between at least two OCV fits.
 
-        Args:
-            reference_stoichiometry_limits:
-                A result object containing the beginning of life stoichiometry limits.
+def run_ocv_curve_fit(
+    input_data: PyProBEDataType,
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
+    fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
+    optimizer: Literal["minimize", "differential_evolution"] = "minimize",
+    optimizer_options: Dict[str, Any] = {
+        "x0": np.array([0.9, 0.1, 0.1, 0.9]),
+        "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+    },
+) -> Tuple[Result, Result]:
+    """Fit half cell open circuit potential curves to full cell OCV data.
 
-        Returns:
-            A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
-            the provided OCV fits.
-        """
-        required_columns = [
-            "Cell Capacity [Ah]",
-            "Cathode Capacity [Ah]",
-            "Anode Capacity [Ah]",
-            "Li Inventory [Ah]",
-        ]
-        AnalysisValidator(
-            input_data=reference_stoichiometry_limits, required_columns=required_columns
-        )
-        if self.stoichiometry_limits is None:
-            raise ValueError("No stoichiometry limits have been calculated.")
-        AnalysisValidator(
-            input_data=self.stoichiometry_limits, required_columns=required_columns
-        )
+    Args:
+        input_data: The input data for the analysis.
+        ocp_pe: The positive electrode OCP in the form of a OCP or CompositeOCP object.
+        ocp_ne: The negative electrode OCP in the form of a OCP or CompositeOCP object.
+        fitting_target: The target for the curve fitting. Defaults to "OCV".
+        optimizer: The optimization algorithm to use. Defaults to "minimize".
+        optimizer_options:
+            The options for the optimization algorithm. Defaults to
+            {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
+                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+            Where x0 is the initial guess for the fit and bounds are the
+            limits for the fit. The fitting parameters are ordered [x_pe_lo,
+            x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
+            limits at low and high full-cell SOC respectively.
 
-        electrode_capacity_results = [
-            reference_stoichiometry_limits,
-            self.stoichiometry_limits,
-        ]
-        cell_capacity = utils.assemble_array(
-            electrode_capacity_results, "Cell Capacity [Ah]"
-        )
-        pe_capacity = utils.assemble_array(
-            electrode_capacity_results, "Cathode Capacity [Ah]"
-        )
-        ne_capacity = utils.assemble_array(
-            electrode_capacity_results, "Anode Capacity [Ah]"
-        )
-        li_inventory = utils.assemble_array(
-            electrode_capacity_results, "Li Inventory [Ah]"
-        )
-        SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
-            cell_capacity, pe_capacity, ne_capacity, li_inventory
-        )
-
-        self.dma_result = electrode_capacity_results[0].clean_copy(
-            pl.DataFrame(
-                {
-                    "SOH": SOH[:, 0],
-                    "LAM_pe": LAM_pe[:, 0],
-                    "LAM_ne": LAM_ne[:, 0],
-                    "LLI": LLI[:, 0],
-                }
-            )
-        )
-        self.dma_result.column_definitions = {
-            "SOH": "Cell capacity normalized to initial capacity.",
-            "LAM_pe": "Loss of active material in positive electrode.",
-            "LAM_ne": "Loss of active material in positive electrode.",
-            "LLI": "Loss of lithium inventory.",
-        }
-        return self.dma_result
-
-    @staticmethod
-    def average_ocvs(
-        input_data: FilterToCycleType,
-        ocp_pe: OCP,
-        ocp_ne: OCP,
-        discharge_filter: Optional[str] = None,
-        charge_filter: Optional[str] = None,
-    ) -> "DMA":
-        """Average the charge and discharge OCV curves.
-
-        Args:
-            discharge_result: The discharge OCV data.
-            charge_result: The charge OCV data.
-
-        Returns:
-            A DMA object containing the averaged OCV curve.
-        """
+    Returns:
+        - The stoichiometry limits and electrode capacities.
+        - The fitted OCV data.
+    """
+    if "SOC" in input_data.column_list:
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
-        AnalysisValidator(
-            input_data=input_data,
-            required_columns=required_columns,
-            required_type=FilterToCycleType,
+        validator = AnalysisValidator(
+            input_data=input_data, required_columns=required_columns
         )
-
-        if discharge_filter is None:
-            discharge_result = input_data.discharge()
-        else:
-            discharge_result = eval(f"input_data.{discharge_filter}")
-        if charge_filter is None:
-            charge_result = input_data.charge()
-        else:
-            charge_result = eval(f"input_data.{charge_filter}")
-        charge_SOC = charge_result.get_only("SOC")
-        charge_OCV = charge_result.get_only("Voltage [V]")
-        charge_current = charge_result.get_only("Current [A]")
-        discharge_SOC = discharge_result.get_only("SOC")
-        discharge_OCV = discharge_result.get_only("Voltage [V]")
-        discharge_current = discharge_result.get_only("Current [A]")
-
-        average_OCV = dma_functions.average_OCV_curves(
-            charge_SOC,
-            charge_OCV,
-            charge_current,
-            discharge_SOC,
-            discharge_OCV,
-            discharge_current,
+        voltage, capacity, SOC = validator.variables
+        cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
+    else:
+        required_columns = ["Voltage [V]", "Capacity [Ah]"]
+        validator = AnalysisValidator(
+            input_data=input_data, required_columns=required_columns
         )
+        voltage, capacity = validator.variables
+        cell_capacity = np.abs(np.ptp(capacity))
+        SOC = (capacity - capacity.min()) / cell_capacity
 
-        average_result = charge_result.clean_copy(
-            pl.DataFrame(
-                {
-                    "Voltage [V]": average_OCV,
-                    "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
-                    "SOC": charge_SOC,
-                }
-            )
+    dVdSOC = np.gradient(voltage, SOC)
+    dSOCdV = np.gradient(SOC, voltage)
+
+    fitting_target_data = {
+        "OCV": voltage,
+        "dQdV": dSOCdV,
+        "dVdQ": dVdSOC,
+    }[fitting_target]
+
+    if isinstance(ocp_pe, CompositeOCP):
+        composite_pe = True
+    else:
+        composite_pe = False
+    if isinstance(ocp_ne, CompositeOCP):
+        composite_ne = True
+    else:
+        composite_ne = False
+
+    objective_function = _build_objective_function(
+        ocp_pe,
+        ocp_ne,
+        SOC,
+        fitting_target_data,
+        fitting_target,
+        composite_pe,
+        composite_ne,
+    )
+
+    selected_optimizer = {
+        "minimize": optimize.minimize,
+        "differential_evolution": optimize.differential_evolution,
+    }[optimizer]
+
+    results = selected_optimizer(objective_function, **optimizer_options).x
+
+    x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = results[:4]
+    if composite_pe:
+        pe_frac = results[4]
+        if composite_ne:
+            ne_frac = results[5]
+    elif composite_ne and not composite_pe:
+        ne_frac = results[4]
+    else:
+        pe_frac = None
+        ne_frac = None
+
+    (
+        pe_capacity,
+        ne_capacity,
+        li_inventory,
+    ) = dma_functions.calc_electrode_capacities(
+        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
+    )
+
+    data_dict = {
+        "x_pe low SOC": np.array([x_pe_lo]),
+        "x_pe high SOC": np.array([x_pe_hi]),
+        "x_ne low SOC": np.array([x_ne_lo]),
+        "x_ne high SOC": np.array([x_ne_hi]),
+        "Cell Capacity [Ah]": np.array([cell_capacity]),
+        "Cathode Capacity [Ah]": np.array([pe_capacity]),
+        "Anode Capacity [Ah]": np.array([ne_capacity]),
+        "Li Inventory [Ah]": np.array([li_inventory]),
+    }
+    if composite_pe:
+        data_dict["pe composite fraction"] = np.array([pe_frac])
+    if composite_ne:
+        data_dict["ne composite fraction"] = np.array([ne_frac])
+
+    input_stoichiometry_limits = input_data.clean_copy(pl.DataFrame(data_dict))
+    input_stoichiometry_limits.column_definitions = {
+        "x_pe low SOC": "Positive electrode stoichiometry at lowest SOC point.",
+        "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
+        "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
+        "x_ne high SOC": "Negative electrode stoichiometry at highest SOC point.",
+        "Cell Capacity [Ah]": "Total cell capacity.",
+        "Cathode Capacity [Ah]": "Cathode capacity.",
+        "Anode Capacity [Ah]": "Anode capacity.",
+        "Li Inventory [Ah]": "Lithium inventory.",
+    }
+
+    if composite_pe:
+        input_stoichiometry_limits.column_definitions[
+            "pe composite fraction"
+        ] = "Fraction of composite cathode capacity attributed to first component."
+    if composite_ne:
+        input_stoichiometry_limits.column_definitions[
+            "ne composite fraction"
+        ] = "Fraction of composite anode capacity attributed to first component."
+
+    fitted_voltage = _f_OCV(
+        ocp_pe,
+        ocp_ne,
+        SOC,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+    )
+    fitted_dVdSOC = _f_grad_OCV(
+        ocp_pe,
+        ocp_ne,
+        SOC,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+    )
+    fitted_OCV = input_data.clean_copy(
+        pl.DataFrame(
+            {
+                "Capacity [Ah]": capacity,
+                "SOC": SOC,
+                "Input Voltage [V]": voltage,
+                "Fitted Voltage [V]": fitted_voltage,
+                "Input dSOCdV [1/V]": dSOCdV,
+                "Fitted dSOCdV [1/V]": 1 / fitted_dVdSOC,
+                "Input dVdSOC [V]": dVdSOC,
+                "Fitted dVdSOC [V]": fitted_dVdSOC,
+            }
         )
-        return DMA(input_data=average_result, ocp_pe=ocp_pe, ocp_ne=ocp_ne)
+    )
+    fitted_OCV.column_definitions = {
+        "SOC": "Cell state of charge.",
+        "Voltage [V]": "Fitted OCV values.",
+    }
+
+    return input_stoichiometry_limits, fitted_OCV
+
+
+def quantify_degradation_modes(
+    input_stoichiometry_limits: Result, reference_stoichiometry_limits: Result
+) -> Result:
+    """Quantify the change in degradation modes between at least two OCV fits.
+
+    Args:
+        input_stoichiometry_limits:
+            A result object containing the stoichiometry limits for the OCV fits.
+        reference_stoichiometry_limits:
+            A result object containing the beginning of life stoichiometry limits.
+
+    Returns:
+        A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
+        the provided OCV fits.
+    """
+    required_columns = [
+        "Cell Capacity [Ah]",
+        "Cathode Capacity [Ah]",
+        "Anode Capacity [Ah]",
+        "Li Inventory [Ah]",
+    ]
+    AnalysisValidator(
+        input_data=reference_stoichiometry_limits, required_columns=required_columns
+    )
+    if input_stoichiometry_limits is None:
+        raise ValueError("No stoichiometry limits have been calculated.")
+    AnalysisValidator(
+        input_data=input_stoichiometry_limits, required_columns=required_columns
+    )
+
+    electrode_capacity_results = [
+        reference_stoichiometry_limits,
+        input_stoichiometry_limits,
+    ]
+    cell_capacity = utils.assemble_array(
+        electrode_capacity_results, "Cell Capacity [Ah]"
+    )
+    pe_capacity = utils.assemble_array(
+        electrode_capacity_results, "Cathode Capacity [Ah]"
+    )
+    ne_capacity = utils.assemble_array(
+        electrode_capacity_results, "Anode Capacity [Ah]"
+    )
+    li_inventory = utils.assemble_array(electrode_capacity_results, "Li Inventory [Ah]")
+    SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
+        cell_capacity, pe_capacity, ne_capacity, li_inventory
+    )
+
+    dma_result = electrode_capacity_results[0].clean_copy(
+        pl.DataFrame(
+            {
+                "SOH": SOH[:, 0],
+                "LAM_pe": LAM_pe[:, 0],
+                "LAM_ne": LAM_ne[:, 0],
+                "LLI": LLI[:, 0],
+            }
+        )
+    )
+    dma_result.column_definitions = {
+        "SOH": "Cell capacity normalized to initial capacity.",
+        "LAM_pe": "Loss of active material in positive electrode.",
+        "LAM_ne": "Loss of active material in positive electrode.",
+        "LLI": "Loss of lithium inventory.",
+    }
+    return dma_result
 
 
 def _run_ocv_curve_fit_with_index(
     index: int,
-    dma_object: DMA,
+    input_data: PyProBEDataType,
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
     fitting_target: Literal["OCV", "dQdV", "dVdQ"],
     optimizer: Literal["minimize", "differential_evolution"],
     optimizer_options: Dict[str, Any],
 ) -> Tuple[int, Tuple[Result, Result]]:
     """Wrapper function for running the OCV curve fitting with an index."""
-    result = dma_object.run_ocv_curve_fit(
+    result = run_ocv_curve_fit(
+        input_data=input_data,
+        ocp_pe=ocp_pe,
+        ocp_ne=ocp_ne,
         fitting_target=fitting_target,
         optimizer=optimizer,
         optimizer_options=optimizer_options,
@@ -803,208 +761,135 @@ def _run_ocv_curve_fit_with_index(
 
 
 def _quantify_degradation_modes_with_index(
-    index: int, dma_object: DMA, reference_stoichiometry_limits: Result
+    index: int, stoichiometry_limits: Result, reference_stoichiometry_limits: Result
 ) -> Tuple[int, Result]:
-    result = dma_object.quantify_degradation_modes(
+    result = quantify_degradation_modes(
+        input_stoichiometry_limits=stoichiometry_limits,
         reference_stoichiometry_limits=reference_stoichiometry_limits,
     )
     return index, result
 
 
-class BatchDMA(BaseModel):
-    """A class for running DMA analysis across multiple input data sets."""
+def run_batch_dma_parallel(
+    input_data_list: List[PyProBEDataType],
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
+    fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
+    optimizer: Literal["minimize", "differential_evolution"] = "minimize",
+    optimizer_options: Dict[str, Any] = {
+        "x0": np.array([0.9, 0.1, 0.1, 0.9]),
+        "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+    },
+) -> Tuple[Result, List[Result]]:
+    """Fit half cell open circuit potential curves to full cell OCV data.
 
-    input_data: List[PyProBEDataType]
-    """The a list of input data for the degradation mode analysis."""
+    DMA analysis is run in parallel across all provided input_data.
 
-    ocp_pe: OCP
-    """An object containing the positive electrode OCP functions."""
+    Args:
+        input_data_list: The list of input data for the analysis.
+        ocp_pe: The positive electrode OCP in the form of a OCP or CompositeOCP object.
+        ocp_ne: The negative electrode OCP in the form of a OCP or CompositeOCP object.
+        fitting_target: The target for the curve fitting. Defaults to "OCV".
+        optimizer: The optimization algorithm to use. Defaults to "minimize".
+        optimizer_options:
+            The options for the optimization algorithm. Defaults to
+            {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
+                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+            Where x0 is the initial guess for the fit and bounds are the
+            limits for the fit. The fitting parameters are ordered [x_pe_lo,
+            x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
+            limits at low and high full-cell SOC respectively.
 
-    ocp_ne: OCP
-    """An object containing the negative electrode OCP functions."""
-
-    fitted_OCV: Optional[List[Result]] = None
-    """A list of the fitted OCV data."""
-
-    batch_DMA_results: Optional[Result] = None
-    """The result of the DMA analysis across all provided input_data.
-
-    Contains the stoichiometry limits, SOH, LAM_pe, LAM_ne, and LLI for each of the
-    provided OCV fits.
+    Returns:
+        - Result: The stoichiometry limits, electrode capacities and
+        degradation modes.
+        - List[Result]: The fitted OCV data for each list item in input_data.
     """
-
-    class Config:
-        """Pydantic configuration settings."""
-
-        arbitrary_types_allowed = True
-
-    @property
-    def dma_objects(self) -> List[DMA]:
-        """Return the DMA objects."""
-        if not hasattr(self, "_dma_objects"):
-            self._dma_objects = [
-                DMA(input_data=data, ocp_ne=self.ocp_ne, ocp_pe=self.ocp_pe)
-                for data in self.input_data
-            ]
-        return self._dma_objects
-
-    def downsample_ocv(
-        self,
-        sampling_interval: float,
-        occurrence: Literal["first", "last", "middle"] = "first",
-        time_column: str = "Time [s]",
-    ) -> List[Result]:
-        """Downsample the OCV data to a specified sampling interval.
-
-        This method updates the input_data attribute with the downsampled data, and
-        returns a Result object. The logic is based on
-        :func:`pyprobe.analysis.smoothing.downsample_data`, which also provides the
-        logic for the :func:`pyprobe.analysis.smoothing.Smoothing.downsample` method.
-
-        Args:
-            sampling_interval: The sampling interval for the downsampled data.
-            occurrence: The occurrence to use when downsampling. Defaults to "first".
-            time_column: The column containing the time data. Defaults to "Time [s]".
-
-        Returns:
-            A list of result objects containing the downsampled OCV data.
-        """
-        return [
-            dma_object.downsample_ocv(
-                sampling_interval=sampling_interval,
-                occurrence=occurrence,
-                time_column=time_column,
+    # Run the OCV curve fitting in parallel
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        fit_futures = [
+            executor.submit(
+                _run_ocv_curve_fit_with_index,
+                index,
+                input_data,
+                ocp_pe,
+                ocp_ne,
+                fitting_target=fitting_target,
+                optimizer=optimizer,
+                optimizer_options=optimizer_options,
             )
-            for dma_object in self.dma_objects
+            for index, input_data in enumerate(input_data_list)
         ]
+    # collate the results
+    fit_results = [
+        future.result() for future in concurrent.futures.as_completed(fit_futures)
+    ]
 
-    def run_batch_dma_parallel(
-        self,
-        fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
-        optimizer: Literal["minimize", "differential_evolution"] = "minimize",
-        optimizer_options: Dict[str, Any] = {
-            "x0": np.array([0.9, 0.1, 0.1, 0.9]),
-            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
-        },
-    ) -> Tuple[Result, List[Result]]:
-        """Fit half cell open circuit potential curves to full cell OCV data.
+    # Extract the results
+    fit_index = [result[0] for result in fit_results]
+    stoichiometry_limit_list = [result[1][0] for result in fit_results]
+    fitted_OCVs = [result[1][1] for result in fit_results]
+    sorted_fitted_ocvs = copy.deepcopy(fitted_OCVs)
+    fit_0_position = -1
 
-        DMA analysis is run in parallel across all provided input_data.
+    for position, index in enumerate(fit_index):
+        if index == 0:
+            fit_0_position = position
+        sorted_fitted_ocvs[index] = fitted_OCVs[position]
+        stoichiometry_limit_list[position].base_dataframe = stoichiometry_limit_list[
+            position
+        ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
 
-        Args:
-            fitting_target: The target for the curve fitting. Defaults to "OCV".
-            optimizer: The optimization algorithm to use. Defaults to "minimize".
-            optimizer_options:
-                The options for the optimization algorithm. Defaults to
-                {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                 "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
-                Where x0 is the initial guess for the fit and bounds are the
-                limits for the fit. The fitting parameters are ordered [x_pe_lo,
-                x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
-                limits at low and high full-cell SOC respectively.
-
-        Returns:
-            - Result: The stoichiometry limits, electrode capacities and
-            degradation modes.
-            - List[Result]: The fitted OCV data for each list item in input_data.
-        """
-        # Run the OCV curve fitting in parallel
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            fit_futures = [
-                executor.submit(
-                    _run_ocv_curve_fit_with_index,
-                    index,
-                    dma_object,
-                    fitting_target=fitting_target,
-                    optimizer=optimizer,
-                    optimizer_options=optimizer_options,
-                )
-                for index, dma_object in enumerate(self.dma_objects)
-            ]
-        # collate the results
-        fit_results = [
-            future.result() for future in concurrent.futures.as_completed(fit_futures)
+    # Run the DMA quantification in parallel
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        dma_futures = [
+            executor.submit(
+                _quantify_degradation_modes_with_index,
+                index,
+                stoichiometry_limits,
+                reference_stoichiometry_limits=stoichiometry_limit_list[fit_0_position],
+            )
+            for index, stoichiometry_limits in zip(fit_index, stoichiometry_limit_list)
         ]
+    # collate the results
+    all_results = [
+        future.result() for future in concurrent.futures.as_completed(dma_futures)
+    ]
 
-        # Extract the results
-        fit_index = [result[0] for result in fit_results]
-        stoichiometry_limits = [result[1][0] for result in fit_results]
-        fitted_OCVs = [result[1][1] for result in fit_results]
-        sorted_fitted_ocvs = copy.deepcopy(fitted_OCVs)
-        fit_0_position = -1
-        # Update the DMA objects with the results
-        for position, index in enumerate(fit_index):
-            if index == 0:
-                fit_0_position = position
-            sorted_fitted_ocvs[index] = fitted_OCVs[position]
-            stoichiometry_limits[position].base_dataframe = stoichiometry_limits[
-                position
-            ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
-            self.dma_objects[index].stoichiometry_limits = stoichiometry_limits[
-                position
-            ]
-            self.dma_objects[index].fitted_OCV = fitted_OCVs[position]
+    # Extract the results
+    dma_index = [result[0] for result in all_results]
+    dma_results = [result[1] for result in all_results]
 
-        # Run the DMA quantification in parallel
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            if self.dma_objects[0].stoichiometry_limits is None:
-                raise ValueError(
-                    "No stoichiometry limits have been calculated for the reference "
-                    "data point."
-                )
-            dma_futures = [
-                executor.submit(
-                    _quantify_degradation_modes_with_index,
-                    index,
-                    dma_object,
-                    reference_stoichiometry_limits=self.dma_objects[
-                        0
-                    ].stoichiometry_limits,
-                )
-                for index, dma_object in enumerate(self.dma_objects)
-            ]
-        # collate the results
-        all_results = [
-            future.result() for future in concurrent.futures.as_completed(dma_futures)
-        ]
+    # Update the DMA objects with the results
+    for position, index in enumerate(dma_index):
+        if index == 0:
+            dma_0_position = position
+        dma_results[position].base_dataframe = dma_results[
+            position
+        ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
+        # reduce the dataframe down to only the last row (the row relevant to the
+        # data point)
+        dma_results[position].base_dataframe = dma_results[
+            position
+        ].base_dataframe.tail(1)
 
-        # Extract the results
-        dma_index = [result[0] for result in all_results]
-        dma_results = [result[1] for result in all_results]
-
-        # Update the DMA objects with the results
-        for position, index in enumerate(dma_index):
-            if index == 0:
-                dma_0_position = position
-            dma_results[position].base_dataframe = dma_results[
-                position
-            ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
-            self.dma_objects[index].dma_result = dma_results[position]
-            # reduce the dataframe down to only the last row (the row relevant to the
-            # data point)
-            dma_results[position].base_dataframe = dma_results[
-                position
-            ].base_dataframe.tail(1)
-
-        # compile the results into single result objects
-        all_stoichiometry_limits = copy.deepcopy(stoichiometry_limits[fit_0_position])
-        all_dma_results = copy.deepcopy(dma_results[dma_0_position])
-        all_stoichiometry_limits.extend(
-            [item for i, item in enumerate(stoichiometry_limits) if i != fit_0_position]
-        )
-        all_dma_results.extend(
-            [item for i, item in enumerate(dma_results) if i != dma_0_position]
-        )
-        all_final_results = all_stoichiometry_limits
-        all_final_results.join(all_dma_results, on="Index", how="left")
-        all_final_results.base_dataframe = all_final_results.base_dataframe.sort(
-            "Index"
-        )
-        all_final_results.define_column(
-            "Index", "The index of the data point from the provided list of input data."
-        )
-        self.batch_DMA_results = all_final_results
-        return all_final_results, sorted_fitted_ocvs
+    # compile the results into single result objects
+    all_stoichiometry_limits = copy.deepcopy(stoichiometry_limit_list[fit_0_position])
+    all_dma_results = copy.deepcopy(dma_results[dma_0_position])
+    all_stoichiometry_limits.extend(
+        [item for i, item in enumerate(stoichiometry_limit_list) if i != fit_0_position]
+    )
+    all_dma_results.extend(
+        [item for i, item in enumerate(dma_results) if i != dma_0_position]
+    )
+    all_final_results = all_stoichiometry_limits
+    print(all_final_results)
+    all_final_results.join(all_dma_results, on="Index", how="left")
+    all_final_results.base_dataframe = all_final_results.base_dataframe.sort("Index")
+    all_final_results.define_column(
+        "Index", "The index of the data point from the provided list of input data."
+    )
+    return all_final_results, sorted_fitted_ocvs
 
 
 @validate_call
@@ -1016,6 +901,8 @@ def average_ocvs(
     """Average the charge and discharge OCV curves.
 
     Args:
+        input_data: The input data for the analysis. Must be a PyProBE object that can
+            be filtered to particular steps i.e. a Cycle object or higher.
         discharge_filter: The filter to apply to retrieve the discharge data from
             the input data. If left to default, the first discharge in the input
             data will be used.
