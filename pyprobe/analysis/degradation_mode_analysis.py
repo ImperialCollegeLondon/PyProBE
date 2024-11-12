@@ -33,8 +33,7 @@ def _get_gradient(
         any_function: The OCP function.
 
     Returns:
-        Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-            The gradient of the OCP.
+        The gradient of the OCP.
     """
     if isinstance(any_function, PPoly):
         return any_function.derivative()
@@ -80,9 +79,7 @@ class OCP(_AbstractOCP):
     """A class for single-component electrode open circuit potential data.
 
     Args:
-        ocp_function (Union[Callable[[NDArray[np.float64]],
-            NDArray[np.float64]], PPoly, sp.Expr]):
-            The OCP function for the electrode.
+        ocp_function: The OCP function for the electrode.
     """
 
     def __init__(
@@ -108,14 +105,12 @@ class OCP(_AbstractOCP):
         multiple calls to this method to provide the OCP data for each component.
 
         Args:
-            stoichiometry (NDArray[np.float64]): The stoichiometry data.
-            ocp (NDArray[np.float64]): The OCP data.
-            interpolation_method
-                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
-                The interpolation method to use. Defaults to "linear".
+            stoichiometry: The stoichiometry data.
+            ocp: The OCP data.
+            interpolation_method: The interpolation method to use. Defaults to "linear".
 
         Returns:
-            OCP: The OCP object.
+            The OCP object.
         """
         interpolator = {
             "linear": smoothing.linear_interpolator,
@@ -133,7 +128,7 @@ class OCP(_AbstractOCP):
             sympy_expression: A sympy expression for the OCP.
 
         Returns:
-            OCP: The OCP object.
+            The OCP object.
         """
         return OCP(sympy_expression)
 
@@ -161,11 +156,8 @@ class CompositeOCP(_AbstractOCP):
     """A class for composite electrode open circuit potential data.
 
     Args:
-        ocp_list (List[Union[Callable[[NDArray[np.float64]],
-        NDArray[np.float64]], PPoly, sp.Expr]]):
-            A list of OCP functions for the composite electrode.
-
-        ocp_vector (NDArray[np.float64]): The OCP vector for the composite electrode.
+        ocp_list: A list of OCP functions for the composite electrode.
+        ocp_vector: The OCP vector for the composite electrode.
     """
 
     def __init__(
@@ -195,15 +187,11 @@ class CompositeOCP(_AbstractOCP):
         """Create a CompositeOCP object from stoichiometry and OCP data.
 
         Args:
-            stoichiometry_comp1 (NDArray[np.float64]):
-                The stoichiometry data for the first component.
-            ocp_comp1 (NDArray[np.float64]): The OCP data for the first component.
-            stoichiometry_comp2 (NDArray[np.float64]):
-                The stoichiometry data for the second component.
-            ocp_comp2 (NDArray[np.float64]): The OCP data for the second component.
-            interpolation_method
-                (Literal["linear", "cubic", "Pchip", "Akima"], optional):
-                The interpolation method to use. Defaults to "linear".
+            stoichiometry_comp1: The stoichiometry data for the first component.
+            ocp_comp1: The OCP data for the first component.
+            stoichiometry_comp2: The stoichiometry data for the second component.
+            ocp_comp2: The OCP data for the second component.
+            interpolation_method: The interpolation method to use. Defaults to "linear".
         """
         # Determine common voltage range for anode components
         composite_voltage_limits = (
@@ -296,14 +284,12 @@ class DMA(BaseModel):
         logic for the :func:`pyprobe.analysis.smoothing.Smoothing.downsample` method.
 
         Args:
-            sampling_interval (float): The sampling interval for the downsampled data.
-            occurrence (Literal["first", "last", "middle"], optional):
-                The occurrence to use when downsampling. Defaults to "first".
-            time_column (str, optional):
-                The column containing the time data. Defaults to "Time [s]".
+            sampling_interval: The sampling interval for the downsampled data.
+            occurrence: The occurrence to use when downsampling. Defaults to "first".
+            time_column: The column containing the time data. Defaults to "Time [s]".
 
         Returns:
-            Result: A result object containing the downsampled OCV data.
+            A result object containing the downsampled OCV data.
         """
         required_columns = ["Voltage [V]", time_column]
         AnalysisValidator(input_data=self.input_data, required_columns=required_columns)
@@ -327,19 +313,16 @@ class DMA(BaseModel):
         """Calculate the full cell OCV as a function of SOC.
 
         Args:
-            SOC (NDArray[np.float64]): The full cell SOC.
-            ocp_pe (Callable[[NDArray[np.float64]], NDArray[np.float64]]):
-                The positive electrode OCP as a function of stoichiometry.
-            ocp_ne (Callable[[NDArray[np.float64]], NDArray[np.float64]]):
-                The negative electrode OCP as a function of stoichiometry.
-            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
-            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
-            x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
-            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
+            SOC: The full cell SOC.
+            ocp_pe: The positive electrode OCP as a function of stoichiometry.
+            ocp_ne: The negative electrode OCP as a function of stoichiometry.
+            x_pe_lo: The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi: The cathode stoichiometry at highest cell SOC.
+            x_ne_lo: The cathode stoichiometry at lowest cell SOC.
+            x_ne_hi: The anode stoichiometry at highest cell SOC.
 
         Returns:
-            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-                A function to calculate the full cell OCV as a function of SOC.
+            A function to calculate the full cell OCV as a function of SOC.
         """
         # Calculate the stoichiometry at the given SOC for each electrode
         z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
@@ -362,19 +345,16 @@ class DMA(BaseModel):
         d(OCV)/d(SOC) = d(OCV)/d(z_pe) * d(z_pe)/d(SOC)
                         - d(OCV)/d(z_ne) * d(z_ne)/d(SOC)
         Args:
-            SOC (NDArray[np.float64]): The full cell SOC.
-            ocp_pe (Callable[[NDArray[np.float64]], NDArray[np.float64]]):
-                The OCP function for the positive electrode.
-            ocp_ne (Callable[[NDArray[np.float64]], NDArray[np.float64]]):
-                The OCP function for the negative electrode.
-            x_pe_lo (float): The cathode stoichiometry at lowest cell SOC.
-            x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
-            x_ne_lo (float): The cathode stoichiometry at lowest cell SOC.
-            x_ne_hi (float): The anode stoichiometry at highest cell SOC.
+            SOC: The full cell SOC.
+            ocp_pe: The OCP function for the positive electrode.
+            ocp_ne: The OCP function for the negative electrode.
+            x_pe_lo: The cathode stoichiometry at lowest cell SOC.
+            x_pe_hi: The cathode stoichiometry at highest cell SOC.
+            x_ne_lo: The cathode stoichiometry at lowest cell SOC.
+            x_ne_hi: The anode stoichiometry at highest cell SOC.
 
         Returns:
-            Callable[[NDArray[np.float64]], NDArray[np.float64]]:
-                A function to calculate the full cell OCV gradient as a function of SOC.
+            A function to calculate the full cell OCV gradient as a function of SOC.
         """
         # Calculate the stoichiometry at the given SOC for each electrode
         z_pe = x_pe_lo + (x_pe_hi - x_pe_lo) * SOC
@@ -398,12 +378,11 @@ class DMA(BaseModel):
         """Get the objective function for the OCV curve fitting.
 
         Args:
-            SOC (NDArray[np.float64]): The full cell SOC.
-            fitting_target_data (NDArray[np.float64]): The data to fit.
-            fitting_target (Literal["OCV", "dQdV", "dVdQ"]):
-                The target for the curve fitting.
-            composite_pe (bool): Whether the positive electrode is composite.
-            composite_ne (bool): Whether the negative electrode is composite.
+            SOC: The full cell SOC.
+            fitting_target_data: The data to fit.
+            fitting_target: The target for the curve fitting.
+            composite_pe: Whether the positive electrode is composite.
+            composite_ne: Whether the negative electrode is composite.
         """
         # Define the unwrap_params function based on the values of composite_pe and
         # composite_ne
@@ -508,10 +487,10 @@ class DMA(BaseModel):
             """Objective function for the OCV curve fitting.
 
             Args:
-                params (NDArray[np.float64]): The fitting parameters.
+                params: The fitting parameters.
 
             Returns:
-                NDArray[np.float64]: The residuals between the data and the fit.
+                The residuals between the data and the fit.
             """
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = unwrap_params(params)
             model = model_function(SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi)
@@ -531,11 +510,9 @@ class DMA(BaseModel):
         """Fit half cell open circuit potential curves to full cell OCV data.
 
         Args:
-            fitting_target (Literal["OCV", "dQdV", "dVdQ"], optional):
-                The target for the curve fitting. Defaults to "OCV".
-            optimizer (Literal["minimize", "differential_evolution"], optional):
-                The optimization algorithm to use. Defaults to "minimize".
-            optimizer_options (Dict[str, Any], optional):
+            fitting_target: The target for the curve fitting. Defaults to "OCV".
+            optimizer: The optimization algorithm to use. Defaults to "minimize".
+            optimizer_options:
                 The options for the optimization algorithm. Defaults to
                 {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
                  "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
@@ -545,9 +522,8 @@ class DMA(BaseModel):
                 limits at low and high full-cell SOC respectively.
 
         Returns:
-            Tuple[Result, Result]:
-                - Result: The stoichiometry limits and electrode capacities.
-                - Result: The fitted OCV data.
+            - The stoichiometry limits and electrode capacities.
+            - The fitted OCV data.
         """
         if "SOC" in self.input_data.column_list:
             required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
@@ -690,13 +666,12 @@ class DMA(BaseModel):
         """Quantify the change in degradation modes between at least two OCV fits.
 
         Args:
-            reference_stoichiometry_limits (Result):
+            reference_stoichiometry_limits:
                 A result object containing the beginning of life stoichiometry limits.
 
         Returns:
-            Result:
-                A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
-                the provided OCV fits.
+            A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
+            the provided OCV fits.
         """
         required_columns = [
             "Cell Capacity [Ah]",
@@ -762,11 +737,11 @@ class DMA(BaseModel):
         """Average the charge and discharge OCV curves.
 
         Args:
-            discharge_result (Result): The discharge OCV data.
-            charge_result (Result): The charge OCV data.
+            discharge_result: The discharge OCV data.
+            charge_result: The charge OCV data.
 
         Returns:
-            DMA: A DMA object containing the averaged OCV curve.
+            A DMA object containing the averaged OCV curve.
         """
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
         AnalysisValidator(
@@ -887,14 +862,12 @@ class BatchDMA(BaseModel):
         logic for the :func:`pyprobe.analysis.smoothing.Smoothing.downsample` method.
 
         Args:
-            sampling_interval (float): The sampling interval for the downsampled data.
-            occurrence (Literal["first", "last", "middle"], optional):
-                The occurrence to use when downsampling. Defaults to "first".
-            time_column (str, optional):
-                The column containing the time data. Defaults to "Time [s]".
+            sampling_interval: The sampling interval for the downsampled data.
+            occurrence: The occurrence to use when downsampling. Defaults to "first".
+            time_column: The column containing the time data. Defaults to "Time [s]".
 
         Returns:
-            List[Result]: A list of result objects containing the downsampled OCV data.
+            A list of result objects containing the downsampled OCV data.
         """
         return [
             dma_object.downsample_ocv(
@@ -919,11 +892,9 @@ class BatchDMA(BaseModel):
         DMA analysis is run in parallel across all provided input_data.
 
         Args:
-            fitting_target (Literal["OCV", "dQdV", "dVdQ"], optional):
-                The target for the curve fitting. Defaults to "OCV".
-            optimizer (Literal["minimize", "differential_evolution"], optional):
-                The optimization algorithm to use. Defaults to "minimize".
-            optimizer_options (Dict[str, Any], optional):
+            fitting_target: The target for the curve fitting. Defaults to "OCV".
+            optimizer: The optimization algorithm to use. Defaults to "minimize".
+            optimizer_options:
                 The options for the optimization algorithm. Defaults to
                 {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
                  "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
@@ -933,10 +904,9 @@ class BatchDMA(BaseModel):
                 limits at low and high full-cell SOC respectively.
 
         Returns:
-            Tuple[Result, List[Result]]:
-                - Result: The stoichiometry limits, electrode capacities and
-                degradation modes.
-                - List[Result]: The fitted OCV data for each list item in input_data.
+            - Result: The stoichiometry limits, electrode capacities and
+            degradation modes.
+            - List[Result]: The fitted OCV data for each list item in input_data.
         """
         # Run the OCV curve fitting in parallel
         with concurrent.futures.ProcessPoolExecutor() as executor:
