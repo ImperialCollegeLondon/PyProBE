@@ -15,6 +15,7 @@ from pyprobe.analysis.degradation_mode_analysis import (
     BatchDMA,
     CompositeOCP,
     _get_gradient,
+    average_ocvs,
 )
 from pyprobe.result import Result
 
@@ -649,30 +650,6 @@ def test_calculate_dma_parameters(
     )
 
 
-def test_average_ocvs(BreakinCycles_fixture):
-    """Test the average_ocvs method."""
-    break_in = BreakinCycles_fixture.cycle(0)
-    break_in.set_SOC()
-    dma = DMA.average_ocvs(
-        input_data=break_in,
-        charge_filter="constant_current(1)",
-        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
-        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
-    )
-    assert math.isclose(dma.input_data.get_only("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(dma.input_data.get_only("Voltage [V]")[-1], 4.170649780122139)
-    np.testing.assert_allclose(
-        dma.input_data.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
-    )
-    # test invalid input
-    with pytest.raises(ValueError):
-        DMA.average_ocvs(
-            input_data=break_in.charge(0),
-            ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
-            ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
-        )
-
-
 def test_calc_full_cell_ocv_composite():
     """Test the composite_full_cell_ocv method."""
     # Sample data
@@ -741,3 +718,19 @@ def test_downsample_ocv():
         dma.input_data.data["Voltage [V]"].to_numpy(),
         np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]),
     )
+
+
+def test_average_ocvs(BreakinCycles_fixture):
+    """Test the average_ocvs method."""
+    break_in = BreakinCycles_fixture.cycle(0)
+    break_in.set_SOC()
+    corrected_r = average_ocvs(break_in, charge_filter="constant_current(1)")
+    assert math.isclose(corrected_r.get_only("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(corrected_r.get_only("Voltage [V]")[-1], 4.170649780122139)
+    np.testing.assert_allclose(
+        corrected_r.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
+    )
+
+    # test invalid input
+    with pytest.raises(ValueError):
+        average_ocvs(break_in.charge(0))

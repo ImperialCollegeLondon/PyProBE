@@ -9,7 +9,7 @@ import numpy as np
 import polars as pl
 import sympy as sp
 from numpy.typing import NDArray
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_call
 from scipy import optimize
 from scipy.interpolate import PPoly
 
@@ -1005,3 +1005,62 @@ class BatchDMA(BaseModel):
         )
         self.batch_DMA_results = all_final_results
         return all_final_results, sorted_fitted_ocvs
+
+
+@validate_call
+def average_ocvs(
+    input_data: FilterToCycleType,
+    discharge_filter: Optional[str] = None,
+    charge_filter: Optional[str] = None,
+) -> Result:
+    """Average the charge and discharge OCV curves.
+
+    Args:
+        discharge_filter: The filter to apply to retrieve the discharge data from
+            the input data. If left to default, the first discharge in the input
+            data will be used.
+        charge_filter: The filter to apply to retrieve the charge data from the
+            input data. If left to default, the first charge in the input data will
+            be used.
+
+    Returns:
+        A Result object containing the averaged OCV curve.
+    """
+    required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC", "Current [A]"]
+    AnalysisValidator(
+        input_data=input_data,
+        required_columns=required_columns,
+    )
+    if discharge_filter is None:
+        discharge_result = input_data.discharge()
+    else:
+        discharge_result = eval(f"input_data.{discharge_filter}")
+    if charge_filter is None:
+        charge_result = input_data.charge()
+    else:
+        charge_result = eval(f"input_data.{charge_filter}")
+    charge_SOC = charge_result.get_only("SOC")
+    charge_OCV = charge_result.get_only("Voltage [V]")
+    charge_current = charge_result.get_only("Current [A]")
+    discharge_SOC = discharge_result.get_only("SOC")
+    discharge_OCV = discharge_result.get_only("Voltage [V]")
+    discharge_current = discharge_result.get_only("Current [A]")
+
+    average_OCV = dma_functions.average_OCV_curves(
+        charge_SOC,
+        charge_OCV,
+        charge_current,
+        discharge_SOC,
+        discharge_OCV,
+        discharge_current,
+    )
+
+    return charge_result.clean_copy(
+        pl.DataFrame(
+            {
+                "Voltage [V]": average_OCV,
+                "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
+                "SOC": charge_SOC,
+            }
+        )
+    )
