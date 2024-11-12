@@ -594,7 +594,7 @@ def eol_stoich_fixture(eol_capacity_fixture):
     return stoichiometry_limits
 
 
-def test_calculate_dma_parameters(
+def test_quantify_degradation_modes(
     bol_capacity_fixture, eol_capacity_fixture, bol_stoich_fixture, eol_stoich_fixture
 ):
     """Test the calculate_dma_parameters method."""
@@ -605,13 +605,14 @@ def test_calculate_dma_parameters(
         bol_capacity_fixture[3] - eol_capacity_fixture[3]
     ) / bol_capacity_fixture[3]
 
-    result = dma.quantify_degradation_modes(eol_stoich_fixture, bol_stoich_fixture)
+    result = dma.quantify_degradation_modes([bol_stoich_fixture, eol_stoich_fixture])
 
     assert result.data["SOH"].to_numpy()[1] == expected_SOH
     assert result.data["LAM_pe"].to_numpy()[1] == expected_LAM_pe
     assert result.data["LAM_ne"].to_numpy()[1] == expected_LAM_ne
     assert result.data["LLI"].to_numpy()[1] == expected_LLI
-    assert result.data.columns == ["SOH", "LAM_pe", "LAM_ne", "LLI"]
+    np.testing.assert_allclose(result.data["Index"].to_numpy(), [0, 1])
+    assert result.data.columns == ["Index", "SOH", "LAM_pe", "LAM_ne", "LLI"]
 
     # test with missing or incorrect input data
     result = Result(
@@ -625,7 +626,7 @@ def test_calculate_dma_parameters(
     )
 
     with pytest.raises(ValueError):
-        dma.quantify_degradation_modes(result, bol_stoich_fixture)
+        dma.quantify_degradation_modes([result, bol_stoich_fixture])
 
 
 def test_calc_full_cell_ocv_composite():

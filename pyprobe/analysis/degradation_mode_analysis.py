@@ -1,12 +1,11 @@
 """Module for degradation mode analysis methods."""
 
-import concurrent.futures
-import copy
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
 import polars as pl
+import ray
 import sympy as sp
 from numpy.typing import NDArray
 from pydantic import ConfigDict, validate_call
@@ -675,15 +674,13 @@ def run_ocv_curve_fit(
 
 @validate_call
 def quantify_degradation_modes(
-    input_stoichiometry_limits: Result, reference_stoichiometry_limits: Result
+    stoichiometry_limits_list: List[Result],
 ) -> Result:
     """Quantify the change in degradation modes between at least two OCV fits.
 
     Args:
-        input_stoichiometry_limits:
-            A result object containing the stoichiometry limits for the OCV fits.
-        reference_stoichiometry_limits:
-            A result object containing the beginning of life stoichiometry limits.
+        stoichiometry_limits_list: A list of Result objects containing the
+        stoichiometry limits for the OCV fits.
 
     Returns:
         A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
@@ -695,36 +692,27 @@ def quantify_degradation_modes(
         "Anode Capacity [Ah]",
         "Li Inventory [Ah]",
     ]
-    AnalysisValidator(
-        input_data=reference_stoichiometry_limits, required_columns=required_columns
-    )
-    if input_stoichiometry_limits is None:
-        raise ValueError("No stoichiometry limits have been calculated.")
-    AnalysisValidator(
-        input_data=input_stoichiometry_limits, required_columns=required_columns
-    )
+    for stoichiometry_limits in stoichiometry_limits_list:
+        AnalysisValidator(
+            input_data=stoichiometry_limits, required_columns=required_columns
+        )
 
-    electrode_capacity_results = [
-        reference_stoichiometry_limits,
-        input_stoichiometry_limits,
-    ]
     cell_capacity = utils.assemble_array(
-        electrode_capacity_results, "Cell Capacity [Ah]"
+        stoichiometry_limits_list, "Cell Capacity [Ah]"
     )
     pe_capacity = utils.assemble_array(
-        electrode_capacity_results, "Cathode Capacity [Ah]"
+        stoichiometry_limits_list, "Cathode Capacity [Ah]"
     )
-    ne_capacity = utils.assemble_array(
-        electrode_capacity_results, "Anode Capacity [Ah]"
-    )
-    li_inventory = utils.assemble_array(electrode_capacity_results, "Li Inventory [Ah]")
+    ne_capacity = utils.assemble_array(stoichiometry_limits_list, "Anode Capacity [Ah]")
+    li_inventory = utils.assemble_array(stoichiometry_limits_list, "Li Inventory [Ah]")
     SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
         cell_capacity, pe_capacity, ne_capacity, li_inventory
     )
 
-    dma_result = electrode_capacity_results[0].clean_copy(
+    dma_result = stoichiometry_limits_list[0].clean_copy(
         pl.DataFrame(
             {
+                "Index": np.arange(len(stoichiometry_limits_list)),
                 "SOH": SOH[:, 0],
                 "LAM_pe": LAM_pe[:, 0],
                 "LAM_ne": LAM_ne[:, 0],
@@ -732,7 +720,11 @@ def quantify_degradation_modes(
             }
         )
     )
+    dma_result.base_dataframe = dma_result.base_dataframe.with_columns(
+        pl.col("Index").cast(pl.Int64)
+    )
     dma_result.column_definitions = {
+        "Index": "The index of the data point from the provided list of input data.",
         "SOH": "Cell capacity normalized to initial capacity.",
         "LAM_pe": "Loss of active material in positive electrode.",
         "LAM_ne": "Loss of active material in positive electrode.",
@@ -741,6 +733,7 @@ def quantify_degradation_modes(
     return dma_result
 
 
+@ray.remote
 def _run_ocv_curve_fit_with_index(
     index: int,
     input_data: PyProBEDataType,
@@ -758,16 +751,6 @@ def _run_ocv_curve_fit_with_index(
         fitting_target=fitting_target,
         optimizer=optimizer,
         optimizer_options=optimizer_options,
-    )
-    return index, result
-
-
-def _quantify_degradation_modes_with_index(
-    index: int, stoichiometry_limits: Result, reference_stoichiometry_limits: Result
-) -> Tuple[int, Result]:
-    result = quantify_degradation_modes(
-        input_stoichiometry_limits=stoichiometry_limits,
-        reference_stoichiometry_limits=reference_stoichiometry_limits,
     )
     return index, result
 
@@ -809,89 +792,50 @@ def run_batch_dma_parallel(
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
     # Run the OCV curve fitting in parallel
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        fit_futures = [
-            executor.submit(
-                _run_ocv_curve_fit_with_index,
-                index,
-                input_data,
-                ocp_pe,
-                ocp_ne,
-                fitting_target=fitting_target,
-                optimizer=optimizer,
-                optimizer_options=optimizer_options,
-            )
-            for index, input_data in enumerate(input_data_list)
-        ]
-    # collate the results
-    fit_results = [
-        future.result() for future in concurrent.futures.as_completed(fit_futures)
+    # Initialize Ray (only needs to happen once)
+    if not ray.is_initialized():
+        ray.init()
+
+    # Submit tasks to Ray
+    futures = [
+        _run_ocv_curve_fit_with_index.remote(
+            index,
+            input_data,
+            ocp_pe,
+            ocp_ne,
+            fitting_target=fitting_target,
+            optimizer=optimizer,
+            optimizer_options=optimizer_options,
+        )
+        for index, input_data in enumerate(input_data_list)
     ]
 
+    # Get results and sort by index
+    fit_results = ray.get(futures)
+    ray.shutdown()
+    fit_results = [result for _, result in sorted(fit_results)]
     # Extract the results
-    fit_index = [result[0] for result in fit_results]
-    stoichiometry_limit_list = [result[1][0] for result in fit_results]
-    fitted_OCVs = [result[1][1] for result in fit_results]
-    sorted_fitted_ocvs = copy.deepcopy(fitted_OCVs)
-    fit_0_position = -1
+    stoichiometry_limit_list = [result[0] for result in fit_results]
+    fitted_OCVs = [result[1] for result in fit_results]
 
-    for position, index in enumerate(fit_index):
-        if index == 0:
-            fit_0_position = position
-        sorted_fitted_ocvs[index] = fitted_OCVs[position]
-        stoichiometry_limit_list[position].base_dataframe = stoichiometry_limit_list[
-            position
-        ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
+    for index, sto_limit in enumerate(stoichiometry_limit_list):
+        sto_limit.base_dataframe = sto_limit.base_dataframe.with_columns(
+            pl.lit(index).cast(pl.Int64).alias("Index")
+        )
 
-    # Run the DMA quantification in parallel
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        dma_futures = [
-            executor.submit(
-                _quantify_degradation_modes_with_index,
-                index,
-                stoichiometry_limits,
-                reference_stoichiometry_limits=stoichiometry_limit_list[fit_0_position],
-            )
-            for index, stoichiometry_limits in zip(fit_index, stoichiometry_limit_list)
-        ]
-    # collate the results
-    all_results = [
-        future.result() for future in concurrent.futures.as_completed(dma_futures)
-    ]
-
-    # Extract the results
-    dma_index = [result[0] for result in all_results]
-    dma_results = [result[1] for result in all_results]
-
-    # Update the DMA objects with the results
-    for position, index in enumerate(dma_index):
-        if index == 0:
-            dma_0_position = position
-        dma_results[position].base_dataframe = dma_results[
-            position
-        ].base_dataframe.with_columns(pl.lit(index).alias("Index"))
-        # reduce the dataframe down to only the last row (the row relevant to the
-        # data point)
-        dma_results[position].base_dataframe = dma_results[
-            position
-        ].base_dataframe.tail(1)
-
-    # compile the results into single result objects
-    all_stoichiometry_limits = copy.deepcopy(stoichiometry_limit_list[fit_0_position])
-    all_dma_results = copy.deepcopy(dma_results[dma_0_position])
+    dma_results = quantify_degradation_modes(stoichiometry_limit_list)
+    # compile the results into single result object
+    all_stoichiometry_limits = stoichiometry_limit_list[0]
     all_stoichiometry_limits.extend(
-        [item for i, item in enumerate(stoichiometry_limit_list) if i != fit_0_position]
-    )
-    all_dma_results.extend(
-        [item for i, item in enumerate(dma_results) if i != dma_0_position]
+        [item for i, item in enumerate(stoichiometry_limit_list) if i != 0]
     )
     all_final_results = all_stoichiometry_limits
-    all_final_results.join(all_dma_results, on="Index", how="left")
+    all_final_results.join(dma_results, on="Index", how="left")
     all_final_results.base_dataframe = all_final_results.base_dataframe.sort("Index")
     all_final_results.define_column(
         "Index", "The index of the data point from the provided list of input data."
     )
-    return all_final_results, sorted_fitted_ocvs
+    return all_final_results, fitted_OCVs
 
 
 @validate_call

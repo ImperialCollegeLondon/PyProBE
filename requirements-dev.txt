@@ -6,6 +6,8 @@
 #
 accessible-pygments==0.0.5
     # via pydata-sphinx-theme
+aiosignal==1.3.1
+    # via ray
 alabaster==1.0.0
     # via sphinx
 altair==5.4.0
@@ -53,6 +55,7 @@ click==8.1.7
     # via
     #   black
     #   pip-tools
+    #   ray
     #   streamlit
 contourpy==1.3.0
     # via matplotlib
@@ -85,6 +88,7 @@ fastjsonschema==2.20.0
 filelock==3.15.4
     # via
     #   pytest-mypy
+    #   ray
     #   virtualenv
 flake8==7.1.1
     # via
@@ -94,6 +98,10 @@ flake8-docstrings==1.7.0
     # via PyProBE (pyproject.toml)
 fonttools==4.53.1
     # via matplotlib
+frozenlist==1.5.0
+    # via
+    #   aiosignal
+    #   ray
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
@@ -125,6 +133,7 @@ jsonschema==4.23.0
     # via
     #   altair
     #   nbformat
+    #   ray
 jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyter-client==8.6.2
@@ -161,6 +170,8 @@ mistune==3.0.2
     # via nbconvert
 mpmath==1.3.0
     # via sympy
+msgpack==1.1.0
+    # via ray
 mypy==1.11.1
     # via
     #   PyProBE (pyproject.toml)
@@ -212,6 +223,7 @@ packaging==24.1
     #   pooch
     #   pydata-sphinx-theme
     #   pytest
+    #   ray
     #   sphinx
     #   streamlit
     #   xarray
@@ -253,7 +265,9 @@ pre-commit==3.8.0
 prompt-toolkit==3.0.47
     # via ipython
 protobuf==5.27.3
-    # via streamlit
+    # via
+    #   ray
+    #   streamlit
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
@@ -335,8 +349,11 @@ pyyaml==6.0.2
     #   PyProBE (pyproject.toml)
     #   pre-commit
     #   pybtex
+    #   ray
 pyzmq==26.1.0
     # via jupyter-client
+ray==2.39.0
+    # via PyProBE (pyproject.toml)
 referencing==0.35.1
     # via
     #   jsonschema
@@ -344,6 +361,7 @@ referencing==0.35.1
 requests==2.32.3
     # via
     #   pooch
+    #   ray
     #   sphinx
     #   streamlit
 rich==13.7.1

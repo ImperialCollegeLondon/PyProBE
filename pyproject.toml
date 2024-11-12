@@ -25,7 +25,8 @@ dependencies = [
     "pydantic", # for data valiation
     "kaleido", # for displaying plotly figures as images
     "IPython", # for example notebooks
-    "pybamm" # for battery modelling and experiment class
+    "pybamm", # for battery modelling and experiment class
+    "ray", # for parallel processing
 ]
 
 [project.optional-dependencies]
