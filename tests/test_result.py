@@ -375,3 +375,45 @@ def test_extend_with_new_columns(reduced_result_fixture):
     assert (
         reduced_result_fixture.column_definitions["Current [A]"] == "Current definition"
     )
+
+
+def test_clean_copy(reduced_result_fixture):
+    """Test the clean_copy method."""
+    # Test default parameters (empty dataframe)
+    clean_result = reduced_result_fixture.clean_copy()
+    assert isinstance(clean_result, Result)
+    assert clean_result.base_dataframe.is_empty()
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == {}
+
+    # Test with new dataframe
+    new_df = pl.DataFrame({"Test [V]": [1, 2, 3]})
+    clean_result = reduced_result_fixture.clean_copy(dataframe=new_df)
+    assert isinstance(clean_result, Result)
+    pl_testing.assert_frame_equal(clean_result.data, new_df)
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == {}
+
+    # Test with new column definitions
+    new_defs = {"New Column [A]": "New definition"}
+    clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
+    assert isinstance(clean_result, Result)
+    assert clean_result.base_dataframe.is_empty()
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == new_defs
+
+    # Test with both new dataframe and column definitions
+    clean_result = reduced_result_fixture.clean_copy(
+        dataframe=new_df, column_definitions=new_defs
+    )
+    assert isinstance(clean_result, Result)
+    pl_testing.assert_frame_equal(clean_result.data, new_df)
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == new_defs
+
+    # Test with LazyFrame
+    lazy_df = new_df.lazy()
+    clean_result = reduced_result_fixture.clean_copy(dataframe=lazy_df)
+    assert isinstance(clean_result, Result)
+    assert isinstance(clean_result.base_dataframe, pl.LazyFrame)
+    pl_testing.assert_frame_equal(clean_result.data, new_df)
