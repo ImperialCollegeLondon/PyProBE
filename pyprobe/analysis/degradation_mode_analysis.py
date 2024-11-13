@@ -687,6 +687,10 @@ def quantify_degradation_modes(
         the provided OCV fits.
     """
     required_columns = [
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
         "Cell Capacity [Ah]",
         "Cathode Capacity [Ah]",
         "Anode Capacity [Ah]",
@@ -696,6 +700,10 @@ def quantify_degradation_modes(
         AnalysisValidator(
             input_data=stoichiometry_limits, required_columns=required_columns
         )
+    x_pe_lo = utils.assemble_array(stoichiometry_limits_list, "x_pe low SOC")
+    x_pe_hi = utils.assemble_array(stoichiometry_limits_list, "x_pe high SOC")
+    x_ne_lo = utils.assemble_array(stoichiometry_limits_list, "x_ne low SOC")
+    x_ne_hi = utils.assemble_array(stoichiometry_limits_list, "x_ne high SOC")
 
     cell_capacity = utils.assemble_array(
         stoichiometry_limits_list, "Cell Capacity [Ah]"
@@ -713,6 +721,14 @@ def quantify_degradation_modes(
         pl.DataFrame(
             {
                 "Index": np.arange(len(stoichiometry_limits_list)),
+                "x_pe low SOC": x_pe_lo[:, 0],
+                "x_pe high SOC": x_pe_hi[:, 0],
+                "x_ne low SOC": x_ne_lo[:, 0],
+                "x_ne high SOC": x_ne_hi[:, 0],
+                "Cell Capacity [Ah]": cell_capacity[:, 0],
+                "Cathode Capacity [Ah]": pe_capacity[:, 0],
+                "Anode Capacity [Ah]": ne_capacity[:, 0],
+                "Li Inventory [Ah]": li_inventory[:, 0],
                 "SOH": SOH[:, 0],
                 "LAM_pe": LAM_pe[:, 0],
                 "LAM_ne": LAM_ne[:, 0],
@@ -827,18 +843,7 @@ def run_batch_dma_parallel(
         )
 
     dma_results = quantify_degradation_modes(stoichiometry_limit_list)
-    # compile the results into single result object
-    all_stoichiometry_limits = stoichiometry_limit_list[0]
-    all_stoichiometry_limits.extend(
-        [item for i, item in enumerate(stoichiometry_limit_list) if i != 0]
-    )
-    all_final_results = all_stoichiometry_limits
-    all_final_results.join(dma_results, on="Index", how="left")
-    all_final_results.base_dataframe = all_final_results.base_dataframe.sort("Index")
-    all_final_results.define_column(
-        "Index", "The index of the data point from the provided list of input data."
-    )
-    return all_final_results, fitted_OCVs
+    return dma_results, fitted_OCVs
 
 
 @validate_call

@@ -517,7 +517,7 @@ def bol_ne_limits_fixture():
 @pytest.fixture
 def bol_pe_limits_fixture():
     """Return the cathode stoichiometry limits."""
-    return np.array([0.05, 0.9])
+    return np.array([0.9, 0.05])
 
 
 @pytest.fixture
@@ -529,7 +529,7 @@ def eol_ne_limits_fixture():
 @pytest.fixture
 def eol_pe_limits_fixture():
     """Return the cathode stoichiometry limits."""
-    return np.array([0.05, 0.9])
+    return np.array([0.9, 0.05])
 
 
 @pytest.fixture
@@ -561,11 +561,17 @@ def eol_capacity_fixture(eol_ne_limits_fixture, eol_pe_limits_fixture):
 
 
 @pytest.fixture
-def bol_stoich_fixture(bol_capacity_fixture):
+def bol_stoich_fixture(
+    bol_capacity_fixture, bol_ne_limits_fixture, bol_pe_limits_fixture
+):
     """Return a Result instance."""
     stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
+                "x_pe low SOC": bol_pe_limits_fixture[0],
+                "x_pe high SOC": bol_pe_limits_fixture[1],
+                "x_ne low SOC": bol_ne_limits_fixture[0],
+                "x_ne high SOC": bol_ne_limits_fixture[1],
                 "Cell Capacity [Ah]": bol_capacity_fixture[0],
                 "Cathode Capacity [Ah]": bol_capacity_fixture[1],
                 "Anode Capacity [Ah]": bol_capacity_fixture[2],
@@ -578,11 +584,17 @@ def bol_stoich_fixture(bol_capacity_fixture):
 
 
 @pytest.fixture
-def eol_stoich_fixture(eol_capacity_fixture):
+def eol_stoich_fixture(
+    eol_capacity_fixture, eol_ne_limits_fixture, eol_pe_limits_fixture
+):
     """Return a Result instance."""
     stoichiometry_limits = Result(
         base_dataframe=pl.LazyFrame(
             {
+                "x_pe low SOC": eol_pe_limits_fixture[0],
+                "x_pe high SOC": eol_pe_limits_fixture[1],
+                "x_ne low SOC": eol_ne_limits_fixture[0],
+                "x_ne high SOC": eol_ne_limits_fixture[1],
                 "Cell Capacity [Ah]": eol_capacity_fixture[0],
                 "Cathode Capacity [Ah]": eol_capacity_fixture[1],
                 "Anode Capacity [Ah]": eol_capacity_fixture[2],
@@ -606,13 +618,27 @@ def test_quantify_degradation_modes(
     ) / bol_capacity_fixture[3]
 
     result = dma.quantify_degradation_modes([bol_stoich_fixture, eol_stoich_fixture])
-
-    assert result.data["SOH"].to_numpy()[1] == expected_SOH
-    assert result.data["LAM_pe"].to_numpy()[1] == expected_LAM_pe
-    assert result.data["LAM_ne"].to_numpy()[1] == expected_LAM_ne
-    assert result.data["LLI"].to_numpy()[1] == expected_LLI
+    # Test assertions using numpy's assert_allclose
+    np.testing.assert_allclose(result.data["SOH"].to_numpy()[1], expected_SOH)
+    np.testing.assert_allclose(result.data["LAM_pe"].to_numpy()[1], expected_LAM_pe)
+    np.testing.assert_allclose(result.data["LAM_ne"].to_numpy()[1], expected_LAM_ne)
+    np.testing.assert_allclose(result.data["LLI"].to_numpy()[1], expected_LLI)
     np.testing.assert_allclose(result.data["Index"].to_numpy(), [0, 1])
-    assert result.data.columns == ["Index", "SOH", "LAM_pe", "LAM_ne", "LLI"]
+    assert result.data.columns == [
+        "Index",
+        "x_pe low SOC",
+        "x_pe high SOC",
+        "x_ne low SOC",
+        "x_ne high SOC",
+        "Cell Capacity [Ah]",
+        "Cathode Capacity [Ah]",
+        "Anode Capacity [Ah]",
+        "Li Inventory [Ah]",
+        "SOH",
+        "LAM_pe",
+        "LAM_ne",
+        "LLI",
+    ]
 
     # test with missing or incorrect input data
     result = Result(
