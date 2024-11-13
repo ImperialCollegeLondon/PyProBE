@@ -793,26 +793,29 @@ def run_batch_dma_parallel(
     """
     # Run the OCV curve fitting in parallel
     # Initialize Ray (only needs to happen once)
-    if not ray.is_initialized():
-        ray.init()
-
-    # Submit tasks to Ray
-    futures = [
-        _run_ocv_curve_fit_with_index.remote(
-            index,
-            input_data,
-            ocp_pe,
-            ocp_ne,
-            fitting_target=fitting_target,
-            optimizer=optimizer,
-            optimizer_options=optimizer_options,
-        )
-        for index, input_data in enumerate(input_data_list)
-    ]
-
-    # Get results and sort by index
-    fit_results = ray.get(futures)
-    ray.shutdown()
+    try:
+        if not ray.is_initialized():
+            ray.init()
+        print(f"Ray using {ray.cluster_resources()['CPU']} CPUs")
+        # Submit tasks to Ray
+        futures = [
+            _run_ocv_curve_fit_with_index.remote(
+                index,
+                input_data,
+                ocp_pe,
+                ocp_ne,
+                fitting_target=fitting_target,
+                optimizer=optimizer,
+                optimizer_options=optimizer_options,
+            )
+            for index, input_data in enumerate(input_data_list)
+        ]
+        print(f"Submitted {len(futures)} parallel tasks")
+        # Get results and sort by index
+        fit_results = ray.get(futures)
+    finally:
+        if ray.is_initialized():
+            ray.shutdown()
     fit_results = [result for _, result in sorted(fit_results)]
     # Extract the results
     stoichiometry_limit_list = [result[0] for result in fit_results]
