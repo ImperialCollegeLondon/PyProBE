@@ -51,6 +51,7 @@ def _create_interpolator(
     interpolator_class: Callable[..., Any],
     x: NDArray[np.float64],
     y: NDArray[np.float64],
+    **kwargs: Any,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create an interpolator after validating the input vectors.
 
@@ -63,7 +64,7 @@ def _create_interpolator(
         Any: The interpolator object.
     """
     x, y = _validate_interp_input_vectors(x, y)
-    return interpolator_class(x, y)
+    return interpolator_class(x, y, **kwargs)
 
 
 def linear_interpolator(
@@ -82,7 +83,7 @@ def linear_interpolator(
 
 
 def cubic_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64]
+    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a Scipy cubic spline interpolator.
 
@@ -94,11 +95,11 @@ def cubic_interpolator(
         Callable[[NDArray[np.float64]], NDArray[np.float64]]:
             The cubic spline interpolator.
     """
-    return _create_interpolator(interpolate.CubicSpline, x, y)
+    return _create_interpolator(interpolate.CubicSpline, x, y, **kwargs)
 
 
 def pchip_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64]
+    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a Scipy Pchip interpolator.
 
@@ -109,11 +110,11 @@ def pchip_interpolator(
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Pchip interpolator.
     """
-    return _create_interpolator(interpolate.PchipInterpolator, x, y)
+    return _create_interpolator(interpolate.PchipInterpolator, x, y, **kwargs)
 
 
 def akima_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64]
+    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a Scipy Akima interpolator.
 
@@ -124,7 +125,7 @@ def akima_interpolator(
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Akima interpolator.
     """
-    return _create_interpolator(interpolate.Akima1DInterpolator, x, y)
+    return _create_interpolator(interpolate.Akima1DInterpolator, x, y, **kwargs)
 
 
 def downsample_data(
