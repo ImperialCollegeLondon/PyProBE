@@ -846,6 +846,102 @@ def run_batch_dma_parallel(
     return dma_results, fitted_OCVs
 
 
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
+def run_batch_dma_sequential(
+    input_data_list: List[PyProBEDataType],
+    ocp_pe: Union[OCP, CompositeOCP],
+    ocp_ne: Union[OCP, CompositeOCP],
+    fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
+    optimizer: List[Literal["minimize", "differential_evolution"]] = ["minimize"],
+    optimizer_options: List[Dict[str, Any]] = [
+        {
+            "x0": np.array([0.9, 0.1, 0.1, 0.9]),
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+        }
+    ],
+    link_results: bool = False,
+) -> Tuple[Result, List[Result]]:
+    """Fit half cell open circuit potential curves to full cell OCV data.
+
+    DMA analysis is run sequentially across all provided input_data.
+
+    Args:
+        input_data_list: The list of input data for the analysis.
+        ocp_pe: The positive electrode OCP in the form of a OCP or CompositeOCP object.
+        ocp_ne: The negative electrode OCP in the form of a OCP or CompositeOCP object.
+        fitting_target: The target for the curve fitting. Defaults to "OCV".
+        optimizer:
+            A list of optimization algorithms to use. The length of the list determines
+            how the optimizers will be applied:
+                - Length = 1, the same optimizer will be used for all provided input
+                data.
+                - Length = 2, the first optimizer will be used for the first item in the
+                input_data_list and the second optimizer will be used for the remaining
+                items.
+                - Length = n, the ith optimizer will be used for the ith item in the
+                input_data_list. The length of the optimizer list must match the length
+                of the input_data_list.
+            Defaults to ["minimize"].
+        optimizer_options:
+            A list of dictionaries containing the options for the optimization
+            algorithm. The length of the list determines how the options will be
+            applied in the same manner as the optimizer argument. Defaults to
+            [{"x0": np.array([0.9, 0.1, 0.1, 0.9]),
+                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}].
+        link_results: Whether to link the fitted stoichiometry limits from the previous
+            input data list item to the next input data list item. Defaults to False.
+
+    Returns:
+        - Result: The stoichiometry limits, electrode capacities and
+        degradation modes.
+        - List[Result]: The fitted OCV data for each list item in input_data.
+    """
+    # Initialize the results list
+    stoichiometry_limit_list: List[Result] = []
+    fitted_OCVs: List[Result] = []
+    # Run the OCV curve fitting sequentially
+    for index, input_data in enumerate(input_data_list):
+        if len(optimizer) == 1:
+            current_optimizer = optimizer[0]
+        else:
+            current_optimizer = optimizer[index]
+        if len(optimizer_options) == 1:
+            current_optimizer_options = optimizer_options[0]
+        else:
+            current_optimizer_options = optimizer_options[index]
+        if index > 0 and link_results:
+            previous_stoichiometry_limits = stoichiometry_limit_list[-1]
+            (
+                previous_x_pe_lo,
+                previous_x_pe_hi,
+                previous_x_ne_lo,
+                previous_x_ne_hi,
+            ) = previous_stoichiometry_limits.get(
+                "x_pe low SOC", "x_pe high SOC", "x_ne low SOC", "x_ne high SOC"
+            )
+            if current_optimizer == "minimize":
+                current_optimizer_options["x0"] = np.array(
+                    [
+                        previous_x_pe_lo[0],
+                        previous_x_pe_hi[0],
+                        previous_x_ne_lo[0],
+                        previous_x_ne_hi[0],
+                    ]
+                )
+        stoichiometry_limits, fitted_OCV = run_ocv_curve_fit(
+            input_data=input_data,
+            ocp_pe=ocp_pe,
+            ocp_ne=ocp_ne,
+            fitting_target=fitting_target,
+            optimizer=current_optimizer,
+            optimizer_options=current_optimizer_options,
+        )
+        stoichiometry_limit_list.append(stoichiometry_limits)
+        fitted_OCVs.append(fitted_OCV)
+    dma_results = quantify_degradation_modes(stoichiometry_limit_list)
+    return dma_results, fitted_OCVs
+
+
 @validate_call
 def average_ocvs(
     input_data: FilterToCycleType,

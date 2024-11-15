@@ -720,3 +720,140 @@ def test_average_ocvs(BreakinCycles_fixture):
     # test invalid input
     with pytest.raises(ValueError):
         dma.average_ocvs(break_in.charge(0))
+
+
+def test_run_batch_dma_sequential_basic():
+    """Test basic functionality of run_batch_dma_sequential."""
+    # Generate sample data
+    soc = np.linspace(0, 1, 1000)
+    ocv_target_list = [
+        get_sample_ocv_data([0.83, 0.1, 0.1, 0.73]),
+        get_sample_ocv_data([0.7, 0.2, 0.1, 0.70]),
+        get_sample_ocv_data([0.6, 0.3, 0.3, 0.65]),
+    ]
+    input_data_list = [
+        Result(
+            base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+            info={},
+        )
+        for ocv in ocv_target_list
+    ]
+
+    dma_results, fitted_ocvs = dma.run_batch_dma_sequential(
+        input_data_list=input_data_list,
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+        fitting_target="OCV",
+        optimizer=["differential_evolution"],
+        optimizer_options=[
+            {"bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)]}
+        ],
+    )
+
+    # Verify results
+    assert len(fitted_ocvs) == 3
+    np.testing.assert_allclose(
+        dma_results.data["x_pe low SOC"], [0.83, 0.7, 0.6], rtol=1e-6
+    )
+    np.testing.assert_allclose(
+        dma_results.data["x_pe high SOC"], [0.1, 0.2, 0.3], rtol=1e-5
+    )
+
+
+def test_run_batch_dma_sequential_multiple_optimizers():
+    """Test run_batch_dma_sequential with multiple optimizers."""
+    soc = np.linspace(0, 1, 1000)
+    ocv_target_list = [
+        get_sample_ocv_data([0.83, 0.1, 0.1, 0.73]),
+        get_sample_ocv_data([0.7, 0.2, 0.1, 0.70]),
+    ]
+    input_data_list = [
+        Result(
+            base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+            info={},
+        )
+        for ocv in ocv_target_list
+    ]
+
+    dma_results, fitted_ocvs = dma.run_batch_dma_sequential(
+        input_data_list=input_data_list,
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+        optimizer=["differential_evolution", "minimize"],
+        optimizer_options=[
+            {"bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)]},
+            {
+                "x0": np.array([0.83, 0.1, 0.1, 0.73]),
+                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
+            },
+        ],
+    )
+
+    assert len(fitted_ocvs) == 2
+    assert isinstance(dma_results, Result)
+    np.testing.assert_allclose(dma_results.data["x_pe low SOC"], [0.83, 0.7], rtol=1e-6)
+
+
+def test_run_batch_dma_sequential_linked_results():
+    """Test run_batch_dma_sequential with linked results."""
+    soc = np.linspace(0, 1, 1000)
+    ocv_target_list = [
+        get_sample_ocv_data([0.83, 0.1, 0.1, 0.73]),
+        get_sample_ocv_data([0.7, 0.2, 0.1, 0.70]),
+    ]
+    input_data_list = [
+        Result(
+            base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+            info={},
+        )
+        for ocv in ocv_target_list
+    ]
+
+    dma_results, fitted_ocvs = dma.run_batch_dma_sequential(
+        input_data_list=input_data_list,
+        ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+        ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+        link_results=True,
+        optimizer=["minimize"],
+        optimizer_options=[{"x0": np.array([0.83, 0.1, 0.1, 0.73])}],
+    )
+
+    assert len(fitted_ocvs) == 2
+    assert isinstance(dma_results, Result)
+    np.testing.assert_allclose(dma_results.data["x_pe low SOC"], [0.83, 0.7], rtol=1e-6)
+
+
+def test_run_batch_dma_sequential_invalid_inputs():
+    """Test run_batch_dma_sequential with invalid inputs."""
+    soc = np.linspace(0, 1, 1000)
+    ocv = get_sample_ocv_data([0.83, 0.1, 0.1, 0.73])
+    input_data = Result(
+        base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+        info={},
+    )
+
+    # Test empty input list
+    with pytest.raises(ValueError):
+        dma.run_batch_dma_sequential(
+            input_data_list=[],
+            ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+            ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+        )
+
+    # Test invalid optimizer length
+    with pytest.raises(ValueError):
+        dma.run_batch_dma_sequential(
+            input_data_list=[input_data, input_data],
+            ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+            ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+            optimizer=["minimize", "differential_evolution", "invalid"],
+        )
+
+    # Test invalid optimizer type
+    with pytest.raises(ValueError):
+        dma.run_batch_dma_sequential(
+            input_data_list=[input_data],
+            ocp_ne=OCP(graphite_LGM50_ocp_Chen2020),
+            ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
+            optimizer=["invalid_optimizer"],
+        )
