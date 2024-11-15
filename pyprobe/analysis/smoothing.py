@@ -18,11 +18,13 @@ from pyprobe.result import Result
 class _LinearInterpolator(interpolate.PPoly):
     """A class to interpolate data linearly."""
 
-    def __init__(self, x: NDArray[np.float64], y: NDArray[np.float64]) -> None:
+    def __init__(
+        self, x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
+    ) -> None:
         """Initialize the interpolator."""
         slopes = np.diff(y) / np.diff(x)
         coefficients = np.vstack([slopes, y[:-1]])
-        super().__init__(coefficients, x)
+        super().__init__(coefficients, x, **kwargs)
 
 
 def _validate_interp_input_vectors(
@@ -68,7 +70,7 @@ def _create_interpolator(
 
 
 def linear_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64]
+    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a linear interpolator.
 
@@ -79,7 +81,7 @@ def linear_interpolator(
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The linear interpolator.
     """
-    return _create_interpolator(_LinearInterpolator, x, y)
+    return _create_interpolator(_LinearInterpolator, x, y, **kwargs)
 
 
 def cubic_interpolator(
