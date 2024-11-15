@@ -138,7 +138,6 @@ def _downsample_data(
     target: str,
     sampling_interval: float,
     occurrence: Literal["first", "last", "middle"] = "first",
-    time_column: str = "Time [s]",
 ) -> pl.DataFrame | pl.LazyFrame:
     """Resample a DataFrame to a specified interval.
 
@@ -168,22 +167,12 @@ def _downsample_data(
     )
     # Group by 'group' and select the desired occurrence
     if occurrence == "first":
-        resampled_times = df.group_by("bin").agg(
-            [pl.col(time_column).first().alias(time_column)]
-        )
+        resampled_times = df.group_by("bin").first()
     elif occurrence == "last":
-        resampled_times = df.group_by("bin").agg(
-            [
-                pl.col(time_column).last().alias(time_column),
-            ]
-        )
+        resampled_times = df.group_by("bin").last()
     elif occurrence == "middle":
-        resampled_times = (
-            df.group_by("bin")
-            .agg(pl.col(time_column).quantile(0.5, "nearest").alias(time_column))
-            .sort(time_column)
-        )
-    return resampled_times.join(df, on=time_column)
+        resampled_times = df.group_by("bin").quantile(0.5, "nearest")
+    return resampled_times.join(df, on=target)
 
 
 def spline_smoothing(
@@ -256,7 +245,6 @@ def downsample(
     target_column: str,
     sampling_interval: float,
     occurrence: Literal["first", "last", "middle"] = "first",
-    time_column: str = "Time [s]",
 ) -> Result:
     """Downsample a DataFrame to a specified interval.
 
@@ -284,7 +272,6 @@ def downsample(
         target_column,
         sampling_interval,
         occurrence,
-        time_column,
     )
     return result
 
@@ -409,7 +396,6 @@ class Smoothing(BaseModel):
         target_column: str,
         sampling_interval: float,
         occurrence: Literal["first", "last", "middle"] = "first",
-        time_column: str = "Time [s]",
     ) -> Result:
         """Downsample a DataFrame to a specified interval.
 
@@ -435,7 +421,6 @@ class Smoothing(BaseModel):
             target_column,
             sampling_interval,
             occurrence,
-            time_column,
         )
         return result
 

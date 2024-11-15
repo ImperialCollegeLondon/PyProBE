@@ -211,7 +211,6 @@ def test_downsample_df(benchmark):
     resampled_middle = smoothing._downsample_data(
         df, "values", min_distance, occurrence="middle"
     )["values"].to_numpy()
-
     np.testing.assert_array_equal(
         resampled_first, np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
     )
@@ -237,7 +236,7 @@ def test_downsample_df(benchmark):
 
 def test_downsample_basic(noisy_data):
     """Test basic downsampling functionality with default parameters."""
-    result = smoothing.downsample(noisy_data, "y", time_column="x", sampling_interval=1)
+    result = smoothing.downsample(noisy_data, "y", sampling_interval=1)
 
     # Check that output is a Result object
     assert isinstance(result, Result)
@@ -247,24 +246,6 @@ def test_downsample_basic(noisy_data):
     # Check that the interval between points is at least the sampling interval
     diffs = np.diff(result.get_only("y"))
     assert np.all(np.abs(diffs) >= 0.9)
-
-
-def test_downsample_custom_time_column():
-    """Test downsampling with a custom time column name."""
-    times = np.array([0, 1, 2, 3, 4, 5])
-    values = np.array([0, 1, 2, 3, 4, 5])
-    test_data = Result(
-        base_dataframe=pl.LazyFrame({"custom_time": times, "values": values}),
-        info={},
-        column_definitions={"custom_time": "time", "values": "test values"},
-    )
-
-    result = smoothing.downsample(
-        test_data, "values", sampling_interval=2.0, time_column="custom_time"
-    )
-
-    assert "custom_time" in result.column_list
-    assert len(result.get_only("values")) == 3
 
 
 def test_downsample_intervals():
