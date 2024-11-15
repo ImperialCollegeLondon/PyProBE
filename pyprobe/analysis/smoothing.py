@@ -13,6 +13,9 @@ from scipy.signal import savgol_filter
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
+from pyprobe.typing import PyProBEDataType
+
+pl.Config.set_tbl_rows(50)
 
 
 class _LinearInterpolator(interpolate.PPoly):
@@ -130,7 +133,7 @@ def akima_interpolator(
     return _create_interpolator(interpolate.Akima1DInterpolator, x, y, **kwargs)
 
 
-def downsample_data(
+def _downsample_data(
     df: pl.DataFrame | pl.LazyFrame,
     target: str,
     sampling_interval: float,
@@ -138,6 +141,9 @@ def downsample_data(
     time_column: str = "Time [s]",
 ) -> pl.DataFrame | pl.LazyFrame:
     """Resample a DataFrame to a specified interval.
+
+    This method bins the data into intervals of the specified size and then selects
+    the desired occurrence within each bin. The target column must be monotonic.
 
     Args:
         df (pl.DataFrame | pl.LazyFrame):
@@ -153,47 +159,177 @@ def downsample_data(
         pl.DataFrame | pl.LazyFrame:
             The downsampled DataFrame.
     """
-    # Calculate the absolute difference between consecutive values
     df = df.with_columns(
         [
-            (pl.col(target) - pl.col(target).shift(1))
-            .abs()
-            .fill_null(0)
-            .alias("target_diff")
+            ((pl.col(target) / sampling_interval).floor() * sampling_interval).alias(
+                "bin"
+            )
         ]
     )
-
-    # Calculate cumulative sum of value differences
-    df = df.with_columns([pl.col("target_diff").cum_sum().alias("target_cumsum")])
-
-    # Create groups based on min_distance
-    df = df.with_columns(
-        [
-            (pl.col("target_cumsum") / sampling_interval)
-            .floor()
-            .cast(pl.Int64)
-            .alias("group")
-        ]
-    )
-
     # Group by 'group' and select the desired occurrence
     if occurrence == "first":
-        resampled_times = df.group_by("group").agg(
+        resampled_times = df.group_by("bin").agg(
             [pl.col(time_column).first().alias(time_column)]
         )
     elif occurrence == "last":
-        resampled_times = df.group_by("group").agg(
+        resampled_times = df.group_by("bin").agg(
             [
                 pl.col(time_column).last().alias(time_column),
             ]
         )
     elif occurrence == "middle":
         resampled_times = (
-            df.group_by("group")
+            df.group_by("bin")
             .agg(pl.col(time_column).quantile(0.5, "nearest").alias(time_column))
             .sort(time_column)
         )
     return resampled_times.join(df, on=time_column)
+
+
+def spline_smoothing(
+    input_data: PyProBEDataType,
+    target_column: str,
+    smoothing_lambda: Optional[float] = None,
+    x: str = "Time [s]",
+) -> Result:
+    """A method for smoothing noisy data using a spline.
+
+    Args:
+        input_data (PyProBEDataType):
+            The input data to smooth.
+        target_column (str):
+            The name of the target variable to smooth.
+        smoothing_lambda (float, optional):
+            The smoothing parameter. Default is None.
+        x (str, optional):
+            The name of the x variable for the spline curve fit.
+            Default is "Time [s]".
+
+    Returns:
+        Result:
+            A result object containing the data from input data with the target
+            column smoothed using a spline, and the gradient of the smoothed data
+            with respect to the x variable.
+    """
+    # validate and identify variables
+    validator = AnalysisValidator(
+        input_data=input_data, required_columns=[x, target_column]
+    )
+    x_data, y_data = validator.variables
+
+    data_flipped = False
+    if x_data[0] > x_data[-1]:  # flip the data if it is not in ascending order
+        x_data = np.flip(x_data)
+        y_data = np.flip(y_data)
+        data_flipped = True
+
+    y_spline = make_smoothing_spline(x_data, y_data, lam=smoothing_lambda)
+
+    smoothed_y = y_spline(x_data)
+    if data_flipped:
+        x_data = np.flip(x_data)
+        smoothed_y = np.flip(smoothed_y)
+
+    derivative = y_spline.derivative()
+    smoothed_dydx = derivative(x_data)
+
+    result = copy.deepcopy(input_data)
+    smoothed_data_column = pl.Series(target_column, smoothed_y)
+    result.base_dataframe = result.base_dataframe.with_columns(
+        smoothed_data_column.alias(target_column)
+    )
+
+    gradient_column_name = f"d({target_column})/d({x})"
+    dydx_column = pl.Series(gradient_column_name, smoothed_dydx)
+    result.base_dataframe = result.base_dataframe.with_columns(
+        dydx_column.alias(gradient_column_name)
+    )
+    result.define_column(
+        f"d({target_column})/d({x})",
+        "The gradient of the smoothed data.",
+    )
+    return result
+
+
+def downsample(
+    input_data: PyProBEDataType,
+    target_column: str,
+    sampling_interval: float,
+    occurrence: Literal["first", "last", "middle"] = "first",
+    time_column: str = "Time [s]",
+) -> Result:
+    """Downsample a DataFrame to a specified interval.
+
+    Requires the target column to be monotonic.
+
+    Args:
+        input_data (PyProBEDataType):
+            The input data to downsample.
+        target_column (str):
+            The target column to downsample.
+        sampling_interval (float):
+            The desired minimum interval between points.
+        occurrence (Literal['first', 'last', 'middle'], optional):
+            The occurrence to take when downsampling. Default is 'first'.
+        time_column (str, optional):
+            The time column to use for downsampling. Default is 'Time [s]'.
+
+    Returns:
+        Result:
+            A result object containing the downsampled DataFrame.
+    """
+    result = copy.deepcopy(input_data)
+    result.base_dataframe = _downsample_data(
+        result.base_dataframe,
+        target_column,
+        sampling_interval,
+        occurrence,
+        time_column,
+    )
+    return result
+
+
+def savgol_smoothing(
+    input_data: PyProBEDataType,
+    target_column: str,
+    window_length: int,
+    polyorder: int,
+    derivative: int = 0,
+) -> Result:
+    """Smooth noisy data using a Savitzky-Golay filter.
+
+    Args:
+        input_data (PyProBEDataType):
+            The input data to smooth.
+        target_column (str):
+            The name of the target variable to smooth.
+        window_length (int):
+            The length of the filter window. Must be a positive odd integer.
+        polynomial_order (int):
+            The order of the polynomial used to fit the samples.
+        derivative (int, optional):
+            The order of the derivative to compute. Default is 0.
+
+    Returns:
+        Result:
+            A result object containing all of the columns of input_data smoothed
+            using the Savitzky-Golay filter.
+    """
+    # validate and identify variables
+    validator = AnalysisValidator(
+        input_data=input_data, required_columns=[target_column]
+    )
+    x = validator.variables
+    smoothed_y = savgol_filter(
+        x=x, window_length=window_length, polyorder=polyorder, deriv=derivative
+    )
+
+    smoothed_data_column = pl.Series(target_column, smoothed_y)
+    result = copy.deepcopy(input_data)
+    result.base_dataframe = result.base_dataframe.with_columns(
+        smoothed_data_column.alias(target_column)
+    )
+    return result
 
 
 class Smoothing(BaseModel):
@@ -294,7 +430,7 @@ class Smoothing(BaseModel):
                 A result object containing the downsampled DataFrame.
         """
         result = copy.deepcopy(self.input_data)
-        result.base_dataframe = downsample_data(
+        result.base_dataframe = _downsample_data(
             result.base_dataframe,
             target_column,
             sampling_interval,
@@ -328,7 +464,7 @@ class Smoothing(BaseModel):
         validator = AnalysisValidator(
             input_data=self.input_data, required_columns=[target_column]
         )
-        x = validator.variables
+        x = validator.variables[0]
 
         if monotonic:
             if x[0] > x[-1]:

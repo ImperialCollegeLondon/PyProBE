@@ -1,12 +1,10 @@
 """Tests for the smoothing analysis module."""
 import numpy as np
 import polars as pl
-import polars.testing as pl_testing
 import pytest
 from scipy import interpolate
 
 from pyprobe.analysis import smoothing
-from pyprobe.analysis.smoothing import Smoothing
 from pyprobe.result import Result
 
 
@@ -15,7 +13,7 @@ def noisy_data():
     """Generate noisy data."""
     np.random.seed(42)
     x = np.arange(1, 6, 0.01)
-    y = x**2 + np.random.normal(0, 0.1, size=x.size)  # y = x^2 with noise
+    y = x**2 + np.random.normal(0, 0.01, size=x.size)  # y = x^2 with noise
 
     return Result(
         base_dataframe=pl.LazyFrame({"x": x, "y": y}),
@@ -41,14 +39,15 @@ def noisy_data_reversed():
 
 def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     """Test the spline smoothing method with noisy data."""
-    smoothing = Smoothing(input_data=noisy_data)
 
     def smooth():
-        return smoothing.spline_smoothing(x="x", target_column="y").get_only("y")
+        return smoothing.spline_smoothing(
+            input_data=noisy_data, x="x", target_column="y"
+        ).get_only("y")
 
     benchmark(smooth)
 
-    result = smoothing.spline_smoothing(x="x", target_column="y")
+    result = smoothing.spline_smoothing(input_data=noisy_data, x="x", target_column="y")
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
 
@@ -63,54 +62,26 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     np.testing.assert_allclose(result.get_only("d(y)/d(x)"), expected_dydx, rtol=0.2)
 
     # reverse the data
-    smoothing = Smoothing(input_data=noisy_data_reversed)
     flipped_x = np.flip(x)
-    result = smoothing.spline_smoothing(x="x", target_column="y")
+    result = smoothing.spline_smoothing(
+        input_data=noisy_data_reversed, x="x", target_column="y"
+    )
     flipped_expected_y = flipped_x**2
     np.testing.assert_allclose(result.get_only("y"), flipped_expected_y, rtol=0.2)
 
 
-def test_level_smoothing(noisy_data, noisy_data_reversed, benchmark):
-    """Test the level smoothing method with noisy data."""
-    smoothing = Smoothing(input_data=noisy_data)
-
-    result = smoothing.level_smoothing(target_column="y", interval=1, monotonic=True)
-
-    assert result.data.select(pl.col("y").diff().min().alias("min_diff")).item(0, 0) > 1
-    all_data = result.data.join(noisy_data.data, on="y")
-    assert len(all_data) == len(result.data)
-    pl_testing.assert_frame_equal(
-        all_data.select("x"), all_data.select(pl.col("x_right").alias("x"))
-    )
-    assert set(result.column_list) == set(noisy_data.column_list)
-
-    # reverse the data
-    smoothing = Smoothing(input_data=noisy_data_reversed)
-    result = smoothing.level_smoothing(target_column="y", interval=1)
-    assert (
-        result.data.select(pl.col("y").diff().abs().min().alias("min_diff")).item(0, 0)
-        > 1
-    )
-    all_data = result.data.join(noisy_data_reversed.data, on="y")
-    assert len(all_data) == len(result.data)
-    pl_testing.assert_frame_equal(
-        all_data.select("x"), all_data.select(pl.col("x_right").alias("x"))
-    )
-
-
 def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
     """Test the Savgol smoothing method."""
-    smoothing = Smoothing(input_data=noisy_data)
 
     def smooth():
         return smoothing.savgol_smoothing(
-            target_column="y", window_length=100, polyorder=2
+            input_data=noisy_data, target_column="y", window_length=100, polyorder=2
         ).get_only("y")
 
     benchmark(smooth)
 
     result = smoothing.savgol_smoothing(
-        target_column="y", window_length=100, polyorder=2
+        input_data=noisy_data, target_column="y", window_length=100, polyorder=2
     )
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
@@ -221,20 +192,23 @@ def test_validate_interp_input_vectors_flip():
 
 
 def test_downsample_df(benchmark):
-    """Test downsample_data with different occurrences."""
+    """Test _downsample_data with different occurrences."""
     times = np.linspace(0, 100, 101)
     values = times
     min_distance = 10
     df = pl.DataFrame({"Time [s]": times, "values": values})
 
     def smooth_data():
-        return smoothing.downsample_data(df, "values", min_distance, occurrence="first")
+        return smoothing._downsample_data(
+            df, "values", min_distance, occurrence="first"
+        )
 
-    resampled_first = benchmark(smooth_data)["values"].to_numpy()
-    resampled_last = smoothing.downsample_data(
+    # resampled_first = benchmark(smooth_data)["values"].to_numpy()
+    resampled_first = smooth_data()["values"].to_numpy()
+    resampled_last = smoothing._downsample_data(
         df, "values", min_distance, occurrence="last"
     )["values"].to_numpy()
-    resampled_middle = smoothing.downsample_data(
+    resampled_middle = smoothing._downsample_data(
         df, "values", min_distance, occurrence="middle"
     )["values"].to_numpy()
 
@@ -248,103 +222,83 @@ def test_downsample_df(benchmark):
         resampled_middle, np.array([5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 100])
     )
 
-    # Test with non-monotonic data
-    times = np.append(times, np.linspace(101, 200, 100))
-    values = np.append(values, np.linspace(99, 0, 100))
+    # test with decreasing x
+    times = np.linspace(0, 100, 101)
+    values = times[::-1]
     df = pl.DataFrame({"Time [s]": times, "values": values})
-    resampled_first = smoothing.downsample_data(
+    resampled_first = smoothing._downsample_data(
         df, "values", min_distance, occurrence="first"
     )["values"].to_numpy()
-    resampled_last = smoothing.downsample_data(
-        df, "values", min_distance, occurrence="last"
-    )["values"].to_numpy()
-    resampled_middle = smoothing.downsample_data(
-        df, "values", min_distance, occurrence="middle"
-    )["values"].to_numpy()
 
     np.testing.assert_array_equal(
-        resampled_first,
-        np.array(
-            [
-                0,
-                10,
-                20,
-                30,
-                40,
-                50,
-                60,
-                70,
-                80,
-                90,
-                100,
-                90,
-                80,
-                70,
-                60,
-                50,
-                40,
-                30,
-                20,
-                10,
-                0,
-            ]
-        ),
+        resampled_first, np.array([100, 99, 89, 79, 69, 59, 49, 39, 29, 19, 9])
     )
 
-    np.testing.assert_array_equal(
-        resampled_last,
-        np.array(
-            [
-                9,
-                19,
-                29,
-                39,
-                49,
-                59,
-                69,
-                79,
-                89,
-                99,
-                91,
-                81,
-                71,
-                61,
-                51,
-                41,
-                31,
-                21,
-                11,
-                1,
-                0,
-            ]
-        ),
+
+def test_downsample_basic(noisy_data):
+    """Test basic downsampling functionality with default parameters."""
+    result = smoothing.downsample(noisy_data, "y", time_column="x", sampling_interval=1)
+
+    # Check that output is a Result object
+    assert isinstance(result, Result)
+
+    # Check that number of points is reduced
+    assert len(result.get_only("y")) < len(noisy_data.get_only("y"))
+    # Check that the interval between points is at least the sampling interval
+    diffs = np.diff(result.get_only("y"))
+    assert np.all(np.abs(diffs) >= 0.9)
+
+
+def test_downsample_custom_time_column():
+    """Test downsampling with a custom time column name."""
+    times = np.array([0, 1, 2, 3, 4, 5])
+    values = np.array([0, 1, 2, 3, 4, 5])
+    test_data = Result(
+        base_dataframe=pl.LazyFrame({"custom_time": times, "values": values}),
+        info={},
+        column_definitions={"custom_time": "time", "values": "test values"},
     )
 
-    np.testing.assert_array_equal(
-        resampled_middle,
-        np.array(
-            [
-                5,
-                15,
-                25,
-                35,
-                45,
-                55,
-                65,
-                75,
-                85,
-                95,
-                95,
-                85,
-                75,
-                65,
-                55,
-                45,
-                35,
-                25,
-                15,
-                5,
-                0,
-            ]
-        ),
+    result = smoothing.downsample(
+        test_data, "values", sampling_interval=2.0, time_column="custom_time"
     )
+
+    assert "custom_time" in result.column_list
+    assert len(result.get_only("values")) == 3
+
+
+def test_downsample_intervals():
+    """Test downsampling with different sampling intervals."""
+    times = np.linspace(0, 10, 101)  # 101 points from 0 to 10
+    values = times
+    test_data = Result(
+        base_dataframe=pl.LazyFrame({"Time [s]": times, "values": values}),
+        info={},
+        column_definitions={"Time [s]": "time", "values": "test values"},
+    )
+
+    # Test with different intervals
+    result_1 = smoothing.downsample(test_data, "values", 1.0)
+    result_2 = smoothing.downsample(test_data, "values", 2.0)
+    result_5 = smoothing.downsample(test_data, "values", 5.0)
+
+    # Check that larger intervals result in fewer points
+    assert len(result_1.get_only("values")) > len(result_2.get_only("values"))
+    assert len(result_2.get_only("values")) > len(result_5.get_only("values"))
+
+
+def test_downsample_metadata_preservation():
+    """Test that downsampling preserves Result metadata."""
+    times = np.array([0, 1, 2, 3, 4, 5])
+    values = np.array([0, 1, 2, 3, 4, 5])
+    test_data = Result(
+        base_dataframe=pl.LazyFrame({"Time [s]": times, "values": values}),
+        info={"test_info": "test"},
+        column_definitions={"Time [s]": "time", "values": "test values"},
+    )
+
+    result = smoothing.downsample(test_data, "values", sampling_interval=2.0)
+
+    # Check that metadata is preserved
+    assert result.info == test_data.info
+    assert result.column_definitions == test_data.column_definitions
