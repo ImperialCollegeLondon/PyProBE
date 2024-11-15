@@ -76,6 +76,10 @@ warn_unused_ignores = false
 module = "polars"
 follow_imports = "skip"
 
+[[tool.mypy.overrides]]
+module = "deprecated.*"
+ignore_missing_imports = true
+
 [tool.isort]
 profile = "black"
 
