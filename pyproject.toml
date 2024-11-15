@@ -47,6 +47,7 @@ dev = [
     "pytest-benchmark", # benchmarking
     "types-PyYAML",
     "types-toml",
+    "types-Deprecated",
     # documentation
     "sphinx",
     "sphinx-tabs",
