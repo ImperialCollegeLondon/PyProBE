@@ -133,7 +133,7 @@ def akima_interpolator(
     return _create_interpolator(interpolate.Akima1DInterpolator, x, y, **kwargs)
 
 
-def _downsample_data(
+def _downsample_monotonic_data(
     df: pl.DataFrame | pl.LazyFrame,
     target: str,
     sampling_interval: float,
@@ -167,12 +167,49 @@ def _downsample_data(
     )
     # Group by 'group' and select the desired occurrence
     if occurrence == "first":
-        resampled_times = df.group_by("bin").first()
+        return df.group_by("bin", maintain_order=True).first().drop("bin")
     elif occurrence == "last":
-        resampled_times = df.group_by("bin").last()
+        return df.group_by("bin", maintain_order=True).last().drop("bin")
     elif occurrence == "middle":
-        resampled_times = df.group_by("bin").quantile(0.5, "nearest")
-    return resampled_times.join(df, on=target)
+        return (
+            df.group_by("bin", maintain_order=True).quantile(0.5, "nearest").drop("bin")
+        )
+
+
+def _downsample_non_monotonic_data(
+    df: pl.DataFrame | pl.LazyFrame,
+    target: str,
+    sampling_interval: float,
+) -> pl.DataFrame | pl.LazyFrame:
+    """Resample a DataFrame to a specified interval.
+
+    This method loops through the data and selects each point that meets the interval
+    condition over the previously sampled point.
+
+    Args:
+        df (pl.DataFrame | pl.LazyFrame):
+            The DataFrame to downsample.
+        target (str):
+            The target column to downsample.
+        sampling_interval (float):
+            The desired minimum interval between points.
+
+    Returns:
+        pl.DataFrame | pl.LazyFrame:
+            The downsampled DataFrame.
+    """
+    if isinstance(df, pl.LazyFrame):
+        df = df.collect()
+    x = df.select(target).to_numpy()
+    indices = [0]
+    last_val = x[0]
+
+    for i in range(1, len(x)):
+        if abs(x[i] - last_val) >= sampling_interval:
+            indices.append(i)
+            last_val = x[i]
+    df = df.with_row_index()
+    return df.filter(pl.col("index").is_in(indices)).drop("index")
 
 
 def spline_smoothing(
@@ -244,11 +281,22 @@ def downsample(
     input_data: PyProBEDataType,
     target_column: str,
     sampling_interval: float,
+    monotonic: bool = True,
     occurrence: Literal["first", "last", "middle"] = "first",
 ) -> Result:
     """Downsample a DataFrame to a specified interval.
 
-    Requires the target column to be monotonic.
+    This function uses two different methods for downsampling depending on whether the
+    target column is monotonic or not.
+    - If the target column is monotonic, the data is
+    binned into intervals of the specified size and the desired occurrence within each
+    bin is selected.
+    - If the target column is not monotonic, the data is looped through
+    and compared to the previously sampled point to determine if the interval condition
+    is met.
+
+    The monotonic algorithm is faster and more efficient, while the non-monotonic
+    guarantees that the interval condition is met.
 
     Args:
         input_data (PyProBEDataType):
@@ -257,22 +305,35 @@ def downsample(
             The target column to downsample.
         sampling_interval (float):
             The desired minimum interval between points.
+        monotonic (bool):
+            If True, the target_column is assumed to be monotonic. Default is True.
+            If False, the target_column is assumed to be non-monotonic. Each point in
+            the target column is compared to the previously sampled point to determine
+            if the interval condition is met.
         occurrence (Literal['first', 'last', 'middle'], optional):
             The occurrence to take when downsampling. Default is 'first'.
-        time_column (str, optional):
-            The time column to use for downsampling. Default is 'Time [s]'.
+            This argument is only used when the target column is monotonic, otherwise
+            the first occurrence when the interval condition is met is taken.
 
     Returns:
         Result:
             A result object containing the downsampled DataFrame.
     """
+    AnalysisValidator(input_data=input_data, required_columns=[target_column])
     result = copy.deepcopy(input_data)
-    result.base_dataframe = _downsample_data(
-        result.base_dataframe,
-        target_column,
-        sampling_interval,
-        occurrence,
-    )
+    if monotonic:
+        result.base_dataframe = _downsample_monotonic_data(
+            result.base_dataframe,
+            target_column,
+            sampling_interval,
+            occurrence,
+        )
+    else:
+        result.base_dataframe = _downsample_non_monotonic_data(
+            result.base_dataframe,
+            target_column,
+            sampling_interval,
+        )
     return result
 
 
@@ -416,7 +477,7 @@ class Smoothing(BaseModel):
                 A result object containing the downsampled DataFrame.
         """
         result = copy.deepcopy(self.input_data)
-        result.base_dataframe = _downsample_data(
+        result.base_dataframe = _downsample_monotonic_data(
             result.base_dataframe,
             target_column,
             sampling_interval,
