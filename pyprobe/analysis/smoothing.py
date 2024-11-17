@@ -5,8 +5,9 @@ from typing import Any, Callable, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
+from deprecated import deprecated
 from numpy.typing import NDArray
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_call
 from scipy import interpolate
 from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter
@@ -14,8 +15,6 @@ from scipy.signal import savgol_filter
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
-
-pl.Config.set_tbl_rows(50)
 
 
 class _LinearInterpolator(interpolate.PPoly):
@@ -212,6 +211,7 @@ def _downsample_non_monotonic_data(
     return df.filter(pl.col("index").is_in(indices)).drop("index")
 
 
+@validate_call
 def spline_smoothing(
     input_data: PyProBEDataType,
     target_column: str,
@@ -277,6 +277,7 @@ def spline_smoothing(
     return result
 
 
+@validate_call
 def downsample(
     input_data: PyProBEDataType,
     target_column: str,
@@ -337,6 +338,7 @@ def downsample(
     return result
 
 
+@validate_call
 def savgol_smoothing(
     input_data: PyProBEDataType,
     target_column: str,
@@ -390,6 +392,10 @@ class Smoothing(BaseModel):
     input_data: Result
     """The input data for the smoothing."""
 
+    @deprecated(
+        reason="Use the module-level smoothing.spline_smoothing method instead.",
+        version="1.1.0",
+    )
     def spline_smoothing(
         self,
         target_column: str,
@@ -452,6 +458,10 @@ class Smoothing(BaseModel):
         )
         return result
 
+    @deprecated(
+        reason="Use the module-level smoothing.downsample method instead.",
+        version="1.1.0",
+    )
     def downsample(
         self,
         target_column: str,
@@ -485,6 +495,10 @@ class Smoothing(BaseModel):
         )
         return result
 
+    @deprecated(
+        reason="Use the module-level smoothing.downsample method instead.",
+        version="1.1.0",
+    )
     def level_smoothing(
         self,
         target_column: str,
@@ -549,6 +563,10 @@ class Smoothing(BaseModel):
         result.base_dataframe = dataframe
         return result
 
+    @deprecated(
+        reason="Use the module-level smoothing.savgol_smoothing method instead.",
+        version="1.1.0",
+    )
     def savgol_smoothing(
         self,
         target_column: str,
