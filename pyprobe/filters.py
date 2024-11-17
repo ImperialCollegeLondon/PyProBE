@@ -87,7 +87,7 @@ def _step(
     )
 
 
-def get_cycle_column(filter: "ExperimentOrCycleType") -> pl.DataFrame | pl.LazyFrame:
+def get_cycle_column(filter: "FilterToCycleType") -> pl.DataFrame | pl.LazyFrame:
     """Adds a cycle column to the data.
 
     If cycle details have been provided in the README, the cycle column will be created
@@ -100,7 +100,7 @@ def get_cycle_column(filter: "ExperimentOrCycleType") -> pl.DataFrame | pl.LazyF
     number.
 
     Args:
-        filter (ExperimentOrCycleType): The experiment or cycle object.
+        filter: The experiment or cycle object.
 
     Returns:
         pl.DataFrame | pl.LazyFrame: The data with a cycle column.
