@@ -179,16 +179,13 @@ class BaseCycler(BaseModel):
         files.sort()
         list = [self.read_file(file) for file in files]
         all_columns = set([col for df in list for col in df.collect_schema().names()])
-        indices_to_remove = []
         for i in range(len(list)):
             if len(list[i].collect_schema().names()) < len(all_columns):
-                indices_to_remove.append(i)
                 warnings.warn(
                     f"File {os.path.basename(files[i])} has missing columns, "
-                    "it has not been read."
+                    "these have been filled with null values."
                 )
-                continue
-        return [df for i, df in enumerate(list) if i not in indices_to_remove]
+        return list
 
     def get_imported_dataframe(
         self, dataframe_list: List[pl.DataFrame]
@@ -201,7 +198,7 @@ class BaseCycler(BaseModel):
         Returns:
             DataFrame: A single DataFrame.
         """
-        return pl.concat(dataframe_list, how="vertical", rechunk=True)
+        return pl.concat(dataframe_list, how="diagonal", rechunk=True)
 
     @staticmethod
     def _match_unit(column_name: str, pattern: str) -> Optional[str]:

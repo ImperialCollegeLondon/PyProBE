@@ -3,6 +3,7 @@ import copy
 import os
 import re
 
+import numpy as np
 import polars as pl
 import polars.testing as pl_testing
 import pytest
@@ -355,3 +356,32 @@ def test_ch_dis_capacity(sample_dataframe, sample_pyprobe_dataframe, column_dict
         base_cycler.pyprobe_dataframe.collect(), sample_pyprobe_dataframe
     )
     os.remove("tests/sample_data/test_data.csv")
+
+
+def test_with_missing_columns(sample_dataframe):
+    """Test with a dataframe missing columns."""
+    sample_dataframe.write_csv("tests/sample_data/test_data.csv")
+    df = copy.deepcopy(sample_dataframe)
+    df = df.drop("I [mA]")
+    df.write_csv("tests/sample_data/test_data1.csv")
+    base_cycler = BaseCycler(
+        input_data_path="tests/sample_data/test_data*.csv",
+        column_dict={
+            "DateTime": "Date",
+            "T [*]": "Time [*]",
+            "V [*]": "Voltage [*]",
+            "I [*]": "Current [*]",
+            "Q [*]": "Capacity [*]",
+            "Count": "Step",
+            "Temp [*]": "Temperature [*]",
+            "Q_ch [*]": "Charge Capacity [*]",
+            "Q_dis [*]": "Discharge Capacity [*]",
+        },
+    )
+    assert np.all(
+        np.isnan(
+            base_cycler.pyprobe_dataframe.collect().select("Current [A]").to_numpy()[3:]
+        )
+    )
+    os.remove("tests/sample_data/test_data.csv")
+    os.remove("tests/sample_data/test_data1.csv")
