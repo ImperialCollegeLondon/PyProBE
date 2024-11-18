@@ -1,7 +1,6 @@
 """A module to load and process Biologic battery cycler data."""
 
 
-import glob
 from datetime import datetime
 from typing import List
 
@@ -116,17 +115,3 @@ class BiologicMB(Biologic):
         return df_with_max_step.with_columns(
             pl.col("Ns").cast(pl.Int64) + pl.col("Max_Step")
         )
-
-    def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
-        """Return a list of all the imported dataframes.
-
-        Args:
-            input_data_path (str): The path to the input data.
-
-        Returns:
-            List[DataFrame]: A list of DataFrames.
-        """
-        files = glob.glob(self.input_data_path)
-        files.sort()
-        list = [self.read_file(file) for file in files]
-        return list
