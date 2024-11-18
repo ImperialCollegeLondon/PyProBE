@@ -5,60 +5,33 @@ Contributing to the Analysis Module
 
 :mod:`pyprobe.analysis` classes are classes that perform further analysis of the data.
 
-This document describes the standard format to be used for all PyProBE analysis classes. 
+This document describes the standard format to be used for all PyProBE analysis functions. 
 Constructing your method in this way ensures compatibility with the rest of the 
 PyProBE package, while keeping your code clean and easy to read.
 
-Analysis classes are based on `Pydantic BaseModel <https://docs.pydantic.dev/latest/api/base_model/>`_ 
-to provide input validation. However, following the steps below should allow
-you to write your own analysis class without any direct interaction with pydantic 
-itself. 
 
-Setup
------
-1. Start by creating your class, which must inherit from 
-   pydantic :code:`BaseModel`.
-2. Declare :code:`input_data` as a variable and specify its type. The :mod:`pyprobe.typing`
-   module has type aliases that may be helpful here. This type should be the most
-   lenient type that the methods of your analysis class require.
-
-.. literalinclude:: ../../../pyprobe/analysis/differentiation.py
-    :language: python
-    :linenos:
-    :lines: 15-21
-
-3. Some analysis classes have multiple methods that need to pass information to each 
-   other. For instance the :class:`~pyprobe.analysis.degradation_mode_analysis.DMA`
-   analysis class first calculates stoichiometry limits with the 
-   :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv` method, that are then
-   used in the :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes`
-   method. So, when :func:`~pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv` is called, 
-   it saves this result in `stoichiometry_limits` for use later. If they are required, 
-   these attributes must also be defined at the top of the class.
-
-.. literalinclude:: ../../../pyprobe/analysis/degradation_mode_analysis.py
-    :language: python
-    :linenos:
-    :lines: 17-31
-
-
-Then you can add any additional methods to perform your calculations. 
-
-Methods
--------
+Functions
+---------
 
 All calculations should be conducted inside methods. These are called by the user with
 any additional information required to perform the analysis, and always return 
 :class:`~pyprobe.result.Result` objects. We will use the 
-:func:`~pyprobe.analysis.differentiation.Differentiation.differentiate_FD` method as an example. 
+:func:`~pyprobe.analysis.differentiation.Differentiation.gradient` method as an example. 
+
+It is recommended to use pydantic's `validate_call <https://docs.pydantic.dev/latest/api/validate_call/#pydantic.validate_call_decorator.validate_call>`_ 
+function decorator to ensure that
+objects of the correct type are being passed to your method. This provides the user with
+an error message if they have not called the method correctly, simplifying debugging.
+
 The steps to write a method are as follows:
 
-1. Define the method and its input parameters.
+1. Define the method and its input parameters. One of these is likely to be a PyProBE
+   object, which you can confirm has the necessary columns for your method with step
+   2.
 2. Check that inputs to the method are valid with the 
    :class:`~pyprobe.analysis.utils.AnalysisValidator` class. Provide the class the 
    input data to the method, the columns that are required for the computation to 
-   be performed and the required data type for `input_data`` (only if it is a stricter 
-   requirement than the type assigned to `input_data` above).
+   be performed and the required data type for `input_data``.
 3. If needed, you can retrieve the columns specified in the `required_columns` field
    as numpy arrays by accessing the :attr:`~pyprobe.analysis.utils.AnalysisValidator.variables`
    attribute of the instance of :class:`~pyprobe.analysis.utils.AnalysisValidator`.
@@ -77,7 +50,7 @@ The steps to write a method are as follows:
 .. literalinclude:: ../../../pyprobe/analysis/differentiation.py
     :language: python
     :linenos:
-    :pyobject: Differentiation.differentiate_FD
+    :pyobject: gradient
 
 Base
 ----
