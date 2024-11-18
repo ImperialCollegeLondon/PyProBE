@@ -387,7 +387,7 @@ document.write(`
 <p>A module for the Result class.</p>
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.result.Result">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.result.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A class for holding any data in PyProBE.</p>
 <p>A Result object is the base type for every data object in PyProBE. This class
@@ -659,6 +659,50 @@ to fill in missing values.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.Result.join">
+<span class="sig-name descname"><span class="pre">join</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">how</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inner'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coalesce</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.join" title="Link to this definition">#</a></dt>
+<dd><p>Join two Result objects on a column. A wrapper around the polars join method.</p>
+<p>This will extend the data in the Result object horizontally. The column
+definitions of the two Result objects are combined, if there are any conflicts
+the column definitions of the calling Result object will take precedence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>other</strong> (<a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The other Result object to join with.</p></li>
+<li><p><strong>on</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>]</em>) – The column(s) to join on.</p></li>
+<li><p><strong>how</strong> (<em>str</em>) – The type of join to perform. Default is ‘inner’.</p></li>
+<li><p><strong>coalesce</strong> (<em>bool</em>) – Whether to coalesce the columns. Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.Result.extend">
+<span class="sig-name descname"><span class="pre">extend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concat_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'diagonal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.extend" title="Link to this definition">#</a></dt>
+<dd><p>Extend the data in this Result object with the data in another Result object.</p>
+<p>This method will concatenate the data in the two Result objects, with the Result
+object calling the method above the other Result object. The column definitions
+of the two Result objects are combined, if there are any conflicts the column
+definitions of the calling Result object will take precedence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>other</strong> (<a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em> | </em><em>List</em><em>[</em><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em>]</em>) – The other Result object(s) to extend with.</p></li>
+<li><p><strong>concat_method</strong> (<em>str</em>) – The method to use for concatenation. Default is ‘diagonal’. See the
+polars.concat method documentation for more information.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.result.Result.build">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.build" title="Link to this definition">#</a></dt>
 <dd><p>Build a Result object from a list of dataframes.</p>
@@ -745,6 +789,8 @@ step.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.print_definitions"><code class="docutils literal notranslate"><span class="pre">Result.print_definitions()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.clean_copy"><code class="docutils literal notranslate"><span class="pre">Result.clean_copy()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.add_new_data_columns"><code class="docutils literal notranslate"><span class="pre">Result.add_new_data_columns()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.join"><code class="docutils literal notranslate"><span class="pre">Result.join()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.extend"><code class="docutils literal notranslate"><span class="pre">Result.extend()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.build"><code class="docutils literal notranslate"><span class="pre">Result.build()</span></code></a></li>
 </ul>
 </li>

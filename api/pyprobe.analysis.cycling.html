@@ -399,9 +399,30 @@ document.write(`
   <section id="module-pyprobe.analysis.cycling">
 <span id="pyprobe-analysis-cycling-module"></span><h1>pyprobe.analysis.cycling module<a class="headerlink" href="#module-pyprobe.analysis.cycling" title="Link to this heading">#</a></h1>
 <p>A module for the Cycling class.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.analysis.cycling.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dchg_before_chg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.cycling.summary" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the state of health of the battery.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a>) – A PyProBE object containing cycling data.</p></li>
+<li><p><strong>dchg_before_chg</strong> (<em>bool</em>) – Whether the discharge comes before the
+charge in the cycle loop. Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A result object for the capacity SOH of the cell.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.analysis.cycling.Cycling">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.analysis.cycling.</span></span><span class="sig-name descname"><span class="pre">Cycling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.cycling.Cycling" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cycling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.cycling.Cycling" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A cycling experiment in a battery procedure.</p>
 <dl class="field-list simple">
@@ -486,6 +507,7 @@ charge in the cycle loop. Default is True.</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.summary"><code class="docutils literal notranslate"><span class="pre">summary()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.Cycling"><code class="docutils literal notranslate"><span class="pre">Cycling</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.Cycling.input_data"><code class="docutils literal notranslate"><span class="pre">Cycling.input_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.cycling.Cycling.summary"><code class="docutils literal notranslate"><span class="pre">Cycling.summary()</span></code></a></li>

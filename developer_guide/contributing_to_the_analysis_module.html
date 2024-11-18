@@ -371,74 +371,28 @@ document.write(`
   <section id="contributing-to-the-analysis-module">
 <span id="id1"></span><h1>Contributing to the Analysis Module<a class="headerlink" href="#contributing-to-the-analysis-module" title="Link to this heading">#</a></h1>
 <p><a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.analysis</span></code></a> classes are classes that perform further analysis of the data.</p>
-<p>This document describes the standard format to be used for all PyProBE analysis classes.
+<p>This document describes the standard format to be used for all PyProBE analysis functions.
 Constructing your method in this way ensures compatibility with the rest of the
 PyProBE package, while keeping your code clean and easy to read.</p>
-<p>Analysis classes are based on <a class="reference external" href="https://docs.pydantic.dev/latest/api/base_model/">Pydantic BaseModel</a>
-to provide input validation. However, following the steps below should allow
-you to write your own analysis class without any direct interaction with pydantic
-itself.</p>
-<section id="setup">
-<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
-<ol class="arabic simple">
-<li><p>Start by creating your class, which must inherit from
-pydantic <code class="code docutils literal notranslate"><span class="pre">BaseModel</span></code>.</p></li>
-<li><p>Declare <code class="code docutils literal notranslate"><span class="pre">input_data</span></code> as a variable and specify its type. The <a class="reference internal" href="../api/pyprobe.typing.html#module-pyprobe.typing" title="pyprobe.typing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.typing</span></code></a>
-module has type aliases that may be helpful here. This type should be the most
-lenient type that the methods of your analysis class require.</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># 1. Define the class as a Pydantic BaseModel.</span>
-<span class="linenos">2</span><span class="k">class</span> <span class="nc">Differentiation</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="linenos">3</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for differentiating experimental data.&quot;&quot;&quot;</span>
-<span class="linenos">4</span>
-<span class="linenos">5</span>    <span class="c1"># 2. Define the input_data attribute, giving it a type</span>
-<span class="linenos">6</span>    <span class="n">input_data</span><span class="p">:</span> <span class="n">PyProBEDataType</span>
-<span class="linenos">7</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;The input data for the differentiation.&quot;&quot;&quot;</span>
-</pre></div>
-</div>
-<ol class="arabic simple" start="3">
-<li><p>Some analysis classes have multiple methods that need to pass information to each
-other. For instance the <a class="reference internal" href="../api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA" title="pyprobe.analysis.degradation_mode_analysis.DMA"><code class="xref py py-class docutils literal notranslate"><span class="pre">DMA</span></code></a>
-analysis class first calculates stoichiometry limits with the
-<a class="reference internal" href="../api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv" title="pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_ocv()</span></code></a> method, that are then
-used in the <a class="reference internal" href="../api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes" title="pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes"><code class="xref py py-func docutils literal notranslate"><span class="pre">quantify_degradation_modes()</span></code></a>
-method. So, when <a class="reference internal" href="../api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv" title="pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_ocv()</span></code></a> is called,
-it saves this result in <cite>stoichiometry_limits</cite> for use later. If they are required,
-these attributes must also be defined at the top of the class.</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1"># 1. Define the class as a Pydantic BaseModel.</span>
-<span class="linenos"> 2</span><span class="k">class</span> <span class="nc">DMA</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="linenos"> 3</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class for degradation mode analysis methods.&quot;&quot;&quot;</span>
-<span class="linenos"> 4</span>
-<span class="linenos"> 5</span>    <span class="c1"># 2. Define the input_data attribute, giving it a type</span>
-<span class="linenos"> 6</span>    <span class="n">input_data</span><span class="p">:</span> <span class="n">PyProBEDataType</span>
-<span class="linenos"> 7</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;The input data for the degradation mode analysis.&quot;&quot;&quot;</span>
-<span class="linenos"> 8</span>
-<span class="linenos"> 9</span>    <span class="c1"># 3. Define the attributes that will be populated by the methods.</span>
-<span class="linenos">10</span>    <span class="n">stoichiometry_limits</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Result</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="linenos">11</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;The stoichiometry limits and electrode capacities.&quot;&quot;&quot;</span>
-<span class="linenos">12</span>    <span class="n">fitted_OCV</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Result</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="linenos">13</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;The fitted OCV data.&quot;&quot;&quot;</span>
-<span class="linenos">14</span>    <span class="n">dma_result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Result</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="linenos">15</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;The degradation mode analysis results.&quot;&quot;&quot;</span>
-</pre></div>
-</div>
-<p>Then you can add any additional methods to perform your calculations.</p>
-</section>
-<section id="methods">
-<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h2>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h2>
 <p>All calculations should be conducted inside methods. These are called by the user with
 any additional information required to perform the analysis, and always return
 <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> objects. We will use the
-<a class="reference internal" href="../api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_FD" title="pyprobe.analysis.differentiation.Differentiation.differentiate_FD"><code class="xref py py-func docutils literal notranslate"><span class="pre">differentiate_FD()</span></code></a> method as an example.
-The steps to write a method are as follows:</p>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">gradient()</span></code> method as an example.</p>
+<p>It is recommended to use pydantic’s <a class="reference external" href="https://docs.pydantic.dev/latest/api/validate_call/#pydantic.validate_call_decorator.validate_call">validate_call</a>
+function decorator to ensure that
+objects of the correct type are being passed to your method. This provides the user with
+an error message if they have not called the method correctly, simplifying debugging.</p>
+<p>The steps to write a method are as follows:</p>
 <ol class="arabic simple">
-<li><p>Define the method and its input parameters.</p></li>
+<li><p>Define the method and its input parameters. One of these is likely to be a PyProBE
+object, which you can confirm has the necessary columns for your method with step
+2.</p></li>
 <li><p>Check that inputs to the method are valid with the
 <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a> class. Provide the class the
 input data to the method, the columns that are required for the computation to
-be performed and the required data type for <cite>input_data`</cite> (only if it is a stricter
-requirement than the type assigned to <cite>input_data</cite> above).</p></li>
+be performed and the required data type for <cite>input_data`</cite>.</p></li>
 <li><p>If needed, you can retrieve the columns specified in the <cite>required_columns</cite> field
 as numpy arrays by accessing the <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.variables" title="pyprobe.analysis.utils.AnalysisValidator.variables"><code class="xref py py-attr docutils literal notranslate"><span class="pre">variables</span></code></a>
 attribute of the instance of <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a>.</p></li>
@@ -454,60 +408,53 @@ replacing the data stored with a dataframe created from the provided dictionary.
 <li><p>Add column definitions to the created result object.</p></li>
 <li><p>Return the result object.</p></li>
 </ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>    <span class="k">def</span> <span class="nf">differentiate_FD</span><span class="p">(</span>  <span class="c1"># 1. Define the method</span>
-<span class="linenos"> 2</span>        <span class="bp">self</span><span class="p">,</span>
-<span class="linenos"> 3</span>        <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<span class="linenos"> 4</span>        <span class="n">y</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<span class="linenos"> 5</span>        <span class="n">gradient</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dydx&quot;</span><span class="p">,</span>
-<span class="linenos"> 6</span>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Result</span><span class="p">:</span>
-<span class="linenos"> 7</span><span class="w">        </span><span class="sd">&quot;&quot;&quot;Differentiate smooth data with the finite difference method.</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="nd">@validate_call</span>
+<span class="linenos"> 2</span><span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span>  <span class="c1"># 1. Define the method</span>
+<span class="linenos"> 3</span>    <span class="n">input_data</span><span class="p">:</span> <span class="n">PyProBEDataType</span><span class="p">,</span>
+<span class="linenos"> 4</span>    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="linenos"> 5</span>    <span class="n">y</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="linenos"> 6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Result</span><span class="p">:</span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;Differentiate smooth data with a finite difference method.</span>
 <span class="linenos"> 8</span>
-<span class="linenos"> 9</span><span class="sd">        A light wrapper of the numpy.gradient function.</span>
-<span class="linenos">10</span>
-<span class="linenos">11</span><span class="sd">        Args:</span>
-<span class="linenos">12</span><span class="sd">            x (str): The name of the x variable.</span>
-<span class="linenos">13</span><span class="sd">            y (str): The name of the y variable.</span>
-<span class="linenos">14</span><span class="sd">            gradient (str, optional):</span>
-<span class="linenos">15</span><span class="sd">                The gradient to calculate, either &#39;dydx&#39; or &#39;dxdy&#39;.</span>
-<span class="linenos">16</span><span class="sd">                Defaults to &quot;dydx&quot;.</span>
+<span class="linenos"> 9</span><span class="sd">    A wrapper of the numpy.gradient function. This method calculates the gradient</span>
+<span class="linenos">10</span><span class="sd">    of the data in the y column with respect to the data in the x column.</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span><span class="sd">    Args:</span>
+<span class="linenos">13</span><span class="sd">        input_data:</span>
+<span class="linenos">14</span><span class="sd">            The input data PyProBE object for the differentiation</span>
+<span class="linenos">15</span><span class="sd">        x: The name of the x variable.</span>
+<span class="linenos">16</span><span class="sd">        y: The name of the y variable.</span>
 <span class="linenos">17</span>
-<span class="linenos">18</span><span class="sd">        Returns:</span>
-<span class="linenos">19</span><span class="sd">            Result:</span>
-<span class="linenos">20</span><span class="sd">                A result object containing the columns, `x`, `y` and the</span>
-<span class="linenos">21</span><span class="sd">                calculated gradient.</span>
-<span class="linenos">22</span><span class="sd">        &quot;&quot;&quot;</span>
-<span class="linenos">23</span>        <span class="c1"># 2. Validate the inputs to the method</span>
-<span class="linenos">24</span>        <span class="n">validator</span> <span class="o">=</span> <span class="n">AnalysisValidator</span><span class="p">(</span>
-<span class="linenos">25</span>            <span class="n">input_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_data</span><span class="p">,</span>
-<span class="linenos">26</span>            <span class="n">required_columns</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
-<span class="linenos">27</span>            <span class="c1"># required_type not neccessary here as type specified when declaring</span>
-<span class="linenos">28</span>            <span class="c1"># input_data attribute is strict enough</span>
-<span class="linenos">29</span>        <span class="p">)</span>
-<span class="linenos">30</span>        <span class="c1"># 3. Retrieve the validated columns as numpy arrays</span>
-<span class="linenos">31</span>        <span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">variables</span>
-<span class="linenos">32</span>
-<span class="linenos">33</span>        <span class="c1"># 4. Perform the computation</span>
-<span class="linenos">34</span>        <span class="k">if</span> <span class="n">gradient</span> <span class="o">==</span> <span class="s2">&quot;dydx&quot;</span><span class="p">:</span>
-<span class="linenos">35</span>            <span class="n">gradient_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;d(</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)/d(</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">)&quot;</span>
-<span class="linenos">36</span>            <span class="n">gradient_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y_data</span><span class="p">,</span> <span class="n">x_data</span><span class="p">)</span>
-<span class="linenos">37</span>        <span class="k">elif</span> <span class="n">gradient</span> <span class="o">==</span> <span class="s2">&quot;dxdy&quot;</span><span class="p">:</span>
-<span class="linenos">38</span>            <span class="n">gradient_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;d(</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">)/d(</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)&quot;</span>
-<span class="linenos">39</span>            <span class="n">gradient_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span><span class="p">)</span>
-<span class="linenos">40</span>        <span class="k">else</span><span class="p">:</span>
-<span class="linenos">41</span>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Gradient must be either &#39;dydx&#39; or &#39;dxdy&#39;.&quot;</span><span class="p">)</span>
-<span class="linenos">42</span>
-<span class="linenos">43</span>        <span class="c1"># 5. Create a Result object to store the results</span>
-<span class="linenos">44</span>        <span class="n">gradient_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_data</span><span class="o">.</span><span class="n">clean_copy</span><span class="p">(</span>
-<span class="linenos">45</span>            <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="p">:</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">y_data</span><span class="p">,</span> <span class="n">gradient_title</span><span class="p">:</span> <span class="n">gradient_data</span><span class="p">})</span>
-<span class="linenos">46</span>        <span class="p">)</span>
-<span class="linenos">47</span>        <span class="c1"># 6. Define the column definitions for the Result object</span>
-<span class="linenos">48</span>        <span class="n">gradient_result</span><span class="o">.</span><span class="n">column_definitions</span> <span class="o">=</span> <span class="p">{</span>
-<span class="linenos">49</span>            <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_data</span><span class="o">.</span><span class="n">column_definitions</span><span class="p">[</span><span class="n">x</span><span class="p">],</span>
-<span class="linenos">50</span>            <span class="n">y</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_data</span><span class="o">.</span><span class="n">column_definitions</span><span class="p">[</span><span class="n">y</span><span class="p">],</span>
-<span class="linenos">51</span>            <span class="n">gradient_title</span><span class="p">:</span> <span class="s2">&quot;The calculated gradient.&quot;</span><span class="p">,</span>
-<span class="linenos">52</span>        <span class="p">}</span>
-<span class="linenos">53</span>        <span class="c1"># 7. Return the Result object</span>
-<span class="linenos">54</span>        <span class="k">return</span> <span class="n">gradient_result</span>
+<span class="linenos">18</span><span class="sd">    Returns:</span>
+<span class="linenos">19</span><span class="sd">        A result object containing the columns, `x`, `y` and the</span>
+<span class="linenos">20</span><span class="sd">        calculated gradient.</span>
+<span class="linenos">21</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">22</span>    <span class="c1"># 2. Validate the inputs to the method</span>
+<span class="linenos">23</span>    <span class="n">validator</span> <span class="o">=</span> <span class="n">AnalysisValidator</span><span class="p">(</span>
+<span class="linenos">24</span>        <span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span>
+<span class="linenos">25</span>        <span class="n">required_columns</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
+<span class="linenos">26</span>        <span class="c1"># required_type not neccessary here as type specified when declaring</span>
+<span class="linenos">27</span>        <span class="c1"># input_data attribute is strict enough</span>
+<span class="linenos">28</span>    <span class="p">)</span>
+<span class="linenos">29</span>    <span class="c1"># 3. Retrieve the validated columns as numpy arrays</span>
+<span class="linenos">30</span>    <span class="n">x_data</span><span class="p">,</span> <span class="n">y_data</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">variables</span>
+<span class="linenos">31</span>
+<span class="linenos">32</span>    <span class="c1"># 4. Perform the computation</span>
+<span class="linenos">33</span>    <span class="n">gradient_title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;d(</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)/d(</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="linenos">34</span>    <span class="n">gradient_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">y_data</span><span class="p">,</span> <span class="n">x_data</span><span class="p">)</span>
+<span class="linenos">35</span>
+<span class="linenos">36</span>    <span class="c1"># 5. Create a Result object to store the results</span>
+<span class="linenos">37</span>    <span class="n">gradient_result</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">clean_copy</span><span class="p">(</span>
+<span class="linenos">38</span>        <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">x</span><span class="p">:</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">y_data</span><span class="p">,</span> <span class="n">gradient_title</span><span class="p">:</span> <span class="n">gradient_data</span><span class="p">})</span>
+<span class="linenos">39</span>    <span class="p">)</span>
+<span class="linenos">40</span>    <span class="c1"># 6. Define the column definitions for the Result object</span>
+<span class="linenos">41</span>    <span class="n">gradient_result</span><span class="o">.</span><span class="n">column_definitions</span> <span class="o">=</span> <span class="p">{</span>
+<span class="linenos">42</span>        <span class="n">x</span><span class="p">:</span> <span class="n">input_data</span><span class="o">.</span><span class="n">column_definitions</span><span class="p">[</span><span class="n">x</span><span class="p">],</span>
+<span class="linenos">43</span>        <span class="n">y</span><span class="p">:</span> <span class="n">input_data</span><span class="o">.</span><span class="n">column_definitions</span><span class="p">[</span><span class="n">y</span><span class="p">],</span>
+<span class="linenos">44</span>        <span class="n">gradient_title</span><span class="p">:</span> <span class="s2">&quot;The calculated gradient.&quot;</span><span class="p">,</span>
+<span class="linenos">45</span>    <span class="p">}</span>
+<span class="linenos">46</span>    <span class="c1"># 7. Return the Result object</span>
+<span class="linenos">47</span>    <span class="k">return</span> <span class="n">gradient_result</span>
 </pre></div>
 </div>
 </section>
@@ -600,8 +547,7 @@ in the <a class="reference internal" href="../api/pyprobe.analysis.base.degradat
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">Setup</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#methods">Methods</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#base">Base</a></li>
 </ul>
   </nav></div>

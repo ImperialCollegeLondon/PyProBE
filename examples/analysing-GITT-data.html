@@ -476,8 +476,8 @@ document.write(`
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.analysis.pulsing</span> <span class="kn">import</span> <span class="n">Pulsing</span>
-<span class="n">pulse_object</span> <span class="o">=</span> <span class="n">Pulsing</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">pulsing_experiment</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.analysis</span> <span class="kn">import</span> <span class="n">pulsing</span>
+<span class="n">pulse_object</span> <span class="o">=</span> <span class="n">pulsing</span><span class="o">.</span><span class="n">Pulsing</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">pulsing_experiment</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -500,12 +500,13 @@ document.write(`
 <img alt="../_images/examples_analysing-GITT-data_11_0.png" src="../_images/examples_analysing-GITT-data_11_0.png" />
 </div>
 </div>
-<p>We can also extract key parameters from the pulsing experiment, with the <code class="docutils literal notranslate"><span class="pre">pulse_summary()</span></code> method.</p>
+<p>We can also extract key parameters from the pulsing experiment, with the <code class="docutils literal notranslate"><span class="pre">get_resistances()</span></code> method.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">pulse_object</span><span class="o">.</span><span class="n">pulse_summary</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pulse_resistances</span> <span class="o">=</span> <span class="n">pulsing</span><span class="o">.</span><span class="n">get_resistances</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">pulsing_experiment</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pulse_resistances</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -533,13 +534,13 @@ shape: (10, 5)
 └──────────────┴──────────────────────────┴──────────┴─────────┴───────────┘
 </pre></div></div>
 </div>
-<p>The pulse summary can take an argument of a list of times at which to evaluate the resistance after the pulse, for instance at 10s after the pulse:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">get_resistances()</span></code> method can take an argument of a list of times at which to evaluate the resistance after the pulse, for instance at 10s after the pulse:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pulse_summary</span> <span class="o">=</span> <span class="n">pulse_object</span><span class="o">.</span><span class="n">pulse_summary</span><span class="p">(</span><span class="n">r_times</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">pulse_summary</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pulse_resistances</span> <span class="o">=</span> <span class="n">pulsing</span><span class="o">.</span><span class="n">get_resistances</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">pulsing_experiment</span><span class="p">,</span> <span class="n">r_times</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pulse_resistances</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -573,8 +574,8 @@ shape: (10, 6)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_summary</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="s1">&#39;R0 [Ohms]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R0&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_summary</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="s1">&#39;R_10s [Ohms]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R_10s&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_resistances</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="s1">&#39;R0 [Ohms]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R0&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pulse_resistances</span><span class="p">,</span> <span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="s1">&#39;R_10s [Ohms]&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R_10s&#39;</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">yaxis_title</span> <span class="o">=</span> <span class="s1">&#39;Resistance [Ohms]&#39;</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
 </pre></div>

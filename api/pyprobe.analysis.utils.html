@@ -401,7 +401,7 @@ document.write(`
 <p>Module for utilities for analysis classes.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyprobe.analysis.utils.assemble_array">
-<span class="sig-prename descclassname"><span class="pre">pyprobe.analysis.utils.</span></span><span class="sig-name descname"><span class="pre">assemble_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.utils.assemble_array" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">assemble_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.utils.assemble_array" title="Link to this definition">#</a></dt>
 <dd><p>Assemble an array from a list of results.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -421,13 +421,12 @@ document.write(`
 
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.analysis.utils.AnalysisValidator">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.analysis.utils.</span></span><span class="sig-name descname"><span class="pre">AnalysisValidator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.utils.AnalysisValidator" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalysisValidator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">required_columns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.utils.AnalysisValidator" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A base class for analysis classes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Validators<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type" title="pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_input_data_type</span></code></a> » <code class="xref py py-obj docutils literal notranslate"><span class="pre">all</span> <span class="pre">fields</span></code></p></li>
 <li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns" title="pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_required_columns</span></code></a> » <code class="xref py py-obj docutils literal notranslate"><span class="pre">all</span> <span class="pre">fields</span></code></p></li>
 </ul>
 </dd>
@@ -435,7 +434,6 @@ document.write(`
 <dd class="field-even"><ul class="simple">
 <li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>)</p></li>
 <li><p><strong>required_columns</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p></li>
-<li><p><strong>required_type</strong> (<em>Any</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -449,7 +447,6 @@ document.write(`
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type" title="pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_input_data_type</span></code></a></p></li>
 <li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns" title="pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_required_columns</span></code></a></p></li>
 </ul>
 </dd>
@@ -463,40 +460,8 @@ document.write(`
 <dl class="field-list simple">
 <dt class="field-odd">Validated by<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type" title="pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_input_data_type</span></code></a></p></li>
 <li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns" title="pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_required_columns</span></code></a></p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute pydantic_field">
-<dt class="sig sig-object py" id="pyprobe.analysis.utils.AnalysisValidator.required_type">
-<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">required_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pyprobe.analysis.utils.AnalysisValidator.required_type" title="Link to this definition">#</a></dt>
-<dd><p>The required data type of the input data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Validated by<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type" title="pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_input_data_type</span></code></a></p></li>
-<li><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns" title="pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_required_columns</span></code></a></p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method pydantic_validator">
-<dt class="sig sig-object py" id="pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type">
-<em class="property"><span class="pre">validator</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">validate_input_data_type</span></span><em class="autodoc_pydantic_validator_arrow property">&#160; <span class="pre">»</span>&#160; </em><em class="xref py py-obj"><span class="pre">all</span> <span class="pre">fields</span></em><a class="headerlink" href="#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type" title="Link to this definition">#</a></dt>
-<dd><p>Check if the input_data is of the required type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated instance.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator">AnalysisValidator</a></p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the input data is not of the required type.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -586,8 +551,6 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator.input_data"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.input_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator.required_columns"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.required_columns</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator.required_type"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.required_type</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.validate_input_data_type</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.validate_required_columns</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.utils.AnalysisValidator.variables"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.variables</span></code></a></li>
 </ul>

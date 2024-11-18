@@ -385,12 +385,14 @@ print, plot or perform analysis on the data with the <cite>analysis</cite> modul
 </section>
 <section id="pydantic">
 <h2>Pydantic<a class="headerlink" href="#pydantic" title="Link to this heading">#</a></h2>
-<p><a class="reference external" href="https://docs.pydantic.dev/latest/">Pydantic</a> is used across PyProBE for class input
+<p><a class="reference external" href="https://docs.pydantic.dev/latest/">Pydantic</a> is used across PyProBE for class and function input
 validation. <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>, <a class="reference internal" href="../api/pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a> and
 all of the classes in the <a class="reference internal" href="../api/pyprobe.filters.html#module-pyprobe.filters" title="pyprobe.filters"><code class="xref py py-mod docutils literal notranslate"><span class="pre">filters</span></code></a> module inherit from Pydantic
-<a class="reference external" href="https://docs.pydantic.dev/latest/api/base_model/">BaseModel</a>, as do all of
-the <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> classes. This means all of their
-inputs are type-validated automatically. The <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a>
+<a class="reference external" href="https://docs.pydantic.dev/latest/api/base_model/">BaseModel</a>. This means all of their
+inputs are type-validated automatically.</p>
+<p>Functions in the <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> module use the <a class="reference external" href="https://docs.pydantic.dev/latest/api/validate_call/#pydantic.validate_call_decorator.validate_call">validate_call</a>
+decorator, to ensure the arguments passed are of the correct type.
+The <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a>
 is a custom validation model for checking the type and columns are correct for methods
 of analysis classes.</p>
 <p>Most of this work is behind-the-scenes. Your main interaction with Pydantic is likely to

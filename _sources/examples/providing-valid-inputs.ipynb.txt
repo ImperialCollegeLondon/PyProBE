@@ -120,11 +120,10 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## Analysis Class Validation\n",
+    "## Analysis Module Validation\n",
     "\n",
-    "You are much more likely to experience validation errors when dealing with the classes in the \n",
-    "analysis module. These classes, and the methods within them, may require a particular\n",
-    "PyProBE object to work.\n",
+    "You are much more likely to experience validation errors when dealing with the functions and classes in the \n",
+    "analysis module. These may require a particular PyProBE object to work.\n",
     "\n",
     "As an example, the Cycling class requires an Experiment input. This is because it \n",
     "provides calculations based on the cycle() method of the experiment class:"
@@ -177,8 +176,7 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "Types and columns are also validated in the methods of analysis classes. You can create a \n",
-    "DMA object on any pyprobe data type:"
+    "Functions in the analysis module also contain type validation. This occurs on two levels. First, the inputs to the function are checked. E.g. for the gradient function of the differentiation module, `input_data` is required as a PyProBE object, and string column names are required for `x` and `y`:"
    ]
   },
   {
@@ -187,17 +185,18 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "pOCV = cell.procedure['Sample'].experiment('Break-in Cycles').cycle(1).discharge(0)\n",
+    "from pyprobe.analysis import differentiation\n",
     "\n",
-    "from pyprobe.analysis.degradation_mode_analysis import DMA"
+    "gradient = differentiation.gradient(input_data = cell.procedure['Sample'].experiment('Break-in Cycles').discharge(-1),\n",
+    "                                    x = \"Capacity [Ah]\",\n",
+    "                                    y = \"Voltage [V]\")"
    ]
   },
   {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "But the average_ocvs() method is stricter. It must be provided with a filter no deeper\n",
-    "than Cycle as it requires both a charge and a discharge curve to work on."
+    "But if I provide an array to input_data, I will get an error to say that input_data should be one of many PyProBE objects:"
    ]
   },
   {
@@ -206,26 +205,17 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "averaged_ocv_dma = DMA.average_ocvs(input_data = pOCV)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "pOCV_cycle = cell.procedure['Sample'].experiment('Break-in Cycles').cycle(1)\n",
-    "averaged_ocv_dma = DMA.average_ocvs(input_data = pOCV_cycle)"
+    "import numpy as np\n",
+    "gradient = differentiation.gradient(input_data = np.zeros((10, 2)),\n",
+    "                                    x = \"Capacity [Ah]\",\n",
+    "                                    y = \"Voltage [V]\")"
    ]
   },
   {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "We are now told that we are missing an SOC column. This is encouraged to be calculated outside\n",
-    "the module so it is clearer to the user how the curves will align. We can create an\n",
-    "SOC column with the set_SOC() method:"
+    "Analysis functions will also check that the columns you require for the computation are present in the PyProBE objects provided. As an example, we will call the `gradient()` method, requesting to differentiate a column that does not exist in the underlying data:"
    ]
   },
   {
@@ -234,32 +224,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "pOCV_cycle.set_SOC()\n",
-    "fig = pyprobe.Plot()\n",
-    "fig.add_line(pOCV_cycle.discharge(0).constant_current(0), x='SOC', y='Voltage [V]', label='Discharge', color='blue')\n",
-    "fig.add_line(pOCV_cycle.charge(0).constant_current(0), x='SOC', y='Voltage [V]', label='Charge', color='purple')\n",
-    "fig.show_image()\n",
-    "# fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation"
-   ]
-  },
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "We can then provide this updated result object to the method:"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "averaged_ocv_dma = DMA.average_ocvs(input_data = pOCV_cycle, charge_filter=\"charge(0).constant_current(0)\", discharge_filter=\"discharge(0).constant_current(0)\")\n",
-    "\n",
-    "fig.add_line(averaged_ocv_dma.input_data, x='SOC', y='Voltage [V]', label='Average', color='red')\n",
-    "fig.show_image()\n",
-    "# fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation"
+    "gradient = differentiation.gradient(input_data = cell.procedure['Sample'].experiment('Break-in Cycles').discharge(-1),\n",
+    "                                    x = \"Temperature [C]\",\n",
+    "                                    y = \"Voltage [V]\")"
    ]
   }
  ],

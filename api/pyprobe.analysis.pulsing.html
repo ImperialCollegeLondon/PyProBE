@@ -399,9 +399,55 @@ document.write(`
   <section id="module-pyprobe.analysis.pulsing">
 <span id="pyprobe-analysis-pulsing-module"></span><h1>pyprobe.analysis.pulsing module<a class="headerlink" href="#module-pyprobe.analysis.pulsing" title="Link to this heading">#</a></h1>
 <p>A module for the Pulsing class.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.analysis.pulsing.get_ocv_curve">
+<span class="sig-name descname"><span class="pre">get_ocv_curve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.pulsing.get_ocv_curve" title="Link to this definition">#</a></dt>
+<dd><p>Filter down a pulsing experiment to the points representing the cell OCV.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The input data for the pulsing experiment.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new Result object containing the OCV curve.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.analysis.pulsing.get_resistances">
+<span class="sig-name descname"><span class="pre">get_resistances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.pulsing.get_resistances" title="Link to this definition">#</a></dt>
+<dd><p>Returns a result object summarising the pulsing experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r_times</strong> (<em>List</em><em>[</em><em>float</em><em> | </em><em>int</em><em>]</em>) – A list of times (in seconds) after each pulse at which to evaluate
+the cell resistance.</p></li>
+<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A result object containing key summary statistics for a pulsing
+experiment. Includes:
+- Experiment Capacity [Ah]
+- SOC
+- OCV [V]
+- R0 [Ohms], calculated from the OCV and the first data point in the
+pulse where the current is within 1% of the median pulse current
+- Resistance calculated at each time provided in seconds in the r_times
+argument</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.analysis.pulsing.Pulsing">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.analysis.pulsing.</span></span><span class="sig-name descname"><span class="pre">Pulsing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.pulsing.Pulsing" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pulsing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.pulsing.Pulsing" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A pulsing experiment in a battery procedure.</p>
 <dl class="field-list simple">
@@ -528,6 +574,8 @@ argument</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.pulsing.get_ocv_curve"><code class="docutils literal notranslate"><span class="pre">get_ocv_curve()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.pulsing.get_resistances"><code class="docutils literal notranslate"><span class="pre">get_resistances()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.pulsing.Pulsing"><code class="docutils literal notranslate"><span class="pre">Pulsing</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.pulsing.Pulsing.input_data"><code class="docutils literal notranslate"><span class="pre">Pulsing.input_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.pulsing.Pulsing.pulse"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse()</span></code></a></li>

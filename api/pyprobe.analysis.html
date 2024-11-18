@@ -406,6 +406,7 @@ document.write(`
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.ocv_curve_fit"><code class="docutils literal notranslate"><span class="pre">ocv_curve_fit()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_electrode_capacities"><code class="docutils literal notranslate"><span class="pre">calc_electrode_capacities()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_full_cell_OCV"><code class="docutils literal notranslate"><span class="pre">calc_full_cell_OCV()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_full_cell_OCV_composite"><code class="docutils literal notranslate"><span class="pre">calc_full_cell_OCV_composite()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calculate_dma_parameters"><code class="docutils literal notranslate"><span class="pre">calculate_dma_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.average_OCV_curves"><code class="docutils literal notranslate"><span class="pre">average_OCV_curves()</span></code></a></li>
 </ul>
@@ -431,6 +432,7 @@ document.write(`
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.cycling.html">pyprobe.analysis.cycling module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.summary"><code class="docutils literal notranslate"><span class="pre">summary()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling"><code class="docutils literal notranslate"><span class="pre">Cycling</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling.input_data"><code class="docutils literal notranslate"><span class="pre">Cycling.input_data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling.summary"><code class="docutils literal notranslate"><span class="pre">Cycling.summary()</span></code></a></li>
@@ -439,19 +441,29 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html">pyprobe.analysis.degradation_mode_analysis module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA"><code class="docutils literal notranslate"><span class="pre">DMA</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.input_data"><code class="docutils literal notranslate"><span class="pre">DMA.input_data</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.stoichiometry_limits"><code class="docutils literal notranslate"><span class="pre">DMA.stoichiometry_limits</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fitted_OCV"><code class="docutils literal notranslate"><span class="pre">DMA.fitted_OCV</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.dma_result"><code class="docutils literal notranslate"><span class="pre">DMA.dma_result</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv"><code class="docutils literal notranslate"><span class="pre">DMA.fit_ocv()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.quantify_degradation_modes"><code class="docutils literal notranslate"><span class="pre">DMA.quantify_degradation_modes()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.average_ocvs"><code class="docutils literal notranslate"><span class="pre">DMA.average_ocvs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.OCP"><code class="docutils literal notranslate"><span class="pre">OCP</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.OCP.from_data"><code class="docutils literal notranslate"><span class="pre">OCP.from_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.OCP.from_expression"><code class="docutils literal notranslate"><span class="pre">OCP.from_expression()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.OCP.eval"><code class="docutils literal notranslate"><span class="pre">OCP.eval</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.OCP.grad"><code class="docutils literal notranslate"><span class="pre">OCP.grad</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.CompositeOCP"><code class="docutils literal notranslate"><span class="pre">CompositeOCP</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.CompositeOCP.from_data"><code class="docutils literal notranslate"><span class="pre">CompositeOCP.from_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.CompositeOCP.eval"><code class="docutils literal notranslate"><span class="pre">CompositeOCP.eval</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.CompositeOCP.grad"><code class="docutils literal notranslate"><span class="pre">CompositeOCP.grad</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.run_ocv_curve_fit"><code class="docutils literal notranslate"><span class="pre">run_ocv_curve_fit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.quantify_degradation_modes"><code class="docutils literal notranslate"><span class="pre">quantify_degradation_modes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.run_batch_dma_parallel"><code class="docutils literal notranslate"><span class="pre">run_batch_dma_parallel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.run_batch_dma_sequential"><code class="docutils literal notranslate"><span class="pre">run_batch_dma_sequential()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.average_ocvs"><code class="docutils literal notranslate"><span class="pre">average_ocvs()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.differentiation.html">pyprobe.analysis.differentiation module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.gradient"><code class="docutils literal notranslate"><span class="pre">gradient()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.differentiate_LEAN"><code class="docutils literal notranslate"><span class="pre">differentiate_LEAN()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation"><code class="docutils literal notranslate"><span class="pre">Differentiation</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.input_data"><code class="docutils literal notranslate"><span class="pre">Differentiation.input_data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.Differentiation.differentiate_FD"><code class="docutils literal notranslate"><span class="pre">Differentiation.differentiate_FD()</span></code></a></li>
@@ -461,6 +473,8 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.pulsing.html">pyprobe.analysis.pulsing module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.get_ocv_curve"><code class="docutils literal notranslate"><span class="pre">get_ocv_curve()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.get_resistances"><code class="docutils literal notranslate"><span class="pre">get_resistances()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing"><code class="docutils literal notranslate"><span class="pre">Pulsing</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.input_data"><code class="docutils literal notranslate"><span class="pre">Pulsing.input_data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.Pulsing.pulse"><code class="docutils literal notranslate"><span class="pre">Pulsing.pulse()</span></code></a></li>
@@ -471,9 +485,17 @@ document.write(`
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pyprobe.analysis.smoothing.html">pyprobe.analysis.smoothing module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.spline_smoothing"><code class="docutils literal notranslate"><span class="pre">spline_smoothing()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.downsample"><code class="docutils literal notranslate"><span class="pre">downsample()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.savgol_smoothing"><code class="docutils literal notranslate"><span class="pre">savgol_smoothing()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.linear_interpolator"><code class="docutils literal notranslate"><span class="pre">linear_interpolator()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.cubic_interpolator"><code class="docutils literal notranslate"><span class="pre">cubic_interpolator()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.pchip_interpolator"><code class="docutils literal notranslate"><span class="pre">pchip_interpolator()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.akima_interpolator"><code class="docutils literal notranslate"><span class="pre">akima_interpolator()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing"><code class="docutils literal notranslate"><span class="pre">Smoothing</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.input_data"><code class="docutils literal notranslate"><span class="pre">Smoothing.input_data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.spline_smoothing"><code class="docutils literal notranslate"><span class="pre">Smoothing.spline_smoothing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.downsample"><code class="docutils literal notranslate"><span class="pre">Smoothing.downsample()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.level_smoothing"><code class="docutils literal notranslate"><span class="pre">Smoothing.level_smoothing()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.savgol_smoothing"><code class="docutils literal notranslate"><span class="pre">Smoothing.savgol_smoothing()</span></code></a></li>
 </ul>
@@ -485,8 +507,6 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.input_data"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.input_data</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.required_columns"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.required_columns</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.required_type"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.required_type</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.validate_input_data_type"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.validate_input_data_type</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.validate_required_columns"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.validate_required_columns</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.variables"><code class="docutils literal notranslate"><span class="pre">AnalysisValidator.variables</span></code></a></li>
 </ul>

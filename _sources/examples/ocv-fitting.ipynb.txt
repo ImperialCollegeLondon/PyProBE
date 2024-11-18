@@ -17,7 +17,7 @@
    "source": [
     "import pyprobe\n",
     "import polars as pl\n",
-    "from pyprobe.analysis import degradation_mode_analysis\n",
+    "from pyprobe.analysis import degradation_mode_analysis as dma\n",
     "import numpy as np\n",
     "import matplotlib.pyplot as plt"
    ]
@@ -105,7 +105,28 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "We will now generate a fit to this voltage curve using the Simple OCV fit method in PyProBE:"
+    "We will now generate a fit to this voltage curve.\n",
+    "\n",
+    "First, we must create instances of the OCP class to hold our electrode OCP information:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "neg_ocp = dma.OCP(graphite_LGM50_ocp_Chen2020)\n",
+    "pos_ocp = dma.OCP(nmc_LGM50_ocp_Chen2020)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "In this example, we have directly declared the OCPs since we already have callable functions for them. Alternatively you can use the `from_data` or `from_expression` to define your OCP from data points or a Sympy expression.\n",
+    "\n",
+    "Now we can fit to the ocv curve:"
    ]
   },
   {
@@ -117,14 +138,24 @@
     "# put the voltage and capacity data into a Result object (not necessary in normal use)\n",
     "OCV_result = pyprobe.Result(base_dataframe=pl.DataFrame({'Capacity [Ah]': capacity, 'Voltage [V]': voltage}), info= {})\n",
     "\n",
-    "dma_object = degradation_mode_analysis.DMA(input_data=OCV_result)"
+    "stoichiometry_limits, fitted_curve = dma.run_ocv_curve_fit(\n",
+    "    input_data= OCV_result,\n",
+    "    ocp_ne=neg_ocp,\n",
+    "    ocp_pe=pos_ocp,\n",
+    "    fitting_target='OCV',\n",
+    "    optimizer='minimize',\n",
+    "    optimizer_options={\n",
+    "        'x0': np.array([0.9, 0.1, 0.1, 0.9]),\n",
+    "        'bounds': [(0, 1), (0, 1), (0, 1), (0, 1)]\n",
+    "    }\n",
+    ")"
    ]
   },
   {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "One of the available analysis methods is `fit_ocv()`. This produces two result objects:"
+    "This produces two result objects. The first is the fitted stoichiometry limits:"
    ]
   },
   {
@@ -133,11 +164,6 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "stoichiometry_limits, fitted_curve = dma_object.fit_ocv(x_ne = z,\n",
-    "                   x_pe = z,\n",
-    "                   ocp_ne = ocp_ne,\n",
-    "                   ocp_pe = ocp_pe,\n",
-    "                   x_guess = [0.9, 0.1, 0.1, 0.9])\n",
     "print(stoichiometry_limits.data)"
    ]
   },
@@ -174,12 +200,16 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "stoichiometry_limits, fitted_curve = dma_object.fit_ocv(x_ne = z,\n",
-    "                   x_pe = z,\n",
-    "                   ocp_ne = ocp_ne,\n",
-    "                   ocp_pe = ocp_pe,\n",
-    "                   x_guess = [0.9, 0.1, 0.1, 0.9],\n",
-    "                   fitting_target = 'dQdV')\n",
+    "stoichiometry_limits, fitted_curve = dma.run_ocv_curve_fit(\n",
+    "    input_data= OCV_result,\n",
+    "    ocp_ne=neg_ocp,\n",
+    "    ocp_pe=pos_ocp,\n",
+    "    fitting_target='dQdV',\n",
+    "    optimizer='differential_evolution',\n",
+    "    optimizer_options={\n",
+    "        'bounds': [(0.8, 1), (0.2, 0.3), (0, 0.1), (0.86, 1)]\n",
+    "    }\n",
+    ")\n",
     "print(stoichiometry_limits.data)\n",
     "fig = pyprobe.Plot()\n",
     "fig.add_line(fitted_curve, x='SOC', y='Input dSOCdV [1/V]',label = \"Input\")\n",

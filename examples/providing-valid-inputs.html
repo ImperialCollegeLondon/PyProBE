@@ -516,9 +516,9 @@ base_dataframe.is-instance[DataFrame]
 </pre></div></div>
 </div>
 </section>
-<section id="Analysis-Class-Validation">
-<h2>Analysis Class Validation<a class="headerlink" href="#Analysis-Class-Validation" title="Link to this heading">#</a></h2>
-<p>You are much more likely to experience validation errors when dealing with the classes in the analysis module. These classes, and the methods within them, may require a particular PyProBE object to work.</p>
+<section id="Analysis-Module-Validation">
+<h2>Analysis Module Validation<a class="headerlink" href="#Analysis-Module-Validation" title="Link to this heading">#</a></h2>
+<p>You are much more likely to experience validation errors when dealing with the functions and classes in the analysis module. These may require a particular PyProBE object to work.</p>
 <p>As an example, the Cycling class requires an Experiment input. This is because it provides calculations based on the cycle() method of the experiment class:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -577,23 +577,28 @@ input_data
     For further information visit https://errors.pydantic.dev/2.8/v/model_type
 </pre></div></div>
 </div>
-<p>Types and columns are also validated in the methods of analysis classes. You can create a DMA object on any pyprobe data type:</p>
+<p>Functions in the analysis module also contain type validation. This occurs on two levels. First, the inputs to the function are checked. E.g. for the gradient function of the differentiation module, <code class="docutils literal notranslate"><span class="pre">input_data</span></code> is required as a PyProBE object, and string column names are required for <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code>:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pOCV</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.analysis</span> <span class="kn">import</span> <span class="n">differentiation</span>
 
-<span class="kn">from</span> <span class="nn">pyprobe.analysis.degradation_mode_analysis</span> <span class="kn">import</span> <span class="n">DMA</span>
+<span class="n">gradient</span> <span class="o">=</span> <span class="n">differentiation</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                                    <span class="n">x</span> <span class="o">=</span> <span class="s2">&quot;Capacity [Ah]&quot;</span><span class="p">,</span>
+                                    <span class="n">y</span> <span class="o">=</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>But the average_ocvs() method is stricter. It must be provided with a filter no deeper than Cycle as it requires both a charge and a discharge curve to work on.</p>
+<p>But if I provide an array to input_data, I will get an error to say that input_data should be one of many PyProBE objects:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">averaged_ocv_dma</span> <span class="o">=</span> <span class="n">DMA</span><span class="o">.</span><span class="n">average_ocvs</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">pOCV</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">gradient</span> <span class="o">=</span> <span class="n">differentiation</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
+                                    <span class="n">x</span> <span class="o">=</span> <span class="s2">&quot;Capacity [Ah]&quot;</span><span class="p">,</span>
+                                    <span class="n">y</span> <span class="o">=</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -604,41 +609,64 @@ input_data
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[9], line 1</span>
-<span class="ansi-green-fg">----&gt; 1</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">DMA</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">average_ocvs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">pOCV</span><span class="ansi-yellow-bg">)</span>
+Cell <span class="ansi-green-fg">In[9], line 2</span>
+<span class="ansi-green-intense-fg ansi-bold">      1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> <span class="ansi-bold" style="color: rgb(0,0,255)">numpy</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> <span class="ansi-bold" style="color: rgb(0,0,255)">np</span>
+<span class="ansi-green-fg">----&gt; 2</span> gradient <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">differentiation</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">gradient</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">np</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">zeros</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">10</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">2</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">x</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Capacity [Ah]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">      4</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">y</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Voltage [V]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pyprobe/analysis/degradation_mode_analysis.py:258</span>, in <span class="ansi-cyan-fg">DMA.average_ocvs</span><span class="ansi-blue-fg">(input_data, discharge_filter, charge_filter)</span>
-<span class="ansi-green-intense-fg ansi-bold">    248</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Average the charge and discharge OCV curves.</span>
-<span class="ansi-green-intense-fg ansi-bold">    249</span>
-<span class="ansi-green-intense-fg ansi-bold">    250</span> <span style="color: rgb(175,0,0)">Args:</span>
-<span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">    255</span> <span style="color: rgb(175,0,0)">    DMA: A DMA object containing the averaged OCV curve.</span>
-<span class="ansi-green-intense-fg ansi-bold">    256</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
-<span class="ansi-green-intense-fg ansi-bold">    257</span> required_columns <span style="color: rgb(98,98,98)">=</span> [<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">SOC</span><span style="color: rgb(175,0,0)">&#34;</span>]
-<span class="ansi-green-fg">--&gt; 258</span> <span class="ansi-yellow-bg">AnalysisValidator</span><span class="ansi-yellow-bg">(</span>
-<span class="ansi-green-intense-fg ansi-bold">    259</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    260</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    261</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_type</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">FilterToCycleType</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    262</span> <span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    264</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> discharge_filter <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-<span class="ansi-green-intense-fg ansi-bold">    265</span>     discharge_result <span style="color: rgb(98,98,98)">=</span> input_data<span style="color: rgb(98,98,98)">.</span>discharge()
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pydantic/validate_call_decorator.py:60</span>, in <span class="ansi-cyan-fg">validate_call.&lt;locals&gt;.validate.&lt;locals&gt;.wrapper_function</span><span class="ansi-blue-fg">(*args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     58</span> <span style="color: rgb(175,0,255)">@functools</span><span style="color: rgb(98,98,98)">.</span>wraps(function)
+<span class="ansi-green-intense-fg ansi-bold">     59</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper_function</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
+<span class="ansi-green-fg">---&gt; 60</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg">validate_call_wrapper</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
-<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
-<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
-<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pydantic/_internal/_validate_call.py:96</span>, in <span class="ansi-cyan-fg">ValidateCallWrapper.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     95</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__call__</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">*</span>args: Any, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs: Any) <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">&gt;</span> Any:
+<span class="ansi-green-fg">---&gt; 96</span>     res <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">pydantic_core</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">ArgsKwargs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     97</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__:
+<span class="ansi-green-intense-fg ansi-bold">     98</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__(res)
 
-<span class="ansi-red-fg">ValidationError</span>: 1 validation error for AnalysisValidator
-  Value error, Input data is not of type typing.Union[pyprobe.filters.Procedure, pyprobe.filters.Experiment, pyprobe.filters.Cycle] [type=value_error, input_value={&#39;input_data&#39;: Step(base_... pyprobe.filters.Cycle]}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.8/v/value_error
+<span class="ansi-red-fg">ValidationError</span>: 6 validation errors for gradient
+input_data.RawData
+  Input should be a valid dictionary or instance of RawData [type=model_type, input_value=array([[0., 0.],
+       [..., 0.],
+       [0., 0.]]), input_type=ndarray]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+input_data.Procedure
+  Input should be a valid dictionary or instance of Procedure [type=model_type, input_value=array([[0., 0.],
+       [..., 0.],
+       [0., 0.]]), input_type=ndarray]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+input_data.Experiment
+  Input should be a valid dictionary or instance of Experiment [type=model_type, input_value=array([[0., 0.],
+       [..., 0.],
+       [0., 0.]]), input_type=ndarray]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+input_data.Cycle
+  Input should be a valid dictionary or instance of Cycle [type=model_type, input_value=array([[0., 0.],
+       [..., 0.],
+       [0., 0.]]), input_type=ndarray]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+input_data.Step
+  Input should be a valid dictionary or instance of Step [type=model_type, input_value=array([[0., 0.],
+       [..., 0.],
+       [0., 0.]]), input_type=ndarray]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+input_data.Result
+  Input should be a valid dictionary or instance of Result [type=model_type, input_value=array([[0., 0.],
+       [..., 0.],
+       [0., 0.]]), input_type=ndarray]
+    For further information visit https://errors.pydantic.dev/2.8/v/model_type
 </pre></div></div>
 </div>
+<p>Analysis functions will also check that the columns you require for the computation are present in the PyProBE objects provided. As an example, we will call the <code class="docutils literal notranslate"><span class="pre">gradient()</span></code> method, requesting to differentiate a column that does not exist in the underlying data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pOCV_cycle</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">averaged_ocv_dma</span> <span class="o">=</span> <span class="n">DMA</span><span class="o">.</span><span class="n">average_ocvs</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">pOCV_cycle</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gradient</span> <span class="o">=</span> <span class="n">differentiation</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Break-in Cycles&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                                    <span class="n">x</span> <span class="o">=</span> <span class="s2">&quot;Temperature [C]&quot;</span><span class="p">,</span>
+                                    <span class="n">y</span> <span class="o">=</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -649,25 +677,38 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/pyt
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">ValidationError</span>                           Traceback (most recent call last)
-Cell <span class="ansi-green-fg">In[10], line 2</span>
-<span class="ansi-green-intense-fg ansi-bold">      1</span> pOCV_cycle <span style="color: rgb(98,98,98)">=</span> cell<span style="color: rgb(98,98,98)">.</span>procedure[<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Sample</span><span style="color: rgb(175,0,0)">&#39;</span>]<span style="color: rgb(98,98,98)">.</span>experiment(<span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Break-in Cycles</span><span style="color: rgb(175,0,0)">&#39;</span>)<span style="color: rgb(98,98,98)">.</span>cycle(<span style="color: rgb(98,98,98)">1</span>)
-<span class="ansi-green-fg">----&gt; 2</span> averaged_ocv_dma <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">DMA</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">average_ocvs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">pOCV_cycle</span><span class="ansi-yellow-bg">)</span>
+Cell <span class="ansi-green-fg">In[10], line 1</span>
+<span class="ansi-green-fg">----&gt; 1</span> gradient <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">differentiation</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">gradient</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">cell</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">procedure</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Sample</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">experiment</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Break-in Cycles</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">discharge</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">-</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">      2</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">x</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Temperature [C]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">y</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Voltage [V]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pyprobe/analysis/degradation_mode_analysis.py:258</span>, in <span class="ansi-cyan-fg">DMA.average_ocvs</span><span class="ansi-blue-fg">(input_data, discharge_filter, charge_filter)</span>
-<span class="ansi-green-intense-fg ansi-bold">    248</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Average the charge and discharge OCV curves.</span>
-<span class="ansi-green-intense-fg ansi-bold">    249</span>
-<span class="ansi-green-intense-fg ansi-bold">    250</span> <span style="color: rgb(175,0,0)">Args:</span>
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pydantic/validate_call_decorator.py:60</span>, in <span class="ansi-cyan-fg">validate_call.&lt;locals&gt;.validate.&lt;locals&gt;.wrapper_function</span><span class="ansi-blue-fg">(*args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     58</span> <span style="color: rgb(175,0,255)">@functools</span><span style="color: rgb(98,98,98)">.</span>wraps(function)
+<span class="ansi-green-intense-fg ansi-bold">     59</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper_function</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
+<span class="ansi-green-fg">---&gt; 60</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg">validate_call_wrapper</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
+
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pydantic/_internal/_validate_call.py:96</span>, in <span class="ansi-cyan-fg">ValidateCallWrapper.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     95</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__call__</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">*</span>args: Any, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs: Any) <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">&gt;</span> Any:
+<span class="ansi-green-fg">---&gt; 96</span>     res <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">pydantic_core</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">ArgsKwargs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     97</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__:
+<span class="ansi-green-intense-fg ansi-bold">     98</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__(res)
+
+File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pyprobe/analysis/differentiation.py:38</span>, in <span class="ansi-cyan-fg">gradient</span><span class="ansi-blue-fg">(input_data, x, y)</span>
+<span class="ansi-green-intense-fg ansi-bold">     22</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Differentiate smooth data with a finite difference method.</span>
+<span class="ansi-green-intense-fg ansi-bold">     23</span>
+<span class="ansi-green-intense-fg ansi-bold">     24</span> <span style="color: rgb(175,0,0)">A wrapper of the numpy.gradient function. This method calculates the gradient</span>
 <span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">    255</span> <span style="color: rgb(175,0,0)">    DMA: A DMA object containing the averaged OCV curve.</span>
-<span class="ansi-green-intense-fg ansi-bold">    256</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
-<span class="ansi-green-intense-fg ansi-bold">    257</span> required_columns <span style="color: rgb(98,98,98)">=</span> [<span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Voltage [V]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Capacity [Ah]</span><span style="color: rgb(175,0,0)">&#34;</span>, <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">SOC</span><span style="color: rgb(175,0,0)">&#34;</span>]
-<span class="ansi-green-fg">--&gt; 258</span> <span class="ansi-yellow-bg">AnalysisValidator</span><span class="ansi-yellow-bg">(</span>
-<span class="ansi-green-intense-fg ansi-bold">    259</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    260</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    261</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_type</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">FilterToCycleType</span><span class="ansi-yellow-bg">,</span>
-<span class="ansi-green-intense-fg ansi-bold">    262</span> <span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">    264</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> discharge_filter <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-<span class="ansi-green-intense-fg ansi-bold">    265</span>     discharge_result <span style="color: rgb(98,98,98)">=</span> input_data<span style="color: rgb(98,98,98)">.</span>discharge()
+<span class="ansi-green-intense-fg ansi-bold">     35</span> <span style="color: rgb(175,0,0)">    calculated gradient.</span>
+<span class="ansi-green-intense-fg ansi-bold">     36</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">     37</span> <span style="color: rgb(95,135,135)"># 2. Validate the inputs to the method</span>
+<span class="ansi-green-fg">---&gt; 38</span> validator <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">AnalysisValidator</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">     39</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     40</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">required_columns</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg">x</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">y</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">,</span>
+<span class="ansi-green-intense-fg ansi-bold">     41</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg" style="color: rgb(95,135,135)"># required_type not neccessary here as type specified when declaring</span>
+<span class="ansi-green-intense-fg ansi-bold">     42</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg" style="color: rgb(95,135,135)"># input_data attribute is strict enough</span>
+<span class="ansi-green-intense-fg ansi-bold">     43</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     44</span> <span style="color: rgb(95,135,135)"># 3. Retrieve the validated columns as numpy arrays</span>
+<span class="ansi-green-intense-fg ansi-bold">     45</span> x_data, y_data <span style="color: rgb(98,98,98)">=</span> validator<span style="color: rgb(98,98,98)">.</span>variables
 
 File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
 <span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
@@ -675,50 +716,9 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/pyt
 <span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
 
 <span class="ansi-red-fg">ValidationError</span>: 1 validation error for AnalysisValidator
-  Value error, Missing required columns: [&#39;SOC&#39;] [type=value_error, input_value={&#39;input_data&#39;: Cycle(base... pyprobe.filters.Cycle]}, input_type=dict]
+  Value error, Missing required columns: [&#39;Temperature [C]&#39;] [type=value_error, input_value={&#39;input_data&#39;: Step(base_...re [C]&#39;, &#39;Voltage [V]&#39;]}, input_type=dict]
     For further information visit https://errors.pydantic.dev/2.8/v/value_error
 </pre></div></div>
-</div>
-<p>We are now told that we are missing an SOC column. This is encouraged to be calculated outside the module so it is clearer to the user how the curves will align. We can create an SOC column with the set_SOC() method:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pOCV_cycle</span><span class="o">.</span><span class="n">set_SOC</span><span class="p">()</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pOCV_cycle</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">constant_current</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Discharge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">pOCV_cycle</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">constant_current</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Charge&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;purple&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
-<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/examples_providing-valid-inputs_21_0.png" src="../_images/examples_providing-valid-inputs_21_0.png" />
-</div>
-</div>
-<p>We can then provide this updated result object to the method:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">averaged_ocv_dma</span> <span class="o">=</span> <span class="n">DMA</span><span class="o">.</span><span class="n">average_ocvs</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">pOCV_cycle</span><span class="p">,</span> <span class="n">charge_filter</span><span class="o">=</span><span class="s2">&quot;charge(0).constant_current(0)&quot;</span><span class="p">,</span> <span class="n">discharge_filter</span><span class="o">=</span><span class="s2">&quot;discharge(0).constant_current(0)&quot;</span><span class="p">)</span>
-
-<span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">averaged_ocv_dma</span><span class="o">.</span><span class="n">input_data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Average&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">show_image</span><span class="p">()</span>
-<span class="c1"># fig.show() # This will show the plot interactively, it is commented out for the sake of the documentation</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/examples_providing-valid-inputs_23_0.png" src="../_images/examples_providing-valid-inputs_23_0.png" />
-</div>
 </div>
 </section>
 </section>
@@ -770,7 +770,7 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.10/x64/lib/pyt
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#RawData-Validation">RawData Validation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Analysis-Class-Validation">Analysis Class Validation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Analysis-Module-Validation">Analysis Module Validation</a></li>
 </ul>
   </nav></div>
 

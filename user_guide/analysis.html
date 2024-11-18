@@ -375,39 +375,30 @@ document.write(`
                   
   <section id="analysis">
 <h1>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">#</a></h1>
-<p>Once filtered, the PyProBE <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> exists to perform further computation on your
+<p>Once filtered, the PyProBE <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> module exists to perform further computation on your
 experimental data. You can see the currently available methods in this part of the API
 documentation.</p>
-<p>An analysis class must be instantiated by providing a variant of a
-<a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object to the <code class="code docutils literal notranslate"><span class="pre">input_data</span></code> field. This contains the data
-that you wish to perform the analysis on:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">analysis_object</span> <span class="o">=</span> <span class="n">AnalysisClass</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">Result</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>for example, to perform <a class="reference internal" href="../api/pyprobe.analysis.degradation_mode_analysis.html#module-pyprobe.analysis.degradation_mode_analysis" title="pyprobe.analysis.degradation_mode_analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">degradation</span> <span class="pre">mode</span> <span class="pre">analysis</span></code></a> on a discharge pseudo-ocv:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">discharge_pOCV</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;pOCV&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">discharge</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">dma_object</span> <span class="o">=</span> <span class="n">DMA</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">discharge_pOCV</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Analysis classes can be selective about the data that you provide to them. For example,
+<p>Analysis modules contain functions and classes that operate on PyProBE objects.
+Analysis classes and functions can be selective about the data that you provide to them. For example,
 the <a class="reference internal" href="../api/pyprobe.analysis.cycling.html#pyprobe.analysis.cycling.Cycling" title="pyprobe.analysis.cycling.Cycling"><code class="xref py py-class docutils literal notranslate"><span class="pre">Cycling</span></code></a> analysis class requires the <code class="code docutils literal notranslate"><span class="pre">input_data</span></code>
 attribute to be assigned an <a class="reference internal" href="../api/pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><code class="xref py py-class docutils literal notranslate"><span class="pre">Experiment</span></code></a> object. This is to
 allow this class to use attributes such as <a class="reference internal" href="../api/pyprobe.filters.html#pyprobe.filters.Experiment.charge" title="pyprobe.filters.Experiment.charge"><code class="xref py py-func docutils literal notranslate"><span class="pre">charge()</span></code></a>
 internally. PyProBE will provide an error if the incorrect type is provided.</p>
-<p>An analysis class may be dependent on specific columns in your experimental data. This
-is also validated when an instance of an analysis class is created, and an error is
+<p>An analysis function may be dependent on specific columns in your experimental data. This
+is validated when an analysis method is called, and an error is
 provided if the validation is not passed.</p>
-<p>To perform the analysis, you must then call a method that is an attribute of this class.
-In the call to the method, you must provide any additional parameters needed for the
-method. In general:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">analysis_object</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="n">method_parameters</span><span class="p">)</span>
+<p>Most analysis functions are available at the module-level. In general:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">analysis_modue</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="n">method_parameters</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>or for the DMA example, using the <a class="reference internal" href="../api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv" title="pyprobe.analysis.degradation_mode_analysis.DMA.fit_ocv"><code class="xref py py-func docutils literal notranslate"><span class="pre">fit_ocv()</span></code></a> method:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">stoichiometry_limits</span> <span class="o">=</span> <span class="n">dma_object</span><span class="o">.</span><span class="n">fit_ocv</span><span class="p">(</span><span class="n">x_ne</span><span class="p">,</span> <span class="n">x_pe</span><span class="p">,</span> <span class="n">ocp_ne</span><span class="p">,</span> <span class="n">ocp_pe</span><span class="p">,</span> <span class="n">x_guess</span><span class="p">)</span>
+<p>or for the performing differentiation using the <a class="reference internal" href="../api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.gradient" title="pyprobe.analysis.differentiation.gradient"><code class="xref py py-func docutils literal notranslate"><span class="pre">pyprobe.analysis.differentiation.gradient()</span></code></a> function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.analysis</span> <span class="kn">import</span> <span class="n">differentiation</span>
+<span class="n">gradient</span> <span class="o">=</span> <span class="n">differentiation</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">,</span>
+                                    <span class="n">x</span> <span class="o">=</span> <span class="s2">&quot;Capacity [Ah]&quot;</span><span class="p">,</span>
+                                    <span class="n">y</span> <span class="o">=</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Methods within analysis classes always return <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> objects,
+<p>Methods within analysis modules and classes always return <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> objects,
 which allows direct integration with other PyProBE functionality such as plotting, and
 other methods.</p>
 <p>Analysis functions have been designed to be simple to read and implement. See the

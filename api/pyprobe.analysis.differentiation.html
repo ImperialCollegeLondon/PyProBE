@@ -401,9 +401,84 @@ document.write(`
   <section id="module-pyprobe.analysis.differentiation">
 <span id="pyprobe-analysis-differentiation-module"></span><h1>pyprobe.analysis.differentiation module<a class="headerlink" href="#module-pyprobe.analysis.differentiation" title="Link to this heading">#</a></h1>
 <p>A module for differentiating experimental data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.analysis.differentiation.gradient">
+<span class="sig-name descname"><span class="pre">gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.differentiation.gradient" title="Link to this definition">#</a></dt>
+<dd><p>Differentiate smooth data with a finite difference method.</p>
+<p>A wrapper of the numpy.gradient function. This method calculates the gradient
+of the data in the y column with respect to the data in the x column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The input data PyProBE object for the differentiation</p></li>
+<li><p><strong>x</strong> (<em>str</em>) – The name of the x variable.</p></li>
+<li><p><strong>y</strong> (<em>str</em>) – The name of the y variable.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A result object containing the columns, <cite>x</cite>, <cite>y</cite> and the
+calculated gradient.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.analysis.differentiation.differentiate_LEAN">
+<span class="sig-name descname"><span class="pre">differentiate_LEAN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dydx'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.0668,</span> <span class="pre">0.2417,</span> <span class="pre">0.383,</span> <span class="pre">0.2417,</span> <span class="pre">0.0668]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'longest'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.differentiation.differentiate_LEAN" title="Link to this definition">#</a></dt>
+<dd><p>A method for differentiating noisy data.</p>
+<p>Uses ‘Level Evaluation ANalysis’ (LEAN) method described in the paper of
+Feng <em>et al.</em><a class="footnote-reference brackets" href="#footcite-feng2020" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+<p>This method assumes <span class="math notranslate nohighlight">\(x\)</span> datapoints to be evenly spaced, it can return
+either <span class="math notranslate nohighlight">\(\frac{dy}{dx}\)</span> or <span class="math notranslate nohighlight">\(\frac{dx}{dy}\)</span> depending on the argument
+provided to the <cite>gradient</cite> parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The input data PyProBE object for the differentiation.</p></li>
+<li><p><strong>x</strong> (<em>str</em>) – The name of the x variable.</p></li>
+<li><p><strong>y</strong> (<em>str</em>) – The name of the y variable.</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – The integer multiple to apply to the sampling interval for the bin size
+(<span class="math notranslate nohighlight">\(\delta R\)</span> in paper). Default is 1.</p></li>
+<li><p><strong>gradient</strong> (<em>str</em>) – The gradient to calculate, either ‘dydx’ or ‘dxdy’. Default is ‘dydx’.</p></li>
+<li><p><strong>smoothing_filter</strong> (<em>List</em><em>[</em><em>float</em><em>]</em>) – <p>The coefficients of the smoothing matrix.</p>
+<p>Examples provided by Feng <em>et al.</em><a class="footnote-reference brackets" href="#footcite-feng2020" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> include:</p>
+<blockquote>
+<div><ul>
+<li><p>[0.25, 0.5, 0.25] for a 3-point smoothing filter.</p></li>
+<li><dl class="simple">
+<dt>[0.0668, 0.2417, 0.3830, 0.2417, 0.0668] (default) for a 5-point</dt><dd><p>smoothing filter.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>[0.1059, 0.121, 0.1745, 0.1972, 0.1745, 0.121, 0.1059] for a</dt><dd><p>7-point smoothing filter.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</p></li>
+<li><p><strong>section</strong> (<em>str</em>) – The section of the data with constant sample rate in x to be considered.
+Default is ‘longest’, which just returns the longest unifomly sampled
+section. Alternative is ‘all’, which returns all sections.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A result object containing the columns, <cite>x</cite>, <cite>y</cite> and the calculated
+gradient.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.analysis.differentiation.Differentiation">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyprobe.analysis.differentiation.</span></span><span class="sig-name descname"><span class="pre">Differentiation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.differentiation.Differentiation" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Differentiation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.differentiation.Differentiation" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A class for differentiating experimental data.</p>
 <dl class="field-list simple">
@@ -449,7 +524,7 @@ calculated gradient.</p>
 <span class="sig-name descname"><span class="pre">differentiate_LEAN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dydx'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.0668,</span> <span class="pre">0.2417,</span> <span class="pre">0.383,</span> <span class="pre">0.2417,</span> <span class="pre">0.0668]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'longest'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.analysis.differentiation.Differentiation.differentiate_LEAN" title="Link to this definition">#</a></dt>
 <dd><p>A method for differentiating noisy data.</p>
 <p>Uses ‘Level Evaluation ANalysis’ (LEAN) method described in the paper of
-Feng <em>et al.</em><a class="footnote-reference brackets" href="#footcite-feng2020" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+Feng <em>et al.</em><a class="footnote-reference brackets" href="#footcite-feng2020" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
 <p>This method assumes <span class="math notranslate nohighlight">\(x\)</span> datapoints to be evenly spaced, it can return
 either <span class="math notranslate nohighlight">\(\frac{dy}{dx}\)</span> or <span class="math notranslate nohighlight">\(\frac{dx}{dy}\)</span> depending on the argument
 provided to the <cite>gradient</cite> parameter.</p>
@@ -462,7 +537,7 @@ provided to the <cite>gradient</cite> parameter.</p>
 (<span class="math notranslate nohighlight">\(\delta R\)</span> in paper). Default is 1.</p></li>
 <li><p><strong>gradient</strong> (<em>str</em><em>, </em><em>optional</em>) – The gradient to calculate, either ‘dydx’ or ‘dxdy’. Default is ‘dydx’.</p></li>
 <li><p><strong>smoothing_filter</strong> (<em>List</em><em>[</em><em>float</em><em>]</em><em>, </em><em>optional</em>) – <p>The coefficients of the smoothing matrix.</p>
-<p>Examples provided by Feng <em>et al.</em><a class="footnote-reference brackets" href="#footcite-feng2020" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> include:</p>
+<p>Examples provided by Feng <em>et al.</em><a class="footnote-reference brackets" href="#footcite-feng2020" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> include:</p>
 <blockquote>
 <div><ul>
 <li><p>[0.25, 0.5, 0.25] for a 3-point smoothing filter.</p></li>
@@ -490,12 +565,12 @@ gradient.</p>
 
 </dd></dl>
 
-<div class="docutils container" id="id3">
+<div class="docutils container" id="id5">
 <p class="rubric">References</p>
 <aside class="footnote-list brackets">
 <aside class="footnote brackets" id="footcite-feng2020" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
-<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>)</span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>,<a role="doc-backlink" href="#id3">3</a>,<a role="doc-backlink" href="#id4">4</a>)</span>
 <p>Xuning Feng, Yu Merla, Caihao Weng, Minggao Ouyang, Xiangming He, Bor Yann Liaw, Shriram Santhanagopalan, Xuemin Li, Ping Liu, Languang Lu, Xuebing Han, Dongsheng Ren, Yu Wang, Ruihe Li, Changyong Jin, Peng Huang, Mengchao Yi, Li Wang, Yan Zhao, Yatish Patel, and Gregory Offer. A reliable approach of differentiating discrete sampled-data for battery diagnosis. <em>eTransportation</em>, 3:100051, 2020. URL: <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S2590116820300084">https://www.sciencedirect.com/science/article/pii/S2590116820300084</a>, <a class="reference external" href="https://doi.org/https://doi.org/10.1016/j.etran.2020.100051">doi:https://doi.org/10.1016/j.etran.2020.100051</a>.</p>
 </aside>
 </aside>
@@ -548,6 +623,8 @@ gradient.</p>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.differentiation.gradient"><code class="docutils literal notranslate"><span class="pre">gradient()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.differentiation.differentiate_LEAN"><code class="docutils literal notranslate"><span class="pre">differentiate_LEAN()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.differentiation.Differentiation"><code class="docutils literal notranslate"><span class="pre">Differentiation</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.differentiation.Differentiation.input_data"><code class="docutils literal notranslate"><span class="pre">Differentiation.input_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.analysis.differentiation.Differentiation.differentiate_FD"><code class="docutils literal notranslate"><span class="pre">Differentiation.differentiate_FD()</span></code></a></li>

@@ -378,17 +378,25 @@ document.write(`
   <section id="OCV-Fitting">
 <h1>OCV Fitting<a class="headerlink" href="#OCV-Fitting" title="Link to this heading">#</a></h1>
 <p>Open-circuit voltage fitting is the key step for conducting Degradation Mode Analysis (DMA). PyProBE has a number of built-in methods for this.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyprobe</span>
 <span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">pyprobe.analysis</span> <span class="kn">import</span> <span class="n">degradation_mode_analysis</span>
+<span class="kn">from</span> <span class="nn">pyprobe.analysis</span> <span class="kn">import</span> <span class="n">degradation_mode_analysis</span> <span class="k">as</span> <span class="n">dma</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-11-18 11:54:47,239 INFO util.py:154 -- Missing packages: [&#39;ipywidgets&#39;]. Run `pip install -U ipywidgets`, then restart the notebook server for rich notebook output.
+</pre></div></div>
 </div>
 <p>In this example, we are going to generate a synthetic aged OCV curve. We will use the half cell OCV fits from Chen 2020 [1].</p>
 <div class="nbinput nblast docutils container">
@@ -464,29 +472,46 @@ document.write(`
 Text(0, 0.5, &#39;Voltage (V)&#39;)
 </pre></div></div>
 </div>
-<p>We will now generate a fit to this voltage curve using the Simple OCV fit method in PyProBE:</p>
+<p>We will now generate a fit to this voltage curve.</p>
+<p>First, we must create instances of the OCP class to hold our electrode OCP information:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">neg_ocp</span> <span class="o">=</span> <span class="n">dma</span><span class="o">.</span><span class="n">OCP</span><span class="p">(</span><span class="n">graphite_LGM50_ocp_Chen2020</span><span class="p">)</span>
+<span class="n">pos_ocp</span> <span class="o">=</span> <span class="n">dma</span><span class="o">.</span><span class="n">OCP</span><span class="p">(</span><span class="n">nmc_LGM50_ocp_Chen2020</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>In this example, we have directly declared the OCPs since we already have callable functions for them. Alternatively you can use the <code class="docutils literal notranslate"><span class="pre">from_data</span></code> or <code class="docutils literal notranslate"><span class="pre">from_expression</span></code> to define your OCP from data points or a Sympy expression.</p>
+<p>Now we can fit to the ocv curve:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># put the voltage and capacity data into a Result object (not necessary in normal use)</span>
 <span class="n">OCV_result</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Result</span><span class="p">(</span><span class="n">base_dataframe</span><span class="o">=</span><span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Capacity [Ah]&#39;</span><span class="p">:</span> <span class="n">capacity</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">:</span> <span class="n">voltage</span><span class="p">}),</span> <span class="n">info</span><span class="o">=</span> <span class="p">{})</span>
 
-<span class="n">dma_object</span> <span class="o">=</span> <span class="n">degradation_mode_analysis</span><span class="o">.</span><span class="n">DMA</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">OCV_result</span><span class="p">)</span>
+<span class="n">stoichiometry_limits</span><span class="p">,</span> <span class="n">fitted_curve</span> <span class="o">=</span> <span class="n">dma</span><span class="o">.</span><span class="n">run_ocv_curve_fit</span><span class="p">(</span>
+    <span class="n">input_data</span><span class="o">=</span> <span class="n">OCV_result</span><span class="p">,</span>
+    <span class="n">ocp_ne</span><span class="o">=</span><span class="n">neg_ocp</span><span class="p">,</span>
+    <span class="n">ocp_pe</span><span class="o">=</span><span class="n">pos_ocp</span><span class="p">,</span>
+    <span class="n">fitting_target</span><span class="o">=</span><span class="s1">&#39;OCV&#39;</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;minimize&#39;</span><span class="p">,</span>
+    <span class="n">optimizer_options</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;x0&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]),</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>One of the available analysis methods is <code class="docutils literal notranslate"><span class="pre">fit_ocv()</span></code>. This produces two result objects:</p>
+<p>This produces two result objects. The first is the fitted stoichiometry limits:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stoichiometry_limits</span><span class="p">,</span> <span class="n">fitted_curve</span> <span class="o">=</span> <span class="n">dma_object</span><span class="o">.</span><span class="n">fit_ocv</span><span class="p">(</span><span class="n">x_ne</span> <span class="o">=</span> <span class="n">z</span><span class="p">,</span>
-                   <span class="n">x_pe</span> <span class="o">=</span> <span class="n">z</span><span class="p">,</span>
-                   <span class="n">ocp_ne</span> <span class="o">=</span> <span class="n">ocp_ne</span><span class="p">,</span>
-                   <span class="n">ocp_pe</span> <span class="o">=</span> <span class="n">ocp_pe</span><span class="p">,</span>
-                   <span class="n">x_guess</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">stoichiometry_limits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">stoichiometry_limits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -503,13 +528,13 @@ shape: (1, 8)
 │ f64        ┆ f64        ┆ f64        ┆ f64       ┆ ---       ┆ ---       ┆ ---       ┆ ---       │
 │            ┆            ┆            ┆           ┆ f64       ┆ f64       ┆ f64       ┆ f64       │
 ╞════════════╪════════════╪════════════╪═══════════╪═══════════╪═══════════╪═══════════╪═══════════╡
-│ 0.85       ┆ 0.270001   ┆ 0.030003   ┆ 0.899992  ┆ 5.0       ┆ 8.620704  ┆ 5.747199  ┆ 7.500029  │
+│ 0.85       ┆ 0.27       ┆ 0.03       ┆ 0.9       ┆ 5.0       ┆ 8.62069   ┆ 5.747127  ┆ 7.5       │
 └────────────┴────────────┴────────────┴───────────┴───────────┴───────────┴───────────┴───────────┘
 </pre></div></div>
 </div>
 <p>And the second is a result object containing the fitted OCP curve:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
@@ -524,20 +549,24 @@ shape: (1, 8)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_ocv-fitting_11_0.png" src="../_images/examples_ocv-fitting_11_0.png" />
+<img alt="../_images/examples_ocv-fitting_13_0.png" src="../_images/examples_ocv-fitting_13_0.png" />
 </div>
 </div>
 <p>You can also fit to differentiated voltage data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stoichiometry_limits</span><span class="p">,</span> <span class="n">fitted_curve</span> <span class="o">=</span> <span class="n">dma_object</span><span class="o">.</span><span class="n">fit_ocv</span><span class="p">(</span><span class="n">x_ne</span> <span class="o">=</span> <span class="n">z</span><span class="p">,</span>
-                   <span class="n">x_pe</span> <span class="o">=</span> <span class="n">z</span><span class="p">,</span>
-                   <span class="n">ocp_ne</span> <span class="o">=</span> <span class="n">ocp_ne</span><span class="p">,</span>
-                   <span class="n">ocp_pe</span> <span class="o">=</span> <span class="n">ocp_pe</span><span class="p">,</span>
-                   <span class="n">x_guess</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>
-                   <span class="n">fitting_target</span> <span class="o">=</span> <span class="s1">&#39;dQdV&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stoichiometry_limits</span><span class="p">,</span> <span class="n">fitted_curve</span> <span class="o">=</span> <span class="n">dma</span><span class="o">.</span><span class="n">run_ocv_curve_fit</span><span class="p">(</span>
+    <span class="n">input_data</span><span class="o">=</span> <span class="n">OCV_result</span><span class="p">,</span>
+    <span class="n">ocp_ne</span><span class="o">=</span><span class="n">neg_ocp</span><span class="p">,</span>
+    <span class="n">ocp_pe</span><span class="o">=</span><span class="n">pos_ocp</span><span class="p">,</span>
+    <span class="n">fitting_target</span><span class="o">=</span><span class="s1">&#39;dQdV&#39;</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="o">=</span><span class="s1">&#39;differential_evolution&#39;</span><span class="p">,</span>
+    <span class="n">optimizer_options</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.86</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">stoichiometry_limits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">fitted_curve</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;SOC&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Input dSOCdV [1/V]&#39;</span><span class="p">,</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Input&quot;</span><span class="p">)</span>
@@ -560,7 +589,7 @@ shape: (1, 8)
 │ f64        ┆ f64        ┆ f64        ┆ f64       ┆ ---       ┆ ---       ┆ ---       ┆ ---       │
 │            ┆            ┆            ┆           ┆ f64       ┆ f64       ┆ f64       ┆ f64       │
 ╞════════════╪════════════╪════════════╪═══════════╪═══════════╪═══════════╪═══════════╪═══════════╡
-│ 0.849926   ┆ 0.27001    ┆ 0.030001   ┆ 0.900015  ┆ 5.0       ┆ 8.621931  ┆ 5.747037  ┆ 7.500424  │
+│ 0.849922   ┆ 0.270011   ┆ 0.030006   ┆ 0.900013  ┆ 5.0       ┆ 8.622005  ┆ 5.747082  ┆ 7.50048   │
 └────────────┴────────────┴────────────┴───────────┴───────────┴───────────┴───────────┴───────────┘
 </pre></div></div>
 </div>
@@ -568,7 +597,7 @@ shape: (1, 8)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_ocv-fitting_13_1.png" src="../_images/examples_ocv-fitting_13_1.png" />
+<img alt="../_images/examples_ocv-fitting_15_1.png" src="../_images/examples_ocv-fitting_15_1.png" />
 </div>
 </div>
 <ol class="arabic simple">
