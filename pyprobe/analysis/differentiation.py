@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 import polars as pl
 from deprecated import deprecated
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_call
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import AnalysisValidator
@@ -13,6 +13,7 @@ from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
 
 
+@validate_call
 def gradient(  # 1. Define the method
     input_data: PyProBEDataType,
     x: str,
@@ -60,6 +61,7 @@ def gradient(  # 1. Define the method
     return gradient_result
 
 
+@validate_call
 def differentiate_LEAN(
     input_data: PyProBEDataType,
     x: str,

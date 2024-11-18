@@ -4,7 +4,7 @@ from typing import List
 
 import polars as pl
 from deprecated import deprecated
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Experiment, Step
@@ -241,6 +241,7 @@ def _get_end_of_rest_points(
     )
 
 
+@validate_call
 def get_ocv_curve(input_data: PyProBEDataType) -> Result:
     """Filter down a pulsing experiment to the points representing the cell OCV.
 
@@ -262,6 +263,7 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
     )
 
 
+@validate_call
 def get_resistances(input_data: PyProBEDataType, r_times: List[float] = []) -> Result:
     """Returns a result object summarising the pulsing experiment.
 
