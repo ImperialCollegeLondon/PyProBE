@@ -25,13 +25,14 @@ def gradient(  # 1. Define the method
     of the data in the y column with respect to the data in the x column.
 
     Args:
-        x (str): The name of the x variable.
-        y (str): The name of the y variable.
+        input_data:
+            The input data PyProBE object for the differentiation
+        x: The name of the x variable.
+        y: The name of the y variable.
 
     Returns:
-        Result:
-            A result object containing the columns, `x`, `y` and the
-            calculated gradient.
+        A result object containing the columns, `x`, `y` and the
+        calculated gradient.
     """
     # 2. Validate the inputs to the method
     validator = AnalysisValidator(
@@ -81,16 +82,18 @@ def differentiate_LEAN(
     provided to the `gradient` parameter.
 
     Args:
-        x (str):
+        input_data:
+            The input data PyProBE object for the differentiation.
+        x:
             The name of the x variable.
-        y (str):
+        y:
             The name of the y variable.
-        k (int, optional):
+        k:
             The integer multiple to apply to the sampling interval for the bin size
             (:math:`\delta R` in paper). Default is 1.
-        gradient (str, optional):
+        gradient:
             The gradient to calculate, either 'dydx' or 'dxdy'. Default is 'dydx'.
-        smoothing_filter (List[float], optional):
+        smoothing_filter:
             The coefficients of the smoothing matrix.
 
             Examples provided by :footcite:t:`Feng2020` include:
@@ -101,7 +104,7 @@ def differentiate_LEAN(
                 - [0.1059, 0.121, 0.1745, 0.1972, 0.1745, 0.121, 0.1059] for a
                     7-point smoothing filter.
 
-        section (str, optional):
+        section:
             The section of the data with constant sample rate in x to be considered.
             Default is 'longest', which just returns the longest unifomly sampled
             section. Alternative is 'all', which returns all sections.

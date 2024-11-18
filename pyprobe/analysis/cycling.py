@@ -40,6 +40,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
     """Calculate the state of health of the battery.
 
     Args:
+        input_data: A PyProBE object containing cycling data.
         dchg_before_chg (bool): Whether the discharge comes before the
             charge in the cycle loop. Default is True.
 
