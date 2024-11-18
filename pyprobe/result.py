@@ -1,5 +1,6 @@
 """A module for the Result class."""
 import warnings
+from datetime import datetime
 from pprint import pprint
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
@@ -35,7 +36,7 @@ class Result(BaseModel):
 
     base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
     """The data as a polars DataFrame or LazyFrame."""
-    info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
+    info: Dict[str, Optional[str | int | float | Dict[Any, Any]] | datetime]
     """Dictionary containing information about the cell."""
     column_definitions: Dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
@@ -457,7 +458,7 @@ class Result(BaseModel):
                 | Dict[str, NDArray[np.float64] | List[float]]
             ]
         ],
-        info: Dict[str, Optional[str | int | float | Dict[Any, Any]]],
+        info: Dict[str, Optional[str | int | float | Dict[Any, Any]] | datetime],
     ) -> "Result":
         """Build a Result object from a list of dataframes.
 

@@ -1,4 +1,6 @@
 """Module containing pytest fixtures."""
+import datetime
+
 import polars as pl
 import pytest
 
@@ -8,7 +10,7 @@ from pyprobe.cell import Cell
 @pytest.fixture
 def info_fixture():
     """Pytest fixture for simple cell info."""
-    return {"Name": "Test_Cell"}
+    return {"Name": "Test_Cell", "Test Date": datetime.datetime(2024, 10, 23, 0, 0)}
 
 
 @pytest.fixture
