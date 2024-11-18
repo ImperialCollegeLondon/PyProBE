@@ -48,7 +48,7 @@ def test_get_resistances(Pulsing_fixture):
     assert isinstance(resistances, Result)
     print(resistances.data)
     assert resistances.get("R0 [Ohms]")[0] == (4.1558 - 4.1919) / -0.0199936
-    assert resistances.get("R_10.0s [Ohms]")[0] == (4.1337 - 4.1919) / -0.0199936
+    assert resistances.get("R_10s [Ohms]")[0] == (4.1337 - 4.1919) / -0.0199936
 
 
 def test_get_ocv_curve(Pulsing_fixture):

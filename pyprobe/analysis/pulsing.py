@@ -73,7 +73,9 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
 
 
 @validate_call
-def get_resistances(input_data: PyProBEDataType, r_times: List[float] = []) -> Result:
+def get_resistances(
+    input_data: PyProBEDataType, r_times: List[float | int] = []
+) -> Result:
     """Returns a result object summarising the pulsing experiment.
 
     Args:
