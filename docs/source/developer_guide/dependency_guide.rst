@@ -19,12 +19,15 @@ The performance of PyProBE is demonstrated in the :doc:`../examples/comparing-py
 Pydantic
 --------
 
-`Pydantic <https://docs.pydantic.dev/latest/>`_ is used across PyProBE for class input
+`Pydantic <https://docs.pydantic.dev/latest/>`_ is used across PyProBE for class and function input
 validation. :class:`~pyprobe.result.Result`, :class:`~pyprobe.rawdata.RawData` and 
 all of the classes in the :mod:`~pyprobe.filters` module inherit from Pydantic 
-`BaseModel <https://docs.pydantic.dev/latest/api/base_model/>`_, as do all of 
-the :mod:`~pyprobe.analysis` classes. This means all of their
-inputs are type-validated automatically. The :class:`~pyprobe.analysis.utils.AnalysisValidator`
+`BaseModel <https://docs.pydantic.dev/latest/api/base_model/>`_. This means all of their
+inputs are type-validated automatically. 
+
+Functions in the :mod:`~pyprobe.analysis` module use the `validate_call <https://docs.pydantic.dev/latest/api/validate_call/#pydantic.validate_call_decorator.validate_call>`_ 
+decorator, to ensure the arguments passed are of the correct type.
+The :class:`~pyprobe.analysis.utils.AnalysisValidator`
 is a custom validation model for checking the type and columns are correct for methods
 of analysis classes.
 

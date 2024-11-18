@@ -1,9 +1,9 @@
 """Module for utilities for analysis classes."""
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, model_validator
 
 from pyprobe.result import Result
 from pyprobe.typing import PyProBEDataType
@@ -34,24 +34,6 @@ class AnalysisValidator(BaseModel):
     """The input data to an analysis class."""
     required_columns: List[str]
     """The columns required to conduct the analysis."""
-    required_type: Optional[Any] = Field(default=None)
-    """The required data type of the input data."""
-
-    @model_validator(mode="after")
-    def validate_input_data_type(self) -> "AnalysisValidator":
-        """Check if the input_data is of the required type.
-
-        Returns:
-            AnalysisValidator: The validated instance.
-
-        Raises:
-            ValueError: If the input data is not of the required type.
-        """
-        if self.required_type is not None and not isinstance(
-            self.input_data, self.required_type
-        ):
-            raise ValueError(f"Input data is not of type {self.required_type}")
-        return self
 
     @model_validator(mode="after")
     def validate_required_columns(self) -> "AnalysisValidator":

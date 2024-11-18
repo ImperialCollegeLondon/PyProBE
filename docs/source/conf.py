@@ -42,6 +42,7 @@ autodoc_default_options = {
     "show-inheritance": True,
     "member-order": "bysource",
 }
+add_module_names = False
 
 # -- sphinxcontrib-bibtex configuration --------------------------------------
 bibtex_bibfiles = ["../../CITATIONS.bib"]

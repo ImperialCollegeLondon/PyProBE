@@ -211,3 +211,209 @@ def test_add_new_data_columns():
         }
     )
     pl_testing.assert_frame_equal(result_object.data, expected_data)
+
+
+@pytest.fixture
+def reduced_result_fixture():
+    """Return a Result instance with reduced data."""
+    data = pl.DataFrame(
+        {
+            "Current [A]": [1, 2, 3],
+            "Voltage [V]": [1, 2, 3],
+        }
+    )
+    return Result(
+        base_dataframe=data,
+        info={"test": "info"},
+        column_definitions={
+            "Voltage [V]": "Voltage definition",
+            "Current [A]": "Current definition",
+        },
+    )
+
+
+def test_verify_compatible_frames():
+    """Test the _verify_compatible_frames method."""
+    df1 = pl.DataFrame({"a": [1, 2, 3]})
+    df2 = pl.DataFrame({"b": [4, 5, 6]})
+    lazy_df1 = df1.lazy()
+    lazy_df2 = df2.lazy()
+
+    # Test with two DataFrames
+    result1, result2 = Result._verify_compatible_frames(df1, [df2])
+    assert isinstance(result1, pl.DataFrame)
+    assert isinstance(result2[0], pl.DataFrame)
+
+    # Test with DataFrame and LazyFrame
+    result1, result2 = Result._verify_compatible_frames(df1, [lazy_df2])
+    assert isinstance(result1, pl.DataFrame)
+    assert isinstance(result2[0], pl.DataFrame)
+
+    # Test with LazyFrame and DataFrame
+    result1, result2 = Result._verify_compatible_frames(lazy_df1, [df2])
+    assert isinstance(result1, pl.DataFrame)
+    assert isinstance(result2[0], pl.DataFrame)
+
+    # Test with two LazyFrames
+    result1, result2 = Result._verify_compatible_frames(
+        lazy_df1, [lazy_df2], mode="collect all"
+    )
+    assert isinstance(result1, pl.LazyFrame)
+    assert isinstance(result2[0], pl.LazyFrame)
+
+    # Test with matching the first df
+    result1, result2 = Result._verify_compatible_frames(lazy_df1, [df2], mode="match 1")
+    assert isinstance(result1, pl.LazyFrame)
+    assert isinstance(result2[0], pl.LazyFrame)
+
+    result1, result2 = Result._verify_compatible_frames(df1, [lazy_df2], mode="match 1")
+    assert isinstance(result1, pl.DataFrame)
+    assert isinstance(result2[0], pl.DataFrame)
+
+    # Test with a list of frames
+    result1, result2 = Result._verify_compatible_frames(df1, [df2, lazy_df2])
+    assert isinstance(result1, pl.DataFrame)
+    assert isinstance(result2[0], pl.DataFrame)
+    assert isinstance(result2[1], pl.DataFrame)
+
+    # Test matching the first df with a list of frames
+    result1, result2 = Result._verify_compatible_frames(
+        lazy_df1, [df2, lazy_df2], mode="match 1"
+    )
+    assert isinstance(result1, pl.LazyFrame)
+    assert isinstance(result2[0], pl.LazyFrame)
+    assert isinstance(result2[1], pl.LazyFrame)
+
+
+def test_join_left(reduced_result_fixture):
+    """Test the join method with left join."""
+    other_data = pl.DataFrame(
+        {
+            "Current [A]": [1, 2, 3],
+            "Capacity [Ah]": [4, 5, 6],
+        }
+    )
+    other_result = Result(
+        base_dataframe=other_data,
+        info={"test": "info"},
+        column_definitions={"Voltage [V]": "Voltage definition"},
+    )
+    reduced_result_fixture.join(other_result, on="Current [A]", how="left")
+    expected_data = pl.DataFrame(
+        {
+            "Current [A]": [1, 2, 3],
+            "Voltage [V]": [1, 2, 3],
+            "Capacity [Ah]": [4, 5, 6],
+        }
+    )
+    pl_testing.assert_frame_equal(reduced_result_fixture.data, expected_data)
+    assert (
+        reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
+    )
+
+
+def test_extend(reduced_result_fixture):
+    """Test the extend method."""
+    other_data = pl.DataFrame(
+        {
+            "Current [A]": [4, 5, 6],
+            "Voltage [V]": [4, 5, 6],
+        }
+    )
+    other_result = Result(
+        base_dataframe=other_data,
+        info={"test": "info"},
+        column_definitions={"Voltage [V]": "Voltage definition"},
+    )
+    reduced_result_fixture.extend(other_result)
+    expected_data = pl.DataFrame(
+        {
+            "Current [A]": [1, 2, 3, 4, 5, 6],
+            "Voltage [V]": [1, 2, 3, 4, 5, 6],
+        }
+    )
+    pl_testing.assert_frame_equal(reduced_result_fixture.data, expected_data)
+    assert (
+        reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
+    )
+
+
+def test_extend_with_new_columns(reduced_result_fixture):
+    """Test the extend method with new columns."""
+    other_data = pl.DataFrame(
+        {
+            "Current [A]": [4, 5, 6],
+            "Voltage [V]": [4, 5, 6],
+            "Capacity [Ah]": [8, 9, 10],
+        }
+    )
+    other_result = Result(
+        base_dataframe=other_data,
+        info={"test": "info"},
+        column_definitions={
+            "Voltage [V]": "New voltage definition",
+            "Capacity [Ah]": "Capacity definition",
+            "Current [A]": "Current definition",
+        },
+    )
+    reduced_result_fixture.extend(other_result)
+    expected_data = pl.DataFrame(
+        {
+            "Current [A]": [1, 2, 3, 4, 5, 6],
+            "Voltage [V]": [1, 2, 3, 4, 5, 6],
+            "Capacity [Ah]": [None, None, None, 8, 9, 10],
+        }
+    )
+    pl_testing.assert_frame_equal(reduced_result_fixture.data, expected_data)
+    assert (
+        reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
+    )
+    assert (
+        reduced_result_fixture.column_definitions["Capacity [Ah]"]
+        == "Capacity definition"
+    )
+    assert (
+        reduced_result_fixture.column_definitions["Current [A]"] == "Current definition"
+    )
+
+
+def test_clean_copy(reduced_result_fixture):
+    """Test the clean_copy method."""
+    # Test default parameters (empty dataframe)
+    clean_result = reduced_result_fixture.clean_copy()
+    assert isinstance(clean_result, Result)
+    assert clean_result.base_dataframe.is_empty()
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == {}
+
+    # Test with new dataframe
+    new_df = pl.DataFrame({"Test [V]": [1, 2, 3]})
+    clean_result = reduced_result_fixture.clean_copy(dataframe=new_df)
+    assert isinstance(clean_result, Result)
+    pl_testing.assert_frame_equal(clean_result.data, new_df)
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == {}
+
+    # Test with new column definitions
+    new_defs = {"New Column [A]": "New definition"}
+    clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
+    assert isinstance(clean_result, Result)
+    assert clean_result.base_dataframe.is_empty()
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == new_defs
+
+    # Test with both new dataframe and column definitions
+    clean_result = reduced_result_fixture.clean_copy(
+        dataframe=new_df, column_definitions=new_defs
+    )
+    assert isinstance(clean_result, Result)
+    pl_testing.assert_frame_equal(clean_result.data, new_df)
+    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.column_definitions == new_defs
+
+    # Test with LazyFrame
+    lazy_df = new_df.lazy()
+    clean_result = reduced_result_fixture.clean_copy(dataframe=lazy_df)
+    assert isinstance(clean_result, Result)
+    assert isinstance(clean_result.base_dataframe, pl.LazyFrame)
+    pl_testing.assert_frame_equal(clean_result.data, new_df)

@@ -25,7 +25,9 @@ dependencies = [
     "pydantic", # for data valiation
     "kaleido", # for displaying plotly figures as images
     "IPython", # for example notebooks
-    "pybamm" # for battery modelling and experiment class
+    "pybamm", # for battery modelling and experiment class
+    "ray", # for parallel processing
+    "deprecated", # for deprecation warnings
 ]
 
 [project.optional-dependencies]
@@ -46,6 +48,7 @@ dev = [
     "pytest-benchmark", # benchmarking
     "types-PyYAML",
     "types-toml",
+    "types-Deprecated",
     # documentation
     "sphinx",
     "sphinx-tabs",
@@ -73,6 +76,10 @@ warn_unused_ignores = false
 [[tool.mypy.overrides]]
 module = "polars"
 follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "deprecated.*"
+ignore_missing_imports = true
 
 [tool.isort]
 profile = "black"
