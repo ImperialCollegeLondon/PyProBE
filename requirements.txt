@@ -38,6 +38,8 @@ cycler==0.12.1
     # via matplotlib
 decorator==5.1.1
     # via ipython
+deprecated==1.2.15
+    # via PyProBE (pyproject.toml)
 distinctipy==1.3.4
     # via PyProBE (pyproject.toml)
 executing==2.0.1
@@ -242,5 +244,7 @@ urllib3==2.2.2
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
+wrapt==1.16.0
+    # via deprecated
 xarray==2024.7.0
     # via pybamm

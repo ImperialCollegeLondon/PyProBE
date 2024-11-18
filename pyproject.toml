@@ -27,6 +27,7 @@ dependencies = [
     "IPython", # for example notebooks
     "pybamm", # for battery modelling and experiment class
     "ray", # for parallel processing
+    "deprecated", # for deprecation warnings
 ]
 
 [project.optional-dependencies]
