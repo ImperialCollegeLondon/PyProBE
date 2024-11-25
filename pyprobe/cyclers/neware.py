@@ -24,6 +24,48 @@ class Neware(BaseCycler):
     }
 
     @staticmethod
+    def _convert_neware_time_format(
+        data: pl.DataFrame | pl.LazyFrame, column: str
+    ) -> pl.DataFrame | pl.LazyFrame:
+        """Method to convert the Neware time columns to seconds.
+
+        Neware time columns can be in the format "HH:MM:SS" or "YYYY-MM-DD HH:MM:SS".
+        This method converts the time columns to seconds.
+
+        Args:
+            data: The DataFrame.
+            column: The column name.
+        """
+        has_dates = data.select(
+            pl.col(column).str.contains(r"\d{4}-\d{2}-\d{2}").any()
+        ).item()
+        if has_dates:
+            data = data.with_columns(
+                pl.col(column)
+                .str.strptime(pl.Datetime, format="%Y-%m-%d %H:%M:%S%.f")
+                .cast(pl.Float64)
+                .alias(column)
+            )
+            data = data.with_columns(pl.col(column) / 1e6)
+        else:
+            data = data.with_columns(pl.col(column).str.split(":"))
+            data = data.with_columns(
+                [
+                    (pl.col(column).list.get(0).cast(pl.Float64)).alias("hours"),
+                    (pl.col(column).list.get(1).cast(pl.Float64)).alias("minutes"),
+                    (pl.col(column).list.get(2).cast(pl.Float64)).alias("seconds"),
+                ]
+            )
+            data = data.with_columns(
+                (
+                    pl.col("hours") * 3600 + pl.col("minutes") * 60 + pl.col("seconds")
+                ).alias(column)
+            )
+            data = data.drop(["hours", "minutes", "seconds"])
+        data = data.with_columns(pl.col(column) - pl.col(column).first().alias(column))
+        return data
+
+    @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
@@ -34,28 +76,8 @@ class Neware(BaseCycler):
             pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
         dataframe = BaseCycler.read_file(filepath)
-        if "Time" in dataframe.collect_schema().names():
-            dataframe = dataframe.with_columns(
-                pl.col("Time")
-                .str.strptime(pl.Datetime, format="%Y-%m-%d %H:%M:%S%.f")
-                .cast(pl.Float64)
-                .alias("Time")
-            )
-            dataframe = dataframe.with_columns(
-                pl.col("Time") - pl.col("Time").first().alias("Time")
-            )
-            dataframe = dataframe.with_columns(pl.col("Time") / 1e6)
         if "Total Time" in dataframe.collect_schema().names():
-            dataframe = dataframe.with_columns(
-                pl.col("Total Time")
-                .str.strptime(pl.Datetime, format="%Y-%m-%d %H:%M:%S%.f")
-                .cast(pl.Float64)
-                .alias("Total Time")
-            )
-            dataframe = dataframe.with_columns(
-                pl.col("Total Time") - pl.col("Total Time").first().alias("Total Time")
-            )
-            dataframe = dataframe.with_columns(pl.col("Total Time") / 1e6)
+            dataframe = Neware._convert_neware_time_format(dataframe, "Total Time")
         return dataframe
 
     @property
