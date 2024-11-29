@@ -446,22 +446,27 @@ generated.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.process_cycler_file">
-<span class="sig-name descname"><span class="pre">process_cycler_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cycler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_cycler_file" title="Link to this definition">#</a></dt>
-<dd><p>Convert cycler file into PyProBE format.</p>
+<span class="sig-name descname"><span class="pre">process_cycler_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cycler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'performance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_existing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_cycler_file" title="Link to this definition">#</a></dt>
+<dd><p>Convert a file into PyProBE format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cycler</strong> (<em>str</em>) – The cycler used to produce the data. Available cyclers are:
-- ‘neware’
-- ‘biologic’
-- ‘biologic_MB’ (for Modulo Bat Biologic data)</p></li>
+<li><p><strong>cycler</strong> (<em>Literal</em><em>[</em><em>'neware'</em><em>, </em><em>'biologic'</em><em>, </em><em>'biologic_MB'</em><em>, </em><em>'arbin'</em><em>, </em><em>'basytec'</em><em>, </em><em>'maccor'</em><em>, </em><em>'generic'</em><em>]</em>) – The cycler used to produce the data.</p></li>
 <li><p><strong>folder_path</strong> (<em>str</em>) – The path to the folder containing the data file.</p></li>
-<li><p><strong>input_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for cycler
+<li><p><strong>input_filename</strong> (<em>str</em><em> | </em><em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em>) – A filename string or a function to generate the file name for cycler
 data.</p></li>
-<li><p><strong>output_filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
+<li><p><strong>output_filename</strong> (<em>str</em><em> | </em><em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em>) – A filename string or a function to generate the file name for PyProBE
 data.</p></li>
-<li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename, if they are
+<li><p><strong>filename_inputs</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>) – The list of inputs to input_filename and output_filename, if they are
 functions. These must be keys of the cell info.</p></li>
+<li><p><strong>compression_priority</strong> (<em>Literal</em><em>[</em><em>'performance'</em><em>, </em><em>'file size'</em><em>, </em><em>'uncompressed'</em><em>]</em>) – The priority of the compression algorithm to use on the resulting
+parquet file. Available options are:
+- ‘performance’: Use the ‘lz4’ compression algorithm (default).
+- ‘file size’: Use the ‘zstd’ compression algorithm.
+- ‘uncompressed’: Do not use compression.</p></li>
+<li><p><strong>overwrite_existing</strong> (<em>bool</em>) – If True, any existing parquet file with the output_filename will be
+overwritten. If False, the function will skip the conversion if the
+parquet file already exists.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -472,7 +477,7 @@ functions. These must be keys of the cell info.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.process_generic_file">
-<span class="sig-name descname"><span class="pre">process_generic_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_generic_file" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_generic_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'performance'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_generic_file" title="Link to this definition">#</a></dt>
 <dd><p>Convert generic file into PyProBE format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -489,6 +494,11 @@ indicate the units of the columns.
 E.g. <code class="code docutils literal notranslate"><span class="pre">{&quot;V</span> <span class="pre">(*)&quot;:</span> <span class="pre">&quot;Voltage</span> <span class="pre">[*]&quot;}</span></code>.</p></li>
 <li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
 These must be keys of the cell info.</p></li>
+<li><p><strong>compression_priority</strong> (<em>Literal</em><em>[</em><em>'performance'</em><em>, </em><em>'file size'</em><em>, </em><em>'uncompressed'</em><em>]</em>) – The priority of the compression algorithm to use on the resulting
+parquet file. Available options are:
+- ‘performance’: Use the ‘lz4’ compression algorithm (default).
+- ‘file size’: Use the ‘zstd’ compression algorithm.
+- ‘uncompressed’: Do not use compression.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
