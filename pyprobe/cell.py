@@ -73,6 +73,7 @@ class Cell(BaseModel):
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
         ] = "performance",
+        overwrite_existing: bool = False,
     ) -> None:
         """Convert cycler file into PyProBE format.
 
@@ -99,6 +100,10 @@ class Cell(BaseModel):
                 - 'performance': Use the 'lz4' compression algorithm (default).
                 - 'file size': Use the 'zstd' compression algorithm.
                 - 'uncompressed': Do not use compression.
+            overwrite_existing (bool):
+                If True, any existing parquet file with the output_filename will be
+                overwritten. If False, the function will skip the conversion if the
+                parquet file already exists.
         """
         input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_inputs
@@ -110,27 +115,27 @@ class Cell(BaseModel):
         if "*" in output_data_path:
             raise ValueError("* characters are not allowed for a complete data path.")
 
-        cycler_dict = {
-            "neware": neware.Neware,
-            "biologic": biologic.Biologic,
-            "biologic_MB": biologic.BiologicMB,
-            "arbin": arbin.Arbin,
-            "maccor": maccor.Maccor,
-            "basytec": basytec.Basytec,
-        }
-        t1 = time.time()
-        importer = cycler_dict[cycler](input_data_path=input_data_path)
-        compression_dict = {
-            "uncompressed": "uncompressed",
-            "performance": "lz4",
-            "file size": "zstd",
-        }
-        self._write_parquet(
-            importer,
-            output_data_path,
-            compression=compression_dict[compression_priority],
-        )
-        print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
+        if not os.path.exists(output_data_path) or overwrite_existing:
+            cycler_dict = {
+                "neware": neware.Neware,
+                "biologic": biologic.Biologic,
+                "biologic_MB": biologic.BiologicMB,
+            }
+            t1 = time.time()
+            importer = cycler_dict[cycler](input_data_path=input_data_path)
+            compression_dict = {
+                "uncompressed": "uncompressed",
+                "performance": "lz4",
+                "file size": "zstd",
+            }
+            self._write_parquet(
+                importer,
+                output_data_path,
+                compression=compression_dict[compression_priority],
+            )
+            print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
+        else:
+            print(f"File {output_data_path} already exists. Skipping.")
 
     @validate_call
     def process_generic_file(
