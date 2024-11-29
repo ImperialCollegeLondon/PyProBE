@@ -1,6 +1,7 @@
 """A module to load and process Biologic battery cycler data."""
 
 
+import re
 from datetime import datetime
 from typing import List
 
@@ -41,24 +42,44 @@ class Biologic(BaseCycler):
         _, value = second_line.split(":")
         n_header_lines = int(value.strip())
 
-        with open(filepath, "r", encoding="iso-8859-1") as file:
-            for i in range(n_header_lines):
-                line = file.readline()
-                if "Acquisition started on" in line:
-                    start_time_line = line
-                    break
-        _, value = start_time_line.split(" : ")
-        start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
-
         dataframe = pl.scan_csv(
             filepath, skip_rows=n_header_lines - 1, separator="\t", infer_schema=False
         )
 
-        dataframe = dataframe.with_columns(
-            (pl.col("time/s").cast(pl.Float64).cast(pl.Duration) + pl.lit(start_time))
-            .cast(str)
-            .alias("Date")
-        )
+        datetime_regex = r"^\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}\.\d+$"
+        date_string = dataframe.select("time/s").first().collect().item()
+        if bool(re.match(datetime_regex, date_string)):
+            dataframe = dataframe.with_columns(
+                (
+                    pl.col("time/s").str.strptime(
+                        dtype=pl.Datetime, format="%m/%d/%Y %H:%M:%S%.f"
+                    )
+                ).alias("Date")
+            )
+            dataframe = dataframe.with_columns(
+                (pl.col("Date").diff().dt.total_microseconds().cum_sum() / 1e6)
+                .fill_null(strategy="zero")
+                .cast(str)
+                .alias("time/s")
+            )
+        else:
+            with open(filepath, "r", encoding="iso-8859-1") as file:
+                for i in range(n_header_lines):
+                    line = file.readline()
+                    if "Acquisition started on" in line:
+                        start_time_line = line
+                        break
+            _, value = start_time_line.split(" : ")
+            start_time = datetime.strptime(value.strip(), "%m/%d/%Y %H:%M:%S.%f")
+
+            dataframe = dataframe.with_columns(
+                (
+                    pl.col("time/s").cast(pl.Float64).cast(pl.Duration)
+                    + pl.lit(start_time)
+                )
+                .cast(str)
+                .alias("Date")
+            )
         return dataframe
 
 
