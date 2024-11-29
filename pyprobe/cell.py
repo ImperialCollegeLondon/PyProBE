@@ -16,7 +16,7 @@ from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
 
-__version__ = "1.0.3"
+__version__ = "1.1.0"
 
 
 class Cell(BaseModel):
