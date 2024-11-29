@@ -81,7 +81,7 @@ docutils==0.21.2
     #   sphinx
     #   sphinx-tabs
     #   sphinxcontrib-bibtex
-executing==2.0.1
+executing==2.1.0
     # via stack-data
 fastexcel==0.11.5
     # via PyProBE (pyproject.toml)
