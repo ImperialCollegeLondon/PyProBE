@@ -352,7 +352,7 @@ pyyaml==6.0.2
     #   pre-commit
     #   pybtex
     #   ray
-pyzmq==26.1.0
+pyzmq==26.2.0
     # via jupyter-client
 ray==2.39.0
     # via PyProBE (pyproject.toml)
