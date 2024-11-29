@@ -6,6 +6,7 @@ Examples
 
    getting-started
    filtering-data
+   sharing-data
    analysing-GITT-data
    differentiating-voltage-data
    LEAN-differentiation

@@ -1,0 +1,141 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Sharing Data\n",
+    "\n",
+    "PyProBE makes sharing data simple and straightforward. This is a simple example to demonstrate the process.\n",
+    "\n",
+    "First we will import some sample data:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pyprobe\n",
+    "import os\n",
+    "import shutil\n",
+    "\n",
+    "# Describe the cell. Required fields are 'Name'.\n",
+    "info_dictionary = {'Name': 'Sample cell',\n",
+    "                   'Chemistry': 'NMC622',\n",
+    "                   'Nominal Capacity [Ah]': 0.04,\n",
+    "                   'Cycler number': 1,\n",
+    "                   'Channel number': 1,}\n",
+    "\n",
+    "# Create a cell object\n",
+    "cell = pyprobe.Cell(info=info_dictionary)\n",
+    "\n",
+    "data_directory = '../../../tests/sample_data/neware'\n",
+    "\n",
+    "cell.add_procedure(procedure_name='Sample',\n",
+    "                   folder_path = data_directory,\n",
+    "                   filename = 'sample_data_neware.parquet')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can then use the `archive()` method of the cell object. This stores all attributes of the `cell` object into a single folder. The data is stored as `.parquet` files and the metadata is stored in `.json` files."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cell.archive(path = 'sample_archive')\n",
+    "os.listdir('.')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You can choose to compress the folder by adding `.zip` to the path:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cell.archive(path = 'sample_archive.zip')\n",
+    "os.listdir('.')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You can then retrieve the archived object with the `pyprobe.load_archive()` method:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "saved_cell = pyprobe.load_archive('sample_archive.zip')\n",
+    "print(saved_cell.info)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig = pyprobe.Plot()\n",
+    "fig.add_line(saved_cell.procedure['Sample'], 'Time [hr]', 'Voltage [V]')\n",
+    "fig.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Clean up after example"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "shutil.rmtree('sample_archive')"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "pyprobe-dev",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
