@@ -73,7 +73,14 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
     output_name = "sample_data_neware.parquet"
-    cell_instance.process_cycler_file("neware", folder_path, file_name, output_name)
+    cell_instance.process_cycler_file(
+        "neware",
+        folder_path,
+        file_name,
+        output_name,
+        compression_priority="file size",
+        overwrite_existing=True,
+    )
     expected_dataframe = lazyframe_fixture.collect()
     expected_dataframe = expected_dataframe.with_columns(
         pl.col("Date").dt.cast_time_unit("us")
