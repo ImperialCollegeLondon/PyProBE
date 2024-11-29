@@ -122,7 +122,7 @@ packaging==24.1
     #   ray
     #   streamlit
     #   xarray
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   pybamm
     #   streamlit
