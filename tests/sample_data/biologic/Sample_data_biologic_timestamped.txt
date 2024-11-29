@@ -1,0 +1,106 @@
+BT-Lab ASCII FILE
+Nb header lines : 98                          
+
+Modulo Bat
+
+Run on channel : A1 (SN 0335)
+User : 
+Ecell ctrl range : min = 0.00 V, max = 9.00 V
+Safety Limits :
+	Ecell min = 2.45 V
+	Ecell max = 4.25 V
+	|I| = 9000.000 mA
+	for t > 10 ms
+	Temperature max = 70.00 �C
+Acquisition started on : 11/20/2024 11:38:41.707
+Technique started on : 11/20/2024 11:38:41.707
+Loaded Setting File :  NONE
+Saved on :
+	File : DMT-CAT-DriveCycle-20degC_01_MB_CA1.mpr
+	Directory : D:\Tom\DMT - CAT\
+	Host : 169.254.10.153
+Device : BCS-815 (SN 0433)
+Address : 169.254.146.81
+BT-LAB for windows v1.80 (software)
+Internet server v1.80 (firmware)
+Command interpretor v1.80 (firmware)
+Electrode material : 
+Initial state : 
+Electrolyte : 
+Comments : 
+Mass of active material : 0.001 mg
+ at x = 0.000
+Molecular weight of active material (at x = 0) : 0.001 g/mol
+Atomic weight of intercalated ion : 0.001 g/mol
+Acquisition started at : xo = 0.000
+Number of e- transfered per intercalated ion : 1
+for DX = 1, DQ = 26.802 mA.h
+Battery capacity : 4.500 A.h
+Electrode surface area : 0.000 cm�
+Characteristic mass : 0.001 g
+Volume (V) : 0.001 cm�
+Record Temperature
+Record energy
+Cycle Definition : Charge/Discharge alternance
+Ns                  0                   1                   2                   3                   
+ctrl_type           Rest                CC                  CV                  Rest                
+Apply I/C           I                   C x N               C x N               C x N               
+current/potential   current             current             current             current             
+ctrl1_val                               100.000             4.200                                   
+ctrl1_val_unit                          mA                  V                                       
+ctrl1_val_vs                            <None>              Ref                                     
+ctrl2_val                                                                                           
+ctrl2_val_unit                                                                                      
+ctrl2_val_vs                                                                                        
+ctrl3_val                                                                                           
+ctrl3_val_unit                                                                                      
+ctrl3_val_vs                                                                                        
+N                   1.00                0.10                0.10                0.10                
+charge/discharge    Charge              Charge              Charge              Charge              
+charge/discharge_1  Charge              Charge              Charge              Charge              
+Apply I/C_1         I                   I                   I                   I                   
+N1                  0.00                1.00                1.00                1.00                
+ctrl4_val                                                                                           
+ctrl4_val_unit                                                                                      
+ctrl5_val                                                                                           
+ctrl5_val_unit                                                                                      
+ctrl_tM             0                   0                   0                   0                   
+ctrl_seq            0                   0                   0                   0                   
+ctrl_repeat         0                   0                   0                   0                   
+ctrl_trigger        Falling Edge        Falling Edge        Falling Edge        Falling Edge        
+ctrl_TO_t           0.000               0.000               0.000               0.000               
+ctrl_TO_t_unit      d                   d                   d                   d                   
+ctrl_Nd             6                   6                   6                   6                   
+ctrl_Na             1                   1                   1                   1                   
+ctrl_corr           1                   1                   1                   1                   
+lim_nb              1                   1                   1                   1                   
+lim1_type           Time                Ecell               |I|                 Time                
+lim1_comp           >                   >                   <                   >                   
+lim1_Qprev_pct      100                 100                 100                 100                 
+lim1_Q              Q limit             Q limit             I limit             Q limit             
+lim1_value          120.000             4.200               90.000              24.000              
+lim1_value_unit     s                   V                   mA                  h                   
+lim1_action         Next sequence       Next sequence       Next sequence       Next sequence       
+lim1_seq            1                   2                   3                   4                   
+rec_nb              1                   1                   1                   1                   
+rec1_type           Time                Time                Time                Time                
+rec1_value          10.000              1.000               1.000               1.000               
+rec1_value_unit     s                   s                   s                   s                   
+E range min (V)     0.000               0.000               0.000               0.000               
+E range max (V)     9.000               9.000               9.000               9.000               
+I Range             10 mA               1 A                 1 A                 1 A                 
+I Range min         Unset               Unset               Unset               Unset               
+I Range max         Unset               Unset               Unset               Unset               
+I Range init        Unset               Unset               Unset               Unset               
+auto rest           0                   0                   0                   0                   
+Bandwidth           4                   4                   4                   4                   
+
+Ns changes	Ns	time/s	Ecell/V	I/mA	(Q-Qo)/mA.h	Energy charge/W.h	Energy discharge/W.h	step time/s	Q discharge/mA.h	Q charge/mA.h	Capacity/mA.h	cycle number	P/W	R/Ohm	Temperature/�C	
+0	0	11/20/2024 11:38:41.707	4.1465597E+000	0.0000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.000000000000000E+000	0.0000000E+000	0.0000000E+000	1.9379732E+001
+1	1	11/20/2024 11:38:48.171	4.1518364E+000	4.4993811E+002	2.499656168619792E-004	1.037816297743056E-006	0.000000000000000E+000	6.464000307023525E+000	0.000000000000000E+000	2.499656168619792E-004	2.499656168619792E-004	0.000000000000000E+000	1.8680694E+000	9.2275724E+000	1.9324554E+001
+0	1	11/20/2024 11:38:49.171	4.1529784E+000	4.4991840E+002	1.252344137064616E-001	5.200473001437718E-004	0.000000000000000E+000	7.464000354520977E+000	0.000000000000000E+000	1.252344137064616E-001	1.252344137064616E-001	0.000000000000000E+000	1.8685014E+000	9.2305145E+000	1.9490086E+001
+0	1	11/20/2024 11:38:50.171	4.1533723E+000	4.4993811E+002	2.502194307454427E-001	1.039132079128689E-003	0.000000000000000E+000	8.464000402018428E+000	0.000000000000000E+000	2.502194307454427E-001	2.502194307454427E-001	0.000000000000000E+000	1.8687605E+000	9.2309856E+000	1.9340321E+001
+0	1	11/20/2024 11:38:51.171	4.1538448E+000	4.4995779E+002	3.752053123474121E-001	1.558272465142144E-003	0.000000000000000E+000	9.464000449515879E+000	0.000000000000000E+000	3.752053123474121E-001	3.752053123474121E-001	0.000000000000000E+000	1.8690549E+000	9.2316322E+000	1.9348202E+001
+0	1	11/20/2024 11:38:52.171	4.1541204E+000	4.4989871E+002	5.001919928487142E-001	2.077458527357314E-003	0.000000000000000E+000	1.046400049701333E+001	0.000000000000000E+000	5.001919928487142E-001	5.001919928487142E-001	0.000000000000000E+000	1.8689334E+000	9.2334566E+000	1.9521616E+001
+0	1	11/20/2024 11:38:53.171	4.1544747E+000	4.5001691E+002	6.251781919352214E-001	2.596678972778320E-003	0.000000000000000E+000	1.146400054451078E+001	0.000000000000000E+000	6.251781919352213E-001	6.251781919352213E-001	0.000000000000000E+000	1.8695838E+000	9.2318192E+000	1.9300909E+001
+0	1	11/20/2024 11:38:54.171	4.1545930E+000	4.4991840E+002	7.501638655090332E-001	3.115929252590603E-003	0.000000000000000E+000	1.246400059200823E+001	0.000000000000000E+000	7.501638655090331E-001	7.501638655090331E-001	0.000000000000000E+000	1.8692278E+000	9.2341032E+000	1.9458557E+001

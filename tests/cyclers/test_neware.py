@@ -23,16 +23,14 @@ def test_read_file(neware_cycler):
         "tests/sample_data/neware/sample_data_neware.xlsx"
     )
     assert isinstance(unprocessed_dataframe, pl.DataFrame)
-
     # Test that Time and Total time are read correctly
     expected_start = pl.DataFrame(
         {
-            "Time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
             "Total Time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
         }
     )
     pl_testing.assert_frame_equal(
-        neware_cycler._imported_dataframe.select("Time", "Total Time").head(6),
+        neware_cycler._imported_dataframe.select("Total Time").head(6),
         expected_start,
     )
     assert neware_cycler._imported_dataframe["Total Time"][-1] == 562784.5
@@ -229,3 +227,38 @@ def test_read_and_process_neware_multi_file(benchmark):
     helper_read_and_process(
         benchmark, neware_cycler, last_row, expected_events, expected_columns
     )
+
+
+def test_convert_neware_time_format():
+    """Test the _convert_neware_time_format method."""
+    data = pl.DataFrame(
+        {
+            "Total Time": [
+                "2022-02-02 02:02:00",
+                "2022-02-02 02:02:01",
+                "2022-02-02 02:02:02",
+                "2022-02-02 02:02:03",
+                "2022-02-02 02:02:04",
+                "2022-02-02 02:02:05",
+            ]
+        }
+    )
+    converted_data = Neware._convert_neware_time_format(data, "Total Time")
+    expected_data = pl.DataFrame({"Total Time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]})
+    pl_testing.assert_frame_equal(converted_data, expected_data)
+
+    data = pl.DataFrame(
+        {
+            "Total Time": [
+                "00:00:00",
+                "00:00:01",
+                "00:00:02",
+                "00:00:03",
+                "00:00:04",
+                "00:00:05",
+            ]
+        }
+    )
+    converted_data = Neware._convert_neware_time_format(data, "Total Time")
+    expected_data = pl.DataFrame({"Total Time": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]})
+    pl_testing.assert_frame_equal(converted_data, expected_data)

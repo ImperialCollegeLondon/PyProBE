@@ -1,6 +1,7 @@
 """Tests for the neware module."""
 from datetime import datetime
 
+import numpy as np
 import polars as pl
 import polars.testing as pl_testing
 import pytest
@@ -42,6 +43,25 @@ def test_read_file(biologic_cycler, biologic_MB_cycler):
     assert (
         str(unprocessed_dataframe.select(pl.col("Date")).collect().item(0, 0))
         == start_time
+    )
+
+
+def test_read_file_timestamp():
+    """Test the read_file method."""
+    unprocessed_dataframe = Biologic(
+        input_data_path="tests/sample_data/biologic/"
+        "Sample_data_biologic_timestamped.txt"
+    )._imported_dataframe
+    assert isinstance(unprocessed_dataframe, pl.LazyFrame)
+    time_s = (
+        unprocessed_dataframe.select(pl.col("time/s"))
+        .cast(pl.Float64)
+        .collect()
+        .to_numpy()
+    )
+    np.testing.assert_allclose(
+        time_s.flatten(),
+        np.array([0, 6.464, 7.464, 8.464, 9.464, 10.464, 11.464, 12.464]),
     )
 
 
