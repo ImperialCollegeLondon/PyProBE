@@ -450,7 +450,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-deprecated==1.2.9.20240311
+types-deprecated==1.2.15.20241117
     # via PyProBE (pyproject.toml)
 types-pyyaml==6.0.12.20240917
     # via PyProBE (pyproject.toml)
