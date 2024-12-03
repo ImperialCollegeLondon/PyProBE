@@ -193,7 +193,7 @@ def get_resistances(
         pulse_df = pulse_df.select(
             [
                 "Pulse Number",
-                "Experiment Capacity [Ah]",
+                "Capacity [Ah]",
                 "SOC",
                 "OCV [V]",
                 "R0 [Ohms]",
@@ -204,7 +204,7 @@ def get_resistances(
         pulse_df = pulse_df.select(
             [
                 "Pulse Number",
-                "Experiment Capacity [Ah]",
+                "Capacity [Ah]",
                 "SOC",
                 "OCV [V]",
                 "R0 [Ohms]",
@@ -213,9 +213,7 @@ def get_resistances(
 
     column_definitions = {
         "Pulse Number": "An index for each pulse.",
-        "Experiment Capacity [Ah]": input_data.column_definitions[
-            "Experiment Capacity [Ah]"
-        ],
+        "Capacity [Ah]": input_data.column_definitions["Capacity [Ah]"],
         "SOC": input_data.column_definitions["SOC"],
         "OCV [V]": "The voltage value at the final data point in the rest before a "
         "pulse.",
