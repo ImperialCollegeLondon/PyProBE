@@ -6,7 +6,7 @@ import time
 import warnings
 import zipfile
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 import distinctipy
 import polars as pl
