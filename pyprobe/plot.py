@@ -15,6 +15,61 @@ from sklearn.preprocessing import minmax_scale
 if TYPE_CHECKING:
     from pyprobe.result import Result
 
+from functools import wraps
+from typing import Any, Callable
+
+import seaborn as _sns
+
+
+def _convert_data(result_obj: "Result") -> Any:
+    return result_obj.data.to_pandas()
+
+
+def _create_seaborn_wrapper() -> Any:
+    """Create wrapped version of seaborn module."""
+    wrapped_sns = type("SeabornWrapper", (), {})()
+
+    def wrap_function(func: Callable[..., Any]) -> Callable[..., Any]:
+        """Wrap a seaborn function.
+
+        Args:
+            func (Callable): The function to wrap.
+        """
+
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """The wrapper function.
+
+            Modifies the 'data' argument to seaborn functions to be compatible with
+            PyProBE Result objects.
+
+            Args:
+                *args: The positional arguments.
+                **kwargs: The keyword arguments.
+
+            Returns:
+                The result of the wrapped function.
+            """
+            if "data" in kwargs:
+                kwargs["data"] = _convert_data(kwargs["data"])
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    # Copy all seaborn attributes
+    for attr_name in dir(_sns):
+        if not attr_name.startswith("_"):
+            attr = getattr(_sns, attr_name)
+            if callable(attr):
+                setattr(wrapped_sns, attr_name, wrap_function(attr))
+            else:
+                setattr(wrapped_sns, attr_name, attr)
+
+    return wrapped_sns
+
+
+seaborn = _create_seaborn_wrapper()
+
 
 class Plot:
     """A class for plotting result objects with plotly.

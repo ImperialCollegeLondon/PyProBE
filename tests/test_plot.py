@@ -4,11 +4,67 @@ import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 import pytest
+import seaborn as _sns
 from plotly.express.colors import sample_colorscale
 from sklearn.preprocessing import minmax_scale
 
+from pyprobe import plot
 from pyprobe.plot import Plot
 from pyprobe.result import Result
+
+
+def test_seaborn_wrapper_creation():
+    """Test basic seaborn wrapper creation."""
+    wrapper = plot._create_seaborn_wrapper()
+    assert wrapper is not None
+    assert isinstance(wrapper, object)
+
+
+def test_seaborn_wrapper_data_conversion(mocker):
+    """Test that wrapped functions convert data correctly."""
+    result = Result(
+        base_dataframe=pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]}),
+        info={},
+        column_definitions={"x": "int", "y": "int"},
+    )
+    data = result.data.to_pandas()
+    pyprobe_seaborn_plot = plot.seaborn.lineplot(data=result, x="x", y="y")
+    seaborn_lineplot = _sns.lineplot(data=data, x="x", y="y")
+    assert pyprobe_seaborn_plot == seaborn_lineplot
+
+
+def test_seaborn_wrapper_function_call():
+    """Test that wrapped functions produce same output."""
+    wrapper = plot._create_seaborn_wrapper()
+
+    assert wrapper.set_theme() == _sns.set_theme()
+
+    colors1 = wrapper.color_palette()
+    colors2 = _sns.color_palette()
+    assert colors1 == colors2
+
+    # Test with specific parameters
+    palette1 = wrapper.color_palette("husl", 8)
+    palette2 = _sns.color_palette("husl", 8)
+    assert palette1 == palette2
+
+
+def test_seaborn_wrapper_function_properties():
+    """Test that wrapped functions maintain original properties."""
+    wrapper = plot._create_seaborn_wrapper()
+    original_func = _sns.lineplot
+    wrapped_func = wrapper.lineplot
+
+    assert wrapped_func.__name__ == original_func.__name__
+    assert wrapped_func.__doc__ == original_func.__doc__
+
+
+def test_seaborn_wrapper_complete_coverage():
+    """Test that all public seaborn attributes are wrapped."""
+    wrapper = plot._create_seaborn_wrapper()
+    sns_attrs = {attr for attr in dir(_sns) if not attr.startswith("_")}
+    wrapper_attrs = {attr for attr in dir(wrapper) if not attr.startswith("_")}
+    assert sns_attrs == wrapper_attrs
 
 
 @pytest.fixture
