@@ -5,8 +5,8 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import BaseModel, model_validator
 
+from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
-from pyprobe.typing import PyProBEDataType
 
 
 def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
