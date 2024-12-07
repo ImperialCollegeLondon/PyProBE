@@ -29,6 +29,7 @@ class RPT(BaseModel):
         self._rpt_summary.column_definitions = {
             "RPT Number": "The RPT number.",
         }
+        self._process_RPT_start_date()
 
     @property
     def rpt_summary(self) -> Result:
@@ -38,6 +39,22 @@ class RPT(BaseModel):
             Result: A result object for the RPT summary.
         """
         return self._rpt_summary
+
+    def _process_RPT_start_date(self) -> None:
+        """Add the start date of the RPT to the summary."""
+        start_dates = []
+        for rpt in self.input_data:
+            date = rpt.base_dataframe.select("Date").head(1)
+            start_dates.append(date)
+        start_date_df = pl.concat(start_dates)
+        if isinstance(start_date_df, pl.LazyFrame):
+            start_date_df = start_date_df.collect()
+        self._rpt_summary.base_dataframe = self._rpt_summary.base_dataframe.hstack(
+            start_date_df.rename({"Date": "RPT Start Date"})
+        )
+        print(self._rpt_summary.base_dataframe)
+        column_definition = {"RPT Start Date": "The RPT start date."}
+        self._rpt_summary.column_definitions.update(column_definition)
 
     def process_cell_capacity(self, filter: str, name: str = "Capacity [Ah]") -> None:
         """Calculate the capacity for a particular experiment step across the RPTs.

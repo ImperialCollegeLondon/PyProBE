@@ -1,5 +1,7 @@
 """Tests for the RPT analysis module."""
 
+from datetime import datetime
+
 import polars as pl
 import pytest
 from polars import testing as pl_testing
@@ -15,17 +17,24 @@ def RPT_fixture(procedure_fixture):
     return RPT(input_data=[procedure_fixture, procedure_fixture, procedure_fixture])
 
 
-def test_init(RPT_fixture, procedure_fixture):
+@pytest.fixture
+def expected_index_columns():
+    """Return the expected index columns for the RPT object."""
+    known_start_date = datetime(2024, 2, 29, 9, 20, 29, 94000)
+    return {
+        "RPT Number": list(range(3)),
+        "RPT Start Date": [known_start_date] * 3,
+    }
+
+
+def test_init(RPT_fixture, procedure_fixture, expected_index_columns):
     """Test the initialization of the RPT object."""
     assert isinstance(RPT_fixture.rpt_summary, Result)
-    expected_df = pl.DataFrame(
-        {
-            "RPT Number": list(range(3)),
-        }
-    )
+    expected_df = pl.DataFrame(expected_index_columns)
     pl_testing.assert_frame_equal(RPT_fixture.rpt_summary.data, expected_df)
     assert RPT_fixture.rpt_summary.column_definitions == {
         "RPT Number": "The RPT number.",
+        "RPT Start Date": "The RPT start date.",
     }
 
     # Test with incorrect input data
@@ -33,46 +42,44 @@ def test_init(RPT_fixture, procedure_fixture):
         RPT(input_data=[procedure_fixture.discharge(1)])
 
 
-def test_process_cell_capacity(RPT_fixture, procedure_fixture):
+def test_process_cell_capacity(RPT_fixture, procedure_fixture, expected_index_columns):
     """Test the process_cell_capacity method."""
     RPT_fixture.process_cell_capacity(
         "experiment('Break-in Cycles').discharge(-1)",
         name="Last discharge capacity [Ah]",
     )
-    print(RPT_fixture.rpt_summary.data)
     known_discharge_capacity = (
         procedure_fixture.experiment("Break-in Cycles").discharge(-1).capacity
     )
     expected_df = pl.DataFrame(
         {
-            "RPT Number": list(range(3)),
+            **expected_index_columns,
             "Last discharge capacity [Ah]": [known_discharge_capacity] * 3,
         }
     )
     pl_testing.assert_frame_equal(RPT_fixture.rpt_summary.data, expected_df)
-    assert RPT_fixture.rpt_summary.column_definitions == {
-        "RPT Number": "The RPT number.",
-        "Last discharge capacity [Ah]": "The cell capacity.",
-    }
+    assert (
+        RPT_fixture.rpt_summary.column_definitions["Last discharge capacity [Ah]"]
+        == "The cell capacity."
+    )
 
 
-def test_process_soh(RPT_fixture):
+def test_process_soh(RPT_fixture, expected_index_columns):
     """Test the process_soh method."""
     RPT_fixture.process_soh("experiment('Break-in Cycles').discharge(-1)", name="SOH")
     expected_df = pl.DataFrame(
         {
-            "RPT Number": list(range(3)),
+            **expected_index_columns,
             "SOH": [1.0] * 3,
         }
     )
     pl_testing.assert_frame_equal(RPT_fixture.rpt_summary.data, expected_df)
-    assert RPT_fixture.rpt_summary.column_definitions == {
-        "RPT Number": "The RPT number.",
-        "SOH": "The cell SOH.",
-    }
+    assert RPT_fixture.rpt_summary.column_definitions["SOH"] == "The cell SOH."
 
 
-def test_process_pulse_resistance(RPT_fixture, procedure_fixture):
+def test_process_pulse_resistance(
+    RPT_fixture, procedure_fixture, expected_index_columns
+):
     """Test the process_pulse_resistance method."""
     RPT_fixture.process_pulse_resistance("experiment('Discharge Pulses')")
 
@@ -84,7 +91,7 @@ def test_process_pulse_resistance(RPT_fixture, procedure_fixture):
     )
     expected_df = pl.DataFrame(
         {
-            "RPT Number": list(range(3)),
+            **expected_index_columns,
             "R0 [Ohms]": [known_r0] * 3,
         }
     )
