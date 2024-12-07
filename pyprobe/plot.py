@@ -1,11 +1,13 @@
 """A module to contain plotting functions for PyProBE."""
 import platform
 import warnings
-from typing import TYPE_CHECKING, List, Optional
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import plotly.graph_objects as go
 import polars as pl
+import seaborn as _sns
 from IPython.display import Image, display
 from numpy.typing import NDArray
 from plotly.express.colors import sample_colorscale
@@ -15,14 +17,36 @@ from sklearn.preprocessing import minmax_scale
 if TYPE_CHECKING:
     from pyprobe.result import Result
 
-from functools import wraps
-from typing import Any, Callable
 
-import seaborn as _sns
+def _retrieve_relevant_columns(
+    result_obj: "Result", args: Tuple[Any, ...], kwargs: Dict[Any, Any]
+) -> pl.DataFrame:
+    """Retrieve relevant columns from a Result object for plotting.
 
+    This function analyses the arguments passed to a plotting function and retrieves the
+    used columns from the Result object.
 
-def _convert_data(result_obj: "Result") -> Any:
-    return result_obj.data.to_pandas()
+    Args:
+        result_obj: The Result object.
+        args: The positional arguments passed to the plotting function.
+        kwargs: The keyword arguments passed to the plotting function.
+
+    Returns:
+        A dataframe containing the relevant columns from the Result object.
+    """
+    kwargs_values = [v for v in kwargs.values() if isinstance(v, str)]
+    args_values = [v for v in args if isinstance(v, str)]
+    all_args = set(kwargs_values + args_values)
+    result_columns = set(result_obj.base_dataframe.collect_schema().names())
+    relevant_columns = all_args.intersection(result_columns)
+    if not relevant_columns:
+        raise ValueError(
+            f"None of the columns in {all_args} are present in the Result object."
+        )
+    plotting_data = result_obj.base_dataframe.select(relevant_columns)
+    if isinstance(plotting_data, pl.LazyFrame):
+        plotting_data = plotting_data.collect()
+    return plotting_data
 
 
 def _create_seaborn_wrapper() -> Any:
@@ -51,7 +75,9 @@ def _create_seaborn_wrapper() -> Any:
                 The result of the wrapped function.
             """
             if "data" in kwargs:
-                kwargs["data"] = _convert_data(kwargs["data"])
+                kwargs["data"] = _retrieve_relevant_columns(
+                    kwargs["data"], args, kwargs
+                ).to_pandas()
             if func.__name__ == "lineplot":
                 if "estimator" not in kwargs:
                     kwargs["estimator"] = None
@@ -72,6 +98,24 @@ def _create_seaborn_wrapper() -> Any:
 
 
 seaborn = _create_seaborn_wrapper()
+"""A wrapped version of the seaborn package.
+
+This version of seaborn is modified to work with PyProBE Result objects. All functions
+from the original seaborn package are available in this version. Where seaborn functions
+accept a 'data' argument, a PyProBE Result object can be passed instead of a pandas
+DataFrame. For example:
+
+    from pyprobe.plot import seaborn as sns
+
+    result = cell.procedure['Sample']
+    sns.lineplot(data=result, x="x", y="y")
+
+Other modifications include:
+    - The 'estimator' argument is set to None by default in the lineplot function for
+    performance. This can be overridden by passing an estimator explicitly.
+
+See the seaborn documentation for more information: https://seaborn.pydata.org/
+"""
 
 
 class Plot:

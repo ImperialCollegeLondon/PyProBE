@@ -13,6 +13,93 @@ from pyprobe.plot import Plot
 from pyprobe.result import Result
 
 
+def test_retrieve_relevant_columns_args():
+    """Test _retrieve_relevant_columns with positional arguments."""
+    # Set up test data
+    data = pl.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6], "col3": [7, 8, 9]})
+    result = Result(base_dataframe=data, info={})
+
+    # Test with args only
+    args = ["col1", "col2"]
+    kwargs = {}
+    output = plot._retrieve_relevant_columns(result, args, kwargs)
+
+    assert isinstance(output, pl.DataFrame)
+    assert set(output.columns) == {"col1", "col2"}
+    assert output.shape == (3, 2)
+
+
+def test_retrieve_relevant_columns_kwargs():
+    """Test _retrieve_relevant_columns with keyword arguments."""
+    data = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6], "z": [7, 8, 9]})
+    result = Result(base_dataframe=data, info={})
+
+    # Test with kwargs only
+    args = []
+    kwargs = {"x_col": "x", "y_col": "y"}
+    output = plot._retrieve_relevant_columns(result, args, kwargs)
+
+    assert isinstance(output, pl.DataFrame)
+    assert set(output.columns) == {"x", "y"}
+    assert output.shape == (3, 2)
+
+
+def test_retrieve_relevant_columns_mixed():
+    """Test _retrieve_relevant_columns with both args and kwargs."""
+    data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    result = Result(base_dataframe=data, info={})
+
+    args = ["a"]
+    kwargs = {"col": "b"}
+    output = plot._retrieve_relevant_columns(result, args, kwargs)
+
+    assert isinstance(output, pl.DataFrame)
+    assert set(output.columns) == {"a", "b"}
+    assert output.shape == (3, 2)
+
+
+def test_retrieve_relevant_columns_lazy():
+    """Test _retrieve_relevant_columns with LazyFrame."""
+    data = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]}).lazy()
+    result = Result(base_dataframe=data, info={})
+
+    args = ["x"]
+    kwargs = {"y_col": "y"}
+    output = plot._retrieve_relevant_columns(result, args, kwargs)
+
+    assert isinstance(output, pl.DataFrame)  # Should be collected
+    assert not isinstance(output, pl.LazyFrame)
+    assert set(output.columns) == {"x", "y"}
+
+
+def test_retrieve_relevant_columns_intersection():
+    """Test _retrieve_relevant_columns column intersection behavior."""
+    data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    result = Result(base_dataframe=data, info={})
+
+    # Request columns including ones that don't exist
+    args = ["a", "nonexistent1"]
+    kwargs = {"col": "b", "missing": "nonexistent2"}
+    output = plot._retrieve_relevant_columns(result, args, kwargs)
+
+    assert isinstance(output, pl.DataFrame)
+    assert set(output.columns) == {"a", "b"}  # Only existing columns
+    assert output.shape == (3, 2)
+
+
+def test_retrieve_relevant_columns_no_columns():
+    """Test _retrieve_relevant_columns with no columns."""
+    data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    result = Result(base_dataframe=data, info={})
+
+    # Request columns that don't exist
+    args = ["nonexistent1"]
+    kwargs = {"missing": "nonexistent2"}
+
+    with pytest.raises(ValueError):
+        plot._retrieve_relevant_columns(result, args, kwargs)
+
+
 def test_seaborn_wrapper_creation():
     """Test basic seaborn wrapper creation."""
     wrapper = plot._create_seaborn_wrapper()
