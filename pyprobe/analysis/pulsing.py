@@ -97,8 +97,20 @@ def get_resistances(
     """
     AnalysisValidator(
         input_data=input_data,
-        required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event", "SOC"],
+        required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event"],
     )
+    include_soc = "SOC" in input_data.base_dataframe.collect_schema().names()
+    if include_soc:
+        column_list = [
+            "Pulse Number",
+            "Capacity [Ah]",
+            "SOC",
+            "OCV [V]",
+            "R0 [Ohms]",
+        ]
+    else:
+        column_list = ["Pulse Number", "Capacity [Ah]", "OCV [V]", "R0 [Ohms]"]
+
     all_data_df = input_data.base_dataframe
 
     # get the pulse number for each row
@@ -190,36 +202,21 @@ def get_resistances(
             ).rename({f"V_{time}s [V]": f"R_{time}s [Ohms]"})
 
         # filter the dataframe to the final selection
-        pulse_df = pulse_df.select(
-            [
-                "Pulse Number",
-                "Capacity [Ah]",
-                "SOC",
-                "OCV [V]",
-                "R0 [Ohms]",
-            ]
-            + r_t_col_names
-        )
+        pulse_df = pulse_df.select(column_list + r_t_col_names)
     else:
-        pulse_df = pulse_df.select(
-            [
-                "Pulse Number",
-                "Capacity [Ah]",
-                "SOC",
-                "OCV [V]",
-                "R0 [Ohms]",
-            ]
-        )
+        pulse_df = pulse_df.select(column_list)
 
     column_definitions = {
         "Pulse Number": "An index for each pulse.",
         "Capacity [Ah]": input_data.column_definitions["Capacity [Ah]"],
-        "SOC": input_data.column_definitions["SOC"],
         "OCV [V]": "The voltage value at the final data point in the rest before a "
         "pulse.",
         "R0 [Ohms]": "The instantaneous resistance measured between the final rest "
         "point and the first data point in the pulse.",
     }
+    if include_soc:
+        column_definitions["SOC"] = input_data.column_definitions["SOC"]
+
     result = input_data.clean_copy(pulse_df, column_definitions)
     for time in r_times:
         result.define_column(
