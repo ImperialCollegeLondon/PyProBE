@@ -1,11 +1,12 @@
 """A module to streamline processing of identical reference performance tests."""
 
-from typing import Any, List
+from typing import Any, List, Optional
 
 import numpy as np
 import polars as pl
 from pydantic import BaseModel
 
+from pyprobe.analysis import pulsing
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Procedure
 from pyprobe.result import Result
@@ -89,4 +90,61 @@ class RPT(BaseModel):
             soh_df
         )
         column_definition = {name: "The cell SOH."}
+        self._rpt_summary.column_definitions.update(column_definition)
+
+    def process_pulse_resistance(
+        self,
+        filter: str,
+        eval_time: float = 0.0,
+        pulse_number: Optional[int] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        """Calculate the pulse resistance from a pulsing experiment across the RPTs.
+
+        Results are stored in the :property:`rpt_summary` attribute.
+
+        Args:
+            filter: The filter to apply to the data to extract the pulse data.
+            eval_time:
+                The time at which to evaluate the resistance. Default is 0.0. If 0.0,
+                the resistance using the first pulse datapoint is calculated (R0).
+            pulse_number:
+                The pulse number to evaluate the resistance. Default is None. If None,
+                the resistance for all pulses is calculated.
+            name: The name of the column to store the pulse resistance.
+        """
+        if eval_time == 0.0:
+            resistance_col_name = "R0 [Ohms]"
+        else:
+            resistance_col_name = f"R_{eval_time}s [Ohms]"
+        if name is None:
+            name = resistance_col_name
+
+        all_resistances = []
+        for experiment in self.input_data:
+            pulse_data = eval(f"experiment.{filter}")
+            if eval_time == 0.0:
+                resistance_result = pulsing.get_resistances(pulse_data)
+            else:
+                resistance_result = pulsing.get_resistances(pulse_data, [eval_time])
+            if pulse_number is not None:
+                resistance_df = resistance_result.data.filter(
+                    pl.col("Pulse Number") == pulse_number
+                )
+                resistance_value = resistance_df[resistance_col_name].to_numpy()[0]
+            else:
+                resistance_value = resistance_result.data[
+                    resistance_col_name
+                ].to_numpy()
+            all_resistances.append(resistance_value)
+
+        resistance_df = pl.DataFrame(
+            {
+                name: all_resistances,
+            }
+        )
+        self._rpt_summary.base_dataframe = self._rpt_summary.base_dataframe.hstack(
+            resistance_df
+        )
+        column_definition = {name: "The cell pulse resistance."}
         self._rpt_summary.column_definitions.update(column_definition)

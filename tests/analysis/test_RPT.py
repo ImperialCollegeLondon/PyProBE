@@ -4,6 +4,7 @@ import polars as pl
 import pytest
 from polars import testing as pl_testing
 
+from pyprobe.analysis import pulsing
 from pyprobe.analysis.RPT import RPT
 from pyprobe.result import Result
 
@@ -69,3 +70,60 @@ def test_process_soh(RPT_fixture):
         "RPT Number": "The RPT number.",
         "SOH": "The cell SOH.",
     }
+
+
+def test_process_pulse_resistance(RPT_fixture, procedure_fixture):
+    """Test the process_pulse_resistance method."""
+    RPT_fixture.process_pulse_resistance("experiment('Discharge Pulses')")
+
+    # test R0
+    known_r0 = (
+        pulsing.get_resistances(procedure_fixture.experiment("Discharge Pulses"))
+        .data["R0 [Ohms]"]
+        .to_numpy()
+    )
+    expected_df = pl.DataFrame(
+        {
+            "RPT Number": list(range(3)),
+            "R0 [Ohms]": [known_r0] * 3,
+        }
+    )
+    pl_testing.assert_frame_equal(RPT_fixture.rpt_summary.data, expected_df)
+
+    # test R_5s
+    RPT_fixture.process_pulse_resistance(
+        "experiment('Discharge Pulses')", eval_time=5.0
+    )
+    known_r5s = (
+        pulsing.get_resistances(procedure_fixture.experiment("Discharge Pulses"), [5.0])
+        .data["R_5.0s [Ohms]"]
+        .to_numpy()
+    )
+    expected_df = pl.DataFrame(
+        {
+            "RPT Number": list(range(3)),
+            "R0 [Ohms]": [known_r0] * 3,
+            "R_5.0s [Ohms]": [known_r5s] * 3,
+        }
+    )
+
+    # test single pulse number
+    RPT_fixture.process_pulse_resistance(
+        "experiment('Discharge Pulses')",
+        pulse_number=4,
+        eval_time=5.0,
+        name="R_5s_pulse_1",
+    )
+    known_r5s_pulse_1 = (
+        pulsing.get_resistances(procedure_fixture.experiment("Discharge Pulses"), [5.0])
+        .data["R_5.0s [Ohms]"]
+        .to_numpy()[4]
+    )
+    expected_df = pl.DataFrame(
+        {
+            "RPT Number": list(range(3)),
+            "R0 [Ohms]": [known_r0] * 3,
+            "R_5.0s [Ohms]": [known_r5s] * 3,
+            "R_5s_pulse_1": [known_r5s_pulse_1] * 3,
+        }
+    )
