@@ -3,6 +3,7 @@
 import numpy as np
 import plotly.graph_objects as go
 import polars as pl
+import polars.testing as pl_testing
 import pytest
 import seaborn as _sns
 from plotly.express.colors import sample_colorscale
@@ -98,6 +99,25 @@ def test_retrieve_relevant_columns_no_columns():
 
     with pytest.raises(ValueError):
         plot._retrieve_relevant_columns(result, args, kwargs)
+
+
+def test_retrieve_relevant_columns_with_unit_conversion():
+    """Test _retrieve_relevant_columns with unit conversion."""
+    data = pl.DataFrame({"I [A]": [1, 2, 3], "V [V]": [4, 5, 6]})
+    result = Result(
+        base_dataframe=data,
+        info={},
+        column_definitions={"I [A]": "Current", "V [V]": "Voltage"},
+    )
+
+    args = ["I [mA]"]
+    kwargs = {"y_col": "V [kV]"}
+    output = plot._retrieve_relevant_columns(result, args, kwargs)
+
+    expected_data = pl.DataFrame(
+        {"I [mA]": [1e3, 2e3, 3e3], "V [kV]": [4e-3, 5e-3, 6e-3]}
+    )
+    pl_testing.assert_frame_equal(output, expected_data)
 
 
 def test_seaborn_wrapper_creation():

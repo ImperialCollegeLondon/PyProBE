@@ -37,9 +37,13 @@ def _retrieve_relevant_columns(
     kwargs_values = [v for v in kwargs.values() if isinstance(v, str)]
     args_values = [v for v in args if isinstance(v, str)]
     all_args = set(kwargs_values + args_values)
-    result_columns = set(result_obj.base_dataframe.collect_schema().names())
-    relevant_columns = all_args.intersection(result_columns)
-    if not relevant_columns:
+    relevant_columns = []
+    for arg in all_args:
+        arg_in_result = result_obj._check_units(arg)
+        if arg_in_result:
+            relevant_columns.append(arg)
+
+    if len(relevant_columns) == 0:
         raise ValueError(
             f"None of the columns in {all_args} are present in the Result object."
         )
