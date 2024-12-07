@@ -540,7 +540,7 @@ document.write(`
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 2.14 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 2.20 times faster than Pandas.
 </pre></div></div>
 </div>
 <p>Confirm that the same data has been retrieved:</p>
@@ -565,7 +565,7 @@ The median execution time for the filtering query in PyProBE is 2.14 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f97cd336890&gt;
+&lt;matplotlib.legend.Legend at 0x7fd19dd834d0&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -602,7 +602,7 @@ The median execution time for the filtering query in PyProBE is 2.14 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Reading from .parquet is on average 21.16 times faster than reading from .csv
+Reading from .parquet is on average 20.87 times faster than reading from .csv
 </pre></div></div>
 </div>
 <p>The sample dataset is not large, covering only around a week of testing. Battery degradation experiments can last for years, so the test below demonstrates the scalability of PyProBE to large data sets. We will now repeat our battery experiment multiple times and save the new dataset:</p>
@@ -654,7 +654,7 @@ Reading from .parquet is on average 21.16 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f97fd181590&gt;
+&lt;matplotlib.legend.Legend at 0x7fd1c8180c90&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -710,12 +710,12 @@ Reading from .parquet is on average 21.16 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 11.17 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 11.30 times faster than Pandas.
 Execution time breakdown:
             Period   PyProBE    Pandas
-0           1 week  0.027431  0.058755
-1         12 weeks  0.036716  0.410151
-2  Increase Factor  1.338492  6.980689
+0           1 week  0.027357  0.060290
+1         12 weeks  0.036755  0.415192
+2  Increase Factor  1.343536  6.886550
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -763,7 +763,7 @@ Execution time breakdown:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f97fb9b9590&gt;
+&lt;matplotlib.legend.Legend at 0x7fd1994ccc10&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">

@@ -25,10 +25,10 @@ Submodules
    pyprobe.dashboard
    pyprobe.filters
    pyprobe.plot
+   pyprobe.pyprobe_types
    pyprobe.rawdata
    pyprobe.readme_processor
    pyprobe.result
-   pyprobe.typing
    pyprobe.units
    pyprobe.utils
 
