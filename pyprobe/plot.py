@@ -52,6 +52,9 @@ def _create_seaborn_wrapper() -> Any:
             """
             if "data" in kwargs:
                 kwargs["data"] = _convert_data(kwargs["data"])
+            if func.__name__ == "lineplot":
+                if "estimator" not in kwargs:
+                    kwargs["estimator"] = None
             return func(*args, **kwargs)
 
         return wrapper
