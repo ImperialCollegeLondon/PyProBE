@@ -1,4 +1,6 @@
 """A module to contain plotting functions for PyProBE."""
+import platform
+import warnings
 from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
@@ -60,6 +62,11 @@ class Plot:
 
     def show_image(self) -> None:
         """Show the plot as an image."""
+        if platform.system() == "Windows":
+            warnings.warn(
+                "show_image() is known to hang indefinitely on Windows. "
+                "If you encounter this issue, use show() instead."
+            )
         img_bytes = self.fig.to_image(format="png")
         display(Image(img_bytes))
 
