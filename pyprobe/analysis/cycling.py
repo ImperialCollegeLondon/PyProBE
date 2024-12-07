@@ -7,8 +7,8 @@ from pydantic import BaseModel, validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Experiment, get_cycle_column
+from pyprobe.pyprobe_types import FilterToCycleType
 from pyprobe.result import Result
-from pyprobe.typing import FilterToCycleType
 
 
 def _create_capacity_throughput(

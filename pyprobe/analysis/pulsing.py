@@ -8,8 +8,8 @@ from pydantic import BaseModel, validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.filters import Experiment, Step
+from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
-from pyprobe.typing import PyProBEDataType
 
 
 def _get_pulse_number(data: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame | pl.LazyFrame:

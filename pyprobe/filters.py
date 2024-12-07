@@ -9,7 +9,7 @@ from pyprobe import utils
 from pyprobe.rawdata import RawData
 
 if TYPE_CHECKING:
-    from pyprobe.typing import (  # , FilterToStepType
+    from pyprobe.pyprobe_types import (  # , FilterToStepType
         ExperimentOrCycleType,
         FilterToCycleType,
     )

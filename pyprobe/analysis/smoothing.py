@@ -13,8 +13,8 @@ from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter
 
 from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
-from pyprobe.typing import PyProBEDataType
 
 
 @validate_call
