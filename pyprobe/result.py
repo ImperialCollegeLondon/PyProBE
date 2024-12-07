@@ -199,7 +199,7 @@ class Result(BaseModel):
             frame_to_return = frame_to_return.collect()
         return frame_to_return.to_numpy()
 
-    def _check_units(self, column_name: str) -> None:
+    def _check_units(self, column_name: str) -> bool:
         """Check if a column exists and convert the units if it does not.
 
         Adds a new column to the dataframe with the desired unit.
@@ -207,11 +207,15 @@ class Result(BaseModel):
         Args:
             column_name (str): The column name to convert to.
 
-        Raises:
-            ValueError: If the column name is not in the data.
+        Returns:
+            bool: True if the column exists or is added, False otherwise.
         """
         if column_name not in self.base_dataframe.collect_schema().names():
-            converter_object = unit_from_regexp(column_name)
+            try:
+                converter_object = unit_from_regexp(column_name)
+            except ValueError as e:
+                if str(e) == f"Name {column_name} does not match pattern.":
+                    return False
             if converter_object.input_quantity in self.quantities:
                 instruction = converter_object.from_default_unit()
                 self.base_dataframe = self.base_dataframe.with_columns(instruction)
@@ -222,11 +226,11 @@ class Result(BaseModel):
                         f"[{converter_object.default_unit}]"
                     ],
                 )
+                return True
             else:
-                raise ValueError(
-                    f"Column with quantity'{converter_object.input_quantity}' not in"
-                    " data."
-                )
+                return False
+        else:
+            return True
 
     @property
     def quantities(self) -> List[str]:

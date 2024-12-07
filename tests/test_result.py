@@ -113,7 +113,8 @@ def test_quantities(Result_fixture):
 def test_check_units(Result_fixture):
     """Test the _check_units method."""
     assert "Current [mA]" not in Result_fixture.data.columns
-    Result_fixture._check_units("Current [mA]")
+    column_present = Result_fixture._check_units("Current [mA]")
+    assert column_present
     assert "Current [mA]" in Result_fixture.data.columns
     assert "Current [mA]" in Result_fixture.column_definitions.keys()
     assert (
@@ -122,13 +123,25 @@ def test_check_units(Result_fixture):
     )
 
     result = Result(
-        base_dataframe=pl.DataFrame({"Invented quantity [V]": [1, 2, 3]}),
+        base_dataframe=pl.DataFrame(
+            {"Invented quantity [V]": [1, 2, 3], "Unitless quantity": [4, 5, 6]}
+        ),
         info={},
         column_definitions={"Invented quantity [V]": "Invented quantity definition"},
     )
     assert "Invented quantity [mV]" not in result.data.columns
-    result._check_units("Invented quantity [mV]")
+    column_present = result._check_units("Invented quantity [mV]")
+    assert column_present
     assert "Invented quantity [mV]" in result.data.columns
+
+    column_present = result._check_units("Unitless quantity")
+    assert column_present
+
+    column_present = result._check_units("Missing quantity [mV]")
+    assert not column_present
+
+    column_present = result._check_units("Missing unitless quantity")
+    assert not column_present
 
 
 def test_print_definitions(Result_fixture, capsys):
