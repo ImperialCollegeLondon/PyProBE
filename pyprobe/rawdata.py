@@ -92,7 +92,7 @@ class RawData(Result):
         Returns:
             pl.DataFrame | pl.LazyFrame: The dataframe or lazyframe with the new column.
         """
-        self.base_dataframe = self.base_dataframe.with_columns(
+        self.live_dataframe = self.live_dataframe.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
         if new_column_definition is not None:
@@ -133,7 +133,7 @@ class RawData(Result):
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
         if reference_charge is None:
-            self.base_dataframe = self.base_dataframe.with_columns(
+            self.live_dataframe = self.live_dataframe.with_columns(
                 (
                     (
                         pl.col("Capacity [Ah]")
@@ -145,13 +145,13 @@ class RawData(Result):
             )
         else:
             if self.contains_lazyframe:
-                reference_charge_data = reference_charge.base_dataframe.select(
+                reference_charge_data = reference_charge.live_dataframe.select(
                     "Time [s]", "Capacity [Ah]"
                 )
-                self.base_dataframe = self.base_dataframe.join(
+                self.live_dataframe = self.live_dataframe.join(
                     reference_charge_data, on="Time [s]", how="left"
                 )
-                self.base_dataframe = self.base_dataframe.with_columns(
+                self.live_dataframe = self.live_dataframe.with_columns(
                     pl.col("Capacity [Ah]_right")
                     .max()
                     .alias("Full charge reference capacity"),
@@ -160,13 +160,13 @@ class RawData(Result):
                 full_charge_reference_capacity = (
                     reference_charge.data.select("Capacity [Ah]").max().item()
                 )
-                self.base_dataframe = self.base_dataframe.with_columns(
+                self.live_dataframe = self.live_dataframe.with_columns(
                     pl.lit(full_charge_reference_capacity).alias(
                         "Full charge reference capacity"
                     ),
                 )
 
-            self.base_dataframe = self.base_dataframe.with_columns(
+            self.live_dataframe = self.live_dataframe.with_columns(
                 (
                     (
                         pl.col("Capacity [Ah]")
@@ -197,7 +197,7 @@ class RawData(Result):
             reference_capacity = (
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
-        self.base_dataframe = self.base_dataframe.with_columns(
+        self.live_dataframe = self.live_dataframe.with_columns(
             (
                 pl.col("Capacity [Ah]")
                 - pl.col("Capacity [Ah]").max()
@@ -238,7 +238,7 @@ class RawData(Result):
         # reduce the full dataframe to only the steps as they appear in order in
         # the data
         only_steps = (
-            self.data.with_row_index()
+            self.live_dataframe.with_row_index()
             .group_by("Event", maintain_order=True)
             .agg(pl.col("Step").first())
         )

@@ -7,7 +7,64 @@ import polars as pl
 import polars.testing as pl_testing
 import pytest
 
-from pyprobe.result import Result
+from pyprobe.result import PolarsColumnCache, Result
+
+
+def test_PolarsColumnCache_lazyframe():
+    """Test the PolarsColumnCache class."""
+    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    cache = PolarsColumnCache(lf)
+    assert cache.cache == {}
+    pl_testing.assert_frame_equal(cache.base_dataframe, lf)
+
+
+def test_PolarsColumnCache_dataframe():
+    """Test the PolarsColumnCache class with a DataFrame."""
+    df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    cache = PolarsColumnCache(df)
+    pl_testing.assert_frame_equal(cache.cached_dataframe, df)
+    expected_a = df.select("a")["a"]
+    expected_b = df.select("b")["b"]
+    expected_c = df.select("c")["c"]
+    assert cache.cache["a"].to_list() == expected_a.to_list()
+    assert cache.cache["b"].to_list() == expected_b.to_list()
+    assert cache.cache["c"].to_list() == expected_c.to_list()
+
+
+def test_collect_columns():
+    """Test the collect_columns method."""
+    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    cache = PolarsColumnCache(lf)
+
+    # Test single column collection
+    cache.collect_columns("a")
+    expected_a = lf.select("a").collect()["a"]
+    assert cache.cache["a"].to_list() == expected_a.to_list()
+    pl_testing.assert_frame_equal(cache.cached_dataframe, lf.select("a").collect())
+
+    # Test multiple column collection
+    cache = PolarsColumnCache(lf)
+    cache.collect_columns("a", "b")
+    expected_a = lf.select("a").collect()["a"]
+    expected_b = lf.select("b").collect()["b"]
+    assert cache.cache["a"].to_list() == expected_a.to_list()
+    assert cache.cache["b"].to_list() == expected_b.to_list()
+    pl_testing.assert_frame_equal(
+        cache.cached_dataframe, lf.select("a", "b").collect(), check_column_order=False
+    )
+
+    # Test unit conversion
+    lf = pl.LazyFrame(
+        {
+            "Current [A]": [1, 2, 3],
+            "Voltage [V]": [4, 5, 6],
+            "Date": [5, 6, 7],
+        }
+    )
+    cache = PolarsColumnCache(lf)
+    cache.collect_columns("Current [mA]")
+    expected_current = pl.Series("Current [mA]", [1000, 2000, 3000])
+    assert cache.cache["Current [mA]"].to_list() == expected_current.to_list()
 
 
 @pytest.fixture
@@ -27,16 +84,6 @@ def test_init(Result_fixture):
     assert isinstance(Result_fixture, Result)
     assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(Result_fixture.info, dict)
-
-
-def test_call(Result_fixture):
-    """Test the __call__ method."""
-    current = Result_fixture("Current [A]")
-    np_testing.assert_array_equal(
-        current, Result_fixture.data["Current [A]"].to_numpy()
-    )
-    current_mA = Result_fixture("Current [mA]")
-    np_testing.assert_array_equal(current_mA, current * 1000)
 
 
 def test_get(Result_fixture):
@@ -67,18 +114,6 @@ def test_get_only(Result_fixture):
     np_testing.assert_array_equal(current_mA, current * 1000)
 
 
-def test_array(Result_fixture):
-    """Test the array method."""
-    array = Result_fixture.array()
-    np_testing.assert_array_equal(array, Result_fixture.data.to_numpy())
-
-    filtered_array = Result_fixture.array("Current [A]", "Voltage [V]")
-    np_testing.assert_array_equal(
-        filtered_array,
-        Result_fixture.data.select("Current [A]", "Voltage [V]").to_numpy(),
-    )
-
-
 def test_getitem(Result_fixture):
     """Test the __getitem__ method."""
     current = Result_fixture["Current [A]"]
@@ -91,7 +126,7 @@ def test_getitem(Result_fixture):
     assert "Current [mA]" in current_mA.column_list
     assert "Current [A]" not in current_mA.column_list
     np_testing.assert_allclose(
-        current_mA.get_only("Current [mA]"), Result_fixture.get_only("Current [mA]")
+        current_mA.get("Current [mA]"), Result_fixture.get("Current [mA]")
     )
 
 
@@ -99,49 +134,15 @@ def test_data(Result_fixture):
     """Test the data property."""
     assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(Result_fixture.data, pl.DataFrame)
-    assert isinstance(Result_fixture.base_dataframe, pl.DataFrame)
-    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.base_dataframe)
+    assert isinstance(Result_fixture.live_dataframe, pl.DataFrame)
+    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.live_dataframe)
 
 
 def test_quantities(Result_fixture):
     """Test the quantities property."""
     assert set(Result_fixture.quantities) == set(
-        ["Time", "Current", "Voltage", "Capacity"]
+        ["Time", "Current", "Voltage", "Capacity", "Event", "Date", "Step"]
     )
-
-
-def test_check_units(Result_fixture):
-    """Test the _check_units method."""
-    assert "Current [mA]" not in Result_fixture.data.columns
-    column_present = Result_fixture._check_units("Current [mA]")
-    assert column_present
-    assert "Current [mA]" in Result_fixture.data.columns
-    assert "Current [mA]" in Result_fixture.column_definitions.keys()
-    assert (
-        Result_fixture.column_definitions["Current [mA]"]
-        == Result_fixture.column_definitions["Current [A]"]
-    )
-
-    result = Result(
-        base_dataframe=pl.DataFrame(
-            {"Invented quantity [V]": [1, 2, 3], "Unitless quantity": [4, 5, 6]}
-        ),
-        info={},
-        column_definitions={"Invented quantity [V]": "Invented quantity definition"},
-    )
-    assert "Invented quantity [mV]" not in result.data.columns
-    column_present = result._check_units("Invented quantity [mV]")
-    assert column_present
-    assert "Invented quantity [mV]" in result.data.columns
-
-    column_present = result._check_units("Unitless quantity")
-    assert column_present
-
-    column_present = result._check_units("Missing quantity [mV]")
-    assert not column_present
-
-    column_present = result._check_units("Missing unitless quantity")
-    assert not column_present
 
 
 def test_print_definitions(Result_fixture, capsys):
@@ -223,7 +224,9 @@ def test_add_new_data_columns():
             "Data 2": [None, None, None, 6.0, 10.0, 14.0],
         }
     )
-    pl_testing.assert_frame_equal(result_object.data, expected_data)
+    pl_testing.assert_frame_equal(
+        result_object.data, expected_data, check_column_order=False
+    )
 
 
 @pytest.fixture
@@ -345,7 +348,9 @@ def test_extend(reduced_result_fixture):
             "Voltage [V]": [1, 2, 3, 4, 5, 6],
         }
     )
-    pl_testing.assert_frame_equal(reduced_result_fixture.data, expected_data)
+    pl_testing.assert_frame_equal(
+        reduced_result_fixture.data, expected_data, check_column_order=False
+    )
     assert (
         reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
     )
@@ -377,7 +382,9 @@ def test_extend_with_new_columns(reduced_result_fixture):
             "Capacity [Ah]": [None, None, None, 8, 9, 10],
         }
     )
-    pl_testing.assert_frame_equal(reduced_result_fixture.data, expected_data)
+    pl_testing.assert_frame_equal(
+        reduced_result_fixture.data, expected_data, check_column_order=False
+    )
     assert (
         reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
     )

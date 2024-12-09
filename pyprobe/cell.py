@@ -555,10 +555,10 @@ class Cell(BaseModel):
         metadata = self.dict()
         metadata["PyProBE Version"] = __version__
         for procedure_name, procedure in self.procedure.items():
-            if isinstance(procedure.base_dataframe, pl.LazyFrame):
-                df = procedure.base_dataframe.collect()
+            if isinstance(procedure.live_dataframe, pl.LazyFrame):
+                df = procedure.live_dataframe.collect()
             else:
-                df = procedure.base_dataframe
+                df = procedure.live_dataframe
             # write the dataframe to a parquet file
             filename = procedure_name + ".parquet"
             filepath = os.path.join(path, filename)

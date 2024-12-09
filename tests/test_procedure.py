@@ -1,5 +1,6 @@
 """Module containing tests of the procedure class."""
 
+import copy
 import os
 
 import numpy as np
@@ -81,25 +82,27 @@ def test_add_external_data(procedure_fixture):
     dataframe = pl.DataFrame({"Date": date_range, "Value": value})
     dataframe.write_csv("tests/sample_data/neware/external_data.csv")
 
-    procedure_fixture.add_external_data(
+    procedure1 = copy.deepcopy(procedure_fixture)
+    procedure1.add_external_data(
         filepath="tests/sample_data/neware/external_data.csv",
         importing_columns=["Value"],
         date_column_name="Date",
     )
-    assert "Value" in procedure_fixture.column_list
-    assert procedure_fixture.data.select(
+    assert "Value" in procedure1.column_list
+    assert procedure1.data.select(
         pl.col("Value").tail(69).is_null()
     ).unique().to_numpy() == np.array([True])
 
-    procedure_fixture.add_external_data(
+    procedure2 = copy.deepcopy(procedure_fixture)
+    procedure2.add_external_data(
         filepath="tests/sample_data/neware/external_data.csv",
         importing_columns={"Value": "new column"},
     )
-    assert "new column" in procedure_fixture.column_list
+    assert "new column" in procedure2.column_list
 
-    time = procedure_fixture.data["Time [s]"].to_numpy() + 30.54
+    time = procedure2.data["Time [s]"].to_numpy() + 30.54
     value = 10 * np.sin(0.001 * time)
-    data = procedure_fixture.data["new column"].to_numpy()
+    data = procedure2.data["new column"].to_numpy()
     nan_mask = np.isnan(data)
 
     # Filter out NaNs

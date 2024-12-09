@@ -50,25 +50,25 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
     AnalysisValidator(
         input_data=input_data, required_columns=["Capacity [Ah]", "Time [s]"]
     )
-    input_data.base_dataframe = get_cycle_column(input_data)
+    input_data.live_dataframe = get_cycle_column(input_data)
 
-    input_data.base_dataframe = _create_capacity_throughput(input_data.base_dataframe)
-    lf_capacity_throughput = input_data.base_dataframe.group_by(
+    input_data.live_dataframe = _create_capacity_throughput(input_data.live_dataframe)
+    lf_capacity_throughput = input_data.live_dataframe.group_by(
         "Cycle", maintain_order=True
     ).agg(pl.col("Capacity Throughput [Ah]").first())
-    lf_time = input_data.base_dataframe.group_by("Cycle", maintain_order=True).agg(
+    lf_time = input_data.live_dataframe.group_by("Cycle", maintain_order=True).agg(
         pl.col("Time [s]").first()
     )
 
     lf_charge = (
         input_data.charge()
-        .base_dataframe.group_by("Cycle", maintain_order=True)
+        .live_dataframe.group_by("Cycle", maintain_order=True)
         .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
         .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
     )
     lf_discharge = (
         input_data.discharge()
-        .base_dataframe.group_by("Cycle", maintain_order=True)
+        .live_dataframe.group_by("Cycle", maintain_order=True)
         .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
         .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
     )
@@ -146,27 +146,27 @@ class Cycling(BaseModel):
         AnalysisValidator(
             input_data=self.input_data, required_columns=["Capacity [Ah]", "Time [s]"]
         )
-        self.input_data.base_dataframe = get_cycle_column(self.input_data)
+        self.input_data.live_dataframe = get_cycle_column(self.input_data)
 
-        self.input_data.base_dataframe = _create_capacity_throughput(
-            self.input_data.base_dataframe
+        self.input_data.live_dataframe = _create_capacity_throughput(
+            self.input_data.live_dataframe
         )
-        lf_capacity_throughput = self.input_data.base_dataframe.group_by(
+        lf_capacity_throughput = self.input_data.live_dataframe.group_by(
             "Cycle", maintain_order=True
         ).agg(pl.col("Capacity Throughput [Ah]").first())
-        lf_time = self.input_data.base_dataframe.group_by(
+        lf_time = self.input_data.live_dataframe.group_by(
             "Cycle", maintain_order=True
         ).agg(pl.col("Time [s]").first())
 
         lf_charge = (
             self.input_data.charge()
-            .base_dataframe.group_by("Cycle", maintain_order=True)
+            .live_dataframe.group_by("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
         )
         lf_discharge = (
             self.input_data.discharge()
-            .base_dataframe.group_by("Cycle", maintain_order=True)
+            .live_dataframe.group_by("Cycle", maintain_order=True)
             .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
             .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
         )

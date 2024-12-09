@@ -741,7 +741,7 @@ def quantify_degradation_modes(
             }
         )
     )
-    dma_result.base_dataframe = dma_result.base_dataframe.with_columns(
+    dma_result.live_dataframe = dma_result.live_dataframe.with_columns(
         pl.col("Index").cast(pl.Int64)
     )
     dma_result.column_definitions = {
@@ -843,7 +843,7 @@ def run_batch_dma_parallel(
     fitted_OCVs = [result[1] for result in fit_results]
 
     for index, sto_limit in enumerate(stoichiometry_limit_list):
-        sto_limit.base_dataframe = sto_limit.base_dataframe.with_columns(
+        sto_limit.live_dataframe = sto_limit.live_dataframe.with_columns(
             pl.lit(index).cast(pl.Int64).alias("Index")
         )
 
@@ -969,6 +969,7 @@ def average_ocvs(
         A Result object containing the averaged OCV curve.
     """
     required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC", "Current [A]"]
+
     AnalysisValidator(
         input_data=input_data,
         required_columns=required_columns,

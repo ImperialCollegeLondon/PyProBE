@@ -68,17 +68,18 @@ def spline_smoothing(
     derivative = y_spline.derivative()
     smoothed_dydx = derivative(x_data)
 
-    result = copy.deepcopy(input_data)
+    data = copy.deepcopy(input_data)
     smoothed_data_column = pl.Series(target_column, smoothed_y)
-    result.base_dataframe = result.base_dataframe.with_columns(
+    smoothed_dataframe = data.live_dataframe.with_columns(
         smoothed_data_column.alias(target_column)
     )
 
     gradient_column_name = f"d({target_column})/d({x})"
     dydx_column = pl.Series(gradient_column_name, smoothed_dydx)
-    result.base_dataframe = result.base_dataframe.with_columns(
+    smoothed_dataframe = smoothed_dataframe.with_columns(
         dydx_column.alias(gradient_column_name)
     )
+    result = data.clean_copy(smoothed_dataframe, data.column_definitions)
     result.define_column(
         f"d({target_column})/d({x})",
         "The gradient of the smoothed data.",
@@ -209,20 +210,21 @@ def downsample(
             A result object containing the downsampled DataFrame.
     """
     AnalysisValidator(input_data=input_data, required_columns=[target_column])
-    result = copy.deepcopy(input_data)
+    data = copy.deepcopy(input_data)
     if monotonic:
-        result.base_dataframe = _downsample_monotonic_data(
-            result.base_dataframe,
+        downsampled_data = _downsample_monotonic_data(
+            data.live_dataframe,
             target_column,
             sampling_interval,
             occurrence,
         )
     else:
-        result.base_dataframe = _downsample_non_monotonic_data(
-            result.base_dataframe,
+        downsampled_data = _downsample_non_monotonic_data(
+            data.live_dataframe,
             target_column,
             sampling_interval,
         )
+    result = input_data.clean_copy(downsampled_data, data.column_definitions)
     return result
 
 
@@ -264,7 +266,7 @@ def savgol_smoothing(
 
     smoothed_data_column = pl.Series(target_column, smoothed_y)
     result = copy.deepcopy(input_data)
-    result.base_dataframe = result.base_dataframe.with_columns(
+    result.live_dataframe = result.live_dataframe.with_columns(
         smoothed_data_column.alias(target_column)
     )
     return result
@@ -450,13 +452,13 @@ class Smoothing(BaseModel):
 
         result = copy.deepcopy(self.input_data)
         smoothed_data_column = pl.Series(target_column, smoothed_y)
-        result.base_dataframe = result.base_dataframe.with_columns(
+        result.live_dataframe = result.live_dataframe.with_columns(
             smoothed_data_column.alias(target_column)
         )
 
         gradient_column_name = f"d({target_column})/d({x})"
         dydx_column = pl.Series(gradient_column_name, smoothed_dydx)
-        result.base_dataframe = result.base_dataframe.with_columns(
+        result.live_dataframe = result.live_dataframe.with_columns(
             dydx_column.alias(gradient_column_name)
         )
         result.define_column(
@@ -494,8 +496,8 @@ class Smoothing(BaseModel):
                 A result object containing the downsampled DataFrame.
         """
         result = copy.deepcopy(self.input_data)
-        result.base_dataframe = _downsample_monotonic_data(
-            result.base_dataframe,
+        result.live_dataframe = _downsample_monotonic_data(
+            result.live_dataframe,
             target_column,
             sampling_interval,
             occurrence,
@@ -558,7 +560,7 @@ class Smoothing(BaseModel):
             i = next_index + 1
 
         # Filter the dataframe to only include the resampled points
-        dataframe = self.input_data.base_dataframe.filter(
+        dataframe = self.input_data.live_dataframe.filter(
             [
                 pl.col(target_column).is_in(x_resampled),
                 pl.col(target_column).is_first_distinct(),
@@ -567,7 +569,7 @@ class Smoothing(BaseModel):
 
         # Create a new result object with the resampled data
         result = self.input_data
-        result.base_dataframe = dataframe
+        result.live_dataframe = dataframe
         return result
 
     @deprecated(
@@ -609,7 +611,7 @@ class Smoothing(BaseModel):
 
         smoothed_data_column = pl.Series(target_column, smoothed_y)
         result = copy.deepcopy(self.input_data)
-        result.base_dataframe = result.base_dataframe.with_columns(
+        result.live_dataframe = result.live_dataframe.with_columns(
             smoothed_data_column.alias(target_column)
         )
         return result

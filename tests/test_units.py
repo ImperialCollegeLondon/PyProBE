@@ -2,7 +2,7 @@
 import numpy as np
 import polars as pl
 
-from pyprobe.units import Units, unit_from_regexp
+from pyprobe.units import Units, split_quantity_unit, unit_from_regexp
 
 
 def test_from_regexp():
@@ -22,6 +22,19 @@ def test_from_regexp():
     unit_object = unit_from_regexp(name, pattern)
     assert unit_object.input_quantity == "Current"
     assert unit_object.input_unit == "mA"
+
+
+def test_split_quantity_unit():
+    """Test the split_quantity_unit method."""
+    name = "Date"
+    quantity, unit = split_quantity_unit(name)
+    assert quantity == "Date"
+    assert unit == ""
+
+    name = "SOC"
+    quantity, unit = split_quantity_unit(name)
+    assert quantity == "SOC"
+    assert unit == ""
 
 
 def test_init():

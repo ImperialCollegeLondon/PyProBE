@@ -16,6 +16,7 @@ from sklearn.preprocessing import minmax_scale
 
 if TYPE_CHECKING:
     from pyprobe.result import Result
+from pyprobe.units import split_quantity_unit
 
 
 def _retrieve_relevant_columns(
@@ -39,18 +40,19 @@ def _retrieve_relevant_columns(
     all_args = set(kwargs_values + args_values)
     relevant_columns = []
     for arg in all_args:
-        arg_in_result = result_obj._check_units(arg)
-        if arg_in_result:
-            relevant_columns.append(arg)
+        try:
+            quantity, _ = split_quantity_unit(arg)
 
+        except ValueError:
+            continue
+        if quantity in result_obj._polars_cache.quantities:
+            relevant_columns.append(arg)
     if len(relevant_columns) == 0:
         raise ValueError(
             f"None of the columns in {all_args} are present in the Result object."
         )
-    plotting_data = result_obj.base_dataframe.select(relevant_columns)
-    if isinstance(plotting_data, pl.LazyFrame):
-        plotting_data = plotting_data.collect()
-    return plotting_data
+    result_obj._polars_cache.collect_columns(*relevant_columns)
+    return result_obj._get_data_subset(*relevant_columns)
 
 
 def _create_seaborn_wrapper() -> Any:
