@@ -624,7 +624,7 @@ def test_quantify_degradation_modes(
     np.testing.assert_allclose(result.data["LAM_ne"].to_numpy()[1], expected_LAM_ne)
     np.testing.assert_allclose(result.data["LLI"].to_numpy()[1], expected_LLI)
     np.testing.assert_allclose(result.data["Index"].to_numpy(), [0, 1])
-    assert result.data.columns == [
+    assert set(result.data.columns) == {
         "Index",
         "x_pe low SOC",
         "x_pe high SOC",
@@ -638,7 +638,7 @@ def test_quantify_degradation_modes(
         "LAM_pe",
         "LAM_ne",
         "LLI",
-    ]
+    }
 
     # test with missing or incorrect input data
     result = Result(

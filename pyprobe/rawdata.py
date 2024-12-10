@@ -76,6 +76,23 @@ class RawData(Result):
             raise ValueError(error_msg)
         return dataframe
 
+    @property
+    def data(self) -> pl.DataFrame:
+        """Return the data as a polars DataFrame.
+
+        Returns:
+            pl.DataFrame: The data as a polars DataFrame.
+
+        Raises:
+            ValueError: If no data exists for this filter.
+        """
+        dataframe = super().data
+        unsorted_columns = set(dataframe.collect_schema().names()) - set(
+            required_columns
+        )
+        sorted_columns = list(required_columns) + list(unsorted_columns)
+        return dataframe.select(sorted_columns)
+
     def zero_column(
         self,
         column: str,

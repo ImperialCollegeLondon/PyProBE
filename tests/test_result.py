@@ -67,6 +67,33 @@ def test_collect_columns():
     assert cache.cache["Current [mA]"].to_list() == expected_current.to_list()
 
 
+def test_live_dataframe():
+    """Test the live_dataframe property."""
+    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    result_object = Result(base_dataframe=lf, info={})
+    pl_testing.assert_frame_equal(result_object.live_dataframe, lf)
+    assert result_object._polars_cache.columns == ["a", "b", "c"]
+    assert result_object._polars_cache.quantities == {"a", "b", "c"}
+
+    # test updating a column of the live_dataframe
+    result_object.live_dataframe = result_object.live_dataframe.with_columns(
+        (pl.col("a") * 10).alias("a")
+    )
+    result_object._polars_cache.collect_columns("a")
+    pl_testing.assert_frame_equal(
+        result_object.live_dataframe, lf.with_columns((pl.col("a") * 10))
+    )
+
+    result_object = Result(base_dataframe=lf, info={})
+    result_object._polars_cache.collect_columns("a")
+    result_object.live_dataframe = result_object.live_dataframe.with_columns(
+        (pl.col("a") * 10).alias("d")
+    )
+    pl.testing.assert_frame_equal(
+        result_object.live_dataframe, lf.with_columns((pl.col("a") * 10).alias("d"))
+    )
+
+
 @pytest.fixture
 def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
@@ -322,7 +349,9 @@ def test_join_left(reduced_result_fixture):
             "Capacity [Ah]": [4, 5, 6],
         }
     )
-    pl_testing.assert_frame_equal(reduced_result_fixture.data, expected_data)
+    pl_testing.assert_frame_equal(
+        reduced_result_fixture.data, expected_data, check_column_order=False
+    )
     assert (
         reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
     )

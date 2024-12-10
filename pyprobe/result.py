@@ -24,11 +24,27 @@ class PolarsColumnCache:
         """Initialize the PolarsColumnCache object."""
         self.cache: Dict[str, pl.Series] = {}
         self._cached_dataframe = None
+        self._base_dataframe = base_dataframe
         if isinstance(base_dataframe, pl.LazyFrame):
             self.base_dataframe = base_dataframe
         else:
             self.base_dataframe = base_dataframe
             self.cached_dataframe = base_dataframe
+
+    @property
+    def base_dataframe(self) -> pl.LazyFrame | pl.DataFrame:
+        """The base dataframe.
+
+        Returns:
+            pl.LazyFrame | pl.DataFrame: The base dataframe.
+        """
+        return self._base_dataframe
+
+    @base_dataframe.setter
+    def base_dataframe(self, value: pl.LazyFrame | pl.DataFrame) -> None:
+        """Set the base dataframe."""
+        self.clear_cache()
+        self._base_dataframe = value
 
     @property
     def columns(self) -> List[str]:
