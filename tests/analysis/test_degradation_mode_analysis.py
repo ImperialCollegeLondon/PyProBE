@@ -711,10 +711,10 @@ def test_average_ocvs(BreakinCycles_fixture):
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_SOC()
     corrected_r = dma.average_ocvs(break_in, charge_filter="constant_current(1)")
-    assert math.isclose(corrected_r.get_only("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(corrected_r.get_only("Voltage [V]")[-1], 4.170649780122139)
+    assert math.isclose(corrected_r.get("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(corrected_r.get("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(
-        corrected_r.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
+        corrected_r.get("SOC"), break_in.constant_current(1).get("SOC")
     )
 
     # test invalid input

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
 import polars as pl
+from deprecated import deprecated
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 
@@ -253,6 +254,10 @@ class Result(BaseModel):
         """
         return isinstance(self.live_dataframe, pl.LazyFrame)
 
+    @deprecated(
+        reason="The get_only method is deprecated. Use the get method instead.",
+        version="1.2.0",
+    )
     def get_only(self, column_name: str) -> NDArray[np.float64]:
         """Return a single column of the data as a numpy array.
 

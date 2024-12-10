@@ -982,12 +982,12 @@ def average_ocvs(
         charge_result = input_data.charge()
     else:
         charge_result = eval(f"input_data.{charge_filter}")
-    charge_SOC = charge_result.get_only("SOC")
-    charge_OCV = charge_result.get_only("Voltage [V]")
-    charge_current = charge_result.get_only("Current [A]")
-    discharge_SOC = discharge_result.get_only("SOC")
-    discharge_OCV = discharge_result.get_only("Voltage [V]")
-    discharge_current = discharge_result.get_only("Current [A]")
+    charge_SOC, charge_OCV, charge_current = charge_result.get(
+        "SOC", "Voltage [V]", "Current [A]"
+    )
+    discharge_SOC, discharge_OCV, discharge_current = discharge_result.get(
+        "SOC", "Voltage [V]", "Current [A]"
+    )
 
     average_OCV = dma_functions.average_OCV_curves(
         charge_SOC,
@@ -1002,7 +1002,7 @@ def average_ocvs(
         pl.DataFrame(
             {
                 "Voltage [V]": average_OCV,
-                "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
+                "Capacity [Ah]": charge_result.get("Capacity [Ah]"),
                 "SOC": charge_SOC,
             }
         )

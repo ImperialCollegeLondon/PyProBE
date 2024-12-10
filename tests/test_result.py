@@ -106,11 +106,11 @@ def test_get(Result_fixture):
 
 def test_get_only(Result_fixture):
     """Test the get_only method."""
-    current = Result_fixture.get_only("Current [A]")
+    current = Result_fixture.get("Current [A]")
     np_testing.assert_array_equal(
         current, Result_fixture.data["Current [A]"].to_numpy()
     )
-    current_mA = Result_fixture.get_only("Current [mA]")
+    current_mA = Result_fixture.get("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
 
 

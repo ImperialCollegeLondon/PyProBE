@@ -43,7 +43,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     def smooth():
         return smoothing.spline_smoothing(
             input_data=noisy_data, x="x", target_column="y"
-        ).get_only("y")
+        ).get("y")
 
     benchmark(smooth)
 
@@ -51,7 +51,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
 
-    np.testing.assert_allclose(result.get_only("y"), expected_y, rtol=0.2)
+    np.testing.assert_allclose(result.get("y"), expected_y, rtol=0.2)
 
     input_data_columns = set(noisy_data.column_list + ["d(y)/d(x)"])
     result_columns = set(result.column_list)
@@ -59,7 +59,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
 
     expected_dydx = 2 * x
 
-    np.testing.assert_allclose(result.get_only("d(y)/d(x)"), expected_dydx, rtol=0.2)
+    np.testing.assert_allclose(result.get("d(y)/d(x)"), expected_dydx, rtol=0.2)
 
     # reverse the data
     flipped_x = np.flip(x)
@@ -67,7 +67,7 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
         input_data=noisy_data_reversed, x="x", target_column="y"
     )
     flipped_expected_y = flipped_x**2
-    np.testing.assert_allclose(result.get_only("y"), flipped_expected_y, rtol=0.2)
+    np.testing.assert_allclose(result.get("y"), flipped_expected_y, rtol=0.2)
 
 
 def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
@@ -76,7 +76,7 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
     def smooth():
         return smoothing.savgol_smoothing(
             input_data=noisy_data, target_column="y", window_length=100, polyorder=2
-        ).get_only("y")
+        ).get("y")
 
     benchmark(smooth)
 
@@ -86,7 +86,7 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
 
-    np.testing.assert_allclose(result.get_only("y"), expected_y, rtol=0.2)
+    np.testing.assert_allclose(result.get("y"), expected_y, rtol=0.2)
     assert set(result.column_list) == set(noisy_data.column_list)
 
 
@@ -245,9 +245,9 @@ def test_downsample_monotonic(noisy_data, benchmark):
     assert isinstance(result, Result)
 
     # Check that number of points is reduced
-    assert len(result.get_only("y")) < len(noisy_data.get_only("y"))
+    assert len(result.get("y")) < len(noisy_data.get("y"))
     # Check that the interval between points is at least the sampling interval
-    diffs = np.diff(result.get_only("y"))
+    diffs = np.diff(result.get("y"))
     assert np.all(np.abs(diffs) >= 0.9)
 
 
@@ -271,9 +271,9 @@ def test_downsample_non_monotonic(benchmark):
     # Check that output is a Result object
     assert isinstance(result, Result)
     # Check that number of points is reduced
-    assert len(result.get_only("y")) < len(data.get_only("y"))
+    assert len(result.get("y")) < len(data.get("y"))
     # Check that the interval between points is at least the sampling interval
-    diffs = np.diff(result.get_only("y"))
+    diffs = np.diff(result.get("y"))
     assert np.all(np.abs(diffs) >= 1)
     assert np.any(diffs > 0) and np.any(diffs < 0)
 
@@ -294,8 +294,8 @@ def test_downsample_intervals():
     result_5 = smoothing.downsample(test_data, "values", 5.0)
 
     # Check that larger intervals result in fewer points
-    assert len(result_1.get_only("values")) > len(result_2.get_only("values"))
-    assert len(result_2.get_only("values")) > len(result_5.get_only("values"))
+    assert len(result_1.get("values")) > len(result_2.get("values"))
+    assert len(result_2.get("values")) > len(result_5.get("values"))
 
 
 def test_downsample_metadata_preservation():
