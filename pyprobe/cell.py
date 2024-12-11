@@ -322,6 +322,42 @@ class Cell(BaseModel):
             info=self.info,
         )
 
+    @validate_call
+    def quick_add_procedure(
+        self,
+        procedure_name: str,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
+    ) -> None:
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+
+        This method does not require a README file. It is useful for quickly adding data
+        but filtering by experiment on the resulting object will not be possible.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+        """
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        output_data_path = self._verify_parquet(output_data_path)
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path.")
+
+        base_dataframe = pl.scan_parquet(output_data_path)
+        self.procedure[procedure_name] = Procedure(
+            base_dataframe=base_dataframe, info=self.info, readme_dict={}
+        )
+
     @staticmethod
     def _verify_parquet(filename: str) -> str:
         """Function to verify the filename is in the correct parquet format.
