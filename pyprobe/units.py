@@ -27,7 +27,12 @@ class Units:
     }
     """A dictionary of SI prefixes and their corresponding factors."""
 
-    time_unit_dict: Dict[str, float] = {"s": 1.0, "min": 60.0, "hr": 3600.0}
+    time_unit_dict: Dict[str, float] = {
+        "s": 1.0,
+        "min": 60.0,
+        "hr": 3600.0,
+        "Seconds": 1.0,
+    }
     """A dictionary of time units and their corresponding factors."""
 
     unit_dict: Dict[str, str] = {
@@ -38,6 +43,7 @@ class Units:
         "s": "Time",
         "C": "Temperature",
         "Ohms": "Resistance",
+        "Seconds": "Time",
     }
     """A dictionary of units and their corresponding quantities."""
 
