@@ -170,7 +170,7 @@ def _charge(filter: "FilterToCycleType", *charge_numbers: Union[int, range]) -> 
     Returns:
         Step: A charge step object.
     """
-    condition = pl.col("Current [A]") > 0
+    condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
     return filter.step(*charge_numbers, condition=condition)
 
 
@@ -188,7 +188,7 @@ def _discharge(
     Returns:
         Step: A discharge step object.
     """
-    condition = pl.col("Current [A]") < 0
+    condition = pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
     return filter.step(*discharge_numbers, condition=condition)
 
 
@@ -207,7 +207,11 @@ def _chargeordischarge(
     Returns:
         Step: A charge or discharge step object.
     """
-    condition = pl.col("Current [A]") != 0
+    charge_condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
+    discharge_condition = (
+        pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
+    )
+    condition = charge_condition | discharge_condition
     return filter.step(*chargeordischarge_numbers, condition=condition)
 
 
