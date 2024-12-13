@@ -95,7 +95,9 @@ def test_process_dataframe():
             "T1(℃)": [25, 25, 25, 25, 25, 25],
         }
     )
-    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
+    mock_dataframe.write_excel(
+        "tests/sample_data/mock_dataframe.xlsx", worksheet="record"
+    )
     neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
 
@@ -125,7 +127,9 @@ def test_process_dataframe():
     # Test with a dataframe that does not contain a Charge or Discharge Capacity column
     mock_dataframe = mock_dataframe.drop("Chg. Cap.(mAh)")
     mock_dataframe = mock_dataframe.drop("DChg. Cap.(mAh)")
-    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
+    mock_dataframe.write_excel(
+        "tests/sample_data/mock_dataframe.xlsx", worksheet="record"
+    )
     neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
     pyprobe_dataframe = pyprobe_dataframe.select(
@@ -142,7 +146,9 @@ def test_process_dataframe():
 
     # Test with a dataframe that does not contain a "Date" column
     mock_dataframe = mock_dataframe.drop("Date")
-    mock_dataframe.write_excel("tests/sample_data/mock_dataframe.xlsx")
+    mock_dataframe.write_excel(
+        "tests/sample_data/mock_dataframe.xlsx", worksheet="record"
+    )
     neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
     pyprobe_dataframe = neware_cycler.pyprobe_dataframe
     pyprobe_dataframe = pyprobe_dataframe.select(

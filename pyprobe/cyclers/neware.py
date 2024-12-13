@@ -1,6 +1,8 @@
 """A module to load and process Neware battery cycler data."""
 
 
+import os
+
 import polars as pl
 
 from pyprobe.cyclers.basecycler import BaseCycler
@@ -75,6 +77,20 @@ class Neware(BaseCycler):
         Returns:
             pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
+        file = os.path.basename(filepath)
+        file_ext = os.path.splitext(file)[1]
+        match file_ext.lower():
+            case ".xlsx":
+                dataframe = pl.read_excel(
+                    filepath,
+                    engine="calamine",
+                    infer_schema_length=0,
+                    sheet_name="record",
+                )
+            case ".csv":
+                dataframe = pl.scan_csv(filepath, infer_schema=False)
+            case _:
+                raise ValueError(f"Unsupported file extension: {file_ext}")
         dataframe = BaseCycler.read_file(filepath)
         if "Total Time" in dataframe.collect_schema().names():
             dataframe = Neware._convert_neware_time_format(dataframe, "Total Time")
