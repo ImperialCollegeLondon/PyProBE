@@ -67,7 +67,7 @@ Once imported into a `PyProBE` **Procedure**, individual cycles and steps can be
 
 \autoref{fig:result flowchart} shows how `PyProBE` **RawData** and **Result** objects can be used. **RawData** DataFrames contain only the columns of the `PyProBE` standardised format, while **Result** DataFrames contain any data columns produced from further analysis.
 
-The analysis module contains classes which, when passed a **Result** object in their **input_data** field, enable additional methods via composition. The steps to smooth voltage data before differentiation are described \autoref{fig:analysis flowchart}.
+The analysis module contains classes and functions which, when passed a **Result** object, enable additional functionality. The steps to smooth voltage data before differentiation are described \autoref{fig:analysis flowchart}.
 
 ![The workflow for smoothing and differentiating voltage data in `PyProBE`. The complete code can be seen in the "Differentiating voltage data" example.\label{fig:analysis flowchart}](images/Analysis_flowchart.jpg)
 
