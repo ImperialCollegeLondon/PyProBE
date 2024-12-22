@@ -121,6 +121,8 @@ if __name__ == "__main__":
             "Select an experiment", experiment_names
         )
         selected_experiment_tuple = tuple(selected_experiment)
+    else:
+        selected_experiment_tuple = ()
 
     # Get the cycle and step numbers from the user
     cycle_step_input = st.sidebar.text_input(
