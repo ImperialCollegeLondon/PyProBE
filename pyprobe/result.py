@@ -29,10 +29,7 @@ class PolarsColumnCache:
         self.cache: Dict[str, pl.Series] = {}
         self._cached_dataframe = None
         self._base_dataframe = base_dataframe
-        if isinstance(base_dataframe, pl.LazyFrame):
-            self.base_dataframe = base_dataframe
-        else:
-            self.base_dataframe = base_dataframe
+        if isinstance(base_dataframe, pl.DataFrame):
             self.cached_dataframe = base_dataframe
 
     @property
@@ -575,3 +572,33 @@ class Result(BaseModel):
                 data.append(step_data)
         data = pl.concat(data)
         return cls(base_dataframe=data, info=info)
+
+
+def combine_results(
+    results: List[Result],
+    concat_method: str = "diagonal",
+) -> Result:
+    """Combine multiple Result objects into a single Result object.
+
+    This method should be used to combine multiple Result objects that have different
+    entries in their info dictionaries. The info dictionaries of the Result objects will
+    be integrated into the dataframe of the new Result object
+
+    Args:
+        results (List[Result]): The Result objects to combine.
+        concat_method (str):
+            The method to use for concatenation. Default is 'diagonal'. See the
+            polars.concat method documentation for more information.
+
+    Returns:
+        Result: A new result object with the combined data.
+    """
+    for result in results:
+        instructions = [
+            pl.lit(result.info[key]).alias(key) for key in result.info.keys()
+        ]
+        result.live_dataframe = result.live_dataframe.with_columns(instructions)
+    combined_result = results[0].clean_copy()
+    combined_result.info = {}
+    combined_result.extend(results[0:], concat_method=concat_method)
+    return combined_result

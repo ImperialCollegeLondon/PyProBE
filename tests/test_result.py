@@ -7,7 +7,7 @@ import polars as pl
 import polars.testing as pl_testing
 import pytest
 
-from pyprobe.result import PolarsColumnCache, Result
+from pyprobe.result import PolarsColumnCache, Result, combine_results
 
 
 def test_PolarsColumnCache_lazyframe():
@@ -466,3 +466,26 @@ def test_clean_copy(reduced_result_fixture):
     assert isinstance(clean_result, Result)
     assert isinstance(clean_result.base_dataframe, pl.LazyFrame)
     pl_testing.assert_frame_equal(clean_result.data, new_df)
+
+
+def test_combine_results():
+    """Test the combine results method."""
+    result1 = Result(
+        base_dataframe=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
+        info={"test index": 1.0},
+    )
+    result2 = Result(
+        base_dataframe=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}),
+        info={"test index": 2.0},
+    )
+    combined_result = combine_results([result1, result2])
+    expected_data = pl.DataFrame(
+        {
+            "a": [1, 2, 3, 7, 8, 9],
+            "b": [4, 5, 6, 10, 11, 12],
+            "test index": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
+        }
+    )
+    pl_testing.assert_frame_equal(
+        combined_result.data, expected_data, check_column_order=False
+    )
