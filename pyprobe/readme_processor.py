@@ -1,9 +1,12 @@
 """Module for processing PyPrBE README files."""
+import logging
 from typing import Any, Dict, List, Tuple, Union, cast
 
 import yaml
 
 from pyprobe import utils
+
+logger = logging.getLogger(__name__)
 
 
 class ReadmeModel:
@@ -25,13 +28,15 @@ class ReadmeModel:
                 elif isinstance(self.readme_dict[experiment_name]["Steps"], list):
                     self._process_implicit_experiment(experiment_name)
                 else:
-                    raise ValueError("Invalid format for steps in README file")
+                    error_msg = "Invalid format for steps in README file"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
             elif "Total Steps" in self.readme_dict[experiment_name].keys():
                 self._process_total_steps_experiment(experiment_name)
             else:
-                raise ValueError(
-                    "Each experiment must have a 'Steps' or 'Total Steps' key."
-                )
+                error_msg = "Each experiment must have a 'Steps' or 'Total Steps' key."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
     def _process_explicit_experiment(self, experiment_name: str) -> None:
         """Process an experiment with explicit step numbers.
