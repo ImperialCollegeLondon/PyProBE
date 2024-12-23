@@ -817,7 +817,7 @@ def run_batch_dma_parallel(
     try:
         if not ray.is_initialized():
             ray.init()
-        print(f"Ray using {ray.cluster_resources()['CPU']} CPUs")
+        logger.info(f"Ray using {ray.cluster_resources()['CPU']} CPUs")
         # Submit tasks to Ray
         futures = [
             _run_ocv_curve_fit_with_index.remote(
@@ -831,7 +831,7 @@ def run_batch_dma_parallel(
             )
             for index, input_data in enumerate(input_data_list)
         ]
-        print(f"Submitted {len(futures)} parallel tasks")
+        logger.info(f"Submitted {len(futures)} parallel tasks")
         # Get results and sort by index
         fit_results = ray.get(futures)
     finally:
