@@ -1,9 +1,12 @@
 """A module for unit conversion of PyProBE data."""
 
+import logging
 import re
 from typing import Dict, Optional, Tuple
 
 import polars as pl
+
+logger = logging.getLogger(__name__)
 
 
 class Units:
@@ -81,7 +84,9 @@ class Units:
         try:
             return self.unit_dict[unit]
         except KeyError:
-            raise ValueError(f"Unit {unit} is not recognized.")
+            error_msg = f"Unit {unit} is not recognized."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     def from_default_unit(self) -> pl.Expr:
         """Convert the column from the default unit.
@@ -119,4 +124,6 @@ def unit_from_regexp(
     if match is not None:
         return Units(match.group(1), match.group(2))
     else:
-        raise ValueError(f"Name {name} does not match pattern.")
+        error_msg = f"Name {name} does not match pattern."
+        logger.error(error_msg)
+        raise ValueError(error_msg)
