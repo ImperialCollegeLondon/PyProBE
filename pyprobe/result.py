@@ -1,4 +1,5 @@
 """A module for the Result class."""
+import logging
 from functools import wraps
 from pprint import pprint
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
@@ -15,6 +16,7 @@ from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import split_quantity_unit, unit_from_regexp
 
 logger = logging.getLogger(__name__)
+
 
 class PolarsColumnCache:
     """A class to cache columns from a Polars DataFrame.
@@ -278,12 +280,12 @@ class Result(BaseModel):
             ValueError: If a column name is not in the data.
         """
         array = self._get_data_subset(*column_names).to_numpy()
+        if len(column_names) == 0:
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)
             raise ValueError(error_msg)
         elif len(column_names) == 1:
             return array.T[0]
-        if len(column_names) == 0:
         else:
             return tuple(array.T)
 
