@@ -1,12 +1,15 @@
 """A module to load and process Neware battery cycler data."""
 
 
+import logging
 import os
 
 import polars as pl
 
 from pyprobe.cyclers.basecycler import BaseCycler
 from pyprobe.units import Units
+
+logger = logging.getLogger(__name__)
 
 
 class Neware(BaseCycler):
@@ -90,7 +93,9 @@ class Neware(BaseCycler):
             case ".csv":
                 dataframe = pl.scan_csv(filepath, infer_schema=False)
             case _:
-                raise ValueError(f"Unsupported file extension: {file_ext}")
+                error_msg = f"Unsupported file extension: {file_ext}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         dataframe = BaseCycler.read_file(filepath)
         if "Total Time" in dataframe.collect_schema().names():
             dataframe = Neware._convert_neware_time_format(dataframe, "Total Time")
