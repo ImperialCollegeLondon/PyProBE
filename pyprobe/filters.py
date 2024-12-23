@@ -14,6 +14,10 @@ if TYPE_CHECKING:
         FilterToCycleType,
     )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def _filter_numerical(
     dataframe: pl.LazyFrame | pl.DataFrame,
@@ -50,7 +54,9 @@ def _filter_numerical(
                 pl.col(column).rank("dense", descending=True).is_in(index_list)
             )
         else:
-            raise ValueError("Indices must be all positive or all negative.")
+            error_msg = "Indices must be all positive or all negative."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
     else:
         return dataframe
 
@@ -331,7 +337,9 @@ class Procedure(RawData):
         steps_idx = []
         for experiment_name in experiment_names:
             if experiment_name not in self.experiment_names:
-                raise ValueError(f"{experiment_name} not in procedure.")
+                error_msg = f"{experiment_name} not in procedure."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
@@ -369,7 +377,9 @@ class Procedure(RawData):
         steps_idx = []
         for experiment_name in experiment_names:
             if experiment_name not in self.experiment_names:
-                raise ValueError(f"{experiment_name} not in procedure.")
+                error_msg = f"{experiment_name} not in procedure."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
@@ -442,7 +452,9 @@ class Procedure(RawData):
                 warnings.warn("Excel reading is slow. Consider converting to CSV.")
                 return pl.read_excel(filepath)
             case _:
-                raise ValueError(f"Unsupported file type: {file_ext}")
+                error_msg = f"Unsupported file type: {file_ext}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
 
 class Experiment(RawData):
