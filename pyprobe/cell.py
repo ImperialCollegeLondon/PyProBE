@@ -1,5 +1,6 @@
 """Module for the Cell class."""
 import json
+import logging
 import os
 import shutil
 import time
@@ -15,6 +16,8 @@ from pydantic import BaseModel, Field, field_validator, validate_call
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
+
+logger = logging.getLogger(__name__)
 
 __version__ = "1.1.0"
 
@@ -117,7 +120,9 @@ class Cell(BaseModel):
         )
         output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
-            raise ValueError("* characters are not allowed for a complete data path.")
+            error_msg = "* characters are not allowed for a complete data path."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         if not os.path.exists(output_data_path) or overwrite_existing:
             cycler_dict = {
@@ -131,9 +136,9 @@ class Cell(BaseModel):
             t1 = time.time()
             if cycler == "generic":
                 if column_dict is None:
-                    raise ValueError(
-                        "column_dict must be provided for the generic cycler."
-                    )
+                    error_msg = "column_dict must be provided for the generic cycler."
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
                 importer = basecycler.BaseCycler(
                     input_data_path=input_data_path,
                     column_dict=column_dict,
@@ -150,9 +155,9 @@ class Cell(BaseModel):
                 output_data_path,
                 compression=compression_dict[compression_priority],
             )
-            print(f"\tparquet written in {time.time()-t1: .2f} seconds.")
+            logger.info(f"\tparquet written in {time.time()-t1: .2f} seconds.")
         else:
-            print(f"File {output_data_path} already exists. Skipping.")
+            logger.info(f"File {output_data_path} already exists. Skipping.")
 
     @validate_call
     def process_cycler_file(
@@ -285,7 +290,9 @@ class Cell(BaseModel):
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         output_data_path = self._verify_parquet(output_data_path)
         if "*" in output_data_path:
-            raise ValueError("* characters are not allowed for a complete data path.")
+            error_msg = "* characters are not allowed for a complete data path."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
@@ -378,9 +385,11 @@ class Cell(BaseModel):
             filename_str = filename
         else:
             if filename_inputs is None:
-                raise ValueError(
+                error_msg = (
                     "filename_inputs must be provided when filename is a function."
                 )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             filename_str = self._get_filename(self.info, filename, filename_inputs)
 
         data_path = os.path.join(folder_path, filename_str)
@@ -437,20 +446,22 @@ class Cell(BaseModel):
         # check if the experiment names and PyBaMM solutions are lists
         if isinstance(experiment_names, list) and isinstance(pybamm_solutions, list):
             if len(experiment_names) != len(pybamm_solutions):
-                raise ValueError(
+                error_msg = (
                     "The number of experiment names and PyBaMM solutions must be equal."
                 )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         elif isinstance(experiment_names, list) != isinstance(pybamm_solutions, list):
             if isinstance(experiment_names, list):
-                raise ValueError(
-                    "A list of experiment names must be provided with a list of PyBaMM"
-                    " solutions."
-                )
+                error_msg = "A list of experiment names must be provided with a list"
+                " of PyBaMM solutions."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             else:
-                raise ValueError(
-                    "A single experiment name must be provided with a single PyBaMM"
-                    " solution."
-                )
+                error_msg = "A single experiment name must be provided with a single"
+                " PyBaMM solution."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         else:
             experiment_names = [str(experiment_names)]
             pybamm_solutions = [pybamm_solutions]

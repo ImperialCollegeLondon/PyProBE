@@ -1,4 +1,5 @@
 """Module for utilities for analysis classes."""
+import logging
 from typing import Any, List, Tuple
 
 import numpy as np
@@ -7,6 +8,8 @@ from pydantic import BaseModel, model_validator
 
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
+
+logger = logging.getLogger(__name__)
 
 
 def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
@@ -53,7 +56,9 @@ class AnalysisValidator(BaseModel):
                 except ValueError:
                     missing_columns.append(col)
         if missing_columns:
-            raise ValueError(f"Missing required columns: {missing_columns}")
+            error_msg = f"Missing required columns: {missing_columns}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return self
 
     @property

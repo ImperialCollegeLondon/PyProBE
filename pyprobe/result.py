@@ -1,4 +1,5 @@
 """A module for the Result class."""
+import logging
 import warnings
 from pprint import pprint
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -9,6 +10,8 @@ from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 
 from pyprobe.units import unit_from_regexp
+
+logger = logging.getLogger(__name__)
 
 
 class Result(BaseModel):
@@ -69,7 +72,9 @@ class Result(BaseModel):
 
         self._check_units(column_name)
         if column_name not in self.data.collect_schema().names():
-            raise ValueError(f"Column '{column_name}' not in data.")
+            error_msg = f"Column '{column_name}' not in data."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         else:
             return self.data[column_name].to_numpy()
 
@@ -86,7 +91,9 @@ class Result(BaseModel):
         for col in column_names:
             self._check_units(col)
         if not all(col in self.data.collect_schema().names() for col in column_names):
-            raise ValueError("One or more columns not in data.")
+            error_msg = "One or more columns not in data."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         else:
             return Result(base_dataframe=self.data.select(column_names), info=self.info)
 
@@ -103,7 +110,9 @@ class Result(BaseModel):
         if isinstance(self.base_dataframe, pl.LazyFrame):
             self.base_dataframe = self.base_dataframe.collect()
         if self.base_dataframe.is_empty():
-            raise ValueError("No data exists for this filter.")
+            error_msg = "No data exists for this filter."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return self.base_dataframe
 
     @property
@@ -118,7 +127,7 @@ class Result(BaseModel):
     def get(
         self, *column_names: str
     ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
-        """Return one or more columns of the data as seperate 1D numpy arrays.
+        """Return one or more columns of the data as separate 1D numpy arrays.
 
         Args:
             column_names (str): The column name(s) to return.
@@ -132,14 +141,16 @@ class Result(BaseModel):
             ValueError: If a column name is not in the data.
         """
         if not column_names:
-            raise ValueError("At least one column name must be provided.")
+            error_msg = "At least one column name must be provided."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         full_array = self._get_filtered_array(column_names)
-        seperated_columns = tuple(full_array.T)
-        if len(seperated_columns) == 1:
-            return seperated_columns[0]
+        separated_columns = tuple(full_array.T)
+        if len(separated_columns) == 1:
+            return separated_columns[0]
         else:
-            return seperated_columns
+            return separated_columns
 
     def get_only(self, column_name: str) -> NDArray[np.float64]:
         """Return a single column of the data as a numpy array.
@@ -156,7 +167,9 @@ class Result(BaseModel):
         """
         column = self.get(column_name)
         if not isinstance(column, np.ndarray):
-            raise ValueError("More than one column returned.")
+            error_msg = "More than one column returned."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return column
 
     def array(self, *filtering_column_names: str) -> NDArray[np.float64]:
@@ -193,7 +206,9 @@ class Result(BaseModel):
         for column_name in filtering_column_names:
             self._check_units(column_name)
             if column_name not in self.base_dataframe.collect_schema().names():
-                raise ValueError(f"Column '{column_name}' not in data.")
+                error_msg = f"Column '{column_name}' not in data."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         frame_to_return = self.base_dataframe.select(filtering_column_names)
         if isinstance(frame_to_return, pl.LazyFrame):
             frame_to_return = frame_to_return.collect()
@@ -223,10 +238,10 @@ class Result(BaseModel):
                     ],
                 )
             else:
-                raise ValueError(
-                    f"Column with quantity'{converter_object.input_quantity}' not in"
-                    " data."
-                )
+                error_msg = f"Column with quantity '{converter_object.input_quantity}'"
+                " not in data."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
     @property
     def quantities(self) -> List[str]:
@@ -344,7 +359,9 @@ class Result(BaseModel):
             ValueError: If the base dataframe has no date column.
         """
         if "Date" not in self.column_list:
-            raise ValueError("No date column in the base dataframe.")
+            error_msg = "No date column in the base dataframe."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         # get the columns of the new data
         new_data_cols = new_data.collect_schema().names()
         new_data_cols.remove(date_column_name)

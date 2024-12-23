@@ -154,7 +154,6 @@ def helper_read_and_process(
             return result
 
     pyprobe_dataframe = benchmark(read_and_process)
-    print(pyprobe_dataframe.tail(1))
     assert set(pyprobe_dataframe.columns) == set(expected_columns)
     assert (
         set(pyprobe_dataframe.select("Event").unique().to_series().to_list())

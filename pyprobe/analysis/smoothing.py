@@ -1,6 +1,7 @@
 """Module containing methods for smoothing noisy experimental data."""
 
 import copy
+import logging
 from typing import Any, Callable, Literal, Optional, Tuple
 
 import numpy as np
@@ -15,6 +16,8 @@ from scipy.signal import savgol_filter
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
+
+logger = logging.getLogger(__name__)
 
 
 @validate_call
@@ -292,9 +295,13 @@ def _validate_interp_input_vectors(
         ValueError: If the input vectors are not valid.
     """
     if not np.all(np.diff(x) > 0) and not np.all(np.diff(x) < 0):
-        raise ValueError("x must be strictly increasing or decreasing")
+        error_msg = "x must be strictly increasing or decreasing"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
     if len(x) != len(y):
-        raise ValueError("x and y must have the same length")
+        error_msg = "x and y must have the same length"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
     if not np.all(np.diff(x) > 0):
         x = np.flip(x)
         y = np.flip(y)

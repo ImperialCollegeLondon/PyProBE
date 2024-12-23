@@ -1,6 +1,7 @@
 """A module to load and process battery cycler data."""
 
 import glob
+import logging
 import os
 import warnings
 from typing import Dict, List, Optional
@@ -9,6 +10,8 @@ import polars as pl
 from pydantic import BaseModel, field_validator, model_validator
 
 from pyprobe.units import Units
+
+logger = logging.getLogger(__name__)
 
 
 class BaseCycler(BaseModel):
@@ -39,9 +42,13 @@ class BaseCycler(BaseModel):
         if "*" in value:
             files = glob.glob(value)
             if len(files) == 0:
-                raise ValueError(f"No files found with the pattern {value}.")
+                error_msg = f"No files found with the pattern {value}."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         elif not os.path.exists(value):
-            raise ValueError(f"File not found: path {value} does not exist.")
+            error_msg = f"File not found: path {value} does not exist."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return value
 
     @field_validator("column_dict")
@@ -78,10 +85,12 @@ class BaseCycler(BaseModel):
                     "'Charge Capacity [*]' and 'Discharge Capacity [*]'."
                 )
         if len(missing_columns) > 0:
-            raise ValueError(
+            error_msg = (
                 f"The column dictionary is missing one or more required columns: "
                 f"{missing_columns}." + extra_error_message
             )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return value
 
     @model_validator(mode="after")
@@ -141,10 +150,12 @@ class BaseCycler(BaseModel):
                 for cycler_name, pyprobe_name in column_dict.items():
                     if pyprobe_name == full_name:
                         search_names.append(cycler_name)
-            raise ValueError(
+            error_msg = (
                 f"PyProBE cannot find the following columns, please check your data: "
                 f"{search_names}."
             )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     @staticmethod
     def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
@@ -164,7 +175,9 @@ class BaseCycler(BaseModel):
             case ".csv":
                 return pl.scan_csv(filepath, infer_schema=False)
             case _:
-                raise ValueError(f"Unsupported file extension: {file_ext}")
+                error_msg = f"Unsupported file extension: {file_ext}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
     def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
         """Return a list of all the imported dataframes.
