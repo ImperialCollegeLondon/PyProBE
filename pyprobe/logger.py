@@ -19,6 +19,9 @@ def configure_logging(
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
 
+    # Clear existing handlers
+    root_logger.handlers = []
+
     # Create a console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
