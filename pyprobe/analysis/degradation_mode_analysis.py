@@ -1,5 +1,6 @@
 """Module for degradation mode analysis methods."""
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
 
@@ -17,6 +18,8 @@ from pyprobe.analysis import smoothing, utils
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.pyprobe_types import FilterToCycleType, PyProBEDataType
 from pyprobe.result import Result
+
+logger = logging.getLogger(__name__)
 
 
 def _get_gradient(
@@ -51,11 +54,13 @@ def _get_gradient(
 
         return function_derivative
     else:
-        raise ValueError(
+        error_msg = (
             "OCP is not in a differentiable format. OCP must be a"
             " PPoly object, a sympy expression or a callable function with a "
             "single NDArray input and single NDArray output."
         )
+        logger.error(error_msg)
+        raise ValueError(error_msg)
 
 
 class _AbstractOCP(ABC):
