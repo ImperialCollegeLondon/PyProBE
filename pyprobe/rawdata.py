@@ -1,4 +1,5 @@
 """A module for the RawData class."""
+import logging
 from typing import Dict, List, Optional
 
 import polars as pl
@@ -6,6 +7,8 @@ import pybamm
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
+
+logger = logging.getLogger(__name__)
 
 required_columns = [
     "Time [s]",
@@ -69,7 +72,9 @@ class RawData(Result):
         column_list = dataframe.collect_schema().names()
         missing_columns = [col for col in required_columns if col not in column_list]
         if missing_columns:
-            raise ValueError(f"Missing required columns: {missing_columns}")
+            error_msg = f"Missing required columns: {missing_columns}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return dataframe
 
     def zero_column(
@@ -216,12 +221,14 @@ class RawData(Result):
             no_step_descriptions.select("Step").collect().to_numpy().flatten()
         )
         if len(missing_steps) > 0:
-            raise ValueError(
+            error_msg = (
                 f"Descriptions for steps {str(missing_steps)} are missing."
                 f" Unable to create a PyBaMM experiment object. Please "
                 f"filter the data to a section with descriptions for all "
                 f"steps to create an experiment."
             )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         # reduce the full dataframe to only the steps as they appear in order in
         # the data
