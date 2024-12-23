@@ -24,6 +24,7 @@ Submodules
    pyprobe.cell
    pyprobe.dashboard
    pyprobe.filters
+   pyprobe.logger
    pyprobe.plot
    pyprobe.pyprobe_types
    pyprobe.rawdata

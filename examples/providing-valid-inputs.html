@@ -446,6 +446,14 @@ document.write(`
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-12-23 16:57:36,506 - pyprobe.rawdata - ERROR - Missing required columns: [&#39;Step&#39;, &#39;Event&#39;, &#39;Capacity [Ah]&#39;]
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
@@ -670,6 +678,18 @@ input_data.Result
                                     <span class="n">y</span> <span class="o">=</span> <span class="s2">&quot;Voltage [V]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-12-23 16:57:36,976 - pyprobe.units - ERROR - Name Date does not match pattern.
+2024-12-23 16:57:36,977 - pyprobe.units - ERROR - Name Step does not match pattern.
+2024-12-23 16:57:36,977 - pyprobe.units - ERROR - Name Event does not match pattern.
+2024-12-23 16:57:36,978 - pyprobe.result - ERROR - Column with quantity &#39;Temperature&#39;
+2024-12-23 16:57:36,978 - pyprobe.analysis.utils - ERROR - Missing required columns: [&#39;Temperature [C]&#39;]
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
