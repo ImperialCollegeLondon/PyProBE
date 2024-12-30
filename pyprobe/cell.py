@@ -6,11 +6,14 @@ import shutil
 import time
 import warnings
 import zipfile
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional
 
 import distinctipy
 import polars as pl
-import pybamm.solvers.solution
+
+if TYPE_CHECKING:
+    import pybamm.solvers.solution
+
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -399,7 +402,7 @@ class Cell(BaseModel):
         self,
         procedure_name: str,
         experiment_names: List[str] | str,
-        pybamm_solutions: List[pybamm.solvers.solution] | pybamm.solvers.solution,
+        pybamm_solutions: List["pybamm.solvers.solution"] | "pybamm.solvers.solution",
         output_data_path: Optional[str] = None,
         optional_variables: Optional[List[str]] = None,
     ) -> None:

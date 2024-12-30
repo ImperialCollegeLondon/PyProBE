@@ -1,9 +1,12 @@
 """A module for the RawData class."""
 import logging
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import polars as pl
-import pybamm
+
+if TYPE_CHECKING:
+    import pybamm
+
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
@@ -207,12 +210,19 @@ class RawData(Result):
         )
 
     @property
-    def pybamm_experiment(self) -> pybamm.Experiment:
+    def pybamm_experiment(self) -> "pybamm.Experiment":
         """Return a PyBaMM experiment object for the filtered section of data.
 
         Returns:
             pybamm.Experiment: The PyBaMM experiment object.
         """
+        try:
+            import pybamm
+        except ImportError:
+            raise ImportError(
+                "The 'pybamm' package is required to use this method. "
+                "Please install it using 'pip install pybamm'."
+            )
         step_description_df = pl.LazyFrame(self.step_descriptions)
         no_step_descriptions = step_description_df.filter(
             pl.col("Description").is_null()
