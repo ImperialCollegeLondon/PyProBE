@@ -18,6 +18,7 @@ dependencies = [
     "ray>=2.40.0",
     "scikit-learn>=1.6.0",
     "streamlit>=1.41.1",
+    "sympy>=1.13.3",
 ]
 
 [dependency-groups]
@@ -49,7 +50,7 @@ docs = [
     "sphinxcontrib-bibtex>=2.6.3",
     "xlsxwriter>=3.2.0",
 ]
-external-integration = [
+external_integration = [
     "pybamm>=24.1",
 ]
 

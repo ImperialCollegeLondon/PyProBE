@@ -25,13 +25,13 @@ jobs:
       
       - name: Install the project
         run: |
-          uv sync --all-extras
+          uv sync --all-extras --group format --group test --group docs --group external_integrations
           uv pip install ipykernel
           sudo apt-get install pandoc
       
       - name: Run sphinx-apidoc
         run: |
-          sphinx-apidoc -f -e -M -o docs/source/api pyprobe
+          uv run sphinx-apidoc -f -e -M -o docs/source/api pyprobe
 
       - name: Add bibliographies
         run: |
@@ -43,7 +43,7 @@ jobs:
           
       - name: Build HTML
         run: |
-          sphinx-build -b html docs/source docs/build/html
+          uv run sphinx-build -b html docs/source docs/build/html
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
