@@ -4,7 +4,6 @@ import copy
 
 import numpy as np
 import polars as pl
-import pybamm
 import pytest
 
 from pyprobe.rawdata import RawData
@@ -31,34 +30,6 @@ def test_init(RawData_fixture, step_descriptions_fixture):
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
         RawData(base_dataframe=data, info={"test": 1})
-
-
-def test_pybamm_experiment(RawData_fixture):
-    """Test the pybamm_experiment method."""
-    assert isinstance(RawData_fixture.pybamm_experiment, pybamm.Experiment)
-    assert (
-        RawData_fixture.pybamm_experiment.steps[-1].description == "Rest for 1.5 hours"
-    )
-
-    RawData_fixture.step_descriptions = {
-        "Step": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12],
-        "Description": [
-            "Rest for 4 hours",
-            "Charge at 4mA until 4.2 V, Hold at 4.2 V until 0.04 A",
-            "Rest for 2 hours",
-            "Discharge at 4 mA until 3 V",
-            None,
-            "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
-            "Rest for 2 hours",
-            "Rest for 10 seconds",
-            None,
-            "Rest for 30 minutes",
-            "Rest for 1.5 hours",
-        ],
-    }
-
-    with pytest.raises(ValueError):
-        RawData_fixture.pybamm_experiment
 
 
 def test_capacity(BreakinCycles_fixture):
@@ -154,3 +125,122 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
             "Temperature [C]",
         ]
     )
+
+
+def test_pybamm_experiment():
+    """Test successful creation of PyBaMM experiment list."""
+    # Create test data
+    test_data = pl.DataFrame(
+        {
+            "Time [s]": [1, 2, 3],
+            "Step": [1, 2, 2],
+            "Event": [1, 2, 2],
+            "Current [A]": [0.1, 0.2, 0.3],
+            "Voltage [V]": [3.0, 3.1, 3.2],
+            "Capacity [Ah]": [0.1, 0.2, 0.3],
+        }
+    )
+
+    step_descriptions = {
+        "Step": [1, 2],
+        "Description": ["Rest for 1 hour", "Charge at 1C until 4.2V"],
+    }
+
+    raw_data = RawData(
+        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+    )
+
+    result = raw_data.pybamm_experiment
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0] == "Rest for 1 hour"
+    assert result[1] == "Charge at 1C until 4.2V"
+
+
+def test_pybamm_experiment_missing_descriptions():
+    """Test error handling when step descriptions are missing."""
+    test_data = pl.DataFrame(
+        {
+            "Time [s]": [1, 2, 3],
+            "Step": [1, 2, 3],
+            "Event": [1, 2, 3],
+            "Current [A]": [0.1, 0.2, 0.3],
+            "Voltage [V]": [3.0, 3.1, 3.2],
+            "Capacity [Ah]": [0.1, 0.2, 0.3],
+        }
+    )
+
+    step_descriptions = {
+        "Step": [1, 2, 3],
+        "Description": ["Rest for 1 hour", None, "Charge at 1C"],
+    }
+
+    raw_data = RawData(
+        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+    )
+
+    with pytest.raises(ValueError, match="Descriptions for steps.*are missing"):
+        raw_data.pybamm_experiment
+
+
+def test_pybamm_experiment_multiple_conditions():
+    """Test handling of steps with multiple comma-separated conditions."""
+    test_data = pl.DataFrame(
+        {
+            "Time [s]": [1, 2],
+            "Step": [1, 2],
+            "Event": [1, 2],
+            "Current [A]": [0.1, 0.2],
+            "Voltage [V]": [3.0, 3.1],
+            "Capacity [Ah]": [0.1, 0.2],
+        }
+    )
+
+    step_descriptions = {
+        "Step": [1, 2],
+        "Description": [
+            "Charge at 1C until 4.2V, Hold at 4.2V until C/20",
+            "Rest for 1 hour",
+        ],
+    }
+
+    raw_data = RawData(
+        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+    )
+
+    result = raw_data.pybamm_experiment
+    assert len(result) == 3
+    assert result[0] == "Charge at 1C until 4.2V"
+    assert result[1] == "Hold at 4.2V until C/20"
+    assert result[2] == "Rest for 1 hour"
+
+
+def test_pybamm_experiment_with_loops():
+    """Test pybamm_experiment property handles repeated steps correctly."""
+    # Create test data with repeated steps: 1->2->1->2
+    base_df = pl.DataFrame(
+        {
+            "Step": [1, 1, 1, 2, 2, 1, 1, 2, 2],
+            "Time [s]": range(9),
+            "Voltage [V]": [3.0] * 9,
+            "Current [A]": [0.1] * 9,
+            "Capacity [Ah]": [0.1] * 9,
+            "Event": [1, 1, 1, 2, 2, 3, 3, 4, 4],
+        }
+    )
+
+    step_descriptions = {
+        "Step": [1, 2],
+        "Description": ["Discharge at C/10", "Rest for 1 hour"],
+    }
+
+    data = RawData(base_dataframe=base_df, info={}, step_descriptions=step_descriptions)
+
+    expected = [
+        "Discharge at C/10",  # Step 1
+        "Rest for 1 hour",  # Step 2
+        "Discharge at C/10",  # Step 1 again
+        "Rest for 1 hour",  # Step 2 again
+    ]
+
+    assert data.pybamm_experiment == expected
