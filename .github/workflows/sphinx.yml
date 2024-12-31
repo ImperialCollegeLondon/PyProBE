@@ -4,53 +4,69 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+      
+      - name: Install the project
+        run: |
+          uv sync --all-extras
+          uv pip install ipykernel
+          sudo apt-get install pandoc
+      
+      - name: Run sphinx-apidoc
+        run: |
+          sphinx-apidoc -f -e -M -o docs/source/api pyprobe
+
+      - name: Add bibliographies
+        run: |
+          uv run docs/source/_append_footbib.py docs/source
+
+      - name: Clean old HTML files
+        run: |
+          rm -rf docs/build/html/*
+          
+      - name: Build HTML
+        run: |
+          sphinx-build -b html docs/source docs/build/html
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-docs
+          path: docs/build/html/
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: html-docs
+          path: docs/build/html
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-
-    - name: Gather dependencies
-      run: |
-        pip install -U pip
-        pip install -r requirements-dev.txt
-        pip install .
-        pip install ipykernel
-        sudo apt-get install pandoc
-    
-    - name: Run sphinx-apidoc
-      run: |
-        sphinx-apidoc -f -e -M -o docs/source/api pyprobe
-
-    - name: Add bibliographies
-      run: |
-        python docs/source/_append_footbib.py docs/source
-
-    - name: Clean old HTML files
-      run: |
-        rm -rf docs/build/html/*
-        
-    - name: Build HTML
-      run: |
-        sphinx-build -b html docs/source docs/build/html
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: html-docs
-        path: docs/build/html/
-
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/main'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/build/html
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html
