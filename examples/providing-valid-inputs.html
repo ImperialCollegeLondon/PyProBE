@@ -16,31 +16,33 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-
-  
-  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/autodoc_pydantic.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=a5c4661c" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
   
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -53,6 +55,7 @@
     <link rel="prev" title="Comparing PyProBE Performance" href="comparing-pyprobe-performance.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
   </head>
   
   
@@ -68,19 +71,8 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="../search.html"
       method="get">
@@ -88,7 +80,6 @@
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -96,8 +87,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -178,29 +169,21 @@
         <div class="navbar-item navbar-persistent--container">
           
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
         </div>
       
       
         <div class="navbar-item">
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
       
     </div>
     
@@ -209,15 +192,11 @@ document.write(`
   
     <div class="navbar-persistent--mobile">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
     </div>
   
 
@@ -236,7 +215,8 @@ document.write(`
       
       
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -290,15 +270,11 @@ document.write(`
         
           <div class="navbar-item">
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
         
       </div>
     
@@ -326,9 +302,14 @@ document.write(`
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -346,8 +327,6 @@ document.write(`
       
         <div class="header-article-item">
 
-
-
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -359,7 +338,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="examples.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Providing...</li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Providing Valid Inputs</span></li>
   </ul>
 </nav>
 </div>
@@ -451,7 +430,7 @@ document.write(`
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-23 16:57:36,506 - pyprobe.rawdata - ERROR - Missing required columns: [&#39;Step&#39;, &#39;Event&#39;, &#39;Capacity [Ah]&#39;]
+2024-12-31 18:45:11,129 - pyprobe.rawdata - ERROR - Missing required columns: [&#39;Step&#39;, &#39;Event&#39;, &#39;Capacity [Ah]&#39;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -469,16 +448,23 @@ Cell <span class="ansi-green-fg">In[3], line 5</span>
 <span class="ansi-green-fg">----&gt; 5</span> <span class="ansi-yellow-bg">pyprobe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">rawdata</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">RawData</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">base_dataframe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">incorrect_dataframe</span><span class="ansi-yellow-bg">,</span>
 <span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-yellow-bg">                        </span><span class="ansi-yellow-bg">info</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">{</span><span class="ansi-yellow-bg">}</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
-<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
-<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
-<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/main.py:214</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    212</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    213</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 214</span> validated_self <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    215</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span> <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> validated_self:
+<span class="ansi-green-intense-fg ansi-bold">    216</span>     warnings<span style="color: rgb(98,98,98)">.</span>warn(
+<span class="ansi-green-intense-fg ansi-bold">    217</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">A custom validator is returning a value other than `self`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-intense-fg ansi-bold">    218</span>         <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Returning anything other than `self` from a top level model validator isn</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">t supported when validating via `__init__`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    219</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.</span><span style="color: rgb(175,0,0)">&#39;</span>,
+<span class="ansi-green-intense-fg ansi-bold">    220</span>         stacklevel<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(98,98,98)">2</span>,
+<span class="ansi-green-intense-fg ansi-bold">    221</span>     )
 
 <span class="ansi-red-fg">ValidationError</span>: 1 validation error for RawData
 base_dataframe
   Value error, Missing required columns: [&#39;Step&#39;, &#39;Event&#39;, &#39;Capacity [Ah]&#39;] [type=value_error, input_value=shape: (3, 3)
 ┌──...───────┘, input_type=DataFrame]
-    For further information visit https://errors.pydantic.dev/2.8/v/value_error
+    For further information visit https://errors.pydantic.dev/2.10/v/value_error
 </pre></div></div>
 </div>
 <p>You will also see a validation error if you try to create one of these classes with a data object that is not a Polars DataFrame or LazyFrame:</p>
@@ -510,18 +496,25 @@ Cell <span class="ansi-green-fg">In[4], line 5</span>
 <span class="ansi-green-fg">----&gt; 5</span> <span class="ansi-yellow-bg">pyprobe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">rawdata</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">RawData</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">base_dataframe</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">incorrect_data_dict</span><span class="ansi-yellow-bg">,</span>
 <span class="ansi-green-intense-fg ansi-bold">      6</span> <span class="ansi-yellow-bg">                        </span><span class="ansi-yellow-bg">info</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">{</span><span class="ansi-yellow-bg">}</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
-<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
-<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
-<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/main.py:214</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    212</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    213</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 214</span> validated_self <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    215</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span> <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> validated_self:
+<span class="ansi-green-intense-fg ansi-bold">    216</span>     warnings<span style="color: rgb(98,98,98)">.</span>warn(
+<span class="ansi-green-intense-fg ansi-bold">    217</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">A custom validator is returning a value other than `self`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-intense-fg ansi-bold">    218</span>         <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Returning anything other than `self` from a top level model validator isn</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">t supported when validating via `__init__`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    219</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.</span><span style="color: rgb(175,0,0)">&#39;</span>,
+<span class="ansi-green-intense-fg ansi-bold">    220</span>         stacklevel<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(98,98,98)">2</span>,
+<span class="ansi-green-intense-fg ansi-bold">    221</span>     )
 
 <span class="ansi-red-fg">ValidationError</span>: 2 validation errors for RawData
 base_dataframe.is-instance[LazyFrame]
   Input should be an instance of LazyFrame [type=is_instance_of, input_value={&#39;Time [s]&#39;: [1, 2, 3], &#39;...t [A]&#39;: [0.1, 0.2, 0.3]}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.8/v/is_instance_of
+    For further information visit https://errors.pydantic.dev/2.10/v/is_instance_of
 base_dataframe.is-instance[DataFrame]
   Input should be an instance of DataFrame [type=is_instance_of, input_value={&#39;Time [s]&#39;: [1, 2, 3], &#39;...t [A]&#39;: [0.1, 0.2, 0.3]}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.8/v/is_instance_of
+    For further information visit https://errors.pydantic.dev/2.10/v/is_instance_of
 </pre></div></div>
 </div>
 </section>
@@ -575,15 +568,22 @@ base_dataframe.is-instance[DataFrame]
 Cell <span class="ansi-green-fg">In[7], line 1</span>
 <span class="ansi-green-fg">----&gt; 1</span> cycling <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">Cycling</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">input_data</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">experiment_object</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">cycle</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">1</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
-<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
-<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
-<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/main.py:214</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    212</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    213</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 214</span> validated_self <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    215</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span> <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> validated_self:
+<span class="ansi-green-intense-fg ansi-bold">    216</span>     warnings<span style="color: rgb(98,98,98)">.</span>warn(
+<span class="ansi-green-intense-fg ansi-bold">    217</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">A custom validator is returning a value other than `self`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-intense-fg ansi-bold">    218</span>         <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Returning anything other than `self` from a top level model validator isn</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">t supported when validating via `__init__`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    219</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.</span><span style="color: rgb(175,0,0)">&#39;</span>,
+<span class="ansi-green-intense-fg ansi-bold">    220</span>         stacklevel<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(98,98,98)">2</span>,
+<span class="ansi-green-intense-fg ansi-bold">    221</span>     )
 
 <span class="ansi-red-fg">ValidationError</span>: 1 validation error for Cycling
 input_data
   Input should be a valid dictionary or instance of Experiment [type=model_type, input_value=Cycle(base_dataframe=&lt;Laz...hours&#39;]}, cycle_info=[]), input_type=Cycle]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 </pre></div></div>
 </div>
 <p>Functions in the analysis module also contain type validation. This occurs on two levels. First, the inputs to the function are checked. E.g. for the gradient function of the differentiation module, <code class="docutils literal notranslate"><span class="pre">input_data</span></code> is required as a PyProBE object, and string column names are required for <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code>:</p>
@@ -624,48 +624,48 @@ Cell <span class="ansi-green-fg">In[9], line 2</span>
 <span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">x</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Capacity [Ah]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">,</span>
 <span class="ansi-green-intense-fg ansi-bold">      4</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">y</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Voltage [V]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/validate_call_decorator.py:60</span>, in <span class="ansi-cyan-fg">validate_call.&lt;locals&gt;.validate.&lt;locals&gt;.wrapper_function</span><span class="ansi-blue-fg">(*args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     58</span> <span style="color: rgb(175,0,255)">@functools</span><span style="color: rgb(98,98,98)">.</span>wraps(function)
-<span class="ansi-green-intense-fg ansi-bold">     59</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper_function</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
-<span class="ansi-green-fg">---&gt; 60</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg">validate_call_wrapper</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/_internal/_validate_call.py:38</span>, in <span class="ansi-cyan-fg">update_wrapper_attributes.&lt;locals&gt;.wrapper_function</span><span class="ansi-blue-fg">(*args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     36</span> <span style="color: rgb(175,0,255)">@functools</span><span style="color: rgb(98,98,98)">.</span>wraps(wrapped)
+<span class="ansi-green-intense-fg ansi-bold">     37</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper_function</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
+<span class="ansi-green-fg">---&gt; 38</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg">wrapper</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/_internal/_validate_call.py:96</span>, in <span class="ansi-cyan-fg">ValidateCallWrapper.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     95</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__call__</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">*</span>args: Any, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs: Any) <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">&gt;</span> Any:
-<span class="ansi-green-fg">---&gt; 96</span>     res <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">pydantic_core</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">ArgsKwargs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     97</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__:
-<span class="ansi-green-intense-fg ansi-bold">     98</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__(res)
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/_internal/_validate_call.py:111</span>, in <span class="ansi-cyan-fg">ValidateCallWrapper.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    110</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__call__</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">*</span>args: Any, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs: Any) <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">&gt;</span> Any:
+<span class="ansi-green-fg">--&gt; 111</span>     res <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">pydantic_core</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">ArgsKwargs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    112</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__:
+<span class="ansi-green-intense-fg ansi-bold">    113</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__(res)
 
 <span class="ansi-red-fg">ValidationError</span>: 6 validation errors for gradient
 input_data.RawData
   Input should be a valid dictionary or instance of RawData [type=model_type, input_value=array([[0., 0.],
        [..., 0.],
        [0., 0.]]), input_type=ndarray]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 input_data.Procedure
   Input should be a valid dictionary or instance of Procedure [type=model_type, input_value=array([[0., 0.],
        [..., 0.],
        [0., 0.]]), input_type=ndarray]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 input_data.Experiment
   Input should be a valid dictionary or instance of Experiment [type=model_type, input_value=array([[0., 0.],
        [..., 0.],
        [0., 0.]]), input_type=ndarray]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 input_data.Cycle
   Input should be a valid dictionary or instance of Cycle [type=model_type, input_value=array([[0., 0.],
        [..., 0.],
        [0., 0.]]), input_type=ndarray]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 input_data.Step
   Input should be a valid dictionary or instance of Step [type=model_type, input_value=array([[0., 0.],
        [..., 0.],
        [0., 0.]]), input_type=ndarray]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 input_data.Result
   Input should be a valid dictionary or instance of Result [type=model_type, input_value=array([[0., 0.],
        [..., 0.],
        [0., 0.]]), input_type=ndarray]
-    For further information visit https://errors.pydantic.dev/2.8/v/model_type
+    For further information visit https://errors.pydantic.dev/2.10/v/model_type
 </pre></div></div>
 </div>
 <p>Analysis functions will also check that the columns you require for the computation are present in the PyProBE objects provided. As an example, we will call the <code class="docutils literal notranslate"><span class="pre">gradient()</span></code> method, requesting to differentiate a column that does not exist in the underlying data:</p>
@@ -684,11 +684,11 @@ input_data.Result
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2024-12-23 16:57:36,976 - pyprobe.units - ERROR - Name Date does not match pattern.
-2024-12-23 16:57:36,977 - pyprobe.units - ERROR - Name Step does not match pattern.
-2024-12-23 16:57:36,977 - pyprobe.units - ERROR - Name Event does not match pattern.
-2024-12-23 16:57:36,978 - pyprobe.result - ERROR - Column with quantity &#39;Temperature&#39;
-2024-12-23 16:57:36,978 - pyprobe.analysis.utils - ERROR - Missing required columns: [&#39;Temperature [C]&#39;]
+2024-12-31 18:45:11,604 - pyprobe.units - ERROR - Name Date does not match pattern.
+2024-12-31 18:45:11,604 - pyprobe.units - ERROR - Name Step does not match pattern.
+2024-12-31 18:45:11,605 - pyprobe.units - ERROR - Name Event does not match pattern.
+2024-12-31 18:45:11,605 - pyprobe.result - ERROR - Column with quantity &#39;Temperature&#39;
+2024-12-31 18:45:11,606 - pyprobe.analysis.utils - ERROR - Missing required columns: [&#39;Temperature [C]&#39;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -703,18 +703,18 @@ Cell <span class="ansi-green-fg">In[10], line 1</span>
 <span class="ansi-green-intense-fg ansi-bold">      2</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">x</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Temperature [C]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">,</span>
 <span class="ansi-green-intense-fg ansi-bold">      3</span> <span class="ansi-yellow-bg">                                    </span><span class="ansi-yellow-bg">y</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">Voltage [V]</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#34;</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/validate_call_decorator.py:60</span>, in <span class="ansi-cyan-fg">validate_call.&lt;locals&gt;.validate.&lt;locals&gt;.wrapper_function</span><span class="ansi-blue-fg">(*args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     58</span> <span style="color: rgb(175,0,255)">@functools</span><span style="color: rgb(98,98,98)">.</span>wraps(function)
-<span class="ansi-green-intense-fg ansi-bold">     59</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper_function</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
-<span class="ansi-green-fg">---&gt; 60</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg">validate_call_wrapper</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/_internal/_validate_call.py:38</span>, in <span class="ansi-cyan-fg">update_wrapper_attributes.&lt;locals&gt;.wrapper_function</span><span class="ansi-blue-fg">(*args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">     36</span> <span style="color: rgb(175,0,255)">@functools</span><span style="color: rgb(98,98,98)">.</span>wraps(wrapped)
+<span class="ansi-green-intense-fg ansi-bold">     37</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">wrapper_function</span>(<span style="color: rgb(98,98,98)">*</span>args, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs):
+<span class="ansi-green-fg">---&gt; 38</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-yellow-bg">wrapper</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">*</span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span>
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/_internal/_validate_call.py:96</span>, in <span class="ansi-cyan-fg">ValidateCallWrapper.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     95</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__call__</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">*</span>args: Any, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs: Any) <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">&gt;</span> Any:
-<span class="ansi-green-fg">---&gt; 96</span>     res <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">pydantic_core</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">ArgsKwargs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
-<span class="ansi-green-intense-fg ansi-bold">     97</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__:
-<span class="ansi-green-intense-fg ansi-bold">     98</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__(res)
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/_internal/_validate_call.py:111</span>, in <span class="ansi-cyan-fg">ValidateCallWrapper.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    110</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> <span style="color: rgb(0,0,255)">__call__</span>(<span style="color: rgb(0,135,0)">self</span>, <span style="color: rgb(98,98,98)">*</span>args: Any, <span style="color: rgb(98,98,98)">*</span><span style="color: rgb(98,98,98)">*</span>kwargs: Any) <span style="color: rgb(98,98,98)">-</span><span style="color: rgb(98,98,98)">&gt;</span> Any:
+<span class="ansi-green-fg">--&gt; 111</span>     res <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">pydantic_core</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">ArgsKwargs</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">args</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">kwargs</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    112</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__:
+<span class="ansi-green-intense-fg ansi-bold">    113</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span style="color: rgb(0,135,0)">self</span><span style="color: rgb(98,98,98)">.</span>__return_pydantic_validator__(res)
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pyprobe/analysis/differentiation.py:38</span>, in <span class="ansi-cyan-fg">gradient</span><span class="ansi-blue-fg">(input_data, x, y)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/pyprobe/analysis/differentiation.py:38</span>, in <span class="ansi-cyan-fg">gradient</span><span class="ansi-blue-fg">(input_data, x, y)</span>
 <span class="ansi-green-intense-fg ansi-bold">     22</span> <span style="color: rgb(175,0,0)">&#34;&#34;&#34;Differentiate smooth data with a finite difference method.</span>
 <span class="ansi-green-intense-fg ansi-bold">     23</span>
 <span class="ansi-green-intense-fg ansi-bold">     24</span> <span style="color: rgb(175,0,0)">A wrapper of the numpy.gradient function. This method calculates the gradient</span>
@@ -731,14 +731,21 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/pyt
 <span class="ansi-green-intense-fg ansi-bold">     44</span> <span style="color: rgb(95,135,135)"># 3. Retrieve the validated columns as numpy arrays</span>
 <span class="ansi-green-intense-fg ansi-bold">     45</span> x_data, y_data <span style="color: rgb(98,98,98)">=</span> validator<span style="color: rgb(98,98,98)">.</span>variables
 
-File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/pydantic/main.py:193</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
-<span class="ansi-green-intense-fg ansi-bold">    191</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
-<span class="ansi-green-intense-fg ansi-bold">    192</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
-<span class="ansi-green-fg">--&gt; 193</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+File <span class="ansi-green-fg">~/work/PyProBE/PyProBE/.venv/lib/python3.12/site-packages/pydantic/main.py:214</span>, in <span class="ansi-cyan-fg">BaseModel.__init__</span><span class="ansi-blue-fg">(self, **data)</span>
+<span class="ansi-green-intense-fg ansi-bold">    212</span> <span style="color: rgb(95,135,135)"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
+<span class="ansi-green-intense-fg ansi-bold">    213</span> __tracebackhide__ <span style="color: rgb(98,98,98)">=</span> <span class="ansi-bold" style="color: rgb(0,135,0)">True</span>
+<span class="ansi-green-fg">--&gt; 214</span> validated_self <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">__pydantic_validator__</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">validate_python</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">data</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">self_instance</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    215</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span> <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> validated_self:
+<span class="ansi-green-intense-fg ansi-bold">    216</span>     warnings<span style="color: rgb(98,98,98)">.</span>warn(
+<span class="ansi-green-intense-fg ansi-bold">    217</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">A custom validator is returning a value other than `self`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-intense-fg ansi-bold">    218</span>         <span style="color: rgb(175,0,0)">&#34;</span><span style="color: rgb(175,0,0)">Returning anything other than `self` from a top level model validator isn</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">t supported when validating via `__init__`.</span><span class="ansi-bold" style="color: rgb(175,95,0)">\n</span><span style="color: rgb(175,0,0)">&#34;</span>
+<span class="ansi-green-intense-fg ansi-bold">    219</span>         <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.</span><span style="color: rgb(175,0,0)">&#39;</span>,
+<span class="ansi-green-intense-fg ansi-bold">    220</span>         stacklevel<span style="color: rgb(98,98,98)">=</span><span style="color: rgb(98,98,98)">2</span>,
+<span class="ansi-green-intense-fg ansi-bold">    221</span>     )
 
 <span class="ansi-red-fg">ValidationError</span>: 1 validation error for AnalysisValidator
   Value error, Missing required columns: [&#39;Temperature [C]&#39;] [type=value_error, input_value={&#39;input_data&#39;: Step(base_...re [C]&#39;, &#39;Voltage [V]&#39;]}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.8/v/value_error
+    For further information visit https://errors.pydantic.dev/2.10/v/value_error
 </pre></div></div>
 </div>
 </section>
@@ -779,7 +786,8 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/pyt
             
             
               
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
   <div class="sidebar-secondary-item">
@@ -796,13 +804,13 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/pyt
   </nav></div>
 
   <div class="sidebar-secondary-item">
-
-  <div class="tocsection sourcelink">
-    <a href="../_sources/examples/providing-valid-inputs.ipynb.txt">
-      <i class="fa-solid fa-file-lines"></i> Show Source
-    </a>
-  </div>
-</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/providing-valid-inputs.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
 
 </div></div>
               
@@ -817,8 +825,8 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/pyt
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -838,7 +846,7 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/pyt
         <div class="footer-item">
 
   <p class="sphinx-version">
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
     <br/>
   </p>
 </div>
@@ -851,7 +859,8 @@ File <span class="ansi-green-fg">/opt/hostedtoolcache/Python/3.11.11/x64/lib/pyt
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
 </p></div>
       
     </div>

@@ -6,6 +6,8 @@ virtual environment to install PyProBE, for example venv or conda.
 
 The steps to install PyProBE with developer settings are as follows:
 
+**Clone the repository**
+
 1. Enter a directory in which you wish to install PyProBE:
    
    .. code-block:: bash
@@ -20,48 +22,75 @@ The steps to install PyProBE with developer settings are as follows:
       git clone https://github.com/ImperialCollegeLondon/PyProBE.git
       cd PyProBE
 
-3. Create and activate a virtual environment.
-  
-  .. tabs::
-      .. tab:: venv
+**Installation with uv (recommended)**
 
-         In your working directory:
+To guarantee a safe installation with compatible packages, it is recommended to use
+the `uv <https://uv.readthedocs.io/en/latest/>`_ tool.
 
-         .. code-block:: bash
+First, follow the steps in the 
+`uv installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_ 
+to install uv onto your system. Note: while uv can be installed into a virtual 
+environment with pip, it is recommended to install system-wide.
 
-            python -m venv venv
-            source .venv/bin/activate
+Once uv is installed we can continue with the PyProBE installation. With a single
+command uv installs PyProBE, alongside python and all of its dependencies in a 
+virtual environment:
 
-      .. tab:: conda
-            
-         In any directory:
+.. code-block:: bash
 
-         .. code-block:: bash
+      uv sync --all-extras --group format --group test --group docs --group external-integration
 
-            conda create -n pyprobe python=3.12
-            conda activate pyprobe
+The virtual environment is stored in the :code:`PyProBE/.venv` directory inside your and
+can be activated with :code:`source .venv/bin/activate`. 
 
-3. Install the developer dependencies:
-   
-   .. code-block:: bash
+.. dropdown:: Alternative installation with pip (not recommended)
 
-      cd /path/to/your/directory/PyProBE
-      pip install -r requirements-dev.txt
+   Alternatively, it is possible to install PyProBE with pip. This method skips the
+   dependency locking mechanism within uv, so reliable results are not guaranteed if
+   this method results in dependency conflicts:
 
-4. Install PyProBE as a package into your virtual environment:
-   
-   .. code-block:: bash
+   1. Create and activate a virtual environment.
+     
+     .. tabs::
+         .. tab:: venv
 
-      pip install -e .
+            In your working directory:
 
-   The :code:`-e` flag installs in "editable" mode, which means changes that you 
-   make to the code will be automatically reflected in the package inside your
-   virtual environment.
+            .. code-block:: bash
 
-5. Install the pre-commit hooks:
+               python -m venv venv
+               source .venv/bin/activate
 
-   .. code-block:: bash
+         .. tab:: conda
+               
+            In any directory:
 
-      pre-commit install
+            .. code-block:: bash
+
+               conda create -n pyprobe python=3.12
+               conda activate pyprobe
+
+   2. Install the developer dependencies:
+      
+      .. code-block:: bash
+
+         cd /path/to/your/directory/PyProBE
+         pip install -r requirements-dev.txt
+
+   3. Install PyProBE as a package into your virtual environment:
+      
+      .. code-block:: bash
+
+         pip install -e .
+
+      The :code:`-e` flag installs in "editable" mode, which means changes that you 
+      make to the code will be automatically reflected in the package inside your
+      virtual environment.
+
+**Install the pre-commit hooks:**
+
+.. code-block:: bash
+
+   pre-commit install
 
 .. footbibliography::
