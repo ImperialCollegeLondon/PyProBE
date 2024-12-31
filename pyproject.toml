@@ -50,7 +50,7 @@ docs = [
     "sphinxcontrib-bibtex>=2.6.3",
     "xlsxwriter>=3.2.0",
 ]
-external_integration = [
+external-integration = [
     "pybamm>=24.1",
 ]
 
