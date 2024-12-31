@@ -59,13 +59,17 @@ external-integration = [
 ]
 
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
+[tool.hatch.build]
+packages = ["pyprobe"]
 exclude = [
-    "htmlcov", "docs*", "tests*", "paper*"
-] # Exclude the coverage report file from setuptools package finder
+    "htmlcov/*",
+    "tests/*",
+    "docs/*",
+    "examples/*"
+]
 
 [tool.mypy]
 disallow_any_explicit = false
