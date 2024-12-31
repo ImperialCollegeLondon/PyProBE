@@ -5,7 +5,15 @@ battery cyclers.
 PyProBE is documented [here](https://imperialcollegelondon.github.io/PyProBE/). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://imperialcollegelondon.github.io/PyProBE/examples/examples.html).
 
 ## Installing PyProBE
-Please follow the [user installation guide](https://imperialcollegelondon.github.io/PyProBE/user_guide/installation.html) to install PyProBE.
+Install PyProBE with pip:
+
+```bash
+pip install PyProBE-Data
+```
+
+For more detail see the [user installation guide](https://imperialcollegelondon.github.io/PyProBE/user_guide/installation.html).
+
+To install from source see the [developer installation guide](https://imperialcollegelondon.github.io/PyProBE/developer_guide/installation.html).
 
 ## PyProBE Objectives
 <details open>
