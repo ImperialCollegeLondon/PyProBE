@@ -1,63 +1,74 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-exclude = [
-    "htmlcov",
-] # Exclude the coverage report file from setuptools package finder
-
 [project]
-name = "PyProBE"
+name = "PyProBE-Data"
+authors = [
+  {name = "Thomas Holland"},
+]
 version = "1.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
+license = { file = "LICENSE" }
 dependencies = [
-    "numpy", # for numerical operations
-    "matplotlib", # for plotting
-    "polars", # for dataframes
-    "fastexcel", # for reading Excel files 
-    "plotly", # for plotting
-    "scikit-learn", # for statistical analysis
-    "distinctipy", # for color palettes
-    "streamlit", # for dashboard GUI
-    "PyYAML", # for reading YAML files
-    "ordered-set",
-    "pydantic", # for data valiation
-    "kaleido", # for displaying plotly figures as images
-    "IPython", # for example notebooks
-    "pybamm", # for battery modelling and experiment class
-    "ray", # for parallel processing
-    "deprecated", # for deprecation warnings
+    "deprecated>=1.2.15",
+    "distinctipy>=1.3.4",
+    "fastexcel>=0.12.0",
+    "ipython>=8.31.0",
+    "kaleido==0.2.1",
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.1",
+    "ordered-set>=4.1.0",
+    "plotly>=5.24.1",
+    "polars>=1.18.0",
+    "pydantic>=2.10.4",
+    "pyyaml>=6.0.2",
+    "ray>=2.40.0",
+    "scikit-learn>=1.6.0",
+    "streamlit>=1.41.1",
+    "sympy>=1.13.3",
 ]
 
-[project.optional-dependencies]
-dev = [
-    # linters and formatters
-    "black",
-    "flake8",
-    "flake8-docstrings",
-    "isort",
-    "mypy",
-    "pip-tools",
-    "pre-commit",
-    # pytest
-    "pytest",
-    "pytest-cov", # coverage
-    "pytest-mypy", # type checking
-    "pytest-mock", # mock objects
-    "pytest-benchmark", # benchmarking
-    "types-PyYAML",
-    "types-toml",
-    "types-Deprecated",
-    # documentation
-    "sphinx",
-    "sphinx-tabs",
-    "sphinxcontrib-bibtex", # for references
-    "sphinx-design",
-    "pydata-sphinx-theme", # for theme
-    "nbsphinx", # integrate notebooks in docs
-    "xlsxwriter", # write to Excel from polars
-    "autodoc_pydantic",
+[dependency-groups]
+format = [
+    "black>=24.10.0",
+    "flake8>=7.1.1",
+    "flake8-docstrings>=1.7.0",
+    "isort>=5.13.2",
+    "mypy>=1.14.1",
+    "pre-commit>=4.0.1",
+]
+test = [
+    "pytest>=8.3.4",
+    "pytest-benchmark>=5.1.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-mypy>=0.10.3",
+    "types-deprecated>=1.2.15.20241117",
+    "types-pyyaml>=6.0.12.20241230",
+    "types-toml>=0.10.8.20240310",
+]
+docs = [
+    "autodoc-pydantic>=2.2.0",
+    "nbsphinx>=0.9.6",
+    "pydata-sphinx-theme>=0.16.1",
+    "sphinx>=8.1.3",
+    "sphinx-design>=0.6.1",
+    "sphinx-tabs>=3.4.7",
+    "sphinxcontrib-bibtex>=2.6.3",
+    "xlsxwriter>=3.2.0",
+]
+external-integration = [
+    "pybamm>=24.1",
+]
+
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["pyprobe"]
+exclude = [
+    "htmlcov/*",
+    "tests/*",
+    "docs/*",
+    "examples/*"
 ]
 
 [tool.mypy]

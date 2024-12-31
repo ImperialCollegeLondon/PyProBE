@@ -72,7 +72,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     """Test the process_cycler_file method."""
     folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
-    output_name = "sample_data_neware.parquet"
+    output_name = "sample_data_neware_out.parquet"
     cell_instance.process_cycler_file(
         "neware",
         folder_path,
@@ -88,6 +88,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
     saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
     assert_frame_equal(expected_dataframe, saved_dataframe)
+    os.remove(f"{folder_path}/{output_name}")
 
 
 def test_process_generic_file(cell_instance):

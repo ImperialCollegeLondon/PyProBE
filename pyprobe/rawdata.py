@@ -3,7 +3,6 @@ import logging
 from typing import Dict, List, Optional
 
 import polars as pl
-import pybamm
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
@@ -207,19 +206,25 @@ class RawData(Result):
         )
 
     @property
-    def pybamm_experiment(self) -> pybamm.Experiment:
-        """Return a PyBaMM experiment object for the filtered section of data.
+    def pybamm_experiment(self) -> list[str | tuple[str]]:
+        """Return a list of operating conditions for a PyBaMM experiment object.
+
+        These can be passed directly to pybamm.Experiment() to create an experiment
+        for use with PyBaMM.
+
+        PyProBE does not check the validity of the operating condition strings. When
+        creating the Experiment object, PyBaMM will raise an error if the operating
+        conditions are not valid. The user should then modify the step descriptions
+        in the readme file accordingly.
 
         Returns:
-            pybamm.Experiment: The PyBaMM experiment object.
+            The PyBaMM operating conditions.
         """
-        step_description_df = pl.LazyFrame(self.step_descriptions)
+        step_description_df = pl.DataFrame(self.step_descriptions)
         no_step_descriptions = step_description_df.filter(
             pl.col("Description").is_null()
         )
-        missing_steps = (
-            no_step_descriptions.select("Step").collect().to_numpy().flatten()
-        )
+        missing_steps = no_step_descriptions.select("Step").to_numpy().flatten()
         if len(missing_steps) > 0:
             error_msg = (
                 f"Descriptions for steps {str(missing_steps)} are missing."
@@ -232,17 +237,15 @@ class RawData(Result):
 
         # reduce the full dataframe to only the steps as they appear in order in
         # the data
-        only_steps = self.base_dataframe.filter(
-            pl.col("Step") != pl.col("Step").shift(1)
-        ).select("Step")
+        only_steps = (
+            self.data.with_row_index()
+            .group_by("Event", maintain_order=True)
+            .agg(pl.col("Step").first())
+        )
         # match the step with its description
         all_steps_with_descriptions = only_steps.join(
             step_description_df, on="Step", how="left"
-        )
-        if isinstance(all_steps_with_descriptions, pl.LazyFrame):
-            all_steps_with_descriptions = all_steps_with_descriptions.select(
-                "Description"
-            ).collect()
+        ).select("Description")
         # form a list of all the descriptions
         all_steps_with_descriptions = all_steps_with_descriptions.to_numpy().flatten()
         description_list = []
@@ -250,4 +253,4 @@ class RawData(Result):
             line = description.split(",")
             for item in line:
                 description_list.append(item.strip())
-        return pybamm.Experiment(description_list)
+        return description_list
