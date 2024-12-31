@@ -6,19 +6,16 @@ import shutil
 import time
 import warnings
 import zipfile
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 import distinctipy
 import polars as pl
-
-if TYPE_CHECKING:
-    import pybamm.solvers.solution
-
 from pydantic import BaseModel, Field, field_validator, validate_call
 
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
+from pyprobe.utils import PyBaMMSolution
 
 logger = logging.getLogger(__name__)
 
@@ -401,10 +398,10 @@ class Cell(BaseModel):
     def import_pybamm_solution(
         self,
         procedure_name: str,
-        experiment_names: List[str] | str,
-        pybamm_solutions: List["pybamm.solvers.solution"] | "pybamm.solvers.solution",
+        experiment_names: list[str] | str,
+        pybamm_solutions: list[PyBaMMSolution] | PyBaMMSolution,
         output_data_path: Optional[str] = None,
-        optional_variables: Optional[List[str]] = None,
+        optional_variables: Optional[list[str]] = None,
     ) -> None:
         """Import a PyBaMM solution object into a procedure of the cell.
 
@@ -446,28 +443,21 @@ class Cell(BaseModel):
         else:
             import_variables = required_variables
 
-        # check if the experiment names and PyBaMM solutions are lists
-        if isinstance(experiment_names, list) and isinstance(pybamm_solutions, list):
-            if len(experiment_names) != len(pybamm_solutions):
-                error_msg = (
-                    "The number of experiment names and PyBaMM solutions must be equal."
-                )
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-        elif isinstance(experiment_names, list) != isinstance(pybamm_solutions, list):
-            if isinstance(experiment_names, list):
-                error_msg = "A list of experiment names must be provided with a list"
-                " of PyBaMM solutions."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-            else:
-                error_msg = "A single experiment name must be provided with a single"
-                " PyBaMM solution."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-        else:
-            experiment_names = [str(experiment_names)]
+        # Ensure pybamm_solutions is a list
+        if not isinstance(pybamm_solutions, list):
             pybamm_solutions = [pybamm_solutions]
+
+        # Ensure experiment_names is a list
+        if not isinstance(experiment_names, list):
+            experiment_names = [experiment_names]
+
+        # Check if the lengths of experiment_names and pybamm_solutions match
+        if len(experiment_names) != len(pybamm_solutions):
+            error_msg = (
+                "The number of experiment names and PyBaMM solutions must be equal."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         lazyframe_created = False
         for experiment_name, pybamm_solution in zip(experiment_names, pybamm_solutions):
