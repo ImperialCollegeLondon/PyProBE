@@ -14,7 +14,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/Py-ProBE
+      url: https://pypi.org/p/PyProBE-Data
 
     steps:
       - uses: actions/checkout@v4
