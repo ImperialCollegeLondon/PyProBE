@@ -1,10 +1,9 @@
 name: "Publish to TestPyPI"
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  push:
     branches:
-      - main
+      - add-automatic-version-numbering
   workflow_dispatch:
 
 jobs:
