@@ -3,7 +3,7 @@ name: "Publish to TestPyPI"
 on:
   push:
     branches:
-      - release-candidates*
+      - release-candidates/**
 
 jobs:
   Build:
