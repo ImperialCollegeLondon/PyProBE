@@ -1,0 +1,65 @@
+name: "Publish to TestPyPI"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/PyProBE-Data
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+          
+      - name: Install the project
+        run: uv sync --all-extras --group format --group test --group docs --group external-integration
+
+      - name: Get branch name
+        id: branch-name
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+
+      - name: Run semantic-release
+        run: |
+          uv run semantic-release version \
+            --prerelease \
+            --no-commit \
+            --no-tag \
+            --skip-build \
+            --build-metadata ${{ steps.branch-name.outputs.branch }}
+    
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          # Optional. Commit message for the created commit.
+          # Defaults to "Apply automatic changes"
+          commit_message: Update version [skip ci]
+
+      - name: Build
+        run: uv build
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 5  # Keep artifacts for 5 days
+
+      # - name: Publish
+      #   run: uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always
