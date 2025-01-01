@@ -11,6 +11,7 @@ jobs:
 
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +45,6 @@ jobs:
       - name: Open Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           branch: release-candidate-${{ steps.bump.outputs.version }}
           title: "Release Candidate ${{ steps.bump.outputs.version }}"
           commit-message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
