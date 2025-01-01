@@ -41,18 +41,12 @@ jobs:
       - name: Update uv lockfile
         run: uv lock --upgrade-package pyprobe-data
 
-      - name: Create branch
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          create_branch: true
-          branch: release-candidate-${{ steps.bump.outputs.version }}
-          commit_message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
-
       - name: Open Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: release-candidate-${{ steps.bump.outputs.version }}
           title: "Release Candidate ${{ steps.bump.outputs.version }}"
-          base: main
+          commit-message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
+          base: test-auto-release-pr
           body: "This PR is the release candidate for version ${{ steps.bump.outputs.version }}."
