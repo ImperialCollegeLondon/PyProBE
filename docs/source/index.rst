@@ -22,7 +22,7 @@ PyProBE documentation
 
       User Guide
       ^^^^^^^^^^
-      Get an introduction to PyProBE's capabilities and how to make use of them.
+      Get an introduction to PyProBE's capabilities and how to make use of them. Test
       +++
 
       .. button-ref:: user_guide/user_guide
