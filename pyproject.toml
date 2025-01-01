@@ -18,6 +18,7 @@ dependencies = [
     "plotly>=5.24.1",
     "polars>=1.18.0",
     "pydantic>=2.10.4",
+    "python-semantic-release>=9.15.2",
     "pyyaml>=6.0.2",
     "ray>=2.40.0",
     "scikit-learn>=1.6.0",
