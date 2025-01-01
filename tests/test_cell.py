@@ -7,11 +7,11 @@ import shutil
 import polars as pl
 import pybamm
 import pytest
-import toml
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
 
 import pyprobe
+from pyprobe._version import __version__
 from pyprobe.cell import Cell
 
 
@@ -332,14 +332,12 @@ def test_archive(cell_instance):
     metadata["PyProBE Version"] = "0.0.0"
     with open(os.path.join(input_path, "archive", "metadata.json"), "w") as f:
         json.dump(metadata, f)
-    pyproject_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
-    pyproject_data = toml.load(pyproject_path)
     with pytest.warns(
         UserWarning,
         match=(
             f"The PyProBE version used to archive the cell was "
             f"{metadata['PyProBE Version']}, the current version is "
-            f"{pyproject_data['project']['version']}. There may be compatibility"
+            f"{__version__}. There may be compatibility"
             f" issues."
         ),
     ):
