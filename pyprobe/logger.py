@@ -18,6 +18,7 @@ def configure_logging(
     # Create a root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
+    print("hello")
 
     # Clear existing handlers
     root_logger.handlers = []
