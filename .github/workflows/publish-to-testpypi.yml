@@ -32,6 +32,25 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --group format --group test --group docs --group external-integration
 
+      - name: Get branch name
+        id: branch-name
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+
+      - name: Run semantic-release
+        run: |
+          uv run semantic-release version \
+            --prerelease \
+            --no-commit \
+            --no-tag \
+            --skip-build \
+            --build-metadata ${{ steps.branch-name.outputs.branch }}
+    
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          # Optional. Commit message for the created commit.
+          # Defaults to "Apply automatic changes"
+          commit_message: Update version [skip ci]
+
       - name: Build
         run: uv build
       
@@ -42,5 +61,5 @@ jobs:
           path: dist/
           retention-days: 5  # Keep artifacts for 5 days
 
-      - name: Publish
-        run: uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always
+      # - name: Publish
+      #   run: uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always
