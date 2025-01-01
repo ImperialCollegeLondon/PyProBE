@@ -12,6 +12,7 @@ jobs:
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
+      contents: write    # for git operations
 
     environment:
       name: testpypi
