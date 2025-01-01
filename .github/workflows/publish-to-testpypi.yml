@@ -1,0 +1,48 @@
+name: "Publish to TestPyPI"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - test-auto-release-pr
+  workflow_dispatch:
+
+jobs:
+  Build:
+    if: startsWith(github.head_ref, 'release-candidate-')
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      contents: write    # for git operations
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/PyProBE-Data
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+          
+      - name: Install the project
+        run: uv sync --all-extras --group format --group test --group docs --group external-integration
+
+      - name: Build
+        run: uv build
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 5  # Keep artifacts for 5 days
+
+      # - name: Publish
+      #   run: uv publish --publish-url https://test.pypi.org/legacy/ --trusted-publishing always
