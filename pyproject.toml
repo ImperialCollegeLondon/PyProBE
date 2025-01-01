@@ -3,7 +3,7 @@ name = "PyProBE-Data"
 authors = [
   {name = "Thomas Holland"},
 ]
-version = "1.1.0"
+dynamic = ["version"]
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
 dependencies = [
@@ -33,6 +33,7 @@ format = [
     "isort>=5.13.2",
     "mypy>=1.14.1",
     "pre-commit>=4.0.1",
+    "python-semantic-release>=9.15.2",
 ]
 test = [
     "pytest>=8.3.4",
@@ -70,6 +71,24 @@ exclude = [
     "docs/*",
     "examples/*"
 ]
+
+[tool.hatch.version]
+path = "pyprobe/_version.py"
+
+[tool.semantic_release]
+version_source = "tag"
+version_variables = ["pyprobe/_version.py:__version__"]
+changelog_file = false
+branch = "main" 
+commit_version_number = false  # disable auto commits
+tag_commit = false            # disable auto tagging
+prerelease = true
+upload_to_pypi = false        # disable PyPI upload
+upload_to_release = false     # disable GitHub release creation
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = true
 
 [tool.mypy]
 disallow_any_explicit = false

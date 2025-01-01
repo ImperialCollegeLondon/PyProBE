@@ -1,8 +1,7 @@
 name: "Publish to TestPyPI"
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  push:
     branches:
       - main
   workflow_dispatch:
@@ -13,6 +12,7 @@ jobs:
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
+      contents: write    # for git operations
 
     environment:
       name: testpypi
@@ -20,7 +20,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0  # Fetch all history
+          fetch-tags: true  # Fetch all tags
+          ref: ${{ github.head_ref || github.ref_name }}  # Correct branch reference
+      
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
@@ -31,6 +35,29 @@ jobs:
           
       - name: Install the project
         run: uv sync --all-extras --group format --group test --group docs --group external-integration
+
+      - name: Run semantic-release
+        id: semrel
+        run: |
+          uv run semantic-release version \
+            --prerelease \
+            --no-commit \
+            --no-tag \
+            --skip-build
+
+      - name: Update uv lockfile
+        run:  uv lock --upgrade-package pyprobe-data
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep -o '".*"' pyprobe/_version.py | sed 's/"//g')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update version [skip ci]
+          tagging_message: "v${{ steps.version.outputs.version }}"
 
       - name: Build
         run: uv build

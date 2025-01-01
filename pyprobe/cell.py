@@ -12,14 +12,13 @@ import distinctipy
 import polars as pl
 from pydantic import BaseModel, Field, field_validator, validate_call
 
+from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
 from pyprobe.utils import PyBaMMSolution
 
 logger = logging.getLogger(__name__)
-
-__version__ = "1.1.0"
 
 
 class Cell(BaseModel):
