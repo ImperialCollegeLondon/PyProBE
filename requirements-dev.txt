@@ -136,7 +136,7 @@ jsonschema==4.23.0
     #   altair
     #   nbformat
     #   ray
-jsonschema-specifications==2023.12.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
 jupyter-client==8.6.2
     # via nbclient
