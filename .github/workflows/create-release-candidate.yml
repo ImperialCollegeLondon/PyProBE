@@ -45,7 +45,7 @@ jobs:
       - name: Open Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          branch: release-candidate-${{ steps.bump.outputs.version }}
+          branch: release-candidates/rc-${{ steps.bump.outputs.version }}
           title: "Release Candidate ${{ steps.bump.outputs.version }}"
           commit-message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
           base: test-auto-release-pr

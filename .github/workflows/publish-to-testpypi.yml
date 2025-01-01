@@ -1,20 +1,17 @@
 name: "Publish to TestPyPI"
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  push:
     branches:
-      - test-auto-release-pr
+      - release-candidates/*
   workflow_dispatch:
 
 jobs:
   Build:
-    if: startsWith(github.head_ref, 'release-candidate-')
     runs-on: ubuntu-latest
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
-      contents: write    # for git operations
 
     environment:
       name: testpypi
