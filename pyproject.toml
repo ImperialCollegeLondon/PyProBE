@@ -33,6 +33,7 @@ format = [
     "isort>=5.13.2",
     "mypy>=1.14.1",
     "pre-commit>=4.0.1",
+    "python-semantic-release>=9.15.2",
 ]
 test = [
     "pytest>=8.3.4",
