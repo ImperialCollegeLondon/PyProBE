@@ -1,0 +1,58 @@
+name: "Create Release Candidate"
+
+on:
+  push:
+    branches:
+      - test-auto-release-pr
+
+jobs:
+  create-rc:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history
+          fetch-tags: true  # Fetch all tags
+          ref: ${{ github.head_ref || github.ref_name }}  # Correct branch reference
+
+      - name: Install uv & dependencies
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install project
+        run: |
+          uv sync --all-extras --group format --group test --group docs --group external-integration
+
+      - name: Bump version
+        id: bump
+        run: |
+          uv run semantic-release version --no-commit --no-tag --skip-build
+          VERSION=$(grep -o '".*"' pyprobe/_version.py | sed 's/"//g')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update uv lockfile
+        run: uv lock --upgrade-package pyprobe-data
+
+      - name: Create branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          create_branch: true
+          branch: release-candidate-${{ steps.bump.outputs.version }}
+          commit_message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
+
+      - name: Open Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: release-candidate-${{ steps.bump.outputs.version }}
+          title: "Release Candidate ${{ steps.bump.outputs.version }}"
+          base: main
+          body: "This PR is the release candidate for version ${{ steps.bump.outputs.version }}."

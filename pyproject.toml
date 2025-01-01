@@ -79,7 +79,7 @@ path = "pyprobe/_version.py"
 version_source = "tag"
 version_variables = ["pyprobe/_version.py:__version__"]
 changelog_file = false
-branch = "main" 
+branch = "test-auto-release-pr" 
 commit_version_number = false  # disable auto commits
 tag_commit = false            # disable auto tagging
 prerelease = true
@@ -87,8 +87,8 @@ upload_to_pypi = false        # disable PyPI upload
 upload_to_release = false     # disable GitHub release creation
 
 [tool.semantic_release.branches.main]
-match = "main"
-prerelease = true
+match = "test-auto-release-pr"
+prerelease = false
 
 [tool.mypy]
 disallow_any_explicit = false
