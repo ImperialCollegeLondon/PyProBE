@@ -3,7 +3,7 @@ name = "PyProBE-Data"
 authors = [
   {name = "Thomas Holland"},
 ]
-version = "1.1.0"
+dynamic = ["version"]
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
 dependencies = [
@@ -70,6 +70,9 @@ exclude = [
     "docs/*",
     "examples/*"
 ]
+
+[tool.hatch.version]
+path = "pyprobe/_version.py"
 
 [tool.mypy]
 disallow_any_explicit = false
