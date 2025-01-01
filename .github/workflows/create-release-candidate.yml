@@ -47,6 +47,6 @@ jobs:
         with:
           branch: release-candidates/rc-${{ steps.bump.outputs.version }}
           title: "Release Candidate ${{ steps.bump.outputs.version }}"
-          commit-message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
+          commit-message: "chore: release candidate ${{ steps.bump.outputs.version }}"
           base: test-auto-release-pr
           body: "This PR is the release candidate for version ${{ steps.bump.outputs.version }}."
