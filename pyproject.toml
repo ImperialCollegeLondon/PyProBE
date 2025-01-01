@@ -85,16 +85,9 @@ tag_commit = false            # disable auto tagging
 prerelease = true
 upload_to_pypi = false        # disable PyPI upload
 upload_to_release = false     # disable GitHub release creation
-hooks = [
-    "bash -c 'echo \"Running uv lock\" && uv lock --upgrade-package pyprobe-data'"
-]
 
 [tool.semantic_release.branches.main]
 match = "main"
-prerelease = false
-
-[tool.semantic_release.branches.development]
-match = ".*"  # Match any branch except main
 prerelease = true
 
 [tool.mypy]
