@@ -1,6 +1,4 @@
 """A module to contain plotting functions for PyProBE."""
-import platform
-import warnings
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
@@ -8,7 +6,6 @@ import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 from deprecated import deprecated
-from IPython.display import Image, display
 from numpy.typing import NDArray
 from plotly.express.colors import sample_colorscale
 from plotly.subplots import make_subplots
@@ -198,16 +195,6 @@ class Plot:
     def show(self) -> None:
         """Show the plot."""
         self.fig.show()
-
-    def show_image(self) -> None:
-        """Show the plot as an image."""
-        if platform.system() == "Windows":
-            warnings.warn(
-                "show_image() is known to hang indefinitely on Windows. "
-                "If you encounter this issue, use show() instead."
-            )
-        img_bytes = self.fig.to_image(format="png")
-        display(Image(img_bytes))
 
     def add_line(
         self,
