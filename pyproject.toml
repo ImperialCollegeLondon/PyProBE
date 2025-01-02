@@ -31,9 +31,7 @@ hvplot = [
 seaborn = [
     "seaborn>=0.13.2",
 ]
-
-[dependency-groups]
-format = [
+dev = [
     "black>=24.10.0",
     "flake8>=7.1.1",
     "flake8-docstrings>=1.7.0",
@@ -41,8 +39,6 @@ format = [
     "mypy>=1.14.1",
     "pre-commit>=4.0.1",
     "python-semantic-release>=9.15.2",
-]
-test = [
     "nbmake>=1.5.5",
     "pytest>=8.3.4",
     "pytest-benchmark>=5.1.0",
@@ -52,6 +48,7 @@ test = [
     "types-deprecated>=1.2.15.20241117",
     "types-pyyaml>=6.0.12.20241230",
     "types-toml>=0.10.8.20240310",
+    "pybamm>=24.1"
 ]
 docs = [
     "autodoc-pydantic>=2.2.0",
@@ -62,9 +59,6 @@ docs = [
     "sphinx-tabs>=3.4.7",
     "sphinxcontrib-bibtex>=2.6.3",
     "xlsxwriter>=3.2.0",
-]
-external-integration = [
-    "pybamm>=24.1",
 ]
 
 [build-system]

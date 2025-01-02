@@ -1858,14 +1858,25 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-hvplot = [
-    { name = "hvplot" },
+dev = [
+    { name = "black" },
+    { name = "flake8" },
+    { name = "flake8-docstrings" },
+    { name = "isort" },
+    { name = "mypy" },
+    { name = "nbmake" },
+    { name = "pre-commit" },
+    { name = "pybamm" },
+    { name = "pytest" },
+    { name = "pytest-benchmark" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-mypy" },
+    { name = "python-semantic-release" },
+    { name = "types-deprecated" },
+    { name = "types-pyyaml" },
+    { name = "types-toml" },
 ]
-seaborn = [
-    { name = "seaborn" },
-]
-
-[package.dev-dependencies]
 docs = [
     { name = "autodoc-pydantic" },
     { name = "nbsphinx" },
@@ -1876,82 +1887,57 @@ docs = [
     { name = "sphinxcontrib-bibtex" },
     { name = "xlsxwriter" },
 ]
-external-integration = [
-    { name = "pybamm" },
+hvplot = [
+    { name = "hvplot" },
 ]
-format = [
-    { name = "black" },
-    { name = "flake8" },
-    { name = "flake8-docstrings" },
-    { name = "isort" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "python-semantic-release" },
-]
-test = [
-    { name = "nbmake" },
-    { name = "pytest" },
-    { name = "pytest-benchmark" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "pytest-mypy" },
-    { name = "types-deprecated" },
-    { name = "types-pyyaml" },
-    { name = "types-toml" },
+seaborn = [
+    { name = "seaborn" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "autodoc-pydantic", marker = "extra == 'docs'", specifier = ">=2.2.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = ">=24.10.0" },
     { name = "deprecated", specifier = ">=1.2.15" },
     { name = "distinctipy", specifier = ">=1.3.4" },
     { name = "fastexcel", specifier = ">=0.12.0" },
+    { name = "flake8", marker = "extra == 'dev'", specifier = ">=7.1.1" },
+    { name = "flake8-docstrings", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "hvplot", marker = "extra == 'hvplot'", specifier = ">=0.11.2" },
     { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.2" },
     { name = "matplotlib", specifier = ">=3.10.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14.1" },
+    { name = "nbmake", marker = "extra == 'dev'", specifier = ">=1.5.5" },
+    { name = "nbsphinx", marker = "extra == 'docs'", specifier = ">=0.9.6" },
     { name = "numpy", specifier = ">=2.2.1" },
     { name = "ordered-set", specifier = ">=4.1.0" },
     { name = "plotly", specifier = ">=5.24.1" },
     { name = "polars", specifier = ">=1.18.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
+    { name = "pybamm", marker = "extra == 'dev'", specifier = ">=24.1" },
     { name = "pydantic", specifier = ">=2.10.4" },
+    { name = "pydata-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.16.1" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
+    { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
+    { name = "pytest-mypy", marker = "extra == 'dev'", specifier = ">=0.10.3" },
+    { name = "python-semantic-release", marker = "extra == 'dev'", specifier = ">=9.15.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ray", specifier = ">=2.40.0" },
     { name = "scikit-learn", specifier = ">=1.6.0" },
     { name = "seaborn", marker = "extra == 'seaborn'", specifier = ">=0.13.2" },
+    { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.1.3" },
+    { name = "sphinx-design", marker = "extra == 'docs'", specifier = ">=0.6.1" },
+    { name = "sphinx-tabs", marker = "extra == 'docs'", specifier = ">=3.4.7" },
+    { name = "sphinxcontrib-bibtex", marker = "extra == 'docs'", specifier = ">=2.6.3" },
     { name = "streamlit", specifier = ">=1.41.1" },
     { name = "sympy", specifier = ">=1.13.3" },
-]
-
-[package.metadata.requires-dev]
-docs = [
-    { name = "autodoc-pydantic", specifier = ">=2.2.0" },
-    { name = "nbsphinx", specifier = ">=0.9.6" },
-    { name = "pydata-sphinx-theme", specifier = ">=0.16.1" },
-    { name = "sphinx", specifier = ">=8.1.3" },
-    { name = "sphinx-design", specifier = ">=0.6.1" },
-    { name = "sphinx-tabs", specifier = ">=3.4.7" },
-    { name = "sphinxcontrib-bibtex", specifier = ">=2.6.3" },
-    { name = "xlsxwriter", specifier = ">=3.2.0" },
-]
-external-integration = [{ name = "pybamm", specifier = ">=24.1" }]
-format = [
-    { name = "black", specifier = ">=24.10.0" },
-    { name = "flake8", specifier = ">=7.1.1" },
-    { name = "flake8-docstrings", specifier = ">=1.7.0" },
-    { name = "isort", specifier = ">=5.13.2" },
-    { name = "mypy", specifier = ">=1.14.1" },
-    { name = "pre-commit", specifier = ">=4.0.1" },
-    { name = "python-semantic-release", specifier = ">=9.15.2" },
-]
-test = [
-    { name = "nbmake", specifier = ">=1.5.5" },
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "pytest-benchmark", specifier = ">=5.1.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "pytest-mypy", specifier = ">=0.10.3" },
-    { name = "types-deprecated", specifier = ">=1.2.15.20241117" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20241230" },
-    { name = "types-toml", specifier = ">=0.10.8.20240310" },
+    { name = "types-deprecated", marker = "extra == 'dev'", specifier = ">=1.2.15.20241117" },
+    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.20241230" },
+    { name = "types-toml", marker = "extra == 'dev'", specifier = ">=0.10.8.20240310" },
+    { name = "xlsxwriter", marker = "extra == 'docs'", specifier = ">=3.2.0" },
 ]
 
 [[package]]
