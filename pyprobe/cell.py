@@ -675,17 +675,24 @@ def load_archive(path: str) -> Cell:
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
+    header_row: int = 0,
 ) -> List[Cell]:
     """Function to make a list of cell objects from a record of tests in Excel format.
 
     Args:
         record_filepath (str): The path to the experiment record .xlsx file.
         worksheet_name (str): The worksheet name to read from the record.
+        header_row (int, optional):
+            The row number containing the column headers. Defaults to 0.
 
     Returns:
         list: The list of cell objects.
     """
-    record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
+    record = pl.read_excel(
+        record_filepath,
+        sheet_name=worksheet_name,
+        read_options={"header_row": header_row},
+    )
 
     n_cells = len(record)
     cell_list = []
