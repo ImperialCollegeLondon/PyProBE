@@ -46,7 +46,7 @@ In the Python community for battery research, `PyBaMM` [@sulzer_python_2021] has
 
 Filtering a dataset to the section of interest is the first step of all data processing tasks, but can be time-consuming and cumbersome. Researchers often write new scripts for each experiment, in tools like MatLab, Python `Pandas` or Excel. These scripts are often not intended for sharing, so they may be difficult to read by others, which slows down the exchange of data and methods between researchers. Like `PyBaMM`, `PyProBE` has been written to be more user-friendly than existing tools, making it usable for those with little Python experience.
 
-`PyBaMM` includes a library of interchangeable models, that allows users to test different approaches. There is no equivalent for interchanging methods for battery data processing, causing duplication of effort among researchers. A need therefore exists for an open-source data processing package where researchers can develop new analysis tools within a single framework. `PyProBE`'s **analysis** module is written to be modular and intuitive, with a consistent data structure and built-in data validation. As new methods are developed, they can be added and instantly compared to existing approaches.
+`PyBaMM` includes a library of interchangeable models, that allows users to test different approaches. There is no equivalent for interchanging methods for battery data processing, causing duplication of effort among researchers. A need therefore exists for an open-source data processing package where researchers can develop new analysis tools within a single framework. `PyProBE`'s **analysis** module is written to be modular and intuitive, with a consistent data structure and built-in data validation with `Pydantic` [@pydantic]. As new methods are developed, they can be added and instantly compared to existing approaches.
 
 # PyProBE Operating Principles
 ## Importing and Filtering Data
@@ -65,7 +65,7 @@ Once imported into a `PyProBE` **Procedure**, individual cycles and steps can be
 ## Post-processing tools
 ![Some of the methods that can be called on **Result** objects, and the objects that they return.\label{fig:result flowchart}](images/Result_flowchart.jpg)
 
-\autoref{fig:result flowchart} shows how `PyProBE` **RawData** and **Result** objects can be used. **RawData** DataFrames contain only the columns of the `PyProBE` standardised format, while **Result** DataFrames contain any data columns produced from further analysis.
+\autoref{fig:result flowchart} shows how `PyProBE` **RawData** and **Result** objects can be used. **RawData** DataFrames contain only the columns of the `PyProBE` standardised format, while **Result** DataFrames contain any data columns produced from further analysis.The data stored in `PyProBE` **Result** object can be returned as a `NumPy` [@harris2020array] array or `Polars` dataframe for further manipulation. They can also be immediately visualised with built-in plotting methods for `matplotlib` [@Hunter:2007] and `hvplot` [@hvplot2024], or passed to an included wrapper for `seaborn` [@Waskom2021].
 
 The analysis module contains classes and functions which, when passed a **Result** object, enable additional functionality. The steps to smooth voltage data before differentiation are described \autoref{fig:analysis flowchart}.
 
