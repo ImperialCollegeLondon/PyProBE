@@ -10,7 +10,7 @@ If you would like to contribute code, please:
 
 2. Open an issue to detail the change/addition you wish to make, unless one already exists
 
-3. Create a feature branch and make your changes
+3. Create a feature branch and make your changes. PyProBE uses the [angular commit style](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commits), please ensure your commits follow this syntax before pushing your changes
 
 4. Follow [Google's docstring style](https://github.com/google/styleguide/blob/gh-pages/pyguide.md#38-comments-and-docstrings) and ensure that the documentation builds successfully:
 
@@ -19,16 +19,16 @@ $ cd docs
 $ make html
 ```
 
-5. Ensure that all tests pass:
+5. Ensure that all tests pass (this is best done with uv if you have installed with this tool):
 
 ```bash
-$ pytest
+$ uv run pytest
 ```
 
 6. Ensure that the examples run to completion:
 ```bash
-$ pip install nbmake
-$ pytest --nbmake docs/source/examples/*.ipynb
+$ uv pip install nbmake
+$ uv run pytest --nbmake docs/source/examples/*.ipynb
 ```
 
 7. Open a pull request. In the pull request description, please describe in detail the changes your feature branch introduces, and reference the associated issue.
