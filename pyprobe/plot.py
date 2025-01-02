@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 import plotly.graph_objects as go
 import polars as pl
+from deprecated import deprecated
 from IPython.display import Image, display
 from numpy.typing import NDArray
 from plotly.express.colors import sample_colorscale
@@ -15,6 +16,7 @@ from sklearn.preprocessing import minmax_scale
 
 if TYPE_CHECKING:
     from pyprobe.result import Result
+
 from pyprobe.units import split_quantity_unit
 
 
@@ -143,8 +145,18 @@ See the seaborn documentation for more information: https://seaborn.pydata.org/
 """
 
 
+@deprecated(
+    reason="The Plot class is deprecated as a user facing class. It is kept for "
+    "powering the backend of the dashboard. For user facing plotting, use the "
+    "plot, hvplot or seaborn plotting integrations.",
+    version="1.1.4",
+)
 class Plot:
     """A class for plotting result objects with plotly.
+
+    The Plot class is deprecated as a user facing class. It is kept for
+    powering the backend of the dashboard. For user facing plotting, use the
+    plot, hvplot or seaborn plotting integrations."
 
     Args:
         layout (go.Layout): The plotly layout to use.
