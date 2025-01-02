@@ -39,6 +39,9 @@ Prevents collection of columns if label argument happens to match a column name
 - Add setup for semantic release
   ([`0523185`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0523185db1bdcaf3d6027d2de8e1b1c990e8b9a7))
 
+- Release candidate 1.2.0 [skip ci]
+  ([`c29dddb`](https://github.com/ImperialCollegeLondon/PyProBE/commit/c29dddb5a621ec2f2a6166fbfbde0ddb39a1aec7))
+
 - Remove pip-tools requirements files
   ([`5924f31`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5924f311faa41540e13de85aa17df835f3331bc0))
 
