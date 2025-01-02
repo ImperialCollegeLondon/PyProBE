@@ -285,7 +285,7 @@ def test_downsample_intervals():
     test_data = Result(
         base_dataframe=pl.LazyFrame({"Time [s]": times, "values": values}),
         info={},
-        column_definitions={"Time [s]": "time", "values": "test values"},
+        column_definitions={"Time": "time", "values": "test values"},
     )
 
     # Test with different intervals
@@ -305,7 +305,7 @@ def test_downsample_metadata_preservation():
     test_data = Result(
         base_dataframe=pl.LazyFrame({"Time [s]": times, "values": values}),
         info={"test_info": "test"},
-        column_definitions={"Time [s]": "time", "values": "test values"},
+        column_definitions={"Time": "time", "values": "test values"},
     )
 
     result = smoothing.downsample(test_data, "values", sampling_interval=2.0)

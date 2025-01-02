@@ -446,7 +446,7 @@ def test_run_batch_dma():
                 {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
             ),
             info={},
-            column_definitions={"Voltage [V]": "OCV", "Capacity [Ah]": "SOC"},
+            column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
         )
         for ocv_target in ocv_target_list
     ]

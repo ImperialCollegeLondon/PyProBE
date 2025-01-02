@@ -6,6 +6,7 @@ import polars as pl
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
+from pyprobe.units import split_quantity_unit
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +21,14 @@ required_columns = [
 
 default_column_definitions = {
     "Date": "The timestamp of the data point. Type: datetime.",
-    "Time [s]": "The time passed from the start of the procedure.",
+    "Time": "The time passed from the start of the procedure.",
     "Step": "The step number.",
     "Cycle": "The cycle number.",
     "Event": "The event number. Counts the changes in cycles and steps.",
-    "Current [A]": "The current through the cell.",
-    "Voltage [V]": "The terminal voltage.",
-    "Capacity [Ah]": "The net charge passed since the start of the procedure.",
-    "Temperature [C]": "The temperature of the cell.",
+    "Current": "The current through the cell.",
+    "Voltage": "The terminal voltage.",
+    "Capacity": "The net charge passed since the start of the procedure.",
+    "Temperature": "The temperature of the cell.",
 }
 
 
@@ -112,8 +113,13 @@ class RawData(Result):
         self.live_dataframe = self.live_dataframe.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
+        new_column_quantity, _ = split_quantity_unit(new_column_name)
         if new_column_definition is not None:
-            self.define_column(new_column_name, new_column_definition)
+            self.define_column(new_column_quantity, new_column_definition)
+        else:
+            self.define_column(
+                new_column_quantity, f"{column} with first value zeroed."
+            )
 
     @property
     def capacity(self) -> float:

@@ -622,10 +622,10 @@ def run_ocv_curve_fit(
         "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
         "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
         "x_ne high SOC": "Negative electrode stoichiometry at highest SOC point.",
-        "Cell Capacity [Ah]": "Total cell capacity.",
-        "Cathode Capacity [Ah]": "Cathode capacity.",
-        "Anode Capacity [Ah]": "Anode capacity.",
-        "Li Inventory [Ah]": "Lithium inventory.",
+        "Cell Capacity": "Total cell capacity.",
+        "Cathode Capacity": "Cathode capacity.",
+        "Anode Capacity": "Anode capacity.",
+        "Li Inventory": "Lithium inventory.",
     }
 
     if composite_pe:
@@ -671,7 +671,7 @@ def run_ocv_curve_fit(
     )
     fitted_OCV.column_definitions = {
         "SOC": "Cell state of charge.",
-        "Voltage [V]": "Fitted OCV values.",
+        "Voltage": "Fitted OCV values.",
     }
 
     return input_stoichiometry_limits, fitted_OCV

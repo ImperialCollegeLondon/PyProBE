@@ -107,7 +107,7 @@ def test_retrieve_relevant_columns_with_unit_conversion():
     result = Result(
         base_dataframe=data,
         info={},
-        column_definitions={"I [A]": "Current", "V [V]": "Voltage"},
+        column_definitions={"I": "Current", "V": "Voltage"},
     )
 
     args = ["I [mA]"]

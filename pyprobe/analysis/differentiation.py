@@ -53,11 +53,8 @@ def gradient(  # 1. Define the method
         pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data})
     )
     # 6. Define the column definitions for the Result object
-    gradient_result.column_definitions = {
-        x: input_data.column_definitions[x],
-        y: input_data.column_definitions[y],
-        gradient_title: "The calculated gradient.",
-    }
+    gradient_result.column_definitions = input_data.column_definitions
+    gradient_result.column_definitions[gradient_title] = "The calculated gradient."
     # 7. Return the Result object
     return gradient_result
 
@@ -147,11 +144,8 @@ def differentiate_LEAN(
     gradient_result = input_data.clean_copy(
         pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient})
     )
-    gradient_result.column_definitions = {
-        x: input_data.column_definitions[x],
-        y: input_data.column_definitions[y],
-        gradient_title: "The calculated gradient.",
-    }
+    gradient_result.column_definitions = input_data.column_definitions
+    gradient_result.column_definitions[gradient_title] = "The calculated gradient."
     return gradient_result
 
 
@@ -211,11 +205,8 @@ class Differentiation(BaseModel):
             pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data})
         )
         # 6. Define the column definitions for the Result object
-        gradient_result.column_definitions = {
-            x: self.input_data.column_definitions[x],
-            y: self.input_data.column_definitions[y],
-            gradient_title: "The calculated gradient.",
-        }
+        gradient_result.column_definitions = self.input_data.column_definitions
+        gradient_result.column_definitions[gradient_title] = "The calculated gradient."
         # 7. Return the Result object
         return gradient_result
 
@@ -304,9 +295,6 @@ class Differentiation(BaseModel):
         gradient_result = self.input_data.clean_copy(
             pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient})
         )
-        gradient_result.column_definitions = {
-            x: self.input_data.column_definitions[x],
-            y: self.input_data.column_definitions[y],
-            gradient_title: "The calculated gradient.",
-        }
+        gradient_result.column_definitions = self.input_data.column_definitions
+        gradient_result.column_definitions[gradient_title] = "The calculated gradient."
         return gradient_result

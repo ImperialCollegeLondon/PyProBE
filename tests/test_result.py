@@ -101,7 +101,7 @@ def Result_fixture(lazyframe_fixture, info_fixture):
         base_dataframe=lazyframe_fixture,
         info=info_fixture,
         column_definitions={
-            "Current [A]": "Current definition",
+            "Current": "Current definition",
         },
     )
 
@@ -174,14 +174,14 @@ def test_quantities(Result_fixture):
 
 def test_print_definitions(Result_fixture, capsys):
     """Test the print_definitions method."""
-    Result_fixture.define_column("Voltage [V]", "Voltage across the circuit")
-    Result_fixture.define_column("Resistance [Ohm]", "Resistance of the circuit")
+    Result_fixture.define_column("Voltage", "Voltage across the circuit")
+    Result_fixture.define_column("Resistance", "Resistance of the circuit")
     Result_fixture.print_definitions()
     captured = capsys.readouterr()
     expected_output = (
-        "{'Current [A]': 'Current definition'"
-        ",\n 'Resistance [Ohm]': 'Resistance of the circuit'"
-        ",\n 'Voltage [V]': 'Voltage across the circuit'}"
+        "{'Current': 'Current definition'"
+        ",\n 'Resistance': 'Resistance of the circuit'"
+        ",\n 'Voltage': 'Voltage across the circuit'}"
     )
     assert captured.out.strip() == expected_output
 
@@ -269,8 +269,8 @@ def reduced_result_fixture():
         base_dataframe=data,
         info={"test": "info"},
         column_definitions={
-            "Voltage [V]": "Voltage definition",
-            "Current [A]": "Current definition",
+            "Voltage": "Voltage definition",
+            "Current": "Current definition",
         },
     )
 
@@ -339,7 +339,7 @@ def test_join_left(reduced_result_fixture):
     other_result = Result(
         base_dataframe=other_data,
         info={"test": "info"},
-        column_definitions={"Voltage [V]": "Voltage definition"},
+        column_definitions={"Voltage": "Voltage definition"},
     )
     reduced_result_fixture.join(other_result, on="Current [A]", how="left")
     expected_data = pl.DataFrame(
@@ -352,9 +352,7 @@ def test_join_left(reduced_result_fixture):
     pl_testing.assert_frame_equal(
         reduced_result_fixture.data, expected_data, check_column_order=False
     )
-    assert (
-        reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
-    )
+    assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
 
 
 def test_extend(reduced_result_fixture):
@@ -368,7 +366,7 @@ def test_extend(reduced_result_fixture):
     other_result = Result(
         base_dataframe=other_data,
         info={"test": "info"},
-        column_definitions={"Voltage [V]": "Voltage definition"},
+        column_definitions={"Voltage": "Voltage definition"},
     )
     reduced_result_fixture.extend(other_result)
     expected_data = pl.DataFrame(
@@ -380,9 +378,7 @@ def test_extend(reduced_result_fixture):
     pl_testing.assert_frame_equal(
         reduced_result_fixture.data, expected_data, check_column_order=False
     )
-    assert (
-        reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
-    )
+    assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
 
 
 def test_extend_with_new_columns(reduced_result_fixture):
@@ -398,9 +394,9 @@ def test_extend_with_new_columns(reduced_result_fixture):
         base_dataframe=other_data,
         info={"test": "info"},
         column_definitions={
-            "Voltage [V]": "New voltage definition",
-            "Capacity [Ah]": "Capacity definition",
-            "Current [A]": "Current definition",
+            "Voltage": "New voltage definition",
+            "Capacity": "Capacity definition",
+            "Current": "Current definition",
         },
     )
     reduced_result_fixture.extend(other_result)
@@ -414,16 +410,11 @@ def test_extend_with_new_columns(reduced_result_fixture):
     pl_testing.assert_frame_equal(
         reduced_result_fixture.data, expected_data, check_column_order=False
     )
+    assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
     assert (
-        reduced_result_fixture.column_definitions["Voltage [V]"] == "Voltage definition"
+        reduced_result_fixture.column_definitions["Capacity"] == "Capacity definition"
     )
-    assert (
-        reduced_result_fixture.column_definitions["Capacity [Ah]"]
-        == "Capacity definition"
-    )
-    assert (
-        reduced_result_fixture.column_definitions["Current [A]"] == "Current definition"
-    )
+    assert reduced_result_fixture.column_definitions["Current"] == "Current definition"
 
 
 def test_clean_copy(reduced_result_fixture):

@@ -48,6 +48,7 @@ def test_data(RawData_fixture):
         "Date",
     ]
 
+
 def test_capacity(BreakinCycles_fixture):
     """Test the capacity property."""
     capacity = BreakinCycles_fixture.cycle(0).charge(0).capacity
@@ -118,7 +119,7 @@ def test_zero_column(RawData_fixture):
         "Capacity column with first value zeroed.",
     )
     assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
-    assert RawData_fixture.column_definitions["Zeroed Capacity [Ah]"] == (
+    assert RawData_fixture.column_definitions["Zeroed Capacity"] == (
         "Capacity column with first value zeroed."
     )
 
@@ -133,15 +134,15 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
     definition_keys = list(rawdata.column_definitions.keys())
     assert set(definition_keys) == set(
         [
-            "Time [s]",
-            "Current [A]",
-            "Voltage [V]",
-            "Capacity [Ah]",
+            "Time",
+            "Current",
+            "Voltage",
+            "Capacity",
             "Cycle",
             "Step",
             "Event",
             "Date",
-            "Temperature [C]",
+            "Temperature",
         ]
     )
 

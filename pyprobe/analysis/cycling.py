@@ -105,14 +105,14 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         ).alias("Coulombic Efficiency")
     column_definitions = {
         "Cycle": "The cycle number.",
-        "Capacity Throughput [Ah]": "The cumulative capacity throughput.",
-        "Time [s]": "The time since the beginning of the input_data.",
-        "Charge Capacity [Ah]": "The capacity passed during charge in a cycle.",
-        "Discharge Capacity [Ah]": ("The capacity passed during discharge in a cycle."),
-        "SOH Charge [%]": (
+        "Capacity Throughput": "The cumulative capacity throughput.",
+        "Time": "The time since the beginning of the input_data.",
+        "Charge Capacity": "The capacity passed during charge in a cycle.",
+        "Discharge Capacity": ("The capacity passed during discharge in a cycle."),
+        "SOH Charge": (
             "The charge passed during charge normalized to the first charge."
         ),
-        "SOH Discharge [%]": (
+        "SOH Discharge": (
             "The charge passed during discharge normalised to the first discharge."
         ),
         "Coulombic Efficiency": (
@@ -204,16 +204,14 @@ class Cycling(BaseModel):
             ).alias("Coulombic Efficiency")
         column_definitions = {
             "Cycle": "The cycle number.",
-            "Capacity Throughput [Ah]": "The cumulative capacity throughput.",
-            "Time [s]": "The time since the beginning of the input_data.",
-            "Charge Capacity [Ah]": "The capacity passed during charge in a cycle.",
-            "Discharge Capacity [Ah]": (
-                "The capacity passed during discharge in a cycle."
-            ),
-            "SOH Charge [%]": (
+            "Capacity Throughput": "The cumulative capacity throughput.",
+            "Time": "The time since the beginning of the input_data.",
+            "Charge Capacity": "The capacity passed during charge in a cycle.",
+            "Discharge Capacity": ("The capacity passed during discharge in a cycle."),
+            "SOH Charge": (
                 "The charge passed during charge normalized to the first charge."
             ),
-            "SOH Discharge [%]": (
+            "SOH Discharge": (
                 "The charge passed during discharge normalised to the first discharge."
             ),
             "Coulombic Efficiency": (

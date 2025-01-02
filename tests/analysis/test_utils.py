@@ -19,7 +19,7 @@ def input_data_fixture():
         column_definitions={
             "x": "x definition",
             "y": "y definition",
-            "Units [Ah]": "Units definition",
+            "Units": "Units definition",
         },
     )
 
