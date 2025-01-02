@@ -4,7 +4,6 @@ from functools import wraps
 from pprint import pprint
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
 
-import hvplot.polars
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -16,6 +15,11 @@ from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import split_quantity_unit, unit_from_regexp
 
 logger = logging.getLogger(__name__)
+
+try:
+    import hvplot.polars
+except ImportError:
+    hvplot = None
 
 
 class PolarsColumnCache:
@@ -225,18 +229,28 @@ class Result(BaseModel):
         "when called on a DataFrame.\n\n" + (plot.__doc__ or "")
     )
 
-    @wraps(hvplot.hvPlot)
-    def hvplot(self, *args: Any, **kwargs: Any) -> None:
-        """Wrapper for plotting using the hvplot library."""
-        data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
-        return data_to_plot.hvplot(*args, **kwargs)
+    if hvplot is not None:
 
-    hvplot.__doc__ = (
-        "HvPlot is a library for creating fast and interactive plots.\n\n"
-        "The default backend is bokeh, which can be changed by setting the backend "
-        "with :code:`hvplot.extension('matplotlib')` or "
-        ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
-    )
+        @wraps(hvplot.hvPlot)
+        def hvplot(self, *args: Any, **kwargs: Any) -> None:
+            """Wrapper for plotting using the hvplot library."""
+            data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
+            return data_to_plot.hvplot(*args, **kwargs)
+
+        hvplot.__doc__ = (
+            "HvPlot is a library for creating fast and interactive plots.\n\n"
+            "The default backend is bokeh, which can be changed by setting the backend "
+            "with :code:`hvplot.extension('matplotlib')` or "
+            ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
+        )
+    else:
+
+        def hvplot(self, *args: Any, **kwargs: Any) -> None:
+            """Wrapper for plotting using the hvplot library."""
+            raise ImportError(
+                "Optional dependency hvplot is not installed. Please install it via "
+                "'pip install hvplot'."
+            )
 
     def _get_data_subset(self, *column_names: str) -> pl.DataFrame:
         """Return a subset of the data with the specified columns.

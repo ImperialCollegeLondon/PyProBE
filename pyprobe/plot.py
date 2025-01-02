@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 import plotly.graph_objects as go
 import polars as pl
-import seaborn as _sns
 from IPython.display import Image, display
 from numpy.typing import NDArray
 from plotly.express.colors import sample_colorscale
@@ -55,8 +54,26 @@ def _retrieve_relevant_columns(
     return result_obj._get_data_subset(*relevant_columns)
 
 
+try:
+    import seaborn as _sns
+except ImportError:
+    _sns = None
+
+
 def _create_seaborn_wrapper() -> Any:
-    """Create wrapped version of seaborn module."""
+    """Create a wrapped version of the seaborn package."""
+    if _sns is None:
+
+        class SeabornWrapper:
+            def __getattr__(self, _: Any) -> None:
+                """Raise an ImportError if seaborn is not installed."""
+                raise ImportError(
+                    "Optional dependency 'seaborn' is not installed. Please install by "
+                    "running 'pip install seaborn'."
+                )
+
+        return SeabornWrapper()
+
     wrapped_sns = type("SeabornWrapper", (), {})()
 
     def wrap_function(func: Callable[..., Any]) -> Callable[..., Any]:
