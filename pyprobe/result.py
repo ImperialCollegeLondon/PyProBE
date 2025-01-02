@@ -600,7 +600,5 @@ def combine_results(
             pl.lit(result.info[key]).alias(key) for key in result.info.keys()
         ]
         result.live_dataframe = result.live_dataframe.with_columns(instructions)
-    combined_result = results[0].clean_copy()
-    combined_result.info = {}
-    combined_result.extend(results[0:], concat_method=concat_method)
-    return combined_result
+    results[0].extend(results[1:], concat_method=concat_method)
+    return results[0]
