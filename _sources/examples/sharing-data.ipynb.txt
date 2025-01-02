@@ -95,9 +95,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "fig = pyprobe.Plot()\n",
-    "fig.add_line(saved_cell.procedure['Sample'], 'Time [hr]', 'Voltage [V]')\n",
-    "fig.show()"
+    "saved_cell.procedure['Sample'].plot(x='Time [hr]', y='Voltage [V]')"
    ]
   },
   {

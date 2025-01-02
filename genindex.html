@@ -311,6 +311,7 @@
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#J"><strong>J</strong></a>
  | <a href="#L"><strong>L</strong></a>
@@ -343,15 +344,13 @@
 </li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.add_procedure">add_procedure() (Cell method)</a>
 </li>
-      <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.akima_interpolator">akima_interpolator() (in module pyprobe.analysis.smoothing)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.akima_interpolator">akima_interpolator() (in module pyprobe.analysis.smoothing)</a>
+</li>
       <li><a href="api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.BiologicMB.apply_step_correction">apply_step_correction() (BiologicMB static method)</a>
 </li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.archive">archive() (Cell method)</a>
-</li>
-      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.array">array() (Result method)</a>
 </li>
       <li><a href="api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.assemble_array">assemble_array() (in module pyprobe.analysis.utils)</a>
 </li>
@@ -367,8 +366,12 @@
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.base_dataframe">base_dataframe (Result attribute)</a>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.base_dataframe">base_dataframe (PolarsColumnCache property)</a>
+
+      <ul>
+        <li><a href="api/pyprobe.result.html#pyprobe.result.Result.base_dataframe">(Result attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.build">build() (Result class method)</a>
@@ -379,6 +382,8 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.cached_dataframe">cached_dataframe (PolarsColumnCache property)</a>
+</li>
       <li><a href="api/pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_electrode_capacities">calc_electrode_capacities() (in module pyprobe.analysis.base.degradation_mode_analysis_functions)</a>
 </li>
       <li><a href="api/pyprobe.analysis.base.degradation_mode_analysis_functions.html#pyprobe.analysis.base.degradation_mode_analysis_functions.calc_full_cell_OCV">calc_full_cell_OCV() (in module pyprobe.analysis.base.degradation_mode_analysis_functions)</a>
@@ -431,6 +436,10 @@
 </li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.clean_copy">clean_copy() (Result method)</a>
 </li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.clear_cache">clear_cache() (PolarsColumnCache method)</a>
+</li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.collect_columns">collect_columns() (PolarsColumnCache method)</a>
+</li>
       <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData.column_definitions">column_definitions (RawData attribute)</a>
 
       <ul>
@@ -454,6 +463,10 @@
 </li>
       </ul></li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.column_list">column_list (Result property)</a>
+</li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.columns">columns (PolarsColumnCache property)</a>
+</li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.combine_results">combine_results() (in module pyprobe.result)</a>
 </li>
       <li><a href="api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.CompositeOCP">CompositeOCP (class in pyprobe.analysis.degradation_mode_analysis)</a>
 </li>
@@ -505,8 +518,12 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.data">data (Result property)</a>
+      <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData.data">data (RawData property)</a>
+
+      <ul>
+        <li><a href="api/pyprobe.result.html#pyprobe.result.Result.data">(Result property)</a>
 </li>
+      </ul></li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.date">date (BaseCycler property)</a>
 
       <ul>
@@ -637,6 +654,8 @@
 </li>
       <li><a href="api/pyprobe.result.html#pyprobe.result.Result.get_only">get_only() (Result method)</a>
 </li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.get_quantities">get_quantities() (PolarsColumnCache static method)</a>
+</li>
       <li><a href="api/pyprobe.analysis.pulsing.html#pyprobe.analysis.pulsing.get_resistances">get_resistances() (in module pyprobe.analysis.pulsing)</a>
 </li>
       <li><a href="api/pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.get_x_sections">get_x_sections() (in module pyprobe.analysis.base.differentiation_functions)</a>
@@ -648,6 +667,18 @@
 </li>
       </ul></li>
       <li><a href="api/pyprobe.analysis.differentiation.html#pyprobe.analysis.differentiation.gradient">gradient() (in module pyprobe.analysis.differentiation)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.header_row_index">header_row_index (BaseCycler attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.hvplot">hvplot() (Result method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -711,9 +742,11 @@
 </li>
       <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.level_smoothing">level_smoothing() (Smoothing method)</a>
 </li>
+      <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.linear_interpolator">linear_interpolator() (in module pyprobe.analysis.smoothing)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.linear_interpolator">linear_interpolator() (in module pyprobe.analysis.smoothing)</a>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.live_dataframe">live_dataframe (Result property)</a>
 </li>
       <li><a href="api/pyprobe.cell.html#pyprobe.cell.load_archive">load_archive() (in module pyprobe.cell)</a>
 </li>
@@ -813,6 +846,10 @@
       <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.pchip_interpolator">pchip_interpolator() (in module pyprobe.analysis.smoothing)</a>
 </li>
       <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot">Plot (class in pyprobe.plot)</a>
+</li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.plot">plot() (Result method)</a>
+</li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache">PolarsColumnCache (class in pyprobe.result)</a>
 </li>
       <li><a href="api/pyprobe.units.html#pyprobe.units.Units.prefix_dict">prefix_dict (Units attribute)</a>
 </li>
@@ -1055,9 +1092,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/pyprobe.analysis.degradation_mode_analysis.html#pyprobe.analysis.degradation_mode_analysis.quantify_degradation_modes">quantify_degradation_modes() (in module pyprobe.analysis.degradation_mode_analysis)</a>
 </li>
+      <li><a href="api/pyprobe.result.html#pyprobe.result.PolarsColumnCache.quantities">quantities (PolarsColumnCache property)</a>
+
+      <ul>
+        <li><a href="api/pyprobe.result.html#pyprobe.result.Result.quantities">(Result property)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/pyprobe.result.html#pyprobe.result.Result.quantities">quantities (Result property)</a>
+      <li><a href="api/pyprobe.cell.html#pyprobe.cell.Cell.quick_add_procedure">quick_add_procedure() (Cell method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1113,13 +1156,13 @@
         <li><a href="api/pyprobe.analysis.smoothing.html#pyprobe.analysis.smoothing.Smoothing.savgol_smoothing">(Smoothing method)</a>
 </li>
       </ul></li>
+      <li><a href="api/pyprobe.plot.html#pyprobe.plot.seaborn">seaborn (in module pyprobe.plot)</a>
+</li>
       <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData.set_reference_capacity">set_reference_capacity() (RawData method)</a>
 </li>
       <li><a href="api/pyprobe.rawdata.html#pyprobe.rawdata.RawData.set_SOC">set_SOC() (RawData method)</a>
 </li>
       <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.show">show() (Plot method)</a>
-</li>
-      <li><a href="api/pyprobe.plot.html#pyprobe.plot.Plot.show_image">show_image() (Plot method)</a>
 </li>
       <li><a href="api/pyprobe.analysis.base.differentiation_functions.html#pyprobe.analysis.base.differentiation_functions.smooth_gradient">smooth_gradient() (in module pyprobe.analysis.base.differentiation_functions)</a>
 </li>
@@ -1131,6 +1174,8 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/pyprobe.units.html#pyprobe.units.split_quantity_unit">split_quantity_unit() (in module pyprobe.units)</a>
+</li>
       <li><a href="api/pyprobe.cyclers.basecycler.html#pyprobe.cyclers.basecycler.BaseCycler.step">step (BaseCycler property)</a>
 </li>
       <li><a href="api/pyprobe.filters.html#pyprobe.filters.Cycle.step">step() (Cycle method)</a>

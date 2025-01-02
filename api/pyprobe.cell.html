@@ -457,7 +457,7 @@ parquet file already exists.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cell.Cell.process_generic_file">
-<span class="sig-name descname"><span class="pre">process_generic_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'performance'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_generic_file" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_generic_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header_row_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_column_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression_priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'performance'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.process_generic_file" title="Link to this definition">#</a></dt>
 <dd><p>Convert generic file into PyProBE format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -472,6 +472,8 @@ column names. The keys of the dictionary are the cycler column names and
 the values are the PyProBE column names. You must use asterisks to
 indicate the units of the columns.
 E.g. <code class="code docutils literal notranslate"><span class="pre">{&quot;V</span> <span class="pre">(*)&quot;:</span> <span class="pre">&quot;Voltage</span> <span class="pre">[*]&quot;}</span></code>.</p></li>
+<li><p><strong>header_row_index</strong> (<em>int</em><em>, </em><em>optional</em>) – The index of the header row in the file. Defaults to 0.</p></li>
+<li><p><strong>date_column_format</strong> (<em>str</em><em>, </em><em>optional</em>) – The format of the date column in the generic file. Defaults to None.</p></li>
 <li><p><strong>filename_inputs</strong> (<em>list</em>) – The list of inputs to input_filename and output_filename.
 These must be keys of the cell info.</p></li>
 <li><p><strong>compression_priority</strong> (<em>Literal</em><em>[</em><em>'performance'</em><em>, </em><em>'file size'</em><em>, </em><em>'uncompressed'</em><em>]</em>) – The priority of the compression algorithm to use on the resulting
@@ -503,6 +505,30 @@ data.</p></li>
 info.</p></li>
 <li><p><strong>readme_name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the readme file. Defaults to “README.yaml”. It is assumed
 that the readme file is in the same folder as the data file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.cell.Cell.quick_add_procedure">
+<span class="sig-name descname"><span class="pre">quick_add_procedure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">procedure_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.Cell.quick_add_procedure" title="Link to this definition">#</a></dt>
+<dd><p>Add data in a PyProBE-format parquet file to the procedure dict of the cell.</p>
+<p>This method does not require a README file. It is useful for quickly adding data
+but filtering by experiment on the resulting object will not be possible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>procedure_name</strong> (<em>str</em>) – A name to give the procedure. This will be used when calling
+<code class="code docutils literal notranslate"><span class="pre">cell.procedure[procedure_name]</span></code>.</p></li>
+<li><p><strong>folder_path</strong> (<em>str</em>) – The path to the folder containing the data file.</p></li>
+<li><p><strong>filename</strong> (<em>str</em><em> | </em><em>function</em>) – A filename string or a function to generate the file name for PyProBE
+data.</p></li>
+<li><p><strong>filename_inputs</strong> (<em>Optional</em><em>[</em><em>list</em><em>]</em>) – The list of inputs to filename_function. These must be keys of the cell
+info.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -575,13 +601,14 @@ addition to the PyProBE required variables. Defaults to None.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pyprobe.cell.make_cell_list">
-<span class="sig-name descname"><span class="pre">make_cell_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worksheet_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.make_cell_list" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">make_cell_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">worksheet_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header_row</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cell.make_cell_list" title="Link to this definition">#</a></dt>
 <dd><p>Function to make a list of cell objects from a record of tests in Excel format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>record_filepath</strong> (<em>str</em>) – The path to the experiment record .xlsx file.</p></li>
 <li><p><strong>worksheet_name</strong> (<em>str</em>) – The worksheet name to read from the record.</p></li>
+<li><p><strong>header_row</strong> (<em>int</em><em>, </em><em>optional</em>) – The row number containing the column headers. Defaults to 0.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -649,6 +676,7 @@ addition to the PyProBE required variables. Defaults to None.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_cycler_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_cycler_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.process_generic_file"><code class="docutils literal notranslate"><span class="pre">Cell.process_generic_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.add_procedure()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.quick_add_procedure"><code class="docutils literal notranslate"><span class="pre">Cell.quick_add_procedure()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.import_pybamm_solution"><code class="docutils literal notranslate"><span class="pre">Cell.import_pybamm_solution()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cell.Cell.archive"><code class="docutils literal notranslate"><span class="pre">Cell.archive()</span></code></a></li>
 </ul>

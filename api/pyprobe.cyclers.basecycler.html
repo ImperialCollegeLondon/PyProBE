@@ -378,7 +378,7 @@
 <p>A module to load and process battery cycler data.</p>
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler">
-<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BaseCycler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datetime_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BaseCycler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datetime_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header_row_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>A class to load and process battery cycler data.</p>
 <dl class="field-list simple">
@@ -394,6 +394,7 @@
 <li><p><strong>input_data_path</strong> (<em>str</em>)</p></li>
 <li><p><strong>column_dict</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>)</p></li>
 <li><p><strong>datetime_format</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>header_row_index</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -444,6 +445,19 @@ documentation for more information on the format string.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute pydantic_field">
+<dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.header_row_index">
+<em class="property"><span class="pre">field</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">header_row_index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.header_row_index" title="Link to this definition">#</a></dt>
+<dd><p>The index of the header row in the data file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Validated by<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference internal" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_and_validate_data</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method pydantic_validator">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data">
 <em class="property"><span class="pre">validator</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">import_and_validate_data</span></span><em class="autodoc_pydantic_validator_arrow property">&#160; <span class="pre">»</span>&#160; </em><em class="xref py py-obj"><span class="pre">all</span> <span class="pre">fields</span></em><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data" title="Link to this definition">#</a></dt>
@@ -457,11 +471,15 @@ documentation for more information on the format string.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pyprobe.cyclers.basecycler.BaseCycler.read_file">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.read_file" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header_row_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.cyclers.basecycler.BaseCycler.read_file" title="Link to this definition">#</a></dt>
 <dd><p>Read a battery cycler file into a DataFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – The path to the file.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filepath</strong> (<em>str</em>) – The path to the file.</p></li>
+<li><p><strong>header_row_index</strong> (<em>int</em>) – The index of the header row.</p></li>
+<li><p><strong>header_row_index</strong> – The index of the header row.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The DataFrame.</p>
@@ -713,6 +731,7 @@ documentation for more information on the format string.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.input_data_path"><code class="docutils literal notranslate"><span class="pre">BaseCycler.input_data_path</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.column_dict"><code class="docutils literal notranslate"><span class="pre">BaseCycler.column_dict</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.datetime_format"><code class="docutils literal notranslate"><span class="pre">BaseCycler.datetime_format</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.header_row_index"><code class="docutils literal notranslate"><span class="pre">BaseCycler.header_row_index</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.import_and_validate_data"><code class="docutils literal notranslate"><span class="pre">BaseCycler.import_and_validate_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.read_file"><code class="docutils literal notranslate"><span class="pre">BaseCycler.read_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.cyclers.basecycler.BaseCycler.get_imported_dataframe"><code class="docutils literal notranslate"><span class="pre">BaseCycler.get_imported_dataframe()</span></code></a></li>

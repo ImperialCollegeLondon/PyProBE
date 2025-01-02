@@ -365,11 +365,37 @@
   <section id="module-pyprobe.plot">
 <span id="pyprobe-plot-module"></span><h1>pyprobe.plot module<a class="headerlink" href="#module-pyprobe.plot" title="Link to this heading">#</a></h1>
 <p>A module to contain plotting functions for PyProBE.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="pyprobe.plot.seaborn">
+<span class="sig-name descname"><span class="pre">seaborn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;pyprobe.plot.SeabornWrapper</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#pyprobe.plot.seaborn" title="Link to this definition">#</a></dt>
+<dd><p>A wrapped version of the seaborn package.</p>
+<p>This version of seaborn is modified to work with PyProBE Result objects. All functions
+from the original seaborn package are available in this version. Where seaborn functions
+accept a ‘data’ argument, a PyProBE Result object can be passed instead of a pandas
+DataFrame. For example:</p>
+<blockquote>
+<div><p>from pyprobe.plot import seaborn as sns</p>
+<p>result = cell.procedure[‘Sample’]
+sns.lineplot(data=result, x=”x”, y=”y”)</p>
+</div></blockquote>
+<dl>
+<dt>Other modifications include:</dt><dd><ul class="simple">
+<li><p>The ‘estimator’ argument is set to None by default in the lineplot function for</p></li>
+</ul>
+<p>performance. This can be overridden by passing an estimator explicitly.</p>
+</dd>
+</dl>
+<p>See the seaborn documentation for more information: <a class="reference external" href="https://seaborn.pydata.org/">https://seaborn.pydata.org/</a></p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="pyprobe.plot.Plot">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Layout({'height':</span> <span class="pre">600,</span> <span class="pre">'legend':</span> <span class="pre">{'font':</span> <span class="pre">{'size':</span> <span class="pre">14}},</span> <span class="pre">'template':</span> <span class="pre">'...',</span> <span class="pre">'title':</span> <span class="pre">{'font':</span> <span class="pre">{'size':</span> <span class="pre">18}},</span> <span class="pre">'width':</span> <span class="pre">800,</span> <span class="pre">'xaxis':</span> <span class="pre">{'tickfont':</span> <span class="pre">{'size':</span> <span class="pre">14},</span> <span class="pre">'title':</span> <span class="pre">{'font':</span> <span class="pre">{'size':</span> <span class="pre">18}}},</span> <span class="pre">'yaxis':</span> <span class="pre">{'tickfont':</span> <span class="pre">{'size':</span> <span class="pre">14},</span> <span class="pre">'title':</span> <span class="pre">{'font':</span> <span class="pre">{'size':</span> <span class="pre">18}}}})</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.plot.Plot" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.plot.Plot" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class for plotting result objects with plotly.</p>
+<p>The Plot class is deprecated as a user facing class. It is kept for
+powering the backend of the dashboard. For user facing plotting, use the
+plot, hvplot or seaborn plotting integrations.”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>layout</strong> (<em>go.Layout</em>) – The plotly layout to use.</p>
@@ -394,17 +420,6 @@
 <dt class="sig sig-object py" id="pyprobe.plot.Plot.show">
 <span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.plot.Plot.show" title="Link to this definition">#</a></dt>
 <dd><p>Show the plot.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.plot.Plot.show_image">
-<span class="sig-name descname"><span class="pre">show_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.plot.Plot.show_image" title="Link to this definition">#</a></dt>
-<dd><p>Show the plot as an image.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -565,12 +580,12 @@
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.seaborn"><code class="docutils literal notranslate"><span class="pre">seaborn</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot"><code class="docutils literal notranslate"><span class="pre">Plot</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.title_font_size"><code class="docutils literal notranslate"><span class="pre">Plot.title_font_size</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.axis_font_size"><code class="docutils literal notranslate"><span class="pre">Plot.axis_font_size</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.default_layout"><code class="docutils literal notranslate"><span class="pre">Plot.default_layout</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.show"><code class="docutils literal notranslate"><span class="pre">Plot.show()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.show_image"><code class="docutils literal notranslate"><span class="pre">Plot.show_image()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.add_line"><code class="docutils literal notranslate"><span class="pre">Plot.add_line()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.add_colorscaled_line"><code class="docutils literal notranslate"><span class="pre">Plot.add_colorscaled_line()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.plot.Plot.make_colorscale"><code class="docutils literal notranslate"><span class="pre">Plot.make_colorscale()</span></code></a></li>

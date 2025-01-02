@@ -365,6 +365,115 @@
   <section id="module-pyprobe.result">
 <span id="pyprobe-result-module"></span><h1>pyprobe.result module<a class="headerlink" href="#module-pyprobe.result" title="Link to this heading">#</a></h1>
 <p>A module for the Result class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PolarsColumnCache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.PolarsColumnCache" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class to cache columns from a Polars DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>base_dataframe</strong> (<em>pl.LazyFrame</em><em> | </em><em>pl.DataFrame</em>) – The base dataframe to cache columns from.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.base_dataframe">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">base_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">LazyFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.base_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>The base dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The base dataframe.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pl.LazyFrame | pl.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.columns">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">columns</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.columns" title="Link to this definition">#</a></dt>
+<dd><p>The columns in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The columns in the data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.quantities">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.quantities" title="Link to this definition">#</a></dt>
+<dd><p>The quantities of the data, with unit information removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The quantities of the data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.collect_columns">
+<span class="sig-name descname"><span class="pre">collect_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">columns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.collect_columns" title="Link to this definition">#</a></dt>
+<dd><p>Collect columns from the base dataframe and add to the cache.</p>
+<p>This method will check if the columns are in the cache. If they are not, it will
+check if they are in the base dataframe. If they are not, it will attempt to
+convert the column to the requested units and add to the lazyframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>*columns</strong> (<em>str</em>) – The columns to collect.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the requested columns are not in the base dataframe and cannot
+    be converted.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.clear_cache">
+<span class="sig-name descname"><span class="pre">clear_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.clear_cache" title="Link to this definition">#</a></dt>
+<dd><p>Clear the cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.cached_dataframe">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cached_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.cached_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>Return the cached dataframe as a Polars DataFrame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.PolarsColumnCache.get_quantities">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_quantities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.PolarsColumnCache.get_quantities" title="Link to this definition">#</a></dt>
+<dd><p>The quantities of the data, with unit information removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>column_list</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – The columns to get the quantities of.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The quantities of the data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class pydantic_model">
 <dt class="sig sig-object py" id="pyprobe.result.Result">
 <em class="property"><span class="pre">pydantic</span> <span class="pre">model</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_definitions=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result" title="Link to this definition">#</a></dt>
@@ -443,6 +552,12 @@ includes all of the main methods for returning and describing any data in PyProB
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.result.Result.live_dataframe">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">live_dataframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#pyprobe.result.Result.live_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>Return the data as a polars DataFrame.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.result.Result.data">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DataFrame</span></em><a class="headerlink" href="#pyprobe.result.Result.data" title="Link to this definition">#</a></dt>
 <dd><p>Return the data as a polars DataFrame.</p>
@@ -459,18 +574,198 @@ includes all of the main methods for returning and describing any data in PyProB
 </dl>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="pyprobe.result.Result.contains_lazyframe">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">contains_lazyframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pyprobe.result.Result.contains_lazyframe" title="Link to this definition">#</a></dt>
-<dd><p>Return whether the data is a LazyFrame.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.Result.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.plot" title="Link to this definition">#</a></dt>
+<dd><p>This is a wrapper around the pandas plot method. It will performexactly as you would expect the pandas plot method to performwhen called on a DataFrame.</p>
+<p>Make plots of Series or DataFrame.</p>
+<p>Uses the backend specified by the
+option <code class="docutils literal notranslate"><span class="pre">plotting.backend</span></code>. By default, matplotlib is used.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if the data is a LazyFrame, False otherwise.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>Series</em><em> or </em><em>DataFrame</em>) – The object for which the method is called.</p></li>
+<li><p><strong>x</strong> (<em>label</em><em> or </em><em>position</em><em>, </em><em>default None</em>) – Only used if data is a DataFrame.</p></li>
+<li><p><strong>y</strong> (<em>label</em><em>, </em><em>position</em><em> or </em><em>list</em><em> of </em><em>label</em><em>, </em><em>positions</em><em>, </em><em>default None</em>) – Allows plotting of one column versus another. Only used if data is a
+DataFrame.</p></li>
+<li><p><strong>kind</strong> (<em>str</em>) – <p>The kind of plot to produce:</p>
+<ul>
+<li><p>’line’ : line plot (default)</p></li>
+<li><p>’bar’ : vertical bar plot</p></li>
+<li><p>’barh’ : horizontal bar plot</p></li>
+<li><p>’hist’ : histogram</p></li>
+<li><p>’box’ : boxplot</p></li>
+<li><p>’kde’ : Kernel Density Estimation plot</p></li>
+<li><p>’density’ : same as ‘kde’</p></li>
+<li><p>’area’ : area plot</p></li>
+<li><p>’pie’ : pie plot</p></li>
+<li><p>’scatter’ : scatter plot (DataFrame only)</p></li>
+<li><p>’hexbin’ : hexbin plot (DataFrame only)</p></li>
+</ul>
+</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib axes object</em><em>, </em><em>default None</em>) – An axes of the current figure.</p></li>
+<li><p><strong>subplots</strong> (<em>bool</em><em> or </em><em>sequence</em><em> of </em><em>iterables</em><em>, </em><em>default False</em>) – <p>Whether to group columns into subplots:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">False</span></code> : No subplots will be used</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">True</span></code> : Make separate subplots for each column.</p></li>
+<li><p>sequence of iterables of column labels: Create a subplot for each
+group of columns. For example <cite>[(‘a’, ‘c’), (‘b’, ‘d’)]</cite> will
+create 2 subplots: one with columns ‘a’ and ‘c’, and one
+with columns ‘b’ and ‘d’. Remaining columns that aren’t specified
+will be plotted in additional subplots (one per column).</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 1.5.0.</span></p>
+</div>
+</li>
+</ul>
+</p></li>
+<li><p><strong>sharex</strong> (<em>bool</em><em>, </em><em>default True if ax is None else False</em>) – In case <code class="docutils literal notranslate"><span class="pre">subplots=True</span></code>, share x axis and set some x axis labels
+to invisible; defaults to True if ax is None otherwise False if
+an ax is passed in; Be aware, that passing in both an ax and
+<code class="docutils literal notranslate"><span class="pre">sharex=True</span></code> will alter all x axis labels for all axis in a figure.</p></li>
+<li><p><strong>sharey</strong> (<em>bool</em><em>, </em><em>default False</em>) – In case <code class="docutils literal notranslate"><span class="pre">subplots=True</span></code>, share y axis and set some y axis labels to invisible.</p></li>
+<li><p><strong>layout</strong> (<em>tuple</em><em>, </em><em>optional</em>) – (rows, columns) for the layout of subplots.</p></li>
+<li><p><strong>figsize</strong> (<em>a tuple</em><em> (</em><em>width</em><em>, </em><em>height</em><em>) </em><em>in inches</em>) – Size of a figure object.</p></li>
+<li><p><strong>use_index</strong> (<em>bool</em><em>, </em><em>default True</em>) – Use index as ticks for x axis.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em> or </em><em>list</em>) – Title to use for the plot. If a string is passed, print the string
+at the top of the figure. If a list is passed and <cite>subplots</cite> is
+True, print each item in the list above the corresponding subplot.</p></li>
+<li><p><strong>grid</strong> (<em>bool</em><em>, </em><em>default None</em><em> (</em><em>matlab style default</em><em>)</em>) – Axis grid lines.</p></li>
+<li><p><strong>legend</strong> (<em>bool</em><em> or </em><em>{'reverse'}</em>) – Place legend on axis subplots.</p></li>
+<li><p><strong>style</strong> (<em>list</em><em> or </em><em>dict</em>) – The matplotlib line style per column.</p></li>
+<li><p><strong>logx</strong> (<em>bool</em><em> or </em><em>'sym'</em><em>, </em><em>default False</em>) – Use log scaling or symlog scaling on x axis.</p></li>
+<li><p><strong>logy</strong> (<em>bool</em><em> or </em><em>'sym' default False</em>) – Use log scaling or symlog scaling on y axis.</p></li>
+<li><p><strong>loglog</strong> (<em>bool</em><em> or </em><em>'sym'</em><em>, </em><em>default False</em>) – Use log scaling or symlog scaling on both x and y axes.</p></li>
+<li><p><strong>xticks</strong> (<em>sequence</em>) – Values to use for the xticks.</p></li>
+<li><p><strong>yticks</strong> (<em>sequence</em>) – Values to use for the yticks.</p></li>
+<li><p><strong>xlim</strong> (<em>2-tuple/list</em>) – Set the x limits of the current axes.</p></li>
+<li><p><strong>ylim</strong> (<em>2-tuple/list</em>) – Set the y limits of the current axes.</p></li>
+<li><p><strong>xlabel</strong> (<em>label</em><em>, </em><em>optional</em>) – <p>Name to use for the xlabel on x-axis. Default uses index name as xlabel, or the
+x-column name for planar plots.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 2.0.0: </span>Now applicable to histograms.</p>
+</div>
+</p></li>
+<li><p><strong>ylabel</strong> (<em>label</em><em>, </em><em>optional</em>) – <p>Name to use for the ylabel on y-axis. Default will show no ylabel, or the
+y-column name for planar plots.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 2.0.0: </span>Now applicable to histograms.</p>
+</div>
+</p></li>
+<li><p><strong>rot</strong> (<em>float</em><em>, </em><em>default None</em>) – Rotation for ticks (xticks for vertical, yticks for horizontal
+plots).</p></li>
+<li><p><strong>fontsize</strong> (<em>float</em><em>, </em><em>default None</em>) – Font size for xticks and yticks.</p></li>
+<li><p><strong>colormap</strong> (<em>str</em><em> or </em><em>matplotlib colormap object</em><em>, </em><em>default None</em>) – Colormap to select colors from. If string, load colormap with that
+name from matplotlib.</p></li>
+<li><p><strong>colorbar</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plot colorbar (only relevant for ‘scatter’ and ‘hexbin’
+plots).</p></li>
+<li><p><strong>position</strong> (<em>float</em>) – Specify relative alignments for bar plot layout.
+From 0 (left/bottom-end) to 1 (right/top-end). Default is 0.5
+(center).</p></li>
+<li><p><strong>table</strong> (<em>bool</em><em>, </em><em>Series</em><em> or </em><em>DataFrame</em><em>, </em><em>default False</em>) – If True, draw a table using the data in the DataFrame and the data
+will be transposed to meet matplotlib’s default layout.
+If a Series or DataFrame is passed, use passed data to draw a
+table.</p></li>
+<li><p><strong>yerr</strong> (<em>DataFrame</em><em>, </em><em>Series</em><em>, </em><em>array-like</em><em>, </em><em>dict and str</em>) – See <span class="xref std std-ref">Plotting with Error Bars</span> for
+detail.</p></li>
+<li><p><strong>xerr</strong> (<em>DataFrame</em><em>, </em><em>Series</em><em>, </em><em>array-like</em><em>, </em><em>dict and str</em>) – Equivalent to yerr.</p></li>
+<li><p><strong>stacked</strong> (<em>bool</em><em>, </em><em>default False in line and bar plots</em><em>, </em><em>and True in area plot</em>) – If True, create stacked plot.</p></li>
+<li><p><strong>secondary_y</strong> (<em>bool</em><em> or </em><em>sequence</em><em>, </em><em>default False</em>) – Whether to plot on the secondary y-axis if a list/tuple, which
+columns to plot on secondary y-axis.</p></li>
+<li><p><strong>mark_right</strong> (<em>bool</em><em>, </em><em>default True</em>) – When using a secondary_y axis, automatically mark the column
+labels with “(right)” in the legend.</p></li>
+<li><p><strong>include_bool</strong> (<em>bool</em><em>, </em><em>default is False</em>) – If True, boolean values can be plotted.</p></li>
+<li><p><strong>backend</strong> (<em>str</em><em>, </em><em>default None</em>) – Backend to use instead of the backend specified in the option
+<code class="docutils literal notranslate"><span class="pre">plotting.backend</span></code>. For instance, ‘matplotlib’. Alternatively, to
+specify the <code class="docutils literal notranslate"><span class="pre">plotting.backend</span></code> for the whole session, set
+<code class="docutils literal notranslate"><span class="pre">pd.options.plotting.backend</span></code>.</p></li>
+<li><p><strong>**kwargs</strong> – Options to pass to matplotlib plotting method.</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>If the backend is not the default matplotlib one, the return value
+will be the object returned by the backend.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.axes.Axes</span></code> or numpy.ndarray of them</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>See matplotlib documentation online for more on this subject</p></li>
+<li><p>If <cite>kind</cite> = ‘bar’ or ‘barh’, you can specify relative alignments
+for bar plot layout by <cite>position</cite> keyword.
+From 0 (left/bottom-end) to 1 (right/top-end). Default is 0.5
+(center)</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<p>For Series:</p>
+<p>For DataFrame:</p>
+<p>For SeriesGroupBy:</p>
+<p>For DataFrameGroupBy:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.Result.hvplot">
+<span class="sig-name descname"><span class="pre">hvplot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.hvplot" title="Link to this definition">#</a></dt>
+<dd><p>HvPlot is a library for creating fast and interactive plots.</p>
+<p>The default backend is bokeh, which can be changed by setting the backend with <code class="code docutils literal notranslate"><span class="pre">hvplot.extension('matplotlib')</span></code> or <code class="code docutils literal notranslate"><span class="pre">hvplot.extension('plotly')</span></code>.</p>
+<blockquote>
+<div><p>The plotting method: <cite>df.hvplot(…)</cite> creates a plot similarly to the familiar Pandas
+<cite>df.plot</cite> method.</p>
+<p>For more detailed options use a specific plotting method, e.g. <cite>df.hvplot.line</cite>.</p>
+<p>Reference: <a class="reference external" href="https://hvplot.holoviz.org/reference/index.html">https://hvplot.holoviz.org/reference/index.html</a></p>
+<dl class="simple">
+<dt>x<span class="classifier">string, optional</span></dt><dd><p>Field name(s) to draw x-positions from. If not specified, the index is
+used.</p>
+</dd>
+<dt>y<span class="classifier">string or list, optional</span></dt><dd><p>Field name(s) to draw y-positions from. If not specified, all numerical
+fields are used.</p>
+</dd>
+<dt>kind<span class="classifier">string, optional</span></dt><dd><p>The kind of plot to generate, e.g. ‘area’, ‘bar’, ‘line’, ‘scatter’ etc. To see the
+available plots run <cite>print(df.hvplot.__all__)</cite>.</p>
+</dd>
+<dt><a href="#id1"><span class="problematic" id="id2">**</span></a>kwds<span class="classifier">optional</span></dt><dd><p>Additional keywords arguments are documented in <cite>hvplot.help(‘scatter’)</cite> or similar
+depending on the kind of plot.</p>
+</dd>
+</dl>
+<p>A Holoviews object. You can <cite>print</cite> the object to study its composition and run <cite>hv.help</cite> on
+the object to learn more about its parameters and options.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">hvplot.pandas</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;actual&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">145</span><span class="p">,</span> <span class="mi">135</span><span class="p">,</span> <span class="mi">123</span><span class="p">],</span>
+        <span class="s2">&quot;forecast&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">90</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">125</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">141</span><span class="p">,</span> <span class="mi">141</span><span class="p">,</span> <span class="mi">120</span><span class="p">],</span>
+        <span class="s2">&quot;numerical&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">,</span> <span class="mf">4.3</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.5</span><span class="p">],</span>
+        <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s2">&quot;2022-01-03&quot;</span><span class="p">,</span> <span class="s2">&quot;2022-01-09&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;string&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Mon&quot;</span><span class="p">,</span> <span class="s2">&quot;Tue&quot;</span><span class="p">,</span> <span class="s2">&quot;Wed&quot;</span><span class="p">,</span> <span class="s2">&quot;Thu&quot;</span><span class="p">,</span> <span class="s2">&quot;Fri&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">,</span> <span class="s2">&quot;Sun&quot;</span><span class="p">],</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+<span class="n">line</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">hvplot</span><span class="o">.</span><span class="n">line</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;numerical&quot;</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;actual&quot;</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">],</span>
+    <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;value&quot;</span><span class="p">,</span>
+    <span class="n">legend</span><span class="o">=</span><span class="s2">&quot;bottom&quot;</span><span class="p">,</span>
+    <span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;steelblue&quot;</span><span class="p">,</span> <span class="s2">&quot;teal&quot;</span><span class="p">],</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">line_width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">line</span>
+</pre></div>
+</div>
+<p>You can can add <em>markers</em> to a <cite>line</cite> plot by overlaying with a <cite>scatter</cite> plot.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">markers</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">hvplot</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+    <span class="n">x</span><span class="o">=</span><span class="s2">&quot;numerical&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;actual&quot;</span><span class="p">,</span> <span class="s2">&quot;forecast&quot;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;#f16a6f&quot;</span><span class="p">,</span> <span class="s2">&quot;#1e85f7&quot;</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="mi">50</span>
+<span class="p">)</span>
+<span class="n">line</span> <span class="o">*</span> <span class="n">markers</span>
+</pre></div>
+</div>
+<p>Please note that you can pass widgets or reactive functions as arguments instead of
+literal values, c.f. <a class="reference external" href="https://hvplot.holoviz.org/user_guide/Widgets.html">https://hvplot.holoviz.org/user_guide/Widgets.html</a>.</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -492,6 +787,20 @@ includes all of the main methods for returning and describing any data in PyProB
 <li><p><strong>ValueError</strong> – If no column names are provided.</p></li>
 <li><p><strong>ValueError</strong> – If a column name is not in the data.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pyprobe.result.Result.contains_lazyframe">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">contains_lazyframe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pyprobe.result.Result.contains_lazyframe" title="Link to this definition">#</a></dt>
+<dd><p>Return whether the data is a LazyFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the data is a LazyFrame, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -519,29 +828,9 @@ includes all of the main methods for returning and describing any data in PyProB
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pyprobe.result.Result.array">
-<span class="sig-name descname"><span class="pre">array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">filtering_column_names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.array" title="Link to this definition">#</a></dt>
-<dd><p>Return the data as a single numpy array.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>*filtering_column_names</strong> (<em>str</em>) – The column names to return.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The data as a single numpy array.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>NDArray[np.float64]</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If a column name is not in the data.</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="pyprobe.result.Result.quantities">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.Result.quantities" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pyprobe.result.Result.quantities" title="Link to this definition">#</a></dt>
 <dd><p>The quantities of the data, with unit information removed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -706,6 +995,30 @@ step.</p></li>
 
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pyprobe.result.combine_results">
+<span class="sig-name descname"><span class="pre">combine_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concat_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'diagonal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.combine_results" title="Link to this definition">#</a></dt>
+<dd><p>Combine multiple Result objects into a single Result object.</p>
+<p>This method should be used to combine multiple Result objects that have different
+entries in their info dictionaries. The info dictionaries of the Result objects will
+be integrated into the dataframe of the new Result object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results</strong> (<em>List</em><em>[</em><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a><em>]</em>) – The Result objects to combine.</p></li>
+<li><p><strong>concat_method</strong> (<em>str</em>) – The method to use for concatenation. Default is ‘diagonal’. See the
+polars.concat method documentation for more information.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new result object with the combined data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pyprobe.result.Result" title="pyprobe.result.Result">Result</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -755,15 +1068,27 @@ step.</p></li>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.base_dataframe"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.base_dataframe</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.columns"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.columns</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.quantities"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.quantities</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.collect_columns"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.collect_columns()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.clear_cache"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.clear_cache()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.cached_dataframe"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.cached_dataframe</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.PolarsColumnCache.get_quantities"><code class="docutils literal notranslate"><span class="pre">PolarsColumnCache.get_quantities()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result"><code class="docutils literal notranslate"><span class="pre">Result</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.base_dataframe"><code class="docutils literal notranslate"><span class="pre">Result.base_dataframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.info"><code class="docutils literal notranslate"><span class="pre">Result.info</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.column_definitions"><code class="docutils literal notranslate"><span class="pre">Result.column_definitions</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.live_dataframe"><code class="docutils literal notranslate"><span class="pre">Result.live_dataframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.data"><code class="docutils literal notranslate"><span class="pre">Result.data</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.contains_lazyframe"><code class="docutils literal notranslate"><span class="pre">Result.contains_lazyframe</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.plot"><code class="docutils literal notranslate"><span class="pre">Result.plot()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.hvplot"><code class="docutils literal notranslate"><span class="pre">Result.hvplot()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.get"><code class="docutils literal notranslate"><span class="pre">Result.get()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.contains_lazyframe"><code class="docutils literal notranslate"><span class="pre">Result.contains_lazyframe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.get_only"><code class="docutils literal notranslate"><span class="pre">Result.get_only()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.array"><code class="docutils literal notranslate"><span class="pre">Result.array()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.quantities"><code class="docutils literal notranslate"><span class="pre">Result.quantities</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.column_list"><code class="docutils literal notranslate"><span class="pre">Result.column_list</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.define_column"><code class="docutils literal notranslate"><span class="pre">Result.define_column()</span></code></a></li>
@@ -775,6 +1100,7 @@ step.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.build"><code class="docutils literal notranslate"><span class="pre">Result.build()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.combine_results"><code class="docutils literal notranslate"><span class="pre">combine_results()</span></code></a></li>
 </ul>
   </nav></div>
 
