@@ -51,7 +51,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'examples/filtering-data';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Sharing Data" href="sharing-data.html" />
+    <link rel="next" title="Plotting" href="plotting.html" />
     <link rel="prev" title="Getting started with PyProBE" href="getting-started.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -288,6 +288,7 @@
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting started with PyProBE</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Filtering data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sharing-data.html">Sharing Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="analysing-GITT-data.html">Analysing GITT data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="differentiating-voltage-data.html">Differentiating voltage data</a></li>
@@ -365,6 +366,8 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyprobe</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+
 <span class="n">info_dictionary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sample cell&#39;</span><span class="p">,</span>
                    <span class="s1">&#39;Chemistry&#39;</span><span class="p">:</span> <span class="s1">&#39;NMC622&#39;</span><span class="p">,</span>
                    <span class="s1">&#39;Nominal Capacity [Ah]&#39;</span><span class="p">:</span> <span class="mf">0.04</span><span class="p">,</span>
@@ -909,12 +912,12 @@ if (window.Jupyter !== undefined) {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area rendered_html docutils container">
-<div id='161a4890-ad9b-4005-b0e2-ec849eb9fa34'>
-  <div id="c82eba00-9797-434f-84ad-85f8125f688a" data-root-id="161a4890-ad9b-4005-b0e2-ec849eb9fa34" style="display: contents;"></div>
+<div id='fb34653b-6090-4c19-9240-c7901ba3aaf1'>
+  <div id="a6c1ef30-640f-4b2f-a0e0-cc24033595c9" data-root-id="fb34653b-6090-4c19-9240-c7901ba3aaf1" style="display: contents;"></div>
 </div>
 <script type="application/javascript">(function(root) {
-  var docs_json = {"229cbc9c-f536-4f89-aaee-f36616c2606d":{"version":"3.6.2","title":"Bokeh Application","roots":[{"type":"object","name":"panel.models.browser.BrowserInfo","id":"161a4890-ad9b-4005-b0e2-ec849eb9fa34"},{"type":"object","name":"panel.models.comm_manager.CommManager","id":"dcfceee1-245b-42d5-accc-a595e67e83aa","attributes":{"plot_id":"161a4890-ad9b-4005-b0e2-ec849eb9fa34","comm_id":"b60f5834c9d44daf889e200595aced83","client_comm_id":"edb4182f636042b7b0adc78e1893582a"}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"mode","kind":"Any","default":"warn"},{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationAreaBase1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}};
-  var render_items = [{"docid":"229cbc9c-f536-4f89-aaee-f36616c2606d","roots":{"161a4890-ad9b-4005-b0e2-ec849eb9fa34":"c82eba00-9797-434f-84ad-85f8125f688a"},"root_ids":["161a4890-ad9b-4005-b0e2-ec849eb9fa34"]}];
+  var docs_json = {"2585927a-aee9-4207-a2cc-9aa06cfa4738":{"version":"3.6.2","title":"Bokeh Application","roots":[{"type":"object","name":"panel.models.browser.BrowserInfo","id":"fb34653b-6090-4c19-9240-c7901ba3aaf1"},{"type":"object","name":"panel.models.comm_manager.CommManager","id":"25d9e82f-172a-406e-ac07-7514eb1d5d78","attributes":{"plot_id":"fb34653b-6090-4c19-9240-c7901ba3aaf1","comm_id":"13599c8d164944cb8e79d708e574ce9b","client_comm_id":"f5c3ee8a6308472a9661a9ca402f0ea3"}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"mode","kind":"Any","default":"warn"},{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationAreaBase1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}};
+  var render_items = [{"docid":"2585927a-aee9-4207-a2cc-9aa06cfa4738","roots":{"fb34653b-6090-4c19-9240-c7901ba3aaf1":"a6c1ef30-640f-4b2f-a0e0-cc24033595c9"},"root_ids":["fb34653b-6090-4c19-9240-c7901ba3aaf1"]}];
   var docs = Object.values(docs_json)
   if (!docs) {
     return
@@ -990,7 +993,7 @@ if (window.Jupyter !== undefined) {
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
@@ -998,6 +1001,13 @@ if (window.Jupyter !== undefined) {
 <div class="highlight"><pre>
 &lt;Axes: xlabel=&#39;Time [s]&#39;&gt;
 </pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_filtering-data_4_1.png" src="../_images/examples_filtering-data_4_1.png" />
+</div>
 </div>
 <p>A <code class="docutils literal notranslate"><span class="pre">README.yaml</span></code> file is stored alongside this dataset, which appears like this:</p>
 <div class="nbinput docutils container">
@@ -1063,7 +1073,7 @@ Discharge Pulses:
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
@@ -1071,6 +1081,13 @@ Discharge Pulses:
 <div class="highlight"><pre>
 Text(0, 0.5, &#39;Voltage [V]&#39;)
 </pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_filtering-data_8_1.png" src="../_images/examples_filtering-data_8_1.png" />
+</div>
 </div>
 <p>Selecting the Break-in Cycles experiment, we can filter further:</p>
 <div class="nbinput docutils container">
@@ -1086,7 +1103,7 @@ Text(0, 0.5, &#39;Voltage [V]&#39;)
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
@@ -1094,6 +1111,13 @@ Text(0, 0.5, &#39;Voltage [V]&#39;)
 <div class="highlight"><pre>
 Text(0, 0.5, &#39;Voltage [V]&#39;)
 </pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_filtering-data_10_1.png" src="../_images/examples_filtering-data_10_1.png" />
+</div>
 </div>
 <p>We can break this down further into charge, discharge and rest sections:</p>
 <div class="nbinput docutils container">
@@ -1114,7 +1138,7 @@ Text(0, 0.5, &#39;Voltage [V]&#39;)
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
@@ -1122,6 +1146,13 @@ Text(0, 0.5, &#39;Voltage [V]&#39;)
 <div class="highlight"><pre>
 Text(0, 0.5, &#39;Voltage [V]&#39;)
 </pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_filtering-data_12_1.png" src="../_images/examples_filtering-data_12_1.png" />
+</div>
 </div>
 <p>Some cyclers will split constant voltage and constant current instructions into two separate steps. That is not the case for the cycler used for this dataset, but we can still extract them with PyProBE filtering:</p>
 <div class="nbinput docutils container">
@@ -1141,7 +1172,7 @@ Text(0, 0.5, &#39;Voltage [V]&#39;)
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
@@ -1149,6 +1180,13 @@ Text(0, 0.5, &#39;Voltage [V]&#39;)
 <div class="highlight"><pre>
 Text(0, 0.5, &#39;Current [A]&#39;)
 </pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_filtering-data_14_1.png" src="../_images/examples_filtering-data_14_1.png" />
+</div>
 </div>
 </section>
 
@@ -1172,11 +1210,11 @@ Text(0, 0.5, &#39;Current [A]&#39;)
       </div>
     </a>
     <a class="right-next"
-       href="sharing-data.html"
+       href="plotting.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Sharing Data</p>
+        <p class="prev-next-title">Plotting</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

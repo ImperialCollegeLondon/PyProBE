@@ -19,7 +19,8 @@
     "import polars as pl\n",
     "from pyprobe.analysis import degradation_mode_analysis as dma\n",
     "import numpy as np\n",
-    "import matplotlib.pyplot as plt"
+    "import matplotlib.pyplot as plt\n",
+    "%matplotlib inline"
    ]
   },
   {

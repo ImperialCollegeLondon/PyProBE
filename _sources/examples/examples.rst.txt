@@ -6,6 +6,7 @@ Examples
 
    getting-started
    filtering-data
+   plotting
    sharing-data
    analysing-GITT-data
    differentiating-voltage-data
