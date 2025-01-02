@@ -41,7 +41,15 @@ virtual environment:
       uv sync --all-extras --all-groups
 
 The virtual environment is stored in the :code:`PyProBE/.venv` directory inside your and
-can be activated with :code:`source .venv/bin/activate`. 
+can be activated with :code:`source .venv/bin/activate`.
+
+To run a jupyter notebook in VSCode from this environment you can run:
+
+.. code-block:: bash
+
+      uv run -m ipykernel install --user --name <your-chosen-name>
+
+This will create a kernel that you can select within VSCode in the usual way.
 
 .. dropdown:: Alternative installation with pip (not recommended)
 
