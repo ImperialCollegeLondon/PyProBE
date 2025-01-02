@@ -96,7 +96,7 @@ upload_to_release = false     # disable GitHub release creation
 
 [tool.semantic_release.branches.main]
 match = "main"
-prerelease = true
+prerelease = false
 
 [tool.mypy]
 disallow_any_explicit = false
