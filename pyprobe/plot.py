@@ -34,7 +34,9 @@ def _retrieve_relevant_columns(
     Returns:
         A dataframe containing the relevant columns from the Result object.
     """
-    kwargs_values = [v for v in kwargs.values() if isinstance(v, str)]
+    kwargs_values = [
+        v for k, v in kwargs.items() if isinstance(v, str) and k != "label"
+    ]
     args_values = [v for v in args if isinstance(v, str)]
     all_args = set(kwargs_values + args_values)
     relevant_columns = []
