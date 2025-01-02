@@ -1256,6 +1256,22 @@ wheels = [
 ]
 
 [[package]]
+name = "nbmake"
+version = "1.5.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ipykernel" },
+    { name = "nbclient" },
+    { name = "nbformat" },
+    { name = "pygments" },
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/43/9a/aae201cee5639e1d562b3843af8fd9f8d018bb323e776a2b973bdd5fc64b/nbmake-1.5.5.tar.gz", hash = "sha256:239dc868ea13a7c049746e2aba2c229bd0f6cdbc6bfa1d22f4c88638aa4c5f5c", size = 85929 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/be/b257e12f9710819fde40adc972578bee6b72c5992da1bc8369bef2597756/nbmake-1.5.5-py3-none-any.whl", hash = "sha256:c6fbe6e48b60cacac14af40b38bf338a3b88f47f085c54ac5b8639ff0babaf4b", size = 12818 },
+]
+
+[[package]]
 name = "nbsphinx"
 version = "0.9.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1873,6 +1889,7 @@ format = [
     { name = "python-semantic-release" },
 ]
 test = [
+    { name = "nbmake" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
     { name = "pytest-cov" },
@@ -1926,6 +1943,7 @@ format = [
     { name = "python-semantic-release", specifier = ">=9.15.2" },
 ]
 test = [
+    { name = "nbmake", specifier = ">=1.5.5" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest-benchmark", specifier = ">=5.1.0" },
     { name = "pytest-cov", specifier = ">=6.0.0" },

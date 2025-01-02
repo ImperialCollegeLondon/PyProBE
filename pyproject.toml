@@ -43,6 +43,7 @@ format = [
     "python-semantic-release>=9.15.2",
 ]
 test = [
+    "nbmake>=1.5.5",
     "pytest>=8.3.4",
     "pytest-benchmark>=5.1.0",
     "pytest-cov>=6.0.0",

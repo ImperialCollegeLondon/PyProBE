@@ -27,7 +27,6 @@ $ uv run pytest
 
 6. Ensure that the examples run to completion:
 ```bash
-$ uv pip install nbmake
 $ uv run pytest --nbmake docs/source/examples/*.ipynb
 ```
 
