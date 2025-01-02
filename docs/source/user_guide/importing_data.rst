@@ -121,6 +121,9 @@ Any number of procedures can be added to a cell, for example:
    print(cell.procedure)
    # Returns: dict({'Cycling': <pyprobe.procedure.Procedure object…, 'RPT': <pyprobe.procedure.Procedure object…})
 
+If you want to load data quickly, for simple analysis or viewing, the :func:`~pyprobe.cell.Cell.quick_add_procedure`
+method allows for importing without a :code:`README.yaml` file.
+
 Batch preprocessing
 -------------------
 If you have multiple cells undergoing the same experimental procedures, you can use the
