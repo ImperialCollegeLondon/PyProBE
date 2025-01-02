@@ -158,12 +158,12 @@ def test_zeroed_columns(BreakinCycles_fixture):
     cycle_filtered_data = BreakinCycles_fixture.cycle(0)
     step_filtered_data = BreakinCycles_fixture.cycle(0).step(0)
 
-    assert exp_filtered_data.get_only("Experiment Time [s]")[0] == 0
-    assert exp_filtered_data.get_only("Experiment Capacity [Ah]")[0] == 0
-    assert cycle_filtered_data.get_only("Cycle Time [s]")[0] == 0
-    assert cycle_filtered_data.get_only("Cycle Capacity [Ah]")[0] == 0
-    assert step_filtered_data.get_only("Step Time [s]")[0] == 0
-    assert step_filtered_data.get_only("Step Capacity [Ah]")[0] == 0
+    assert exp_filtered_data.get("Experiment Time [s]")[0] == 0
+    assert exp_filtered_data.get("Experiment Capacity [Ah]")[0] == 0
+    assert cycle_filtered_data.get("Cycle Time [s]")[0] == 0
+    assert cycle_filtered_data.get("Cycle Capacity [Ah]")[0] == 0
+    assert step_filtered_data.get("Step Time [s]")[0] == 0
+    assert step_filtered_data.get("Step Capacity [Ah]")[0] == 0
 
 
 @pytest.fixture

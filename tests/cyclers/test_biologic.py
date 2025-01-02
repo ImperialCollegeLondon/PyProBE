@@ -146,6 +146,39 @@ def test_read_and_process_biologic_MB(benchmark, biologic_MB_cycler):
     assert not any(pyprobe_dataframe.select(pl.col("ds") < 0).to_numpy())
 
 
+def test_read_and_process_biologic_no_header(benchmark):
+    """Test reading a Biologic file without a header."""
+    cycler = Biologic(
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_no_header.mpt"
+    )
+    last_row = pl.DataFrame(
+        {
+            "Time [s]": [281792.50213],
+            "Step": [0],
+            "Event": [0],
+            "Current [A]": [0.0],
+            "Voltage [V]": [2.9814022],
+            "Capacity [Ah]": [0.0],
+            "Temperature [C]": [24.506462],
+        }
+    )
+    helper_read_and_process(
+        benchmark,
+        cycler,
+        expected_final_row=last_row,
+        expected_events=set([0]),
+        expected_columns=[
+            "Time [s]",
+            "Step",
+            "Event",
+            "Current [A]",
+            "Voltage [V]",
+            "Capacity [Ah]",
+            "Temperature [C]",
+        ],
+    )
+
+
 def test_process_dataframe(monkeypatch):
     """Test the Biologic method."""
     mock_dataframe = pl.DataFrame(

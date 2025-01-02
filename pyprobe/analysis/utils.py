@@ -22,7 +22,7 @@ def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
     Returns:
         NDArray: The assembled array.
     """
-    return np.vstack([input.get_only(name) for input in input_data])
+    return np.vstack([input.get(name) for input in input_data])
 
 
 class AnalysisValidator(BaseModel):
@@ -48,17 +48,7 @@ class AnalysisValidator(BaseModel):
         Raises:
             ValueError: If any of the required columns are missing.
         """
-        missing_columns = []
-        for col in self.required_columns:
-            if col not in self.input_data.column_list:
-                try:
-                    self.input_data._check_units(col)
-                except ValueError:
-                    missing_columns.append(col)
-        if missing_columns:
-            error_msg = f"Missing required columns: {missing_columns}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+        self.input_data._polars_cache.collect_columns(*self.required_columns)
         return self
 
     @property
@@ -68,4 +58,4 @@ class AnalysisValidator(BaseModel):
         Returns:
             Tuple[NDArray[np.float64], ...]: The required columns as NDArrays.
         """
-        return self.input_data.get(*tuple(self.required_columns))
+        return self.input_data.get(*self.required_columns)

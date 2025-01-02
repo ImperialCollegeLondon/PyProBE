@@ -81,10 +81,10 @@ def _step(
     """
     if condition is not None:
         base_dataframe = _filter_numerical(
-            filter.base_dataframe.filter(condition), "Event", step_numbers
+            filter.live_dataframe.filter(condition), "Event", step_numbers
         )
     else:
-        base_dataframe = _filter_numerical(filter.base_dataframe, "Event", step_numbers)
+        base_dataframe = _filter_numerical(filter.live_dataframe, "Event", step_numbers)
     return Step(
         base_dataframe=base_dataframe,
         info=filter.info,
@@ -127,7 +127,7 @@ def get_cycle_column(filter: "FilterToCycleType") -> pl.DataFrame | pl.LazyFrame
             .cum_sum()
             .alias("Cycle")
         )
-    return filter.base_dataframe.with_columns(cycle_column)
+    return filter.live_dataframe.with_columns(cycle_column)
 
 
 def _cycle(filter: "ExperimentOrCycleType", *cycle_numbers: Union[int]) -> "Cycle":
@@ -170,7 +170,7 @@ def _charge(filter: "FilterToCycleType", *charge_numbers: Union[int, range]) -> 
     Returns:
         Step: A charge step object.
     """
-    condition = pl.col("Current [A]") > 0
+    condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
     return filter.step(*charge_numbers, condition=condition)
 
 
@@ -188,7 +188,7 @@ def _discharge(
     Returns:
         Step: A discharge step object.
     """
-    condition = pl.col("Current [A]") < 0
+    condition = pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
     return filter.step(*discharge_numbers, condition=condition)
 
 
@@ -207,7 +207,11 @@ def _chargeordischarge(
     Returns:
         Step: A charge or discharge step object.
     """
-    condition = pl.col("Current [A]") != 0
+    charge_condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
+    discharge_condition = (
+        pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
+    )
+    condition = charge_condition | discharge_condition
     return filter.step(*chargeordischarge_numbers, condition=condition)
 
 
@@ -293,6 +297,7 @@ class Procedure(RawData):
 
     def model_post_init(self, __context: Any) -> None:
         """Create a procedure class."""
+        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Procedure Time [s]",
@@ -345,7 +350,7 @@ class Procedure(RawData):
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
-        lf_filtered = self.base_dataframe.filter(conditions)
+        lf_filtered = self.live_dataframe.filter(conditions)
         cycles_list: List[Tuple[int, int, int]] = []
         if len(experiment_names) > 1:
             warnings.warn(
@@ -374,6 +379,7 @@ class Procedure(RawData):
             experiment_names (str):
                 Variable-length argument list of experiment names.
         """
+        self._polars_cache.clear_cache()
         steps_idx = []
         for experiment_name in experiment_names:
             if experiment_name not in self.experiment_names:
@@ -385,11 +391,10 @@ class Procedure(RawData):
         conditions = [
             pl.col("Step").is_in(flattened_steps).not_(),
         ]
-
-        self.base_dataframe = self.base_dataframe.filter(conditions)
         for experiment_name in experiment_names:
             self.readme_dict.pop(experiment_name)
         self.model_post_init(self)
+        self.live_dataframe = self.live_dataframe.filter(conditions)
 
     @property
     def experiment_names(self) -> List[str]:
@@ -469,6 +474,7 @@ class Experiment(RawData):
 
     def model_post_init(self, __context: Any) -> None:
         """Create an experiment class."""
+        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Experiment Time [s]",
@@ -503,6 +509,7 @@ class Cycle(RawData):
 
     def model_post_init(self, __context: Any) -> None:
         """Create a cycle class."""
+        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Cycle Time [s]",
@@ -529,6 +536,7 @@ class Step(RawData):
 
     def model_post_init(self, __context: Any) -> None:
         """Create a step class."""
+        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Step Time [s]",

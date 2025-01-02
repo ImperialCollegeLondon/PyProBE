@@ -77,6 +77,8 @@ class Cell(BaseModel):
         ] = "performance",
         overwrite_existing: bool = False,
         column_dict: Optional[Dict[str, str]] = None,
+        header_row_index: int = 0,
+        date_column_format: Optional[str] = None,
     ) -> None:
         """Convert a file into PyProBE format.
 
@@ -110,6 +112,12 @@ class Cell(BaseModel):
                 the values are the PyProBE column names. You must use asterisks to
                 indicate the units of the columns. Only used for the 'generic' cycler.
                 E.g. :code:`{"V (*)": "Voltage [*]"}`.
+            header_row_index:
+                The index of the header row in the file. Only used for the 'generic'
+                cycler.
+            date_column_format:
+                The format of the date column in the generic file. Only used for the
+                'generic' cycler.
         """
         input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_inputs
@@ -141,6 +149,8 @@ class Cell(BaseModel):
                 importer = basecycler.BaseCycler(
                     input_data_path=input_data_path,
                     column_dict=column_dict,
+                    header_row_index=header_row_index,
+                    datetime_format=date_column_format,
                 )
             else:
                 importer = cycler_dict[cycler](input_data_path=input_data_path)
@@ -217,6 +227,8 @@ class Cell(BaseModel):
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
         column_dict: Dict[str, str],
+        header_row_index: int = 0,
+        date_column_format: Optional[str] = None,
         filename_inputs: Optional[List[str]] = None,
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
@@ -239,6 +251,10 @@ class Cell(BaseModel):
                 the values are the PyProBE column names. You must use asterisks to
                 indicate the units of the columns.
                 E.g. :code:`{"V (*)": "Voltage [*]"}`.
+            header_row_index (int, optional):
+                The index of the header row in the file. Defaults to 0.
+            date_column_format (str, optional):
+                The format of the date column in the generic file. Defaults to None.
             filename_inputs (list):
                 The list of inputs to input_filename and output_filename.
                 These must be keys of the cell info.
@@ -257,6 +273,8 @@ class Cell(BaseModel):
             filename_inputs,
             compression_priority,
             column_dict=column_dict,
+            header_row_index=header_row_index,
+            date_column_format=date_column_format,
         )
 
     @validate_call
@@ -302,6 +320,42 @@ class Cell(BaseModel):
             readme_dict=readme.experiment_dict,
             base_dataframe=base_dataframe,
             info=self.info,
+        )
+
+    @validate_call
+    def quick_add_procedure(
+        self,
+        procedure_name: str,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: Optional[List[str]] = None,
+    ) -> None:
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+
+        This method does not require a README file. It is useful for quickly adding data
+        but filtering by experiment on the resulting object will not be possible.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+        """
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        output_data_path = self._verify_parquet(output_data_path)
+        if "*" in output_data_path:
+            raise ValueError("* characters are not allowed for a complete data path.")
+
+        base_dataframe = pl.scan_parquet(output_data_path)
+        self.procedure[procedure_name] = Procedure(
+            base_dataframe=base_dataframe, info=self.info, readme_dict={}
         )
 
     @staticmethod
@@ -555,10 +609,10 @@ class Cell(BaseModel):
         metadata = self.dict()
         metadata["PyProBE Version"] = __version__
         for procedure_name, procedure in self.procedure.items():
-            if isinstance(procedure.base_dataframe, pl.LazyFrame):
-                df = procedure.base_dataframe.collect()
+            if isinstance(procedure.live_dataframe, pl.LazyFrame):
+                df = procedure.live_dataframe.collect()
             else:
-                df = procedure.base_dataframe
+                df = procedure.live_dataframe
             # write the dataframe to a parquet file
             filename = procedure_name + ".parquet"
             filepath = os.path.join(path, filename)
@@ -621,17 +675,24 @@ def load_archive(path: str) -> Cell:
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
+    header_row: int = 0,
 ) -> List[Cell]:
     """Function to make a list of cell objects from a record of tests in Excel format.
 
     Args:
         record_filepath (str): The path to the experiment record .xlsx file.
         worksheet_name (str): The worksheet name to read from the record.
+        header_row (int, optional):
+            The row number containing the column headers. Defaults to 0.
 
     Returns:
         list: The list of cell objects.
     """
-    record = pl.read_excel(record_filepath, sheet_name=worksheet_name)
+    record = pl.read_excel(
+        record_filepath,
+        sheet_name=worksheet_name,
+        read_options={"header_row": header_row},
+    )
 
     n_cells = len(record)
     cell_list = []

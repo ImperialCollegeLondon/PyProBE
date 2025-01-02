@@ -27,11 +27,14 @@ class Biologic(BaseCycler):
     }
 
     @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
+    def read_file(
+        filepath: str, header_row_index: int = 0
+    ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
             filepath: The path to the file.
+            header_row_index: The index of the header row.
 
         Returns:
             pl.DataFrame | pl.LazyFrame: The DataFrame.
@@ -39,13 +42,21 @@ class Biologic(BaseCycler):
         with open(filepath, "r", encoding="iso-8859-1") as file:
             file.readline()  # Skip the first line
             second_line = file.readline().strip()  # Read the second line
-        _, value = second_line.split(":")
-        n_header_lines = int(value.strip())
+            if second_line.startswith("Nb header lines"):
+                read_header_lines = True
+            else:
+                read_header_lines = False
+        if read_header_lines:  # get the provided number of header lines
+            _, value = second_line.split(":")
+            n_header_lines = int(value.strip())
+        else:
+            n_header_lines = 1
 
         dataframe = pl.scan_csv(
             filepath, skip_rows=n_header_lines - 1, separator="\t", infer_schema=False
         )
 
+        # check if the time column is in datetime format
         datetime_regex = r"^\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}\.\d+$"
         date_string = dataframe.select("time/s").first().collect().item()
         if bool(re.match(datetime_regex, date_string)):
@@ -62,7 +73,9 @@ class Biologic(BaseCycler):
                 .cast(str)
                 .alias("time/s")
             )
-        else:
+        # if the date column is not in datetime format try to retrieve date information
+        # from header
+        elif read_header_lines:
             with open(filepath, "r", encoding="iso-8859-1") as file:
                 for i in range(n_header_lines):
                     line = file.readline()
@@ -80,6 +93,7 @@ class Biologic(BaseCycler):
                 .cast(str)
                 .alias("Date")
             )
+
         return dataframe
 
 
@@ -93,6 +107,7 @@ class BiologicMB(Biologic):
 
         Args:
             filepath: The path to the file.
+            header_row_index: The index of the header row.
 
         Returns:
             pl.DataFrame | pl.LazyFrame: The imported DataFrame.

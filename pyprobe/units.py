@@ -27,7 +27,12 @@ class Units:
     }
     """A dictionary of SI prefixes and their corresponding factors."""
 
-    time_unit_dict: Dict[str, float] = {"s": 1.0, "min": 60.0, "hr": 3600.0}
+    time_unit_dict: Dict[str, float] = {
+        "s": 1.0,
+        "min": 60.0,
+        "hr": 3600.0,
+        "Seconds": 1.0,
+    }
     """A dictionary of time units and their corresponding factors."""
 
     unit_dict: Dict[str, str] = {
@@ -38,6 +43,7 @@ class Units:
         "s": "Time",
         "C": "Temperature",
         "Ohms": "Resistance",
+        "Seconds": "Time",
     }
     """A dictionary of units and their corresponding quantities."""
 
@@ -110,20 +116,40 @@ class Units:
         ).alias(f"{self.input_quantity} [{self.default_unit}]")
 
 
-def unit_from_regexp(
-    name: str, regular_expression: str = r"([\w\s]+?)\s*\[(\w+)\]"
-) -> "Units":
-    """Create an instance of a units class from column name and regular expression.
+def split_quantity_unit(
+    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]*)\])?$"
+) -> Tuple[str, str]:
+    """Split a column name into quantity and unit.
 
     Args:
-        name (str): The column name.
-        regular_expression (str): The pattern to match the column name.
+        name (str): The column name (e.g. "Current [A]" or "Temperature")
+
+    Returns:
+        Tuple[str, str]: The quantity and unit.
     """
     pattern = re.compile(regular_expression)
     match = pattern.match(name)
     if match is not None:
-        return Units(match.group(1), match.group(2))
+        quantity = match.group(1).strip()
+        unit = match.group(2) or ""  # Group 2 will be None if no brackets
+        return quantity, unit
     else:
         error_msg = f"Name {name} does not match pattern."
         logger.error(error_msg)
         raise ValueError(error_msg)
+
+
+def unit_from_regexp(
+    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]*)\])?$"
+) -> "Units":
+    """Create an instance of a units class from column name and regular expression.
+
+    Args:
+        name (str): The column name (e.g. "Current [A]" or "Temperature")
+        regular_expression (str): The pattern to match the column name.
+
+    Returns:
+        Units: Instance with quantity and unit (empty string if no unit found)
+    """
+    quantity, unit = split_quantity_unit(name, regular_expression)
+    return Units(quantity, unit)

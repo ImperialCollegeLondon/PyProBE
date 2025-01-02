@@ -27,6 +27,8 @@ class BaseCycler(BaseModel):
     `chrono crate <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>`_
     documentation for more information on the format string.
     """
+    header_row_index: int = 0
+    """The index of the header row in the data file."""
 
     @field_validator("input_data_path")
     @classmethod
@@ -158,11 +160,15 @@ class BaseCycler(BaseModel):
             raise ValueError(error_msg)
 
     @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
+    def read_file(
+        filepath: str, header_row_index: int = 0
+    ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:
-            filepath (str): The path to the file.
+            filepath: The path to the file.
+            header_row_index: The index of the header row.
+            header_row_index: The index of the header row.
 
         Returns:
             pl.DataFrame | pl.LazyFrame: The DataFrame.
@@ -171,9 +177,16 @@ class BaseCycler(BaseModel):
         file_ext = os.path.splitext(file)[1]
         match file_ext.lower():
             case ".xlsx":
-                return pl.read_excel(filepath, engine="calamine", infer_schema_length=0)
+                return pl.read_excel(
+                    filepath,
+                    engine="calamine",
+                    infer_schema_length=0,
+                    read_options={"header_row": header_row_index},
+                )
             case ".csv":
-                return pl.scan_csv(filepath, infer_schema=False)
+                return pl.scan_csv(
+                    filepath, infer_schema=False, skip_rows=header_row_index
+                )
             case _:
                 error_msg = f"Unsupported file extension: {file_ext}"
                 logger.error(error_msg)
@@ -190,7 +203,7 @@ class BaseCycler(BaseModel):
         """
         files = glob.glob(self.input_data_path)
         files.sort()
-        list = [self.read_file(file) for file in files]
+        list = [self.read_file(file, self.header_row_index) for file in files]
         all_columns = set([col for df in list for col in df.collect_schema().names()])
         for i in range(len(list)):
             if len(list[i].collect_schema().names()) < len(all_columns):

@@ -6,6 +6,7 @@ import polars as pl
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
+from pyprobe.units import split_quantity_unit
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +21,14 @@ required_columns = [
 
 default_column_definitions = {
     "Date": "The timestamp of the data point. Type: datetime.",
-    "Time [s]": "The time passed from the start of the procedure.",
+    "Time": "The time passed from the start of the procedure.",
     "Step": "The step number.",
     "Cycle": "The cycle number.",
     "Event": "The event number. Counts the changes in cycles and steps.",
-    "Current [A]": "The current through the cell.",
-    "Voltage [V]": "The terminal voltage.",
-    "Capacity [Ah]": "The net charge passed since the start of the procedure.",
-    "Temperature [C]": "The temperature of the cell.",
+    "Current": "The current through the cell.",
+    "Voltage": "The terminal voltage.",
+    "Capacity": "The net charge passed since the start of the procedure.",
+    "Temperature": "The temperature of the cell.",
 }
 
 
@@ -76,6 +77,23 @@ class RawData(Result):
             raise ValueError(error_msg)
         return dataframe
 
+    @property
+    def data(self) -> pl.DataFrame:
+        """Return the data as a polars DataFrame.
+
+        Returns:
+            pl.DataFrame: The data as a polars DataFrame.
+
+        Raises:
+            ValueError: If no data exists for this filter.
+        """
+        dataframe = super().data
+        unsorted_columns = set(dataframe.collect_schema().names()) - set(
+            required_columns
+        )
+        sorted_columns = list(required_columns) + list(unsorted_columns)
+        return dataframe.select(sorted_columns)
+
     def zero_column(
         self,
         column: str,
@@ -92,11 +110,16 @@ class RawData(Result):
         Returns:
             pl.DataFrame | pl.LazyFrame: The dataframe or lazyframe with the new column.
         """
-        self.base_dataframe = self.base_dataframe.with_columns(
+        self.live_dataframe = self.live_dataframe.with_columns(
             (pl.col(column) - pl.col(column).first()).alias(new_column_name)
         )
+        new_column_quantity, _ = split_quantity_unit(new_column_name)
         if new_column_definition is not None:
-            self.define_column(new_column_name, new_column_definition)
+            self.define_column(new_column_quantity, new_column_definition)
+        else:
+            self.define_column(
+                new_column_quantity, f"{column} with first value zeroed."
+            )
 
     @property
     def capacity(self) -> float:
@@ -133,7 +156,7 @@ class RawData(Result):
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
         if reference_charge is None:
-            self.base_dataframe = self.base_dataframe.with_columns(
+            self.live_dataframe = self.live_dataframe.with_columns(
                 (
                     (
                         pl.col("Capacity [Ah]")
@@ -145,13 +168,13 @@ class RawData(Result):
             )
         else:
             if self.contains_lazyframe:
-                reference_charge_data = reference_charge.base_dataframe.select(
+                reference_charge_data = reference_charge.live_dataframe.select(
                     "Time [s]", "Capacity [Ah]"
                 )
-                self.base_dataframe = self.base_dataframe.join(
+                self.live_dataframe = self.live_dataframe.join(
                     reference_charge_data, on="Time [s]", how="left"
                 )
-                self.base_dataframe = self.base_dataframe.with_columns(
+                self.live_dataframe = self.live_dataframe.with_columns(
                     pl.col("Capacity [Ah]_right")
                     .max()
                     .alias("Full charge reference capacity"),
@@ -160,13 +183,13 @@ class RawData(Result):
                 full_charge_reference_capacity = (
                     reference_charge.data.select("Capacity [Ah]").max().item()
                 )
-                self.base_dataframe = self.base_dataframe.with_columns(
+                self.live_dataframe = self.live_dataframe.with_columns(
                     pl.lit(full_charge_reference_capacity).alias(
                         "Full charge reference capacity"
                     ),
                 )
 
-            self.base_dataframe = self.base_dataframe.with_columns(
+            self.live_dataframe = self.live_dataframe.with_columns(
                 (
                     (
                         pl.col("Capacity [Ah]")
@@ -197,7 +220,7 @@ class RawData(Result):
             reference_capacity = (
                 pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
             )
-        self.base_dataframe = self.base_dataframe.with_columns(
+        self.live_dataframe = self.live_dataframe.with_columns(
             (
                 pl.col("Capacity [Ah]")
                 - pl.col("Capacity [Ah]").max()
@@ -238,7 +261,7 @@ class RawData(Result):
         # reduce the full dataframe to only the steps as they appear in order in
         # the data
         only_steps = (
-            self.data.with_row_index()
+            self.live_dataframe.with_row_index()
             .group_by("Event", maintain_order=True)
             .agg(pl.col("Step").first())
         )

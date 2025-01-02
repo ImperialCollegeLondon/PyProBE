@@ -1,6 +1,7 @@
 """Tests for the RawData class."""
 
 import copy
+import random
 
 import numpy as np
 import polars as pl
@@ -32,6 +33,22 @@ def test_init(RawData_fixture, step_descriptions_fixture):
         RawData(base_dataframe=data, info={"test": 1})
 
 
+def test_data(RawData_fixture):
+    """Test the data property."""
+    columns = copy.deepcopy(RawData_fixture.data.collect_schema().names())
+    random.shuffle(columns)
+    RawData_fixture.live_dataframe = RawData_fixture.live_dataframe.select(columns)
+    assert RawData_fixture.data.columns == [
+        "Time [s]",
+        "Step",
+        "Event",
+        "Current [A]",
+        "Voltage [V]",
+        "Capacity [Ah]",
+        "Date",
+    ]
+
+
 def test_capacity(BreakinCycles_fixture):
     """Test the capacity property."""
     capacity = BreakinCycles_fixture.cycle(0).charge(0).capacity
@@ -42,13 +59,13 @@ def test_set_SOC(BreakinCycles_fixture):
     """Test the set_SOC method."""
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
+    assert isinstance(with_charge_specified.live_dataframe, pl.LazyFrame)
     assert "Capacity [Ah]_right" not in with_charge_specified.data.columns
     with_charge_specified = with_charge_specified.data["SOC"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     without_charge_specified.set_SOC(0.04)
-    assert isinstance(without_charge_specified.base_dataframe, pl.LazyFrame)
+    assert isinstance(without_charge_specified.live_dataframe, pl.LazyFrame)
     without_charge_specified = without_charge_specified.data["SOC"]
 
     assert (with_charge_specified == without_charge_specified).all()
@@ -62,33 +79,36 @@ def test_SOC_ref_as_dataframe(BreakinCycles_fixture):
     assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
     BreakinCycles_fixture.cycle(-1).charge(-1).data
     with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
+    assert isinstance(with_charge_specified.live_dataframe, pl.LazyFrame)
 
 
 def test_SOC_with_base_as_dataframe(BreakinCycles_fixture):
     """Test the set_SOC method with the base dataframe collected into a dataframe."""
     with_charge_specified = BreakinCycles_fixture
     with_charge_specified.data
-    assert isinstance(with_charge_specified.base_dataframe, pl.DataFrame)
+    assert isinstance(with_charge_specified.live_dataframe, pl.DataFrame)
     with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert isinstance(with_charge_specified.base_dataframe, pl.DataFrame)
+    assert isinstance(with_charge_specified.live_dataframe, pl.DataFrame)
+    assert "SOC" in with_charge_specified._polars_cache.columns
 
 
 def test_set_reference_capacity(BreakinCycles_fixture):
     """Test the set_reference_capacity method."""
-    BreakinCycles_fixture.set_reference_capacity()
-    assert BreakinCycles_fixture("Capacity - Referenced [Ah]").min() == 0
+    procedure1 = copy.deepcopy(BreakinCycles_fixture)
+    procedure1.set_reference_capacity()
+    assert procedure1.get("Capacity - Referenced [Ah]").min() == 0
     assert np.isclose(
-        BreakinCycles_fixture("Capacity - Referenced [Ah]").max(),
-        BreakinCycles_fixture.capacity,
+        procedure1.get("Capacity - Referenced [Ah]").max(),
+        procedure1.capacity,
     )
 
-    BreakinCycles_fixture.set_reference_capacity(0.04)
+    procedure2 = copy.deepcopy(BreakinCycles_fixture)
+    procedure2.set_reference_capacity(0.04)
     assert np.isclose(
-        BreakinCycles_fixture("Capacity - Referenced [Ah]").min(),
-        0.04 - BreakinCycles_fixture.capacity,
+        procedure2.get("Capacity - Referenced [Ah]").min(),
+        0.04 - procedure2.capacity,
     )
-    assert BreakinCycles_fixture("Capacity - Referenced [Ah]").max() == 0.04
+    assert procedure2.get("Capacity - Referenced [Ah]").max() == 0.04
 
 
 def test_zero_column(RawData_fixture):
@@ -99,7 +119,7 @@ def test_zero_column(RawData_fixture):
         "Capacity column with first value zeroed.",
     )
     assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
-    assert RawData_fixture.column_definitions["Zeroed Capacity [Ah]"] == (
+    assert RawData_fixture.column_definitions["Zeroed Capacity"] == (
         "Capacity column with first value zeroed."
     )
 
@@ -114,15 +134,15 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
     definition_keys = list(rawdata.column_definitions.keys())
     assert set(definition_keys) == set(
         [
-            "Time [s]",
-            "Current [A]",
-            "Voltage [V]",
-            "Capacity [Ah]",
+            "Time",
+            "Current",
+            "Voltage",
+            "Capacity",
             "Cycle",
             "Step",
             "Event",
             "Date",
-            "Temperature [C]",
+            "Temperature",
         ]
     )
 

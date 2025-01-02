@@ -622,10 +622,10 @@ def run_ocv_curve_fit(
         "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
         "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
         "x_ne high SOC": "Negative electrode stoichiometry at highest SOC point.",
-        "Cell Capacity [Ah]": "Total cell capacity.",
-        "Cathode Capacity [Ah]": "Cathode capacity.",
-        "Anode Capacity [Ah]": "Anode capacity.",
-        "Li Inventory [Ah]": "Lithium inventory.",
+        "Cell Capacity": "Total cell capacity.",
+        "Cathode Capacity": "Cathode capacity.",
+        "Anode Capacity": "Anode capacity.",
+        "Li Inventory": "Lithium inventory.",
     }
 
     if composite_pe:
@@ -671,7 +671,7 @@ def run_ocv_curve_fit(
     )
     fitted_OCV.column_definitions = {
         "SOC": "Cell state of charge.",
-        "Voltage [V]": "Fitted OCV values.",
+        "Voltage": "Fitted OCV values.",
     }
 
     return input_stoichiometry_limits, fitted_OCV
@@ -741,7 +741,7 @@ def quantify_degradation_modes(
             }
         )
     )
-    dma_result.base_dataframe = dma_result.base_dataframe.with_columns(
+    dma_result.live_dataframe = dma_result.live_dataframe.with_columns(
         pl.col("Index").cast(pl.Int64)
     )
     dma_result.column_definitions = {
@@ -843,7 +843,7 @@ def run_batch_dma_parallel(
     fitted_OCVs = [result[1] for result in fit_results]
 
     for index, sto_limit in enumerate(stoichiometry_limit_list):
-        sto_limit.base_dataframe = sto_limit.base_dataframe.with_columns(
+        sto_limit.live_dataframe = sto_limit.live_dataframe.with_columns(
             pl.lit(index).cast(pl.Int64).alias("Index")
         )
 
@@ -969,6 +969,7 @@ def average_ocvs(
         A Result object containing the averaged OCV curve.
     """
     required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC", "Current [A]"]
+
     AnalysisValidator(
         input_data=input_data,
         required_columns=required_columns,
@@ -981,12 +982,12 @@ def average_ocvs(
         charge_result = input_data.charge()
     else:
         charge_result = eval(f"input_data.{charge_filter}")
-    charge_SOC = charge_result.get_only("SOC")
-    charge_OCV = charge_result.get_only("Voltage [V]")
-    charge_current = charge_result.get_only("Current [A]")
-    discharge_SOC = discharge_result.get_only("SOC")
-    discharge_OCV = discharge_result.get_only("Voltage [V]")
-    discharge_current = discharge_result.get_only("Current [A]")
+    charge_SOC, charge_OCV, charge_current = charge_result.get(
+        "SOC", "Voltage [V]", "Current [A]"
+    )
+    discharge_SOC, discharge_OCV, discharge_current = discharge_result.get(
+        "SOC", "Voltage [V]", "Current [A]"
+    )
 
     average_OCV = dma_functions.average_OCV_curves(
         charge_SOC,
@@ -1001,7 +1002,7 @@ def average_ocvs(
         pl.DataFrame(
             {
                 "Voltage [V]": average_OCV,
-                "Capacity [Ah]": charge_result.get_only("Capacity [Ah]"),
+                "Capacity [Ah]": charge_result.get("Capacity [Ah]"),
                 "SOC": charge_SOC,
             }
         )

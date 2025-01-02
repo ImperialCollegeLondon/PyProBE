@@ -26,7 +26,7 @@ def test_gradient(differentiation_fixture):
     result = differentiation.gradient(differentiation_fixture, "x", "y")
     expected_gradient = np.array([2, 2, 2, 2, 2])
     assert isinstance(result, Result)
-    assert np.allclose(result.get_only("d(y)/d(x)"), expected_gradient)
+    assert np.allclose(result.get("d(y)/d(x)"), expected_gradient)
 
 
 def test_differentiate_LEAN(differentiation_fixture):

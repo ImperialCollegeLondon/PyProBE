@@ -71,7 +71,9 @@ class Neware(BaseCycler):
         return data
 
     @staticmethod
-    def read_file(filepath: str) -> pl.DataFrame | pl.LazyFrame:
+    def read_file(
+        filepath: str, header_row_index: int = 0
+    ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
         Args:

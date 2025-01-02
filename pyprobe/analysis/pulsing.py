@@ -65,7 +65,7 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
         required_columns=["Current [A]", "Voltage [V]", "Time [s]", "SOC"],
     )
 
-    all_data_df = input_data.base_dataframe
+    all_data_df = input_data.live_dataframe
     ocv_df = _get_end_of_rest_points(all_data_df).drop("Pulse Number")
     return input_data.clean_copy(
         ocv_df, column_definitions=input_data.column_definitions
@@ -99,7 +99,7 @@ def get_resistances(
         input_data=input_data,
         required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event", "SOC"],
     )
-    all_data_df = input_data.base_dataframe
+    all_data_df = input_data.live_dataframe
 
     # get the pulse number for each row
     all_data_df = _get_pulse_number(all_data_df)
@@ -213,11 +213,11 @@ def get_resistances(
 
     column_definitions = {
         "Pulse Number": "An index for each pulse.",
-        "Capacity [Ah]": input_data.column_definitions["Capacity [Ah]"],
+        "Capacity": input_data.column_definitions["Capacity"],
         "SOC": input_data.column_definitions["SOC"],
-        "OCV [V]": "The voltage value at the final data point in the rest before a "
+        "OCV": "The voltage value at the final data point in the rest before a "
         "pulse.",
-        "R0 [Ohms]": "The instantaneous resistance measured between the final rest "
+        "R0": "The instantaneous resistance measured between the final rest "
         "point and the first data point in the pulse.",
     }
     result = input_data.clean_copy(pulse_df, column_definitions)
@@ -283,7 +283,7 @@ class Pulsing(BaseModel):
             input_data=self.input_data,
             required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event", "SOC"],
         )
-        all_data_df = self.input_data.base_dataframe
+        all_data_df = self.input_data.live_dataframe
 
         # get the pulse number for each row
         all_data_df = all_data_df.with_columns(
@@ -402,13 +402,13 @@ class Pulsing(BaseModel):
 
         column_definitions = {
             "Pulse Number": "An index for each pulse.",
-            "Experiment Capacity [Ah]": self.input_data.column_definitions[
-                "Experiment Capacity [Ah]"
+            "Experiment Capacity": self.input_data.column_definitions[
+                "Experiment Capacity"
             ],
             "SOC": self.input_data.column_definitions["SOC"],
-            "OCV [V]": "The voltage value at the final data point in the rest before a "
+            "OCV": "The voltage value at the final data point in the rest before a "
             "pulse.",
-            "R0 [Ohms]": "The instantaneous resistance measured between the final rest "
+            "R0": "The instantaneous resistance measured between the final rest "
             "point and the first data point in the pulse.",
         }
         result = self.input_data.clean_copy(pulse_df, column_definitions)

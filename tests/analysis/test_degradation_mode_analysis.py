@@ -446,7 +446,7 @@ def test_run_batch_dma():
                 {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
             ),
             info={},
-            column_definitions={"Voltage [V]": "OCV", "Capacity [Ah]": "SOC"},
+            column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
         )
         for ocv_target in ocv_target_list
     ]
@@ -624,7 +624,7 @@ def test_quantify_degradation_modes(
     np.testing.assert_allclose(result.data["LAM_ne"].to_numpy()[1], expected_LAM_ne)
     np.testing.assert_allclose(result.data["LLI"].to_numpy()[1], expected_LLI)
     np.testing.assert_allclose(result.data["Index"].to_numpy(), [0, 1])
-    assert result.data.columns == [
+    assert set(result.data.columns) == {
         "Index",
         "x_pe low SOC",
         "x_pe high SOC",
@@ -638,7 +638,7 @@ def test_quantify_degradation_modes(
         "LAM_pe",
         "LAM_ne",
         "LLI",
-    ]
+    }
 
     # test with missing or incorrect input data
     result = Result(
@@ -711,10 +711,10 @@ def test_average_ocvs(BreakinCycles_fixture):
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_SOC()
     corrected_r = dma.average_ocvs(break_in, charge_filter="constant_current(1)")
-    assert math.isclose(corrected_r.get_only("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(corrected_r.get_only("Voltage [V]")[-1], 4.170649780122139)
+    assert math.isclose(corrected_r.get("Voltage [V]")[0], 3.14476284763849)
+    assert math.isclose(corrected_r.get("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(
-        corrected_r.get_only("SOC"), break_in.constant_current(1).get_only("SOC")
+        corrected_r.get("SOC"), break_in.constant_current(1).get("SOC")
     )
 
     # test invalid input

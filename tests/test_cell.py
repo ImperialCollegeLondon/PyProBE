@@ -288,6 +288,7 @@ def test_import_pybamm_solution(benchmark):
             ["Procedure Time [s]", "Procedure Capacity [Ah]"]
         ),
         written_data,
+        check_column_order=False,
     )
     os.remove("tests/sample_data/pybamm.parquet")
 
@@ -322,8 +323,8 @@ def test_archive(cell_instance):
         == cell_from_file.procedure[title].cycle_info
     )
     assert_frame_equal(
-        cell_instance.procedure[title].base_dataframe,
-        cell_from_file.procedure[title].base_dataframe,
+        cell_instance.procedure[title].live_dataframe,
+        cell_from_file.procedure[title].live_dataframe,
     )
 
     # test loading an incorrect pyprobe version
@@ -369,8 +370,8 @@ def test_archive(cell_instance):
         == cell_from_file.procedure[title].cycle_info
     )
     assert_frame_equal(
-        cell_instance.procedure[title].base_dataframe,
-        cell_from_file.procedure[title].base_dataframe,
+        cell_instance.procedure[title].live_dataframe,
+        cell_from_file.procedure[title].live_dataframe,
     )
 
     shutil.rmtree(input_path + "archive")
