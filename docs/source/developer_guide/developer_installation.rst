@@ -38,7 +38,7 @@ virtual environment:
 
 .. code-block:: bash
 
-      uv sync --all-extras --group format --group test --group docs --group external-integration
+      uv sync --all-extras --all-groups
 
 The virtual environment is stored in the :code:`PyProBE/.venv` directory inside your and
 can be activated with :code:`source .venv/bin/activate`. 
