@@ -25,7 +25,7 @@ jobs:
       
       - name: Install the project
         run: |
-          uv sync --all-extras --group format --group test --group docs --group external-integration
+          uv sync --all-extras
           uv pip install ipykernel
           sudo apt-get install pandoc
       

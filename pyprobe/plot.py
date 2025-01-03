@@ -70,7 +70,8 @@ def _create_seaborn_wrapper() -> Any:
                 """Raise an ImportError if seaborn is not installed."""
                 raise ImportError(
                     "Optional dependency 'seaborn' is not installed. Please install by "
-                    "running 'pip install seaborn'."
+                    "running 'pip install seaborn' or installing PyProBE with seaborn "
+                    "as an optional dependency: `pip install 'PyProBE-Data[seaborn]'."
                 )
 
         return SeabornWrapper()
@@ -124,10 +125,16 @@ def _create_seaborn_wrapper() -> Any:
 seaborn = _create_seaborn_wrapper()
 """A wrapped version of the seaborn package.
 
+Requires the seaborn package to be installed as an optional dependency. You can install
+it with PyProBE by running :code:`pip install 'PyProBE-Data[seaborn]'`, or install it
+seperately with :code:`pip install seaborn`.
+
 This version of seaborn is modified to work with PyProBE Result objects. All functions
 from the original seaborn package are available in this version. Where seaborn functions
 accept a 'data' argument, a PyProBE Result object can be passed instead of a pandas
 DataFrame. For example:
+
+.. code-block:: python
 
     from pyprobe.plot import seaborn as sns
 

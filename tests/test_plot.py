@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 import polars as pl
 import polars.testing as pl_testing
 import pytest
-import seaborn as _sns
 from plotly.express.colors import sample_colorscale
 from sklearn.preprocessing import minmax_scale
 
@@ -122,6 +121,7 @@ def test_retrieve_relevant_columns_with_unit_conversion():
 
 def test_seaborn_wrapper_creation():
     """Test basic seaborn wrapper creation."""
+    pytest.importorskip("seaborn")
     wrapper = plot._create_seaborn_wrapper()
     assert wrapper is not None
     assert isinstance(wrapper, object)
@@ -129,6 +129,7 @@ def test_seaborn_wrapper_creation():
 
 def test_seaborn_wrapper_data_conversion(mocker):
     """Test that wrapped functions convert data correctly."""
+    sns = pytest.importorskip("seaborn")
     result = Result(
         base_dataframe=pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]}),
         info={},
@@ -136,30 +137,32 @@ def test_seaborn_wrapper_data_conversion(mocker):
     )
     data = result.data.to_pandas()
     pyprobe_seaborn_plot = plot.seaborn.lineplot(data=result, x="x", y="y")
-    seaborn_lineplot = _sns.lineplot(data=data, x="x", y="y")
+    seaborn_lineplot = sns.lineplot(data=data, x="x", y="y")
     assert pyprobe_seaborn_plot == seaborn_lineplot
 
 
 def test_seaborn_wrapper_function_call():
     """Test that wrapped functions produce same output."""
+    sns = pytest.importorskip("seaborn")
     wrapper = plot._create_seaborn_wrapper()
 
-    assert wrapper.set_theme() == _sns.set_theme()
+    assert wrapper.set_theme() == sns.set_theme()
 
     colors1 = wrapper.color_palette()
-    colors2 = _sns.color_palette()
+    colors2 = sns.color_palette()
     assert colors1 == colors2
 
     # Test with specific parameters
     palette1 = wrapper.color_palette("husl", 8)
-    palette2 = _sns.color_palette("husl", 8)
+    palette2 = sns.color_palette("husl", 8)
     assert palette1 == palette2
 
 
 def test_seaborn_wrapper_function_properties():
     """Test that wrapped functions maintain original properties."""
+    sns = pytest.importorskip("seaborn")
     wrapper = plot._create_seaborn_wrapper()
-    original_func = _sns.lineplot
+    original_func = sns.lineplot
     wrapped_func = wrapper.lineplot
 
     assert wrapped_func.__name__ == original_func.__name__
@@ -168,8 +171,9 @@ def test_seaborn_wrapper_function_properties():
 
 def test_seaborn_wrapper_complete_coverage():
     """Test that all public seaborn attributes are wrapped."""
+    sns = pytest.importorskip("seaborn")
     wrapper = plot._create_seaborn_wrapper()
-    sns_attrs = {attr for attr in dir(_sns) if not attr.startswith("_")}
+    sns_attrs = {attr for attr in dir(sns) if not attr.startswith("_")}
     wrapper_attrs = {attr for attr in dir(wrapper) if not attr.startswith("_")}
     assert sns_attrs == wrapper_attrs
 

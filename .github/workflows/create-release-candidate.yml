@@ -31,7 +31,7 @@ jobs:
 
       - name: Install project
         run: |
-          uv sync --all-extras --group format --group test --group docs --group external-integration
+          uv sync --all-extras
 
       - name: Bump version
         id: bump

@@ -38,7 +38,7 @@ virtual environment:
 
 .. code-block:: bash
 
-      uv sync --all-extras --all-groups
+      uv sync --all-extras
 
 The virtual environment is stored in the :code:`PyProBE/.venv` directory inside your and
 can be activated with :code:`source .venv/bin/activate`.
@@ -58,38 +58,13 @@ This will create a kernel that you can select within VSCode in the usual way.
    this method results in dependency conflicts:
 
    1. Create and activate a virtual environment.
-     
-     .. tabs::
-         .. tab:: venv
 
-            In your working directory:
-
-            .. code-block:: bash
-
-               python -m venv venv
-               source .venv/bin/activate
-
-         .. tab:: conda
-               
-            In any directory:
-
-            .. code-block:: bash
-
-               conda create -n pyprobe python=3.12
-               conda activate pyprobe
-
-   2. Install the developer dependencies:
+   2. Install PyProBE as a package into your virtual environment with the developer 
+      dependencies:
       
       .. code-block:: bash
 
-         cd /path/to/your/directory/PyProBE
-         pip install -r requirements-dev.txt
-
-   3. Install PyProBE as a package into your virtual environment:
-      
-      .. code-block:: bash
-
-         pip install -e .
+         pip install -e '.[dev, docs]'
 
       The :code:`-e` flag installs in "editable" mode, which means changes that you 
       make to the code will be automatically reflected in the package inside your
