@@ -237,20 +237,26 @@ class Result(BaseModel):
             data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
             return data_to_plot.hvplot(*args, **kwargs)
 
-        hvplot.__doc__ = (
-            "HvPlot is a library for creating fast and interactive plots.\n\n"
-            "The default backend is bokeh, which can be changed by setting the backend "
-            "with :code:`hvplot.extension('matplotlib')` or "
-            ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
-        )
     else:
 
         def hvplot(self, *args: Any, **kwargs: Any) -> None:
             """Wrapper for plotting using the hvplot library."""
             raise ImportError(
                 "Optional dependency hvplot is not installed. Please install it via "
-                "'pip install hvplot'."
+                "'pip install hvplot' or by installing PyProBE with hvplot as an "
+                "optional dependency: pip install 'PyProBE-Data[hvplot]'."
             )
+
+    hvplot.__doc__ = (
+        "HvPlot is a library for creating fast and interactive plots.\n\n"
+        "This method requires the hvplot library to be installed as an optional "
+        "dependency. You can install it with PyProBE by running "
+        ":code:`pip install 'PyProBE-Data[hvplot]'`, or install it seperately with "
+        ":code:`pip install hvplot`.\n\n"
+        "The default backend is bokeh, which can be changed by setting the backend "
+        "with :code:`hvplot.extension('matplotlib')` or "
+        ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
+    )
 
     def _get_data_subset(self, *column_names: str) -> pl.DataFrame:
         """Return a subset of the data with the specified columns.
