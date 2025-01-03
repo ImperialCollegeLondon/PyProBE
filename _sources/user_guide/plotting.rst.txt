@@ -3,28 +3,53 @@
 Plotting
 ========
 
-PyProBE has a plotting module that can display any :class:`~pyprobe.rawdata.RawData`
-or :class:`~pyprobe.result.Result` object. The plotting module is based on
-`plotly <https://plot.ly/python/>`_. 
+PyProBE includes plotting methods that integrate directly with popular Python visualisation
+tools. Using a backend powered by `Pandas <https://pandas.pydata.org/>`_ and `matplotlib <https://matplotlib.org/>`_, you can call the 
+:func:`~pyprobe.result.Result.plot` method on any :class:`~pyprobe.result.Result` object.
 
-You first create a plot instance:
+For more interactive plotting, you can use install the optional dependency `hvPlot <https://hvplot.holoviz.org/>`_:
+
+.. code-block:: bash
+
+    pip install 'PyProBE-Data[hvplot]'
+
+This enables the :func:`~pyprobe.result.Result.hvplot` method which creates interactive plots for
+visual inspection.
+
+The :func:`~pyprobe.result.Result.plot` and :func:`~pyprobe.result.Result.hvplot` 
+interfaces are very similar. For example, creation of a simple plot might look like:
 
 .. code-block:: python
 
-    plot = pyprobe.Plot()
+    result = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1)
+    
+    # for matplotlib
+    result.plot(x='Time [s]', y='Voltage [V]')
 
-Then you can add data to and display the plot:
+    # for hvplot
+    result.hvplot(x='Time [s]', y='Voltage [V]')
+
+
+PyProBE also includes a wrapper for the `Seaborn <https://seaborn.pydata.org/index.html>`_ 
+package. This allows you to pass any :class:`~pyprobe.result.Result` object to the `data`
+argument of any seaborn method:
 
 .. code-block:: python
 
-    result = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(4).charge(2)
-    plot.add_line(result, 'Time [s]', 'Voltage [V]')
-    plot.show()
+    from pyprobe.plot import seaborn as sns
 
-:func:`~pyprobe.plot.Plot.add_line` adds a line to the plot. The first argument is the 
-:class:`~pyprobe.rawdata.RawData` or :class:`~pyprobe.result.Result` object data to be 
-plotted, the second and third arguments are quantities to plot in x and y.
+    sns.scatterplot(result, x='Time [s]', y='Voltage [V]')
 
-For other plot types see the :class:`~pyprobe.plot.Plot` class documentation.
+
+Seaborn must be installed as an optional dependency:
+
+.. code-block:: bash
+
+    pip install 'PyProBE-Data[seaborn]'
+
+All of these methods are light wrappers, meaning you can refer to the original package 
+documentation for details on methods to customise your plots further. To get started with
+plotting view the :doc:`example <../examples/plotting>`.
+
 
 .. footbibliography::

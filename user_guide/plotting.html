@@ -354,23 +354,41 @@
                   
   <section id="plotting">
 <span id="id1"></span><h1>Plotting<a class="headerlink" href="#plotting" title="Link to this heading">#</a></h1>
-<p>PyProBE has a plotting module that can display any <a class="reference internal" href="../api/pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a>
-or <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object. The plotting module is based on
-<a class="reference external" href="https://plot.ly/python/">plotly</a>.</p>
-<p>You first create a plot instance:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span> <span class="o">=</span> <span class="n">pyprobe</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<p>PyProBE includes plotting methods that integrate directly with popular Python visualisation
+tools. Using a backend powered by <a class="reference external" href="https://pandas.pydata.org/">Pandas</a> and <a class="reference external" href="https://matplotlib.org/">matplotlib</a>, you can call the
+<a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result.plot" title="pyprobe.result.Result.plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot()</span></code></a> method on any <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object.</p>
+<p>For more interactive plotting, you can use install the optional dependency <a class="reference external" href="https://hvplot.holoviz.org/">hvPlot</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;PyProBE-Data[hvplot]&#39;</span>
 </pre></div>
 </div>
-<p>Then you can add data to and display the plot:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">charge</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">plot</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;Time [s]&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
-<span class="n">plot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<p>This enables the <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result.hvplot" title="pyprobe.result.Result.hvplot"><code class="xref py py-func docutils literal notranslate"><span class="pre">hvplot()</span></code></a> method which creates interactive plots for
+visual inspection.</p>
+<p>The <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result.plot" title="pyprobe.result.Result.plot"><code class="xref py py-func docutils literal notranslate"><span class="pre">plot()</span></code></a> and <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result.hvplot" title="pyprobe.result.Result.hvplot"><code class="xref py py-func docutils literal notranslate"><span class="pre">hvplot()</span></code></a>
+interfaces are very similar. For example, creation of a simple plot might look like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Procedure Name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">experiment</span><span class="p">(</span><span class="s1">&#39;Experiment Name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># for matplotlib</span>
+<span class="n">result</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
+
+<span class="c1"># for hvplot</span>
+<span class="n">result</span><span class="o">.</span><span class="n">hvplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><a class="reference internal" href="../api/pyprobe.plot.html#pyprobe.plot.Plot.add_line" title="pyprobe.plot.Plot.add_line"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_line()</span></code></a> adds a line to the plot. The first argument is the
-<a class="reference internal" href="../api/pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawData</span></code></a> or <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object data to be
-plotted, the second and third arguments are quantities to plot in x and y.</p>
-<p>For other plot types see the <a class="reference internal" href="../api/pyprobe.plot.html#pyprobe.plot.Plot" title="pyprobe.plot.Plot"><code class="xref py py-class docutils literal notranslate"><span class="pre">Plot</span></code></a> class documentation.</p>
+<p>PyProBE also includes a wrapper for the <a class="reference external" href="https://seaborn.pydata.org/index.html">Seaborn</a>
+package. This allows you to pass any <a class="reference internal" href="../api/pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object to the <cite>data</cite>
+argument of any seaborn method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.plot</span> <span class="kn">import</span> <span class="n">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+
+<span class="n">sns</span><span class="o">.</span><span class="n">scatterplot</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;Voltage [V]&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Seaborn must be installed as an optional dependency:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;PyProBE-Data[seaborn]&#39;</span>
+</pre></div>
+</div>
+<p>All of these methods are light wrappers, meaning you can refer to the original package
+documentation for details on methods to customise your plots further. To get started with
+plotting view the <a class="reference internal" href="../examples/plotting.html"><span class="doc">example</span></a>.</p>
 </section>
 
 
