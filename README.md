@@ -51,7 +51,7 @@ PyProBE works with numerous cyclers. For guidance on how to export your data to 
 <details>
 <summary><strong style="font-size: 1.2em;">2. Accelerate battery data exploration</strong></summary>
 
-PyProBE has a built-in [plotting](https://imperialcollegelondon.github.io/PyProBE/api/pyprobe.plot.html) module for fast and flexible visualisation of battery data. It also includes a graphical user interface (GUI) 
+PyProBE has built-in plotting methods that integrate with [matplotlib](https://matplotlib.org/), [hvplot](https://hvplot.holoviz.org/) and [seaborn](https://seaborn.pydata.org/index.html) for fast and flexible visualization of battery data. It also includes a graphical user interface (GUI) 
 for exploring data interactively, with almost no code. Run the 
 [getting started](./docs/source/examples/getting-started.ipynb) example locally to try the GUI.
 
