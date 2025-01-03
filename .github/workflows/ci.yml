@@ -29,7 +29,7 @@ jobs:
           python-version-file: "pyproject.toml"
       
       - name: Install the project
-        run: uv sync --all-extras --group format --group test --group docs --group external-integration
+        run: uv sync --all-extras
 
       - name: Run tests
         run: uv run pytest tests --benchmark-json output.json
