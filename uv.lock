@@ -1866,7 +1866,6 @@ dev = [
     { name = "mypy" },
     { name = "nbmake" },
     { name = "pre-commit" },
-    { name = "pybamm" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
     { name = "pytest-cov" },
@@ -1889,6 +1888,9 @@ docs = [
 ]
 hvplot = [
     { name = "hvplot" },
+]
+pybamm = [
+    { name = "pybamm" },
 ]
 seaborn = [
     { name = "seaborn" },
@@ -1915,7 +1917,7 @@ requires-dist = [
     { name = "plotly", specifier = ">=5.24.1" },
     { name = "polars", specifier = ">=1.18.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
-    { name = "pybamm", marker = "extra == 'dev'", specifier = ">=24.1" },
+    { name = "pybamm", marker = "extra == 'pybamm'", specifier = ">=24.1" },
     { name = "pydantic", specifier = ">=2.10.4" },
     { name = "pydata-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.16.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },

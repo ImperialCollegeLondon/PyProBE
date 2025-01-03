@@ -5,7 +5,6 @@ import os
 import shutil
 
 import polars as pl
-import pybamm
 import pytest
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
@@ -158,6 +157,7 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
 
 def test_import_pybamm_solution(benchmark):
     """Test the import_pybamm_solution method."""
+    pybamm = pytest.importorskip("pybamm")
     parameter_values = pybamm.ParameterValues("Chen2020")
     spm = pybamm.lithium_ion.SPM()
     experiment = pybamm.Experiment(
