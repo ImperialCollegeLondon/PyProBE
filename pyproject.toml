@@ -48,6 +48,7 @@ dev = [
     "types-deprecated>=1.2.15.20241117",
     "types-pyyaml>=6.0.12.20241230",
     "types-toml>=0.10.8.20240310",
+    "xlsxwriter>=3.2.0",
 ]
 docs = [
     "autodoc-pydantic>=2.2.0",
@@ -57,7 +58,6 @@ docs = [
     "sphinx-design>=0.6.1",
     "sphinx-tabs>=3.4.7",
     "sphinxcontrib-bibtex>=2.6.3",
-    "xlsxwriter>=3.2.0",
 ]
 pybamm = [
     "pybamm>=24.1",

@@ -1875,6 +1875,7 @@ dev = [
     { name = "types-deprecated" },
     { name = "types-pyyaml" },
     { name = "types-toml" },
+    { name = "xlsxwriter" },
 ]
 docs = [
     { name = "autodoc-pydantic" },
@@ -1884,7 +1885,6 @@ docs = [
     { name = "sphinx-design" },
     { name = "sphinx-tabs" },
     { name = "sphinxcontrib-bibtex" },
-    { name = "xlsxwriter" },
 ]
 hvplot = [
     { name = "hvplot" },
@@ -1939,7 +1939,7 @@ requires-dist = [
     { name = "types-deprecated", marker = "extra == 'dev'", specifier = ">=1.2.15.20241117" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.20241230" },
     { name = "types-toml", marker = "extra == 'dev'", specifier = ">=0.10.8.20240310" },
-    { name = "xlsxwriter", marker = "extra == 'docs'", specifier = ">=3.2.0" },
+    { name = "xlsxwriter", marker = "extra == 'dev'", specifier = ">=3.2.0" },
 ]
 
 [[package]]
