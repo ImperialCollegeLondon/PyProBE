@@ -369,15 +369,19 @@
 <dt class="sig sig-object py" id="pyprobe.plot.seaborn">
 <span class="sig-name descname"><span class="pre">seaborn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;pyprobe.plot.SeabornWrapper</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#pyprobe.plot.seaborn" title="Link to this definition">#</a></dt>
 <dd><p>A wrapped version of the seaborn package.</p>
+<p>Requires the seaborn package to be installed as an optional dependency. You can install
+it with PyProBE by running <code class="code docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'PyProBE-Data[seaborn]'</span></code>, or install it
+seperately with <code class="code docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">seaborn</span></code>.</p>
 <p>This version of seaborn is modified to work with PyProBE Result objects. All functions
 from the original seaborn package are available in this version. Where seaborn functions
 accept a ‘data’ argument, a PyProBE Result object can be passed instead of a pandas
 DataFrame. For example:</p>
-<blockquote>
-<div><p>from pyprobe.plot import seaborn as sns</p>
-<p>result = cell.procedure[‘Sample’]
-sns.lineplot(data=result, x=”x”, y=”y”)</p>
-</div></blockquote>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyprobe.plot</span> <span class="kn">import</span> <span class="n">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">procedure</span><span class="p">[</span><span class="s1">&#39;Sample&#39;</span><span class="p">]</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">result</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl>
 <dt>Other modifications include:</dt><dd><ul class="simple">
 <li><p>The ‘estimator’ argument is set to None by default in the lineplot function for</p></li>

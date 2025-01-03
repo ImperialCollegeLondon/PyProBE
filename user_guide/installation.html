@@ -401,6 +401,13 @@ conda<span class="w"> </span>activate<span class="w"> </span>pyprobe
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>PyProBE-Data
 </pre></div>
 </div>
+<p>Optional dependencies can be added to the installation as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;PyProBE-Data[hvplot]&#39;</span>
+</pre></div>
+</div>
+<p>If a method uses an optional dependency, it will be detailed in the
+<span class="xref std std-doc">api documentation</span>. If these methods is run without their dependencies
+installed, they will return an error.</p>
 </li>
 <li><p>You can create a new python script or jupyter notebook to
 process your data. You can import PyProBE into your script as follows:</p>

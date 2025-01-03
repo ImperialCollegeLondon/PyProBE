@@ -59,6 +59,16 @@ The steps to install PyProBE are as follows:
 
       pip install PyProBE-Data
 
+   Optional dependencies can be added to the installation as follows:
+
+   .. code-block:: bash
+
+      pip install 'PyProBE-Data[hvplot]'
+
+   If a method uses an optional dependency, it will be detailed in the 
+   :doc:`api documentation <pyprobe>`. If these methods is run without their dependencies
+   installed, they will return an error. 
+
 3. You can create a new python script or jupyter notebook to 
    process your data. You can import PyProBE into your script as follows:
 
