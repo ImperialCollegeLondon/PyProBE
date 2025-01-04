@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional
 
 import distinctipy
 import polars as pl
-from pydantic import BaseModel, Field, field_validator, validate_call
+from pydantic import BaseModel, Field, validate_call
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -31,37 +31,6 @@ class Cell(BaseModel):
     """
     procedure: Dict[str, Procedure] = Field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
-
-    @field_validator("info")
-    def check_and_set_name(
-        cls, info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
-    ) -> Dict[str, Optional[str | int | float | Dict[Any, Any]]]:
-        """Validate the `info` field.
-
-        Checks that a `Name` field is present in the `info` dictionary, if not it is
-        set to 'Default Name'. If the `color` field is not present, a color is
-        generated.
-        """
-        if "Name" not in info.keys():
-            info["Name"] = "Default Name"
-            warnings.warn(
-                "The 'Name' field was not in info. It has been set to 'Default Name'."
-            )
-
-        if "color" not in info.keys():
-            info["color"] = distinctipy.get_hex(
-                distinctipy.get_colors(
-                    1,
-                    rng=1,  # Set the random seed
-                    exclude_colors=[
-                        (0, 0, 0),
-                        (1, 1, 1),
-                        (1, 1, 0),
-                    ],
-                )[0]
-            )
-        values = info
-        return values
 
     def _convert_to_parquet(
         self,
