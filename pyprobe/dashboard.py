@@ -96,12 +96,6 @@ if __name__ == "__main__":
     # Display the DataFrame in the sidebar
     selected_indices = dataframe_with_selections(info)
 
-    # choose a cell identifier
-    cell_identifier = st.sidebar.selectbox(
-        "Select a cell identifier", info.collect_schema().names()
-    )
-    selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
-
     # Get the procedure names from the selected cells
     procedure_names_sets = [
         OrderedSet(cell_list[i].procedure.keys()) for i in selected_indices
@@ -151,7 +145,7 @@ if __name__ == "__main__":
 
     graph_placeholder = st.empty()
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     # Create select boxes for the x and y axes
     filter_stage = col1.selectbox(
         "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
@@ -160,6 +154,9 @@ if __name__ == "__main__":
     x_axis = f"{filter_stage} {x_axis}".strip()
     y_axis = col3.selectbox("y axis", y_options, index=1)
     secondary_y_axis = col4.selectbox("Secondary y axis", ["None"] + y_options, index=0)
+    # choose a cell identifier
+    cell_identifier = col5.selectbox("Legend label", info.collect_schema().names())
+    selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
 
     # Select plot theme
 
