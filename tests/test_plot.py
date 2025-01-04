@@ -263,8 +263,8 @@ def test_add_line(Plot_fixture, plot_result_fixture):
     x = "x"
     y = "y"
     secondary_y = None
-    color = None
-    label = None
+    color = "blue"
+    label = "Label"
     showlegend = True
 
     Plot_fixture.add_line(
@@ -284,8 +284,8 @@ def test_add_line(Plot_fixture, plot_result_fixture):
         x=result.data[x],
         y=result.data[y],
         mode="lines",
-        line=dict(color=result.info["color"], dash="solid"),
-        name=result.info["Name"],
+        line=dict(color="blue", dash="solid"),
+        name="Label",
         showlegend=showlegend,
     )
     assert Plot_fixture._fig.data[0] == expected_trace
@@ -299,8 +299,8 @@ def test_add_line_with_secondary_y(Plot_fixture, plot_result_fixture):
     x = "x"
     y = "y"
     secondary_y = "secondary_y"
-    color = None
-    label = None
+    color = "blue"
+    label = "Label"
     showlegend = True
 
     Plot_fixture.add_line(
@@ -319,8 +319,8 @@ def test_add_line_with_secondary_y(Plot_fixture, plot_result_fixture):
         x=result.data[x],
         y=result.data[y],
         mode="lines",
-        line=dict(color=result.info["color"], dash="solid"),
-        name=result.info["Name"],
+        line=dict(color="blue", dash="solid"),
+        name="Label",
         showlegend=showlegend,
     )
     assert Plot_fixture._fig.data[0] == expected_trace
@@ -329,7 +329,7 @@ def test_add_line_with_secondary_y(Plot_fixture, plot_result_fixture):
         x=result.data[x],
         y=result.data[secondary_y],
         mode="lines",
-        line=dict(color=result.info["color"], dash="dash"),
+        line=dict(color="blue", dash="dash"),
         name=result.info["Name"],
         yaxis="y2",
         showlegend=False,
