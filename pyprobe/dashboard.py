@@ -95,8 +95,13 @@ if __name__ == "__main__":
 
     # Display the DataFrame in the sidebar
     selected_indices = dataframe_with_selections(info)
-    # Get the names of the selected rows
-    selected_names = [cell_list[i].info["Name"] for i in selected_indices]
+
+    # choose a cell identifier
+    cell_identifier = st.sidebar.selectbox(
+        "Select a cell identifier", info.collect_schema().names()
+    )
+    selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
+
     # Get the procedure names from the selected cells
     procedure_names_sets = [
         OrderedSet(cell_list[i].procedure.keys()) for i in selected_indices
@@ -188,7 +193,13 @@ if __name__ == "__main__":
         if secondary_y_axis == "None":
             secondary_y_axis = None
 
-        fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
+        fig = fig.add_line(
+            filtered_data,
+            x_axis,
+            y_axis,
+            secondary_y=secondary_y_axis,
+            label=cell_list[selected_index].info[cell_identifier],
+        )
         filtered_data = filtered_data.data.to_pandas()
         selected_data.append(filtered_data)
 
