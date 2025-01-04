@@ -26,10 +26,8 @@ A cell object can be created by providing an info dictionary as a keyword argume
    # Create a cell object
    cell = pyprobe.Cell(info = info_dictionary)
 
-The ``info`` dictionary can contain any number of key-value pairs. The only required key is
-``'Name'``, which is used to identify the cell in plots. PyProBE will verify that the 
-``info`` dictionary contains the ``'Name'`` field. If it does not, it will fill this field with
-``'Default Name'``.
+The ``info`` dictionary can contain any number of key-value pairs that provide 
+metadata to identify the cell and the conditions it was tested under.
 
 Converting data to PyProBE Format
 ---------------------------------
