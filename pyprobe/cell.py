@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class Cell(BaseModel):
     """A class for a cell in a battery experiment."""
 
-    info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
+    info: dict[str, Optional[Any]]
     """Dictionary containing information about the cell.
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
@@ -365,7 +365,7 @@ class Cell(BaseModel):
 
     @staticmethod
     def _get_filename(
-        info: Dict[str, Optional[str | int | float | Dict[Any, Any]]],
+        info: Dict[str, Optional[Any]],
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
     ) -> str:
