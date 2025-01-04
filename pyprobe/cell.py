@@ -8,7 +8,6 @@ import warnings
 import zipfile
 from typing import Any, Callable, Dict, List, Literal, Optional
 
-import distinctipy
 import polars as pl
 from pydantic import BaseModel, Field, validate_call
 
@@ -665,18 +664,7 @@ def make_cell_list(
 
     n_cells = len(record)
     cell_list = []
-    rgb = distinctipy.get_colors(
-        n_cells,
-        exclude_colors=[
-            (0, 0, 0),
-            (1, 1, 1),
-            (1, 1, 0),
-        ],  # Exclude black, white, and yellow
-        rng=1,  # Set the random seed
-        n_attempts=5000,
-    )
     for i in range(n_cells):
         info = record.row(i, named=True)
-        info["color"] = distinctipy.get_hex(rgb[i])
         cell_list.append(Cell(info=info))
     return cell_list
