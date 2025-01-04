@@ -9,7 +9,6 @@ from typing import List
 import plotly
 import polars as pl
 import streamlit as st
-from ordered_set import OrderedSet
 
 from pyprobe.cell import Cell
 from pyprobe.plot import Plot
@@ -98,7 +97,7 @@ if __name__ == "__main__":
 
     # Get the procedure names from the selected cells
     procedure_names_sets = [
-        OrderedSet(cell_list[i].procedure.keys()) for i in selected_indices
+        list(cell_list[i].procedure.keys()) for i in selected_indices
     ]
 
     # Find the common procedure names
