@@ -97,6 +97,9 @@ select = ["D"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.per-file-ignores]
+"docs/source/examples/*" = ["D103"]
+
 [tool.mypy]
 disallow_any_explicit = false
 disallow_any_generics = true
