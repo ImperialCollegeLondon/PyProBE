@@ -19,6 +19,7 @@ dependencies = [
     "pydantic>=2.10.4",
     "pyyaml>=6.0.2",
     "ray>=2.40.0",
+    "ruff>=0.8.5",
     "scikit-learn>=1.6.0",
     "streamlit>=1.41.1",
     "sympy>=1.13.3",
@@ -32,10 +33,6 @@ seaborn = [
     "seaborn>=0.13.2",
 ]
 dev = [
-    "black>=24.10.0",
-    "flake8>=7.1.1",
-    "flake8-docstrings>=1.7.0",
-    "isort>=5.13.2",
     "mypy>=1.14.1",
     "pre-commit>=4.0.1",
     "python-semantic-release>=9.15.2",
@@ -94,6 +91,12 @@ upload_to_release = false     # disable GitHub release creation
 match = "main"
 prerelease = false
 
+[tool.ruff.lint]
+select = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.mypy]
 disallow_any_explicit = false
 disallow_any_generics = true
@@ -114,9 +117,6 @@ follow_imports = "skip"
 [[tool.mypy.overrides]]
 module = "deprecated.*"
 ignore_missing_imports = true
-
-[tool.isort]
-profile = "black"
 
 [tool.pytest.ini_options]
 addopts = "-v --mypy -p no:warnings --cov=pyprobe --cov-report=html --doctest-modules --ignore=docs/ --ignore=pyprobe/"
