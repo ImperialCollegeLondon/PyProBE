@@ -1,6 +1,5 @@
 """A module to load and process Biologic battery cycler data."""
 
-
 import re
 from datetime import datetime
 from typing import List
@@ -106,11 +105,10 @@ class BiologicMB(Biologic):
         """Read a battery cycler file into a DataFrame.
 
         Args:
-            filepath: The path to the file.
-            header_row_index: The index of the header row.
+            dataframe_list: The list of DataFrames to concatenate.
 
         Returns:
-            pl.DataFrame | pl.LazyFrame: The imported DataFrame.
+            The imported DataFrame.
         """
         df_list = []
         for i, df in enumerate(dataframe_list):

@@ -1,6 +1,5 @@
 """A module to load and process Neware battery cycler data."""
 
-
 import logging
 import os
 
@@ -77,7 +76,8 @@ class Neware(BaseCycler):
         """Read a battery cycler file into a DataFrame.
 
         Args:
-            filepath (str): The path to the file.
+            filepath: The path to the file.
+            header_row_index: The index of the header row.
 
         Returns:
             pl.DataFrame | pl.LazyFrame: The DataFrame.

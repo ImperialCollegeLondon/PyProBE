@@ -1,4 +1,5 @@
 """A module for the Result class."""
+
 import logging
 from functools import wraps
 from pprint import pprint
@@ -262,10 +263,10 @@ class Result(BaseModel):
         """Return a subset of the data with the specified columns.
 
         Args:
-            *column_name (str): The columns to include in the new result object.
+            *column_names: The columns to include in the new result object.
 
         Returns:
-            pl.DataFrame: A subset of the data with the specified columns.
+            A subset of the data with the specified columns.
         """
         self._polars_cache.collect_columns(*column_names)
         return self._polars_cache.cached_dataframe.select(column_names)
@@ -412,6 +413,10 @@ class Result(BaseModel):
         Args:
             base_frame (pl.DataFrame | pl.LazyFrame): The first frame to verify.
             frames (List[pl.DataFrame | pl.LazyFrame]): The list of frames to verify.
+            mode:
+                The mode to use for verification. Either 'match 1' or 'collect all'.
+                'match 1' will convert the frames to match the base frame. 'collect all'
+                will collect all frames to DataFrames.
 
         Returns:
             Tuple[pl.DataFrame | pl.LazyFrame, List[pl.DataFrame | pl.LazyFrame]]:

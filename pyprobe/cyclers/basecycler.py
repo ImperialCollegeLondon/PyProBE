@@ -113,9 +113,12 @@ class BaseCycler(BaseModel):
         """Check for missing columns in the imported data.
 
         Args:
-            column_map (Dict[str, Dict[str, str | pl.DataType]]):
+            column_dict:
+                A dictionary mapping the column name format of the cycler to the
+                PyProBE format.
+            column_map:
                 A dictionary mapping the column name format of the cycler to the PyProBE
-                format.
+                format, for the imported data including units.
 
         Raises:
             ValueError:
@@ -332,7 +335,7 @@ class BaseCycler(BaseModel):
 
     @staticmethod
     def _tabulate_column_map(
-        column_map: Dict[str, Dict[str, str | pl.DataType]]
+        column_map: Dict[str, Dict[str, str | pl.DataType]],
     ) -> str:
         data = {
             "Quantity": list(column_map.keys()),

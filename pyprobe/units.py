@@ -122,10 +122,11 @@ def split_quantity_unit(
     """Split a column name into quantity and unit.
 
     Args:
-        name (str): The column name (e.g. "Current [A]" or "Temperature")
+        name: The column name (e.g. "Current [A]" or "Temperature")
+        regular_expression: The pattern to match the column name.
 
     Returns:
-        Tuple[str, str]: The quantity and unit.
+        The quantity and unit.
     """
     pattern = re.compile(regular_expression)
     match = pattern.match(name)

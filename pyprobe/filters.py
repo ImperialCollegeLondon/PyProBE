@@ -1,4 +1,5 @@
 """A module for the filtering classes."""
+
 import os
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
@@ -112,7 +113,7 @@ def get_cycle_column(filter: "FilterToCycleType") -> pl.DataFrame | pl.LazyFrame
         pl.DataFrame | pl.LazyFrame: The data with a cycle column.
     """
     if len(filter.cycle_info) > 0:
-        cycle_ends = ((pl.col("Step").shift() == filter.cycle_info[0][1])) & (
+        cycle_ends = (pl.col("Step").shift() == filter.cycle_info[0][1]) & (
             pl.col("Step") != filter.cycle_info[0][1]
         ).fill_null(strategy="zero").cast(pl.Int16)
         cycle_column = cycle_ends.cum_sum().fill_null(strategy="zero").alias("Cycle")
@@ -265,8 +266,8 @@ def _constant_voltage(
     """Return a constant voltage step object.
 
     Args:
-        filter (FilterToCycleType): A filter object that this method is called on.
-        constant_current_numbers (int | range):
+        filter: A filter object that this method is called on.
+        *constant_voltage_numbers:
             Variable-length argument list of constant voltage indices or a range object.
 
     Returns:
@@ -360,9 +361,7 @@ class Procedure(RawData):
         elif "Cycles" in self.readme_dict[experiment_names[0]]:
             # ignore type on below line due to persistent mypy warnings about
             # incompatible types
-            cycles_list = self.readme_dict[experiment_names[0]][
-                "Cycles"
-            ]  # type: ignore
+            cycles_list = self.readme_dict[experiment_names[0]]["Cycles"]  # type: ignore
 
         return Experiment(
             base_dataframe=lf_filtered,
