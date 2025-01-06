@@ -1,4 +1,5 @@
 """A module to contain plotting functions for PyProBE."""
+
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 

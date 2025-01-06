@@ -1,4 +1,5 @@
 """Tests for the Cell class."""
+
 import copy
 import json
 import os

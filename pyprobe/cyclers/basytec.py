@@ -1,6 +1,5 @@
 """A module to load and process Basytec battery cycler data."""
 
-
 from datetime import datetime
 
 import polars as pl

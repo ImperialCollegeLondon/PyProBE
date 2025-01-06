@@ -1,4 +1,5 @@
 """Module for the Cell class."""
+
 import json
 import logging
 import os

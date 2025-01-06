@@ -1,4 +1,5 @@
 """Tests for the utils module."""
+
 from pyprobe import utils
 
 

@@ -1,4 +1,5 @@
 """Module for processing PyPrBE README files."""
+
 import logging
 from typing import Any, Dict, List, Tuple, Union, cast
 

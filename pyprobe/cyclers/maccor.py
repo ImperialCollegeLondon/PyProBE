@@ -1,6 +1,5 @@
 """A module to load and process Maccor battery cycler data."""
 
-
 import polars as pl
 
 from pyprobe.cyclers.basecycler import BaseCycler

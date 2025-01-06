@@ -1,4 +1,5 @@
 """Module for utilities for analysis classes."""
+
 import logging
 from typing import Any, List, Tuple
 

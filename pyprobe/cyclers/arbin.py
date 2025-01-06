@@ -1,6 +1,5 @@
 """A module to load and process Arbin battery cycler data."""
 
-
 from pyprobe.cyclers.basecycler import BaseCycler
 
 

@@ -1,4 +1,5 @@
 """Tests for the neware module."""
+
 from datetime import datetime
 
 import numpy as np

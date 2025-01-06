@@ -1,6 +1,5 @@
 """A module for the Cycling class."""
 
-
 import polars as pl
 from deprecated import deprecated
 from pydantic import BaseModel, validate_call

@@ -1,4 +1,5 @@
 """A collection of utility functions for PyProBE."""
+
 from typing import Any, Dict, List, Optional, Protocol
 
 
