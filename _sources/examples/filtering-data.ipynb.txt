@@ -23,20 +23,25 @@
    "source": [
     "import pyprobe\n",
     "import matplotlib.pyplot as plt\n",
+    "\n",
     "%matplotlib inline\n",
     "\n",
-    "info_dictionary = {'Name': 'Sample cell',\n",
-    "                   'Chemistry': 'NMC622',\n",
-    "                   'Nominal Capacity [Ah]': 0.04,\n",
-    "                   'Cycler number': 1,\n",
-    "                   'Channel number': 1,}\n",
-    "data_directory = '../../../tests/sample_data/neware'\n",
+    "info_dictionary = {\n",
+    "    \"Name\": \"Sample cell\",\n",
+    "    \"Chemistry\": \"NMC622\",\n",
+    "    \"Nominal Capacity [Ah]\": 0.04,\n",
+    "    \"Cycler number\": 1,\n",
+    "    \"Channel number\": 1,\n",
+    "}\n",
+    "data_directory = \"../../../tests/sample_data/neware\"\n",
     "\n",
     "# Create a cell object\n",
     "cell = pyprobe.Cell(info=info_dictionary)\n",
-    "cell.add_procedure(procedure_name='Sample',\n",
-    "                   folder_path = data_directory,\n",
-    "                   filename = 'sample_data_neware.parquet')"
+    "cell.add_procedure(\n",
+    "    procedure_name=\"Sample\",\n",
+    "    folder_path=data_directory,\n",
+    "    filename=\"sample_data_neware.parquet\",\n",
+    ")"
    ]
   },
   {
@@ -52,8 +57,8 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "full_procedure = cell.procedure['Sample']\n",
-    "full_procedure.plot(x='Time [s]', y='Voltage [V]')"
+    "full_procedure = cell.procedure[\"Sample\"]\n",
+    "full_procedure.plot(x=\"Time [s]\", y=\"Voltage [V]\")"
    ]
   },
   {
@@ -69,7 +74,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "with open(data_directory+'/README.yaml', 'r') as file:\n",
+    "with open(data_directory + \"/README.yaml\", \"r\") as file:\n",
     "    readme = file.read()\n",
     "    print(readme)"
    ]
@@ -92,10 +97,16 @@
     "pulses = full_procedure.experiment(\"Discharge Pulses\")\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "initial_charge.plot(x='Time [s]', y='Voltage [V]', ax=ax, color = 'red', label='Initial Charge')\n",
-    "break_in.plot(x='Time [s]', y='Voltage [V]', ax=ax, color = 'blue', label='Break-in Cycles')\n",
-    "pulses.plot(x='Time [s]', y='Voltage [V]', ax=ax, color='purple', label='Discharge Pulses')\n",
-    "ax.set_ylabel('Voltage [V]')"
+    "initial_charge.plot(\n",
+    "    x=\"Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"red\", label=\"Initial Charge\"\n",
+    ")\n",
+    "break_in.plot(\n",
+    "    x=\"Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"blue\", label=\"Break-in Cycles\"\n",
+    ")\n",
+    "pulses.plot(\n",
+    "    x=\"Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"purple\", label=\"Discharge Pulses\"\n",
+    ")\n",
+    "ax.set_ylabel(\"Voltage [V]\")"
    ]
   },
   {
@@ -111,12 +122,22 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "cycle_3 = break_in.cycle(2) # python zero-indexing means we use index 2 to retrieve the third cycle\n",
+    "cycle_3 = break_in.cycle(\n",
+    "    2\n",
+    ")  # python zero-indexing means we use index 2 to retrieve the third cycle\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "break_in.plot(x='Experiment Time [s]', y='Voltage [V]', ax=ax, color='blue', label='Break-in Cycles')\n",
-    "cycle_3.plot(x='Experiment Time [s]', y='Voltage [V]', ax=ax, color='red', label='Cycle 3')\n",
-    "ax.set_ylabel('Voltage [V]')"
+    "break_in.plot(\n",
+    "    x=\"Experiment Time [s]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    "    ax=ax,\n",
+    "    color=\"blue\",\n",
+    "    label=\"Break-in Cycles\",\n",
+    ")\n",
+    "cycle_3.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"red\", label=\"Cycle 3\"\n",
+    ")\n",
+    "ax.set_ylabel(\"Voltage [V]\")"
    ]
   },
   {
@@ -138,11 +159,19 @@
     "rest_1 = cycle_3.rest(1)\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "discharge.plot(x='Experiment Time [s]', y='Voltage [V]', ax=ax, color='blue', label='Discharge')\n",
-    "rest_0.plot(x='Experiment Time [s]', y='Voltage [V]', ax=ax, color='red', label='Rest 0')\n",
-    "charge.plot(x='Experiment Time [s]', y='Voltage [V]', ax=ax, color='purple', label='Charge')\n",
-    "rest_1.plot(x='Experiment Time [s]', y='Voltage [V]', ax=ax, color='green', label='Rest 1')\n",
-    "ax.set_ylabel('Voltage [V]')"
+    "discharge.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"blue\", label=\"Discharge\"\n",
+    ")\n",
+    "rest_0.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"red\", label=\"Rest 0\"\n",
+    ")\n",
+    "charge.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"purple\", label=\"Charge\"\n",
+    ")\n",
+    "rest_1.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Voltage [V]\", ax=ax, color=\"green\", label=\"Rest 1\"\n",
+    ")\n",
+    "ax.set_ylabel(\"Voltage [V]\")"
    ]
   },
   {
@@ -159,15 +188,23 @@
    "outputs": [],
    "source": [
     "CC_discharge = discharge.constant_current(0)\n",
-    "CC_charge  = charge.constant_current(0)\n",
+    "CC_charge = charge.constant_current(0)\n",
     "CV_hold = cycle_3.constant_voltage(0)\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "cycle_3.plot(x='Experiment Time [s]', y='Current [A]', ax=ax, color='blue', label='Cycle 3')\n",
-    "CC_discharge.plot(x='Experiment Time [s]', y='Current [A]', ax=ax, color='green', label='CC Discharge')\n",
-    "CC_charge.plot(x='Experiment Time [s]', y='Current [A]', ax=ax, color='red', label='CC Charge')\n",
-    "CV_hold.plot(x='Experiment Time [s]', y='Current [A]', ax=ax, color='purple', label='CV Hold')\n",
-    "ax.set_ylabel('Current [A]')"
+    "cycle_3.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Current [A]\", ax=ax, color=\"blue\", label=\"Cycle 3\"\n",
+    ")\n",
+    "CC_discharge.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Current [A]\", ax=ax, color=\"green\", label=\"CC Discharge\"\n",
+    ")\n",
+    "CC_charge.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Current [A]\", ax=ax, color=\"red\", label=\"CC Charge\"\n",
+    ")\n",
+    "CV_hold.plot(\n",
+    "    x=\"Experiment Time [s]\", y=\"Current [A]\", ax=ax, color=\"purple\", label=\"CV Hold\"\n",
+    ")\n",
+    "ax.set_ylabel(\"Current [A]\")"
    ]
   }
  ],

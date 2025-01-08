@@ -369,20 +369,20 @@ the PyProBE format. E.g. <code class="code docutils literal notranslate"><span c
 indicated by an asterisk <code class="code docutils literal notranslate"><span class="pre">*</span></code>: PyProBE will perform unit conversion automatically.</p></li>
 </ul>
 <p>Below is an example from the <a class="reference internal" href="../api/pyprobe.cyclers.biologic.html#pyprobe.cyclers.biologic.Biologic" title="pyprobe.cyclers.biologic.Biologic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Biologic</span></code></a> class:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span>
-<span class="linenos"> 2</span><span class="k">class</span> <span class="nc">Biologic</span><span class="p">(</span><span class="n">BaseCycler</span><span class="p">):</span>
-<span class="linenos"> 3</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to load and process Biologic battery cycler data.&quot;&quot;&quot;</span>
-<span class="linenos"> 4</span>
-<span class="linenos"> 5</span>    <span class="n">input_data_path</span><span class="p">:</span> <span class="nb">str</span>
-<span class="linenos"> 6</span>    <span class="n">column_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-<span class="linenos"> 7</span>        <span class="s2">&quot;Date&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
-<span class="linenos"> 8</span>        <span class="s2">&quot;time/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Time [*]&quot;</span><span class="p">,</span>
-<span class="linenos"> 9</span>        <span class="s2">&quot;Ns&quot;</span><span class="p">:</span> <span class="s2">&quot;Step&quot;</span><span class="p">,</span>
-<span class="linenos">10</span>        <span class="s2">&quot;I/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
-<span class="linenos">11</span>        <span class="s2">&quot;&lt;I&gt;/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
-<span class="linenos">12</span>        <span class="s2">&quot;Ecell/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Voltage [*]&quot;</span><span class="p">,</span>
-<span class="linenos">13</span>        <span class="s2">&quot;Q charge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Charge Capacity [*]&quot;</span><span class="p">,</span>
-<span class="linenos">14</span>        <span class="s2">&quot;Q discharge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Discharge Capacity [*]&quot;</span><span class="p">,</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="k">class</span> <span class="nc">Biologic</span><span class="p">(</span><span class="n">BaseCycler</span><span class="p">):</span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to load and process Biologic battery cycler data.&quot;&quot;&quot;</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span>    <span class="n">input_data_path</span><span class="p">:</span> <span class="nb">str</span>
+<span class="linenos"> 5</span>    <span class="n">column_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="linenos"> 6</span>        <span class="s2">&quot;Date&quot;</span><span class="p">:</span> <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+<span class="linenos"> 7</span>        <span class="s2">&quot;time/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Time [*]&quot;</span><span class="p">,</span>
+<span class="linenos"> 8</span>        <span class="s2">&quot;Ns&quot;</span><span class="p">:</span> <span class="s2">&quot;Step&quot;</span><span class="p">,</span>
+<span class="linenos"> 9</span>        <span class="s2">&quot;I/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
+<span class="linenos">10</span>        <span class="s2">&quot;&lt;I&gt;/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Current [*]&quot;</span><span class="p">,</span>
+<span class="linenos">11</span>        <span class="s2">&quot;Ecell/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Voltage [*]&quot;</span><span class="p">,</span>
+<span class="linenos">12</span>        <span class="s2">&quot;Q charge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Charge Capacity [*]&quot;</span><span class="p">,</span>
+<span class="linenos">13</span>        <span class="s2">&quot;Q discharge/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Discharge Capacity [*]&quot;</span><span class="p">,</span>
+<span class="linenos">14</span>        <span class="s2">&quot;Temperature/*&quot;</span><span class="p">:</span> <span class="s2">&quot;Temperature [*]&quot;</span><span class="p">,</span>
 </pre></div>
 </div>
 </li>

@@ -461,17 +461,18 @@ in the <a class="reference internal" href="../api/pyprobe.analysis.base.degradat
 <span class="linenos">12</span><span class="sd">        x_pe_hi (float): The cathode stoichiometry at highest cell SOC.</span>
 <span class="linenos">13</span><span class="sd">        x_ne_lo (float): The anode stoichiometry at lowest cell SOC.</span>
 <span class="linenos">14</span><span class="sd">        x_ne_hi (float): The anode stoichiometry at highest cell SOC.</span>
-<span class="linenos">15</span>
-<span class="linenos">16</span><span class="sd">    Returns:</span>
-<span class="linenos">17</span><span class="sd">        Tuple[float, float, float]:</span>
-<span class="linenos">18</span><span class="sd">            - NDArray: The cathode capacity.</span>
-<span class="linenos">19</span><span class="sd">            - NDArray: The anode capacity.</span>
-<span class="linenos">20</span><span class="sd">            - NDArray: The lithium inventory.</span>
-<span class="linenos">21</span><span class="sd">    &quot;&quot;&quot;</span>
-<span class="linenos">22</span>    <span class="n">pe_capacity</span> <span class="o">=</span> <span class="n">cell_capacity</span> <span class="o">/</span> <span class="p">(</span><span class="n">x_pe_lo</span> <span class="o">-</span> <span class="n">x_pe_hi</span><span class="p">)</span>
-<span class="linenos">23</span>    <span class="n">ne_capacity</span> <span class="o">=</span> <span class="n">cell_capacity</span> <span class="o">/</span> <span class="p">(</span><span class="n">x_ne_hi</span> <span class="o">-</span> <span class="n">x_ne_lo</span><span class="p">)</span>
-<span class="linenos">24</span>    <span class="n">li_inventory</span> <span class="o">=</span> <span class="p">(</span><span class="n">pe_capacity</span> <span class="o">*</span> <span class="n">x_pe_lo</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ne_capacity</span> <span class="o">*</span> <span class="n">x_ne_lo</span><span class="p">)</span>
-<span class="linenos">25</span>    <span class="k">return</span> <span class="n">pe_capacity</span><span class="p">,</span> <span class="n">ne_capacity</span><span class="p">,</span> <span class="n">li_inventory</span>
+<span class="linenos">15</span><span class="sd">        cell_capacity (float): The cell capacity.</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span><span class="sd">    Returns:</span>
+<span class="linenos">18</span><span class="sd">        Tuple[float, float, float]:</span>
+<span class="linenos">19</span><span class="sd">            - NDArray: The cathode capacity.</span>
+<span class="linenos">20</span><span class="sd">            - NDArray: The anode capacity.</span>
+<span class="linenos">21</span><span class="sd">            - NDArray: The lithium inventory.</span>
+<span class="linenos">22</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">23</span>    <span class="n">pe_capacity</span> <span class="o">=</span> <span class="n">cell_capacity</span> <span class="o">/</span> <span class="p">(</span><span class="n">x_pe_lo</span> <span class="o">-</span> <span class="n">x_pe_hi</span><span class="p">)</span>
+<span class="linenos">24</span>    <span class="n">ne_capacity</span> <span class="o">=</span> <span class="n">cell_capacity</span> <span class="o">/</span> <span class="p">(</span><span class="n">x_ne_hi</span> <span class="o">-</span> <span class="n">x_ne_lo</span><span class="p">)</span>
+<span class="linenos">25</span>    <span class="n">li_inventory</span> <span class="o">=</span> <span class="p">(</span><span class="n">pe_capacity</span> <span class="o">*</span> <span class="n">x_pe_lo</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">ne_capacity</span> <span class="o">*</span> <span class="n">x_ne_lo</span><span class="p">)</span>
+<span class="linenos">26</span>    <span class="k">return</span> <span class="n">pe_capacity</span><span class="p">,</span> <span class="n">ne_capacity</span><span class="p">,</span> <span class="n">li_inventory</span>
 </pre></div>
 </div>
 </section>

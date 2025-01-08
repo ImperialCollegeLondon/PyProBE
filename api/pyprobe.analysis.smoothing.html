@@ -450,9 +450,8 @@ the first occurrence when the interval condition is met is taken.</p></li>
 <li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The input data to smooth.</p></li>
 <li><p><strong>target_column</strong> (<em>str</em>) – The name of the target variable to smooth.</p></li>
 <li><p><strong>window_length</strong> (<em>int</em>) – The length of the filter window. Must be a positive odd integer.</p></li>
-<li><p><strong>polynomial_order</strong> – The order of the polynomial used to fit the samples.</p></li>
+<li><p><strong>polyorder</strong> (<em>int</em>) – The order of the polynomial used to fit the samples.</p></li>
 <li><p><strong>derivative</strong> (<em>int</em>) – The order of the derivative to compute. Default is 0.</p></li>
-<li><p><strong>polyorder</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -474,7 +473,7 @@ using the Savitzky-Golay filter.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The x data.</p></li>
 <li><p><strong>y</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The y data.</p></li>
-<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Additional keyword arguments for the interpolator.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -495,7 +494,7 @@ using the Savitzky-Golay filter.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The x data.</p></li>
 <li><p><strong>y</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The y data.</p></li>
-<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Additional keyword arguments for the interpolator.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -516,7 +515,7 @@ using the Savitzky-Golay filter.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The x data.</p></li>
 <li><p><strong>y</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The y data.</p></li>
-<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Additional keyword arguments for the interpolator.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -537,7 +536,7 @@ using the Savitzky-Golay filter.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The x data.</p></li>
 <li><p><strong>y</strong> (<em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – The y data.</p></li>
-<li><p><strong>kwargs</strong> (<em>Any</em>)</p></li>
+<li><p><strong>**kwargs</strong> (<em>Any</em>) – Additional keyword arguments for the interpolator.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -648,9 +647,8 @@ to the specified interval for the target column.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>target_column</strong> (<em>str</em>) – The name of the target variable to smooth.</p></li>
 <li><p><strong>window_length</strong> (<em>int</em>) – The length of the filter window. Must be a positive odd integer.</p></li>
-<li><p><strong>polynomial_order</strong> (<em>int</em>) – The order of the polynomial used to fit the samples.</p></li>
+<li><p><strong>polyorder</strong> (<em>int</em>) – The order of the polynomial used to fit the samples.</p></li>
 <li><p><strong>derivative</strong> (<em>int</em><em>, </em><em>optional</em>) – The order of the derivative to compute. Default is 0.</p></li>
-<li><p><strong>polyorder</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

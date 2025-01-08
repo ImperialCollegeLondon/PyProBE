@@ -39,19 +39,23 @@
     "import pyprobe\n",
     "import polars as pl\n",
     "\n",
-    "info_dictionary = {'Name': 'Sample cell',\n",
-    "                   'Chemistry': 'NMC622',\n",
-    "                   'Nominal Capacity [Ah]': 0.04,\n",
-    "                   'Cycler number': 1,\n",
-    "                   'Channel number': 1,}\n",
-    "data_directory = '../../../tests/sample_data/neware'\n",
+    "info_dictionary = {\n",
+    "    \"Name\": \"Sample cell\",\n",
+    "    \"Chemistry\": \"NMC622\",\n",
+    "    \"Nominal Capacity [Ah]\": 0.04,\n",
+    "    \"Cycler number\": 1,\n",
+    "    \"Channel number\": 1,\n",
+    "}\n",
+    "data_directory = \"../../../tests/sample_data/neware\"\n",
     "\n",
     "# Create a cell object\n",
     "cell = pyprobe.Cell(info=info_dictionary)\n",
-    "cell.add_procedure(procedure_name='Sample',\n",
-    "                   folder_path = data_directory,\n",
-    "                   filename = 'sample_data_neware.parquet')\n",
-    "print(type(cell.procedure['Sample']))"
+    "cell.add_procedure(\n",
+    "    procedure_name=\"Sample\",\n",
+    "    folder_path=data_directory,\n",
+    "    filename=\"sample_data_neware.parquet\",\n",
+    ")\n",
+    "print(type(cell.procedure[\"Sample\"]))"
    ]
   },
   {
@@ -86,12 +90,14 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "incorrect_dataframe = pl.DataFrame({'Time [s]': [1, 2, 3],\n",
-    "                                    'Voltage [V]': [3.5, 3.6, 3.7],\n",
-    "                                    'Current [A]': [0.1, 0.2, 0.3],\n",
-    "                                    })\n",
-    "pyprobe.rawdata.RawData(base_dataframe=incorrect_dataframe,\n",
-    "                        info = {})"
+    "incorrect_dataframe = pl.DataFrame(\n",
+    "    {\n",
+    "        \"Time [s]\": [1, 2, 3],\n",
+    "        \"Voltage [V]\": [3.5, 3.6, 3.7],\n",
+    "        \"Current [A]\": [0.1, 0.2, 0.3],\n",
+    "    }\n",
+    ")\n",
+    "pyprobe.rawdata.RawData(base_dataframe=incorrect_dataframe, info={})"
    ]
   },
   {
@@ -108,12 +114,12 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "incorrect_data_dict = {'Time [s]': [1, 2, 3],\n",
-    "                                    'Voltage [V]': [3.5, 3.6, 3.7],\n",
-    "                                    'Current [A]': [0.1, 0.2, 0.3],\n",
-    "                                    }\n",
-    "pyprobe.rawdata.RawData(base_dataframe=incorrect_data_dict,\n",
-    "                        info = {})"
+    "incorrect_data_dict = {\n",
+    "    \"Time [s]\": [1, 2, 3],\n",
+    "    \"Voltage [V]\": [3.5, 3.6, 3.7],\n",
+    "    \"Current [A]\": [0.1, 0.2, 0.3],\n",
+    "}\n",
+    "pyprobe.rawdata.RawData(base_dataframe=incorrect_data_dict, info={})"
    ]
   },
   {
@@ -135,7 +141,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "experiment_object = cell.procedure['Sample'].experiment('Break-in Cycles')\n",
+    "experiment_object = cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\")\n",
     "print(type(experiment_object))"
    ]
   },
@@ -153,7 +159,8 @@
    "outputs": [],
    "source": [
     "from pyprobe.analysis.cycling import Cycling\n",
-    "cycling = Cycling(input_data = experiment_object)"
+    "\n",
+    "cycling = Cycling(input_data=experiment_object)"
    ]
   },
   {
@@ -169,7 +176,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "cycling = Cycling(input_data = experiment_object.cycle(1))"
+    "cycling = Cycling(input_data=experiment_object.cycle(1))"
    ]
   },
   {
@@ -187,9 +194,11 @@
    "source": [
     "from pyprobe.analysis import differentiation\n",
     "\n",
-    "gradient = differentiation.gradient(input_data = cell.procedure['Sample'].experiment('Break-in Cycles').discharge(-1),\n",
-    "                                    x = \"Capacity [Ah]\",\n",
-    "                                    y = \"Voltage [V]\")"
+    "gradient = differentiation.gradient(\n",
+    "    input_data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").discharge(-1),\n",
+    "    x=\"Capacity [Ah]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    ")"
    ]
   },
   {
@@ -206,9 +215,10 @@
    "outputs": [],
    "source": [
     "import numpy as np\n",
-    "gradient = differentiation.gradient(input_data = np.zeros((10, 2)),\n",
-    "                                    x = \"Capacity [Ah]\",\n",
-    "                                    y = \"Voltage [V]\")"
+    "\n",
+    "gradient = differentiation.gradient(\n",
+    "    input_data=np.zeros((10, 2)), x=\"Capacity [Ah]\", y=\"Voltage [V]\"\n",
+    ")"
    ]
   },
   {
@@ -224,9 +234,11 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "gradient = differentiation.gradient(input_data = cell.procedure['Sample'].experiment('Break-in Cycles').discharge(-1),\n",
-    "                                    x = \"Temperature [C]\",\n",
-    "                                    y = \"Voltage [V]\")"
+    "gradient = differentiation.gradient(\n",
+    "    input_data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").discharge(-1),\n",
+    "    x=\"Temperature [C]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    ")"
    ]
   }
  ],

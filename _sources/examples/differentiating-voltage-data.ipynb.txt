@@ -26,20 +26,25 @@
    "source": [
     "import pyprobe\n",
     "import matplotlib.pyplot as plt\n",
+    "\n",
     "%matplotlib inline\n",
     "\n",
-    "info_dictionary = {'Name': 'Sample cell',\n",
-    "                   'Chemistry': 'NMC622',\n",
-    "                   'Nominal Capacity [Ah]': 0.04,\n",
-    "                   'Cycler number': 1,\n",
-    "                   'Channel number': 1,}\n",
-    "data_directory = '../../../tests/sample_data/neware'\n",
+    "info_dictionary = {\n",
+    "    \"Name\": \"Sample cell\",\n",
+    "    \"Chemistry\": \"NMC622\",\n",
+    "    \"Nominal Capacity [Ah]\": 0.04,\n",
+    "    \"Cycler number\": 1,\n",
+    "    \"Channel number\": 1,\n",
+    "}\n",
+    "data_directory = \"../../../tests/sample_data/neware\"\n",
     "\n",
     "# Create a cell object\n",
     "cell = pyprobe.Cell(info=info_dictionary)\n",
-    "cell.add_procedure(procedure_name='Sample',\n",
-    "                   folder_path = data_directory,\n",
-    "                   filename = 'sample_data_neware.parquet')"
+    "cell.add_procedure(\n",
+    "    procedure_name=\"Sample\",\n",
+    "    folder_path=data_directory,\n",
+    "    filename=\"sample_data_neware.parquet\",\n",
+    ")"
    ]
   },
   {
@@ -55,9 +60,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "final_cycle= cell.procedure['Sample'].experiment('Break-in Cycles').cycle(-1)\n",
+    "final_cycle = cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").cycle(-1)\n",
     "\n",
-    "final_cycle.discharge(0).plot(x='Time [hr]', y='Voltage [V]')"
+    "final_cycle.discharge(0).plot(x=\"Time [hr]\", y=\"Voltage [V]\")"
    ]
   },
   {
@@ -76,9 +81,11 @@
    "source": [
     "from pyprobe.analysis import differentiation\n",
     "\n",
-    "raw_data_dVdQ = differentiation.gradient(final_cycle.discharge(0),\"Capacity [Ah]\", \"Voltage [V]\")\n",
+    "raw_data_dVdQ = differentiation.gradient(\n",
+    "    final_cycle.discharge(0), \"Capacity [Ah]\", \"Voltage [V]\"\n",
+    ")\n",
     "print(raw_data_dVdQ.column_list)\n",
-    "raw_data_dVdQ.plot(x='Capacity [Ah]', y='Voltage [V]')"
+    "raw_data_dVdQ.plot(x=\"Capacity [Ah]\", y=\"Voltage [V]\")"
    ]
   },
   {
@@ -99,13 +106,18 @@
     "from pyprobe.analysis import smoothing\n",
     "\n",
     "\n",
-    "downsampled_data = smoothing.downsample(input_data = final_cycle.discharge(0),\n",
-    "                                            target_column='Voltage [V]',\n",
-    "                                                  sampling_interval=0.002,\n",
-    "                                                )\n",
+    "downsampled_data = smoothing.downsample(\n",
+    "    input_data=final_cycle.discharge(0),\n",
+    "    target_column=\"Voltage [V]\",\n",
+    "    sampling_interval=0.002,\n",
+    ")\n",
     "fig, ax = plt.subplots()\n",
-    "final_cycle.discharge(0).plot(x='Capacity [Ah]', y='Voltage [V]', ax=ax, label='Raw data')\n",
-    "downsampled_data.plot(x='Capacity [Ah]', y='Voltage [V]', ax=ax, style='--', label='Downsampled data')"
+    "final_cycle.discharge(0).plot(\n",
+    "    x=\"Capacity [Ah]\", y=\"Voltage [V]\", ax=ax, label=\"Raw data\"\n",
+    ")\n",
+    "downsampled_data.plot(\n",
+    "    x=\"Capacity [Ah]\", y=\"Voltage [V]\", ax=ax, style=\"--\", label=\"Downsampled data\"\n",
+    ")"
    ]
   },
   {
@@ -121,11 +133,18 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "downsampled_data_dVdQ = differentiation.gradient(downsampled_data, \"Voltage [V]\", \"Capacity [Ah]\")\n",
+    "downsampled_data_dVdQ = differentiation.gradient(\n",
+    "    downsampled_data, \"Voltage [V]\", \"Capacity [Ah]\"\n",
+    ")\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "downsampled_data_dVdQ.plot(x='Voltage [V]', y='d(Capacity [Ah])/d(Voltage [V])', ax=ax, label='Downsampled data')\n",
-    "ax.set_ylabel('d(Capacity [Ah])/d(Voltage [V])')"
+    "downsampled_data_dVdQ.plot(\n",
+    "    x=\"Voltage [V]\",\n",
+    "    y=\"d(Capacity [Ah])/d(Voltage [V])\",\n",
+    "    ax=ax,\n",
+    "    label=\"Downsampled data\",\n",
+    ")\n",
+    "ax.set_ylabel(\"d(Capacity [Ah])/d(Voltage [V])\")"
    ]
   },
   {
@@ -141,17 +160,30 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "spline_smoothed_data = smoothing.spline_smoothing(input_data = final_cycle.discharge(0),\n",
-    "                                                  x='Capacity [Ah]',\n",
-    "                                                  target_column='Voltage [V]',\n",
-    "                                                  smoothing_lambda=1e-10,\n",
-    "                                                  )   \n",
-    "spline_smoothed_data_dVdQ = differentiation.gradient(spline_smoothed_data,\"Voltage [V]\",\"Capacity [Ah]\")\n",
+    "spline_smoothed_data = smoothing.spline_smoothing(\n",
+    "    input_data=final_cycle.discharge(0),\n",
+    "    x=\"Capacity [Ah]\",\n",
+    "    target_column=\"Voltage [V]\",\n",
+    "    smoothing_lambda=1e-10,\n",
+    ")\n",
+    "spline_smoothed_data_dVdQ = differentiation.gradient(\n",
+    "    spline_smoothed_data, \"Voltage [V]\", \"Capacity [Ah]\"\n",
+    ")\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "downsampled_data_dVdQ.plot(x='Voltage [V]', y='d(Capacity [Ah])/d(Voltage [V])', ax=ax, label='Downsampled data')\n",
-    "spline_smoothed_data_dVdQ.plot(x='Voltage [V]', y='d(Capacity [Ah])/d(Voltage [V])', ax=ax, label='Spline smoothed data')\n",
-    "ax.set_ylabel('d(Capacity [Ah])/d(Voltage [V])')"
+    "downsampled_data_dVdQ.plot(\n",
+    "    x=\"Voltage [V]\",\n",
+    "    y=\"d(Capacity [Ah])/d(Voltage [V])\",\n",
+    "    ax=ax,\n",
+    "    label=\"Downsampled data\",\n",
+    ")\n",
+    "spline_smoothed_data_dVdQ.plot(\n",
+    "    x=\"Voltage [V]\",\n",
+    "    y=\"d(Capacity [Ah])/d(Voltage [V])\",\n",
+    "    ax=ax,\n",
+    "    label=\"Spline smoothed data\",\n",
+    ")\n",
+    "ax.set_ylabel(\"d(Capacity [Ah])/d(Voltage [V])\")"
    ]
   },
   {
@@ -167,13 +199,34 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "LEAN_dQdV = differentiation.differentiate_LEAN(input_data = final_cycle.discharge(0), x = 'Capacity [Ah]', y='Voltage [V]', k = 10, gradient = 'dxdy')\n",
+    "LEAN_dQdV = differentiation.differentiate_LEAN(\n",
+    "    input_data=final_cycle.discharge(0),\n",
+    "    x=\"Capacity [Ah]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    "    k=10,\n",
+    "    gradient=\"dxdy\",\n",
+    ")\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "downsampled_data_dVdQ.plot(x='Voltage [V]', y='d(Capacity [Ah])/d(Voltage [V])', ax=ax, label='Downsampled data')\n",
-    "spline_smoothed_data_dVdQ.plot(x='Voltage [V]', y='d(Capacity [Ah])/d(Voltage [V])', ax=ax, label='Spline smoothed data')\n",
-    "LEAN_dQdV.plot(x='Voltage [V]', y='d(Capacity [Ah])/d(Voltage [V])', ax=ax, label='LEAN smoothed data')\n",
-    "ax.set_ylabel('d(Capacity [Ah])/d(Voltage [V])')"
+    "downsampled_data_dVdQ.plot(\n",
+    "    x=\"Voltage [V]\",\n",
+    "    y=\"d(Capacity [Ah])/d(Voltage [V])\",\n",
+    "    ax=ax,\n",
+    "    label=\"Downsampled data\",\n",
+    ")\n",
+    "spline_smoothed_data_dVdQ.plot(\n",
+    "    x=\"Voltage [V]\",\n",
+    "    y=\"d(Capacity [Ah])/d(Voltage [V])\",\n",
+    "    ax=ax,\n",
+    "    label=\"Spline smoothed data\",\n",
+    ")\n",
+    "LEAN_dQdV.plot(\n",
+    "    x=\"Voltage [V]\",\n",
+    "    y=\"d(Capacity [Ah])/d(Voltage [V])\",\n",
+    "    ax=ax,\n",
+    "    label=\"LEAN smoothed data\",\n",
+    ")\n",
+    "ax.set_ylabel(\"d(Capacity [Ah])/d(Voltage [V])\")"
    ]
   }
  ],

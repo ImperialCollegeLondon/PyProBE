@@ -401,9 +401,14 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>) – The input data for the pulsing experiment. Must contain the columns:
+- Current [A]
+- Voltage [V]
+- Time [s]
+- Event
+- SOC</p></li>
 <li><p><strong>r_times</strong> (<em>List</em><em>[</em><em>float</em><em> | </em><em>int</em><em>]</em>) – A list of times (in seconds) after each pulse at which to evaluate
 the cell resistance.</p></li>
-<li><p><strong>input_data</strong> (<a class="reference internal" href="pyprobe.rawdata.html#pyprobe.rawdata.RawData" title="pyprobe.rawdata.RawData"><em>RawData</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Procedure" title="pyprobe.filters.Procedure"><em>Procedure</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Experiment" title="pyprobe.filters.Experiment"><em>Experiment</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Cycle" title="pyprobe.filters.Cycle"><em>Cycle</em></a><em> | </em><a class="reference internal" href="pyprobe.filters.html#pyprobe.filters.Step" title="pyprobe.filters.Step"><em>Step</em></a><em> | </em><a class="reference internal" href="pyprobe.result.html#pyprobe.result.Result" title="pyprobe.result.Result"><em>Result</em></a>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

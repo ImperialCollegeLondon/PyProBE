@@ -23,19 +23,24 @@
    "source": [
     "import pyprobe\n",
     "import matplotlib.pyplot as plt\n",
+    "\n",
     "%matplotlib inline\n",
-    "info_dictionary = {'Name': 'Sample cell',\n",
-    "                   'Chemistry': 'NMC622',\n",
-    "                   'Nominal Capacity [Ah]': 0.04,\n",
-    "                   'Cycler number': 1,\n",
-    "                   'Channel number': 1,}\n",
-    "data_directory = '../../../tests/sample_data/neware'\n",
+    "info_dictionary = {\n",
+    "    \"Name\": \"Sample cell\",\n",
+    "    \"Chemistry\": \"NMC622\",\n",
+    "    \"Nominal Capacity [Ah]\": 0.04,\n",
+    "    \"Cycler number\": 1,\n",
+    "    \"Channel number\": 1,\n",
+    "}\n",
+    "data_directory = \"../../../tests/sample_data/neware\"\n",
     "\n",
     "# Create a cell object\n",
     "cell = pyprobe.Cell(info=info_dictionary)\n",
-    "cell.add_procedure(procedure_name='Sample',\n",
-    "                   folder_path = data_directory,\n",
-    "                   filename = 'sample_data_neware.parquet')"
+    "cell.add_procedure(\n",
+    "    procedure_name=\"Sample\",\n",
+    "    folder_path=data_directory,\n",
+    "    filename=\"sample_data_neware.parquet\",\n",
+    ")"
    ]
   },
   {
@@ -61,7 +66,9 @@
    "outputs": [],
    "source": [
     "plt.figure()\n",
-    "cell.procedure['Sample'].experiment('Break-in Cycles').plot(x='Time [s]', y='Voltage [V]', grid=True)"
+    "cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").plot(\n",
+    "    x=\"Time [s]\", y=\"Voltage [V]\", grid=True\n",
+    ")"
    ]
   },
   {
@@ -78,7 +85,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "cell.procedure['Sample'].experiment('Break-in Cycles').hvplot(x='Time [s]', y='Voltage [V]')"
+    "cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").hvplot(\n",
+    "    x=\"Time [s]\", y=\"Voltage [V]\"\n",
+    ")"
    ]
   },
   {
@@ -113,10 +122,11 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles'),\n",
-    "             x = 'Time [s]',\n",
-    "             y = 'Voltage [V]',\n",
-    "             )"
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\"),\n",
+    "    x=\"Time [s]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    ")"
    ]
   },
   {
@@ -133,16 +143,18 @@
    "outputs": [],
    "source": [
     "fig, ax = plt.subplots(2, 1, figsize=(8, 6))\n",
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles'),\n",
-    "             x = 'Time [s]',\n",
-    "             y = 'Voltage [V]',\n",
-    "             ax = ax[0]\n",
-    "             )\n",
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles'),\n",
-    "                x = 'Time [s]',\n",
-    "                y = 'Current [A]',\n",
-    "                ax = ax[1]\n",
-    "                )\n",
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\"),\n",
+    "    x=\"Time [s]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    "    ax=ax[0],\n",
+    ")\n",
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\"),\n",
+    "    x=\"Time [s]\",\n",
+    "    y=\"Current [A]\",\n",
+    "    ax=ax[1],\n",
+    ")\n",
     "plt.tight_layout()\n",
     "plt.show()"
    ]
@@ -161,18 +173,20 @@
    "outputs": [],
    "source": [
     "fig, ax = plt.subplots(figsize=(12, 6))\n",
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles').cycle(-1),\n",
-    "             x = 'Time [s]',\n",
-    "             y = 'Voltage [V]',\n",
-    "             ax = ax,\n",
-    "             )\n",
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").cycle(-1),\n",
+    "    x=\"Time [s]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    "    ax=ax,\n",
+    ")\n",
     "ax2 = ax.twinx()\n",
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles').cycle(-1),\n",
-    "             x = 'Time [s]',\n",
-    "             y = 'Current [A]',\n",
-    "             ax = ax2,\n",
-    "             color='r'\n",
-    "             )\n",
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").cycle(-1),\n",
+    "    x=\"Time [s]\",\n",
+    "    y=\"Current [A]\",\n",
+    "    ax=ax2,\n",
+    "    color=\"r\",\n",
+    ")\n",
     "plt.show()"
    ]
   },
@@ -190,18 +204,20 @@
    "outputs": [],
    "source": [
     "fig, ax = plt.subplots(figsize=(12, 6))\n",
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles').cycle(-1),\n",
-    "             x = 'Time [hr]',\n",
-    "             y = 'Voltage [V]',\n",
-    "             ax = ax,\n",
-    "             )\n",
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").cycle(-1),\n",
+    "    x=\"Time [hr]\",\n",
+    "    y=\"Voltage [V]\",\n",
+    "    ax=ax,\n",
+    ")\n",
     "ax2 = ax.twinx()\n",
-    "sns.lineplot(data=cell.procedure['Sample'].experiment('Break-in Cycles').cycle(-1),\n",
-    "             x = 'Time [hr]',\n",
-    "             y = 'Current [mA]',\n",
-    "             ax = ax2,\n",
-    "             color='r'\n",
-    "             )\n",
+    "sns.lineplot(\n",
+    "    data=cell.procedure[\"Sample\"].experiment(\"Break-in Cycles\").cycle(-1),\n",
+    "    x=\"Time [hr]\",\n",
+    "    y=\"Current [mA]\",\n",
+    "    ax=ax2,\n",
+    "    color=\"r\",\n",
+    ")\n",
     "plt.show()"
    ]
   }

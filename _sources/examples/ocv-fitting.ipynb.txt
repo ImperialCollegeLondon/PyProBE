@@ -20,6 +20,7 @@
     "from pyprobe.analysis import degradation_mode_analysis as dma\n",
     "import numpy as np\n",
     "import matplotlib.pyplot as plt\n",
+    "\n",
     "%matplotlib inline"
    ]
   },
@@ -61,7 +62,8 @@
     "\n",
     "    return u_eq\n",
     "\n",
-    "z = np.linspace(0, 1, 1000) # stoichiometry vector\n",
+    "\n",
+    "z = np.linspace(0, 1, 1000)  # stoichiometry vector\n",
     "\n",
     "# generate complete ocp curves\n",
     "ocp_pe = nmc_LGM50_ocp_Chen2020(z)\n",
@@ -83,23 +85,23 @@
    "source": [
     "n_pts = 1000\n",
     "# positive electrode\n",
-    "x_pe_lo = 0.85 # stoichiometry at low cell SOC\n",
-    "x_pe_hi = 0.27 # stoichiometry at high cell SOC\n",
-    "x_pe = np.linspace(x_pe_lo, x_pe_hi, n_pts) # stoichiometry range\n",
+    "x_pe_lo = 0.85  # stoichiometry at low cell SOC\n",
+    "x_pe_hi = 0.27  # stoichiometry at high cell SOC\n",
+    "x_pe = np.linspace(x_pe_lo, x_pe_hi, n_pts)  # stoichiometry range\n",
     "\n",
     "# negative electrode\n",
-    "x_ne_lo = 0.03 # stoichiometry at low cell SOC\n",
-    "x_ne_hi = 0.9 # stoichiometry at high cell SOC\n",
-    "x_ne = np.linspace(x_ne_lo, x_ne_hi, n_pts) # stoichiometry range\n",
+    "x_ne_lo = 0.03  # stoichiometry at low cell SOC\n",
+    "x_ne_hi = 0.9  # stoichiometry at high cell SOC\n",
+    "x_ne = np.linspace(x_ne_lo, x_ne_hi, n_pts)  # stoichiometry range\n",
     "\n",
     "# full cell voltage and capacity\n",
     "voltage = nmc_LGM50_ocp_Chen2020(x_pe) - graphite_LGM50_ocp_Chen2020(x_ne)\n",
-    "capacity = np.linspace(0, 5, n_pts) # capacity range in Ah\n",
+    "capacity = np.linspace(0, 5, n_pts)  # capacity range in Ah\n",
     "\n",
     "plt.figure()\n",
     "plt.plot(capacity, voltage)\n",
-    "plt.xlabel('Capacity (Ah)')\n",
-    "plt.ylabel('Voltage (V)')"
+    "plt.xlabel(\"Capacity (Ah)\")\n",
+    "plt.ylabel(\"Voltage (V)\")"
    ]
   },
   {
@@ -137,18 +139,21 @@
    "outputs": [],
    "source": [
     "# put the voltage and capacity data into a Result object (not necessary in normal use)\n",
-    "OCV_result = pyprobe.Result(base_dataframe=pl.DataFrame({'Capacity [Ah]': capacity, 'Voltage [V]': voltage}), info= {})\n",
+    "OCV_result = pyprobe.Result(\n",
+    "    base_dataframe=pl.DataFrame({\"Capacity [Ah]\": capacity, \"Voltage [V]\": voltage}),\n",
+    "    info={},\n",
+    ")\n",
     "\n",
     "stoichiometry_limits, fitted_curve = dma.run_ocv_curve_fit(\n",
-    "    input_data= OCV_result,\n",
+    "    input_data=OCV_result,\n",
     "    ocp_ne=neg_ocp,\n",
     "    ocp_pe=pos_ocp,\n",
-    "    fitting_target='OCV',\n",
-    "    optimizer='minimize',\n",
+    "    fitting_target=\"OCV\",\n",
+    "    optimizer=\"minimize\",\n",
     "    optimizer_options={\n",
-    "        'x0': np.array([0.9, 0.1, 0.1, 0.9]),\n",
-    "        'bounds': [(0, 1), (0, 1), (0, 1), (0, 1)]\n",
-    "    }\n",
+    "        \"x0\": np.array([0.9, 0.1, 0.1, 0.9]),\n",
+    "        \"bounds\": [(0, 1), (0, 1), (0, 1), (0, 1)],\n",
+    "    },\n",
     ")"
    ]
   },
@@ -182,9 +187,11 @@
    "outputs": [],
    "source": [
     "fig, ax = plt.subplots()\n",
-    "fitted_curve.plot(x='SOC', y='Input Voltage [V]', ax=ax, label='Input')\n",
-    "fitted_curve.plot(x='SOC', y='Fitted Voltage [V]', ax=ax, color='red', label='Fit', linestyle='--')\n",
-    "ax.set_ylabel('Voltage (V)')"
+    "fitted_curve.plot(x=\"SOC\", y=\"Input Voltage [V]\", ax=ax, label=\"Input\")\n",
+    "fitted_curve.plot(\n",
+    "    x=\"SOC\", y=\"Fitted Voltage [V]\", ax=ax, color=\"red\", label=\"Fit\", linestyle=\"--\"\n",
+    ")\n",
+    "ax.set_ylabel(\"Voltage (V)\")"
    ]
   },
   {
@@ -201,21 +208,21 @@
    "outputs": [],
    "source": [
     "stoichiometry_limits, fitted_curve = dma.run_ocv_curve_fit(\n",
-    "    input_data= OCV_result,\n",
+    "    input_data=OCV_result,\n",
     "    ocp_ne=neg_ocp,\n",
     "    ocp_pe=pos_ocp,\n",
-    "    fitting_target='dQdV',\n",
-    "    optimizer='differential_evolution',\n",
-    "    optimizer_options={\n",
-    "        'bounds': [(0.8, 1), (0.2, 0.3), (0, 0.1), (0.86, 1)]\n",
-    "    }\n",
+    "    fitting_target=\"dQdV\",\n",
+    "    optimizer=\"differential_evolution\",\n",
+    "    optimizer_options={\"bounds\": [(0.8, 1), (0.2, 0.3), (0, 0.1), (0.86, 1)]},\n",
     ")\n",
     "print(stoichiometry_limits.data)\n",
     "\n",
     "fig, ax = plt.subplots()\n",
-    "fitted_curve.plot(x='SOC', y='Input dSOCdV [1/V]', ax=ax, label='Input')\n",
-    "fitted_curve.plot(x='SOC', y='Fitted dSOCdV [1/V]', ax=ax, color='red', label='Fit', linestyle='--')\n",
-    "ax.set_ylabel('dSOCdV (1/V)')"
+    "fitted_curve.plot(x=\"SOC\", y=\"Input dSOCdV [1/V]\", ax=ax, label=\"Input\")\n",
+    "fitted_curve.plot(\n",
+    "    x=\"SOC\", y=\"Fitted dSOCdV [1/V]\", ax=ax, color=\"red\", label=\"Fit\", linestyle=\"--\"\n",
+    ")\n",
+    "ax.set_ylabel(\"dSOCdV (1/V)\")"
    ]
   },
   {
