@@ -1,4 +1,5 @@
 """A module for the RawData class."""
+
 import logging
 from typing import Dict, List, Optional
 

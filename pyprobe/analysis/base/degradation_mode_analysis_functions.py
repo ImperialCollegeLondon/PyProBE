@@ -83,6 +83,7 @@ def calc_electrode_capacities(
         x_pe_hi (float): The cathode stoichiometry at highest cell SOC.
         x_ne_lo (float): The anode stoichiometry at lowest cell SOC.
         x_ne_hi (float): The anode stoichiometry at highest cell SOC.
+        cell_capacity (float): The cell capacity.
 
     Returns:
         Tuple[float, float, float]:
@@ -246,11 +247,10 @@ def calculate_dma_parameters(
     """Calculate the DMA parameters.
 
     Args:
-        pe_stoich_limits (NDArray[np.float64]): The cathode stoichiometry limits.
-        ne_stoich_limits (NDArray[np.float64]): The anode stoichiometry limits.
-        pe_capacity (NDArray[np.float64]): The cathode capacity.
-        ne_capacity (NDArray[np.float64]): The anode capacity.
-        li_inventory (NDArray[np.float64]): The lithium inventory.
+        cell_capacity: The cell capacity.
+        pe_capacity: The cathode capacity.
+        ne_capacity: The anode capacity.
+        li_inventory: The lithium inventory.
 
     Returns:
         Tuple[float, float, float, float]: The SOH, LAM_pe, LAM_ne, and LLI.
@@ -273,10 +273,12 @@ def average_OCV_curves(
     """Average the charge and discharge OCV curves.
 
     Args:
-        charge_capacity (NDArray[np.float64]): The charge capacity data.
-        charge_OCV (NDArray[np.float64]): The charge OCV data.
-        discharge_capacity (NDArray[np.float64]): The discharge capacity data.
-        discharge_OCV (NDArray[np.float64]): The discharge OCV data.
+        charge_SOC: The charge SOC.
+        charge_OCV: The charge OCV.
+        charge_current: The charge current.
+        discharge_SOC: The discharge SOC.
+        discharge_OCV: The discharge OCV.
+        discharge_current: The discharge current.
 
     Returns:
         Tuple[NDArray[np.float64], NDArray[np.float64]]:

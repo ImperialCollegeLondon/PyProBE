@@ -1,4 +1,5 @@
 """Tests for the neware module."""
+
 import os
 from datetime import datetime
 

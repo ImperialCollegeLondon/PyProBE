@@ -1,4 +1,5 @@
 """Test the basecycler module."""
+
 import copy
 import os
 import re

@@ -1,4 +1,5 @@
 """Module for configuring logging for the PyProBE package."""
+
 import logging
 from typing import Optional
 

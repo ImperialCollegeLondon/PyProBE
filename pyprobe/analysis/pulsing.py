@@ -79,6 +79,13 @@ def get_resistances(
     """Returns a result object summarising the pulsing experiment.
 
     Args:
+        input_data:
+            The input data for the pulsing experiment. Must contain the columns:
+            - Current [A]
+            - Voltage [V]
+            - Time [s]
+            - Event
+            - SOC
         r_times:
             A list of times (in seconds) after each pulse at which to evaluate
             the cell resistance.

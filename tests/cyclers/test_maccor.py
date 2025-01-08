@@ -1,4 +1,5 @@
 """Tests for the Maccor cycler class."""
+
 from datetime import datetime
 
 import polars as pl

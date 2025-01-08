@@ -1,4 +1,5 @@
 """Tests for the filter module."""
+
 import numpy as np
 import polars as pl
 import pytest

@@ -1,4 +1,5 @@
 """Append a footbibliography directive to all .rst files in a directory."""
+
 import os
 import sys
 

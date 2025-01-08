@@ -1,4 +1,5 @@
 """Tests for the degradation mode analysis functions."""
+
 import math
 
 import numpy as np

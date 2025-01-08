@@ -245,7 +245,7 @@ def savgol_smoothing(
             The name of the target variable to smooth.
         window_length:
             The length of the filter window. Must be a positive odd integer.
-        polynomial_order:
+        polyorder:
             The order of the polynomial used to fit the samples.
         derivative:
             The order of the derivative to compute. Default is 0.
@@ -322,6 +322,7 @@ def _create_interpolator(
         interpolator_class (Callable[..., Any]): The interpolator class to use.
         x (NDArray[np.float64]): The x data.
         y (NDArray[np.float64]): The y data.
+        **kwargs (Any): Additional keyword arguments for the interpolator.
 
     Returns:
         Any: The interpolator object.
@@ -338,6 +339,7 @@ def linear_interpolator(
     Args:
         x (NDArray[np.float64]): The x data.
         y (NDArray[np.float64]): The y data.
+        **kwargs (Any): Additional keyword arguments for the interpolator.
 
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The linear interpolator.
@@ -353,6 +355,7 @@ def cubic_interpolator(
     Args:
         x (NDArray[np.float64]): The x data.
         y (NDArray[np.float64]): The y data.
+        **kwargs (Any): Additional keyword arguments for the interpolator.
 
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]:
@@ -369,6 +372,7 @@ def pchip_interpolator(
     Args:
         x (NDArray[np.float64]): The x data.
         y (NDArray[np.float64]): The y data.
+        **kwargs (Any): Additional keyword arguments for the interpolator.
 
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Pchip interpolator.
@@ -384,6 +388,7 @@ def akima_interpolator(
     Args:
         x (NDArray[np.float64]): The x data.
         y (NDArray[np.float64]): The y data.
+        **kwargs (Any): Additional keyword arguments for the interpolator.
 
     Returns:
         Callable[[NDArray[np.float64]], NDArray[np.float64]]: The Akima interpolator.
@@ -590,7 +595,7 @@ class Smoothing(BaseModel):
                 The name of the target variable to smooth.
             window_length (int):
                 The length of the filter window. Must be a positive odd integer.
-            polynomial_order (int):
+            polyorder (int):
                 The order of the polynomial used to fit the samples.
             derivative (int, optional):
                 The order of the derivative to compute. Default is 0.

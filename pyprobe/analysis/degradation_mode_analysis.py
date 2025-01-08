@@ -27,7 +27,7 @@ def _get_gradient(
         Callable[[NDArray[np.float64]], NDArray[np.float64]],
         PPoly,
         sp.Expr,
-    ]
+    ],
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Retrieve the gradient of the OCP function.
 
@@ -292,6 +292,7 @@ def _f_grad_OCV(
     Derivative is calculated using the chain rule:
     d(OCV)/d(SOC) = d(OCV)/d(z_pe) * d(z_pe)/d(SOC)
                     - d(OCV)/d(z_ne) * d(z_ne)/d(SOC)
+
     Args:
         SOC: The full cell SOC.
         ocp_pe: The OCP function for the positive electrode.
@@ -341,7 +342,7 @@ def _build_objective_function(
     if not composite_pe and not composite_ne:
 
         def unwrap_params(
-            params: Tuple[np.float64, ...]
+            params: Tuple[np.float64, ...],
         ) -> Tuple[
             float,
             float,
@@ -363,7 +364,7 @@ def _build_objective_function(
     elif composite_pe and not composite_ne:
 
         def unwrap_params(
-            params: Tuple[np.float64, ...]
+            params: Tuple[np.float64, ...],
         ) -> Tuple[
             float,
             float,
@@ -380,7 +381,7 @@ def _build_objective_function(
     elif not composite_pe and composite_ne:
 
         def unwrap_params(
-            params: Tuple[np.float64, ...]
+            params: Tuple[np.float64, ...],
         ) -> Tuple[
             float,
             float,
@@ -397,7 +398,7 @@ def _build_objective_function(
     else:  # composite_pe and composite_ne are both True
 
         def unwrap_params(
-            params: Tuple[np.float64, ...]
+            params: Tuple[np.float64, ...],
         ) -> Tuple[
             float,
             float,
@@ -629,13 +630,13 @@ def run_ocv_curve_fit(
     }
 
     if composite_pe:
-        input_stoichiometry_limits.column_definitions[
-            "pe composite fraction"
-        ] = "Fraction of composite cathode capacity attributed to first component."
+        input_stoichiometry_limits.column_definitions["pe composite fraction"] = (
+            "Fraction of composite cathode capacity attributed to first component."
+        )
     if composite_ne:
-        input_stoichiometry_limits.column_definitions[
-            "ne composite fraction"
-        ] = "Fraction of composite anode capacity attributed to first component."
+        input_stoichiometry_limits.column_definitions["ne composite fraction"] = (
+            "Fraction of composite anode capacity attributed to first component."
+        )
 
     fitted_voltage = _f_OCV(
         ocp_pe,

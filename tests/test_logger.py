@@ -1,4 +1,5 @@
 """Tests for the logger module."""
+
 import logging
 
 from pyprobe.logger import configure_logging

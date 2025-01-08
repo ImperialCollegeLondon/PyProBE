@@ -1,4 +1,5 @@
 """Module for type hints and type aliases."""
+
 from typing import Union
 
 from pyprobe.filters import Cycle, Experiment, Procedure, Step

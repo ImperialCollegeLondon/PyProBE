@@ -1,4 +1,5 @@
 """Module containing pytest fixtures."""
+
 import polars as pl
 import pytest
 
