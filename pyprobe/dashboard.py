@@ -9,7 +9,6 @@ from typing import List
 import plotly
 import polars as pl
 import streamlit as st
-from ordered_set import OrderedSet
 
 from pyprobe.cell import Cell
 from pyprobe.plot import Plot
@@ -95,11 +94,10 @@ if __name__ == "__main__":
 
     # Display the DataFrame in the sidebar
     selected_indices = dataframe_with_selections(info)
-    # Get the names of the selected rows
-    selected_names = [cell_list[i].info["Name"] for i in selected_indices]
+
     # Get the procedure names from the selected cells
     procedure_names_sets = [
-        OrderedSet(cell_list[i].procedure.keys()) for i in selected_indices
+        list(cell_list[i].procedure.keys()) for i in selected_indices
     ]
 
     # Find the common procedure names
@@ -146,7 +144,7 @@ if __name__ == "__main__":
 
     graph_placeholder = st.empty()
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     # Create select boxes for the x and y axes
     filter_stage = col1.selectbox(
         "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
@@ -155,6 +153,9 @@ if __name__ == "__main__":
     x_axis = f"{filter_stage} {x_axis}".strip()
     y_axis = col3.selectbox("y axis", y_options, index=1)
     secondary_y_axis = col4.selectbox("Secondary y axis", ["None"] + y_options, index=0)
+    # choose a cell identifier
+    cell_identifier = col5.selectbox("Legend label", info.collect_schema().names())
+    selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
 
     # Select plot theme
 
@@ -188,7 +189,13 @@ if __name__ == "__main__":
         if secondary_y_axis == "None":
             secondary_y_axis = None
 
-        fig = fig.add_line(filtered_data, x_axis, y_axis, secondary_y=secondary_y_axis)
+        fig = fig.add_line(
+            filtered_data,
+            x_axis,
+            y_axis,
+            secondary_y=secondary_y_axis,
+            label=cell_list[selected_index].info[cell_identifier],
+        )
         filtered_data = filtered_data.data.to_pandas()
         selected_data.append(filtered_data)
 

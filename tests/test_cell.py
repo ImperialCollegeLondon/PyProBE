@@ -1,5 +1,6 @@
 """Tests for the Cell class."""
 import copy
+import datetime
 import json
 import os
 import shutil
@@ -23,25 +24,33 @@ def cell_instance(info_fixture):
 def test_init(cell_instance, info_fixture):
     """Test the __init__ method."""
     expected_info = copy.copy(info_fixture)
-    expected_info["color"] = "#ff00ff"
     assert cell_instance.info == expected_info
     assert cell_instance.procedure == {}
 
-    info = {"not name": "test"}
-    Cell(info=info)
-    with pytest.warns(UserWarning):
-        cell = Cell(info=info)
-        assert cell.info["Name"] == "Default Name"
 
-
-def test_make_cell_list(info_fixture):
+def test_make_cell_list():
     """Test the make_cell_list method."""
     filepath = "tests/sample_data/neware/Experiment_Record.xlsx"
     record_name = "sample_data_neware"
     cell_list = pyprobe.make_cell_list(filepath, record_name)
-    expected_info = copy.copy(info_fixture)
-    expected_info["color"] = "#ff00ff"
-    assert cell_list[0].info == expected_info
+    assert cell_list[0].info == {
+        "Name": "Cell1",
+        "Chemistry": "NMC622",
+        "Nominal Capacity [Ah]": 5.0,
+        "Start date": datetime.datetime(2024, 3, 20, 9, 3, 23),
+    }
+    assert cell_list[1].info == {
+        "Name": "Cell2",
+        "Chemistry": "NMC811",
+        "Nominal Capacity [Ah]": 3.0,
+        "Start date": datetime.datetime(2024, 3, 20, 9, 2, 23),
+    }
+    assert cell_list[2].info == {
+        "Name": "Cell3",
+        "Chemistry": "LFP",
+        "Nominal Capacity [Ah]": 2.5,
+        "Start date": datetime.datetime(2024, 3, 20, 9, 3, 23),
+    }
 
 
 def test_get_filename(info_fixture):

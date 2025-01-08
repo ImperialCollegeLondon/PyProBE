@@ -8,9 +8,8 @@ import warnings
 import zipfile
 from typing import Any, Callable, Dict, List, Literal, Optional
 
-import distinctipy
 import polars as pl
-from pydantic import BaseModel, Field, field_validator, validate_call
+from pydantic import BaseModel, Field, validate_call
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -24,44 +23,13 @@ logger = logging.getLogger(__name__)
 class Cell(BaseModel):
     """A class for a cell in a battery experiment."""
 
-    info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
+    info: dict[str, Optional[Any]]
     """Dictionary containing information about the cell.
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
     """
     procedure: Dict[str, Procedure] = Field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
-
-    @field_validator("info")
-    def check_and_set_name(
-        cls, info: Dict[str, Optional[str | int | float | Dict[Any, Any]]]
-    ) -> Dict[str, Optional[str | int | float | Dict[Any, Any]]]:
-        """Validate the `info` field.
-
-        Checks that a `Name` field is present in the `info` dictionary, if not it is
-        set to 'Default Name'. If the `color` field is not present, a color is
-        generated.
-        """
-        if "Name" not in info.keys():
-            info["Name"] = "Default Name"
-            warnings.warn(
-                "The 'Name' field was not in info. It has been set to 'Default Name'."
-            )
-
-        if "color" not in info.keys():
-            info["color"] = distinctipy.get_hex(
-                distinctipy.get_colors(
-                    1,
-                    rng=1,  # Set the random seed
-                    exclude_colors=[
-                        (0, 0, 0),
-                        (1, 1, 1),
-                        (1, 1, 0),
-                    ],
-                )[0]
-            )
-        values = info
-        return values
 
     def _convert_to_parquet(
         self,
@@ -396,7 +364,7 @@ class Cell(BaseModel):
 
     @staticmethod
     def _get_filename(
-        info: Dict[str, Optional[str | int | float | Dict[Any, Any]]],
+        info: Dict[str, Optional[Any]],
         filename_function: Callable[[str], str],
         filename_inputs: List[str],
     ) -> str:
@@ -696,18 +664,7 @@ def make_cell_list(
 
     n_cells = len(record)
     cell_list = []
-    rgb = distinctipy.get_colors(
-        n_cells,
-        exclude_colors=[
-            (0, 0, 0),
-            (1, 1, 1),
-            (1, 1, 0),
-        ],  # Exclude black, white, and yellow
-        rng=1,  # Set the random seed
-        n_attempts=5000,
-    )
     for i in range(n_cells):
         info = record.row(i, named=True)
-        info["color"] = distinctipy.get_hex(rgb[i])
         cell_list.append(Cell(info=info))
     return cell_list
