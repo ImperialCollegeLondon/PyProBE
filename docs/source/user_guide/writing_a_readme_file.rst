@@ -29,15 +29,14 @@ The :code:`README.yaml` contains the following information:
    PyBaMM Experiment strings separated by a comma, one for the CC part and one for the
    CV part.
 
-   Each step should be given a step number. For a single README file, this should count
-   upwards from 1. These numbers should increase in line with the real step numbers 
-   defined by the cycler, i.e. Neware cyclers treat a repeat instruction as its own
+   Each step should be given a step number. These numbers should increase in line with the real step numbers 
+   defined by the cycler, i.e. Neware cyclers treat a `repeat` instruction as its own
    step. Therefore, where there is a repeat instruction in the cycler procedure, the 
    corresponding step number should be skipped.
 
 * Cycle:
    This is a section that provides details on repeats of the provided steps. PyProBE 
-   looks for any title containing the string `"cycle"`, so you can choose any name that 
+   looks for any title containing the string :code:`"cycle"`, so you can choose any name that 
    includes this or add multiple cycles with different names.
 
    Cycle details must include the keywords "Start", "End" and "Count". These identify

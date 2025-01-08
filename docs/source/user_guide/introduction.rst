@@ -16,8 +16,7 @@ procedures run on the cell. These can be further filtered as described in the
 
 Once the data is filtered, it can be processed further with a 
 method in the :mod:`~pyprobe.analysis` module or displayed using the built-in 
-:mod:`~pyprobe.plot` module. All filters produce objects that are compatible with the 
-plotting module, making it easy to visualise the data at any stage of the analysis. Additionally, 
+:func:`~pyprobe.result.Result.plot` method. Additionally, 
 all methods in the analysis module produce a :class:`~pyprobe.result.Result` which can 
 be an input to further methods. This is summarised in the flowchart below:
 

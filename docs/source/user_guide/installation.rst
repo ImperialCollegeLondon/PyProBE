@@ -34,24 +34,24 @@ The steps to install PyProBE are as follows:
 
 1. Create and activate a virtual environment.
   
-  .. tabs::
-      .. tab:: venv
+.. tabs::
+   .. tab:: venv
 
-         In your working directory:
+      In your working directory:
 
-         .. code-block:: bash
+      .. code-block:: bash
 
-            python -m venv venv
-            source .venv/bin/activate
+         python -m venv venv
+         source .venv/bin/activate
 
-      .. tab:: conda
-            
-         In any directory:
+   .. tab:: conda
+         
+      In any directory:
 
-         .. code-block:: bash
+      .. code-block:: bash
 
-            conda create -n pyprobe python=3.12
-            conda activate pyprobe
+         conda create -n pyprobe python=3.12
+         conda activate pyprobe
 
 2. Install PyProBE with pip:
    
@@ -66,7 +66,7 @@ The steps to install PyProBE are as follows:
       pip install 'PyProBE-Data[hvplot]'
 
    If a method uses an optional dependency, it will be detailed in the 
-   :doc:`api documentation <pyprobe>`. If these methods is run without their dependencies
+   :doc:`api documentation <pyprobe>`. If these methods are run without their dependencies
    installed, they will return an error. 
 
 3. You can create a new python script or jupyter notebook to 

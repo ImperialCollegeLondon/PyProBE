@@ -1,7 +1,7 @@
-pyprobe.typing module
-=====================
+pyprobe.utils module
+====================
 
-.. automodule:: pyprobe.typing
+.. automodule:: pyprobe.utils
    :members:
    :undoc-members:
    :show-inheritance:

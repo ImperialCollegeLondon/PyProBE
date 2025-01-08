@@ -85,7 +85,7 @@ The Biologic Modulo Bat format has its own reader ``'biologic_MB'``:
 
 Adding data to a cell object
 ----------------------------
-For data to be imported into PyProBE, there must be a corresponding :code:`README.yaml`
+For data to be imported into PyProBE, there should be a corresponding :code:`README.yaml`
 file in the same directory as the data file. This file contains details of the 
 experimental procedure that generated the data. See the :ref:`writing_a_readme_file`
 section for guidance.

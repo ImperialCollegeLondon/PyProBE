@@ -1,9 +1,6 @@
 Installation
 ============
 
-To install PyProBE you must be running Python 3.11 or later. It is recommended to use a 
-virtual environment to install PyProBE, for example venv or conda.
-
 The steps to install PyProBE with developer settings are as follows:
 
 **Clone the repository**
@@ -25,7 +22,7 @@ The steps to install PyProBE with developer settings are as follows:
 **Installation with uv (recommended)**
 
 To guarantee a safe installation with compatible packages, it is recommended to use
-the `uv <https://uv.readthedocs.io/en/latest/>`_ tool.
+the `uv <https://docs.astral.sh/uv/>`_ tool.
 
 First, follow the steps in the 
 `uv installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_ 
@@ -33,7 +30,7 @@ to install uv onto your system. Note: while uv can be installed into a virtual
 environment with pip, it is recommended to install system-wide.
 
 Once uv is installed we can continue with the PyProBE installation. With a single
-command uv installs PyProBE, alongside python and all of its dependencies in a 
+command, uv installs PyProBE alongside Python and all of its dependencies in a 
 virtual environment:
 
 .. code-block:: bash

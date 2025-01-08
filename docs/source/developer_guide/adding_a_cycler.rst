@@ -28,11 +28,12 @@ allow PyProBE to work with your data.
    .. literalinclude:: ../../../pyprobe/cyclers/biologic.py
     :language: python
     :linenos:
-    :lines: 12-25
+    :lines: 12-26
 
 2. Add a method to read a file into a dataframe. 
    
-   The :func:`~pyprobe.cyclers.basecycler.BaseCycler.read_file` method works for the simplest
+   The :func:`~pyprobe.cyclers.basecycler.BaseCycler.read_file` method in the 
+   :class:`~pyprobe.cyclers.basecycler.BaseCycler` works for the simplest
    example, where the file contents are only the data under column headings. This may work
    for you, or may just require adding to its list of recognized file extensions.
 
@@ -55,8 +56,8 @@ allow PyProBE to work with your data.
    
    The :class:`~pyprobe.cyclers.basecycler.BaseCycler`
    includes properties for reading each column of the data. If any of these need adjusting,
-   re-define them in your new cycler class. For example, the :class:`~pyprobe.cyclers.biologic.Biologic` class
-   overrides the :attr:`~pyprobe.cyclers.biologic.Biologic.step` property, to add one
-   to the step number to change from 0-indexing to 1-indexing.
+   re-define them in your new cycler class. For example, the :class:`~pyprobe.cyclers.neware.Neware` class
+   overrides the :attr:`~pyprobe.cyclers.neware.Neware.time` property, to retrieve time
+   information from the date column if it is present.
 
 .. footbibliography::
