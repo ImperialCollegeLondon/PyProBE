@@ -1,0 +1,14 @@
+Initial Charge:
+  Steps: 
+    0: Rest for 2 minutes
+    1: Charge at 1.5 A until 4.2 V
+    2: Hold at 4.2 V until 0.05 A 
+    3: Rest for 2 hours
+pOCV:
+  Steps: 
+    4: Rest for 30 seconds
+    5: Discharge at 0.5 A until 2.5 V
+    6: Rest for 6 hours
+    7: Rest for 30 seconds
+    8: Charge at 0.5 A until 4.2 V
+    9: Rest for 10 minutes
