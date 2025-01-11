@@ -54,7 +54,7 @@ Filtering a dataset to the section of interest is the first step of all data pro
 
 `PyProBE` has a hierarchy of objects containing experimental data. A **Cell** object contains all the data associated with a physical battery that has undergone electrochemical testing. A **Procedure** contains data associated with a particular programme run on a battery cycler. It usually represents data from a single results file produced by the battery cycler. The details of the procedure are included in a README.yaml file stored alongside the experimental data.
 
-Including a README file alongside experimental data is good research practice in accordance with the FAIR principles [@wilkinson_fair_2016]. The `PyProBE` README includes descriptions of cycler processes in `PyBaMM` Experiment format [@sulzer_python_2021] as this is both computer and human-readable. The procedure can be split up into **Experiment** objects which can then be referenced in `PyProBE`’s hierarchical filter structure. An example README file is shown in \autoref{fig:readme}.
+Including a README file alongside experimental data is good research practice in accordance with the FAIR principles [@wilkinson_fair_2016]. The `PyProBE` README includes descriptions of cycler processes in `PyBaMM` Experiment format [@sulzer_python_2021] as it is human-readable and enables integration with `PyBaMM` for running simulations that correspond with the experimental data. The procedure can be split up into **Experiment** objects which can then be referenced in `PyProBE`’s hierarchical filter structure. An example README file is shown in \autoref{fig:readme}.
 
 ![An example README.yaml file for the procedure in \autoref{fig:procedures and experiments}.\label{fig:readme}](images/Readme.jpg)
 
