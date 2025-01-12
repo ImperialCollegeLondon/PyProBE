@@ -34,12 +34,7 @@ jobs:
           uv sync --all-extras
 
       - name: Run tests
-        run: uv run pytest tests --benchmark-json output.json --cov-branch --cov-report=xml
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        run: uv run pytest tests --benchmark-json output.json --cov-report=xml
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
@@ -55,4 +50,9 @@ jobs:
           # Enable Job Summary for PRs
           summary-always: true
       - name: Test notebooks
-        run: uv run pytest --nbmake docs/source/examples/*ipynb --ignore --nbmake docs/source/examples/comparing-pyprobe-performance.ipynb
+        run: uv run pytest --nbmake docs/source/examples/*ipynb --ignore docs/source/examples/comparing-pyprobe-performance.ipynb
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
