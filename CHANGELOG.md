@@ -1,6 +1,189 @@
 # CHANGELOG
 
 
+## v1.3.0 (2025-01-12)
+
+### Bug Fixes
+
+- **cell**: Correct incompatible data/lazyframes in pybamm_experiment property
+  ([`3a2ca00`](https://github.com/ImperialCollegeLondon/PyProBE/commit/3a2ca001fd6dc425ff01a5f18efbb0e18fbd319d))
+
+### Chores
+
+- Add --seed creation of uv venv during workflows
+  ([`45a5fbe`](https://github.com/ImperialCollegeLondon/PyProBE/commit/45a5fbea8ac4dc3d978ac12164231e2ab5968728))
+
+- Add codecov coverage upload
+  ([`8c7a8ce`](https://github.com/ImperialCollegeLondon/PyProBE/commit/8c7a8cef59e5edf4a0c407d788e71087dba4dbec))
+
+- Add condition to release candidate workflow
+  ([`80cf916`](https://github.com/ImperialCollegeLondon/PyProBE/commit/80cf9164c924c9ac72f25dee61540186b2a710ad))
+
+Prevents running the workflow when a merge is made from a branch created by the release candidate
+  workflow itself
+
+- Add readme info to pyproject.toml
+  ([`0e4a25f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0e4a25f16144bb10be9a1d2ac3c57ad6205136d8))
+
+- Add two step coverage upload using artifacts
+  ([`b17ad0c`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b17ad0ccf5a1ce8e02a60bf2ab6d89b0f97e0fb8))
+
+- Add urls and classifiers to pyproject.toml
+  ([`ef08ea5`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ef08ea57ceeec7cd8d8c15136199f33a8143020d))
+
+- Fix coverage workflow
+  ([`3ff3028`](https://github.com/ImperialCollegeLondon/PyProBE/commit/3ff30281e2d047fac72280006c7be7cc5bb46845))
+
+- Fix ruff linting errors
+  ([`e32a067`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e32a067dd96666e25cc39bb69e0acb1be1740d32))
+
+- Ignore D103 (docstring in public function) in examples
+  ([`f2a79c2`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f2a79c2f17a661ff3c1f6fc684bd07edb03d823a))
+
+- Ignore performance example from pytest on notebook examples
+  ([`62adee0`](https://github.com/ImperialCollegeLondon/PyProBE/commit/62adee0a2106fae4ec6ed58ec25aa299139f0f26))
+
+- Make ruff a dev dependency
+  ([`2ffc0a2`](https://github.com/ImperialCollegeLondon/PyProBE/commit/2ffc0a2645e90142f8e91fda57d668fdfcb8b008))
+
+- Move dev dependencies into optional dependency group
+  ([`2202c22`](https://github.com/ImperialCollegeLondon/PyProBE/commit/2202c2239b7558d3b2d33ba52e706ddf9270b064))
+
+Dependency groups are currently not supported for backwards compatibility with pip. Wait for
+  resolution of PEP 735
+
+- Recategorise xlsxwriter as dev dependency
+  ([`699a850`](https://github.com/ImperialCollegeLondon/PyProBE/commit/699a8506cd5b58399885d3cfd7c363becb9b7615))
+
+- Remove ordered-set and distinctipy dependencies
+  ([`314f0e9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/314f0e9c666df8eb732324b970bc3d70fbfbf796))
+
+- Run ci on push to main, exclude notebook tests on push
+  ([`43e30f8`](https://github.com/ImperialCollegeLondon/PyProBE/commit/43e30f84b06fe0610d788fe5e49447f024006289))
+
+- Update nbstripout precommit hook to remove kernelspec
+  ([`ea8e10b`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ea8e10be48fd2b29d8ed033528fa08236d9d05c1))
+
+- Update workflow to v7 of create-pull-request gh action [skip ci]
+  ([`8b3e2d3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/8b3e2d386615c80b59b29fb5b88f115357b06222))
+
+- Update workflows for dependency reorganisation
+  ([`a1a76d2`](https://github.com/ImperialCollegeLondon/PyProBE/commit/a1a76d2700d4cf14d676360b96b316fc47eed269))
+
+- Use % magic to install pybamm and matplotlib in example notebooks
+  ([`62154c3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/62154c3229d6bca3bba5207f1b16ab6793598c96))
+
+### Code Style
+
+- Run ruff format on examples and docs config files
+  ([`adb57cc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/adb57ccd78cbbbeb0ec0eff3c2f7c7174e32aaf4))
+
+- Run ruff format on pyprobe/ and tests/
+  ([`e8a267c`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e8a267c791dc2961135fad395172ab1484c93fb5))
+
+### Documentation
+
+- Add citations to pybamm example
+  ([`0af6632`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0af66320dfc67f5348427cd2aee1c94e720ae740))
+
+- Add detail for creating a jupyter kernel from uv .venv
+  ([`35b33bd`](https://github.com/ImperialCollegeLondon/PyProBE/commit/35b33bd5b647ff40b95d39b1ecf82c4e4b265cfc))
+
+- Add inline matplotlib magic to show plots in examples
+  ([`47ee154`](https://github.com/ImperialCollegeLondon/PyProBE/commit/47ee1542e12050d0b908483e6e2f93658a477d04))
+
+- Add matplotlib inline to pybamm example
+  ([`b43a809`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b43a80986429ba286d9fc26cc8fc3958a4050286))
+
+- Add mention of pybamm integration to paper
+  ([`e8549d9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e8549d98307c00295f00fc5b4de69f5802871383))
+
+- Add optional dependency detail for hvplot and seaborn
+  ([`0045fd4`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0045fd4ebec97d23da542e6d3277d134a1f5a666))
+
+- Add plotting example to examples toc
+  ([`f8e2026`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f8e20267dd2b013de197df21188c949fff53857f))
+
+- Add pybamm example to docs index
+  ([`a5c08f6`](https://github.com/ImperialCollegeLondon/PyProBE/commit/a5c08f68e68b96a77a29a0b6fa9065ba323515ac))
+
+- Add some missing citations and describe plotting integrations
+  ([`cd4b853`](https://github.com/ImperialCollegeLondon/PyProBE/commit/cd4b8533d4b025bd46d93d6d61bc1af29b05bec7))
+
+- Capture output for installing packages in notebook
+  ([`7f870c3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7f870c35fa5ca28a8b46ac82ed59df86abc5a215))
+
+- Create pybamm integration example
+  ([`7ad73e3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7ad73e3038639b55432356661014d77d49f1fffe))
+
+- Fix errors and typos in documentation
+  ([`458e4c6`](https://github.com/ImperialCollegeLondon/PyProBE/commit/458e4c6f86bed1d4b38a4bdd495047b97c80fa51))
+
+- Fix mistake with comparing parquet read times not overwriting exiting files
+  ([`28c0526`](https://github.com/ImperialCollegeLondon/PyProBE/commit/28c0526d8dc17e22ec8129febe85b55e78f664e7))
+
+- Minor typo fix to paper
+  ([`5017aec`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5017aec38f2e4ffddd0200339fe0bc874d0b2445))
+
+- Remove kernelspec from example notebooks
+  ([`6e278f6`](https://github.com/ImperialCollegeLondon/PyProBE/commit/6e278f6e71c4fd057c9ecbdc0bdcb62e60f10829))
+
+- Remove mention of the requirement to specify a "Name" for a cell
+  ([`cc1313f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/cc1313ff4c0007d20d69473a585cd924dcc84a35))
+
+- Update dev install instructions
+  ([`f3740bf`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f3740bfee14ecddcf92e08491010c7007b8eccf5))
+
+- Update readme and user manual to reflect plotting integrations
+  ([`553350f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/553350f85934d31c952964e6e93e9e5b5a06b280))
+
+### Features
+
+- Add a selectbox for a cell identifier to replace the "Name" field
+  ([`5657285`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5657285a35e5e06fbd47fa0ea2892eff8de160cc))
+
+- Allow any dict values in info dictionary
+  ([`c610126`](https://github.com/ImperialCollegeLondon/PyProBE/commit/c610126351ceae10446e3b9d82caf3614c8f60f5))
+
+### Refactoring
+
+- Move cell identifier to below plot
+  ([`6a5e1c4`](https://github.com/ImperialCollegeLondon/PyProBE/commit/6a5e1c45e0fd8b30821c7b04968dafcacf240af7))
+
+- Remove colour generation in make_cell_list method
+  ([`d7704cc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d7704cc825a3004c25461ebd5438fdc0d339d62d))
+
+- Remove OrderedSet use in dashboard
+  ([`26b38e1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/26b38e1f720521bef0e425b4c2b7b76267afa404))
+
+- Remove search for color entry in info dict
+  ([`9894e58`](https://github.com/ImperialCollegeLondon/PyProBE/commit/9894e5864af0615e3e71ee5429ceccc22e847abb))
+
+This changes the default behaviour to cycle through the colours built-in to plotly
+
+- Remove setting of a default name and colour assignment in cell
+  ([`9219eaf`](https://github.com/ImperialCollegeLondon/PyProBE/commit/9219eaf00ffba786f04422457c4c408667ff982b))
+
+- Replace black, flake8 and isort config with ruff
+  ([`8b7c508`](https://github.com/ImperialCollegeLondon/PyProBE/commit/8b7c5088ca646562725d180c937a1abaa833ba5a))
+
+### Testing
+
+- Don't check column order in add_procedure test
+  ([`5e0ce2d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5e0ce2dc1c137ab1dab3a24a8c3321970e6d48e1))
+
+- Fix Plot class tests
+  ([`f9df697`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f9df697428fafd44e7809a0005fe181e61733b81))
+
+- Move pybamm out of dev dependencies
+  ([`fc720d1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/fc720d13692096d3f08e74eb8d97b0c9175edbdd))
+
+Use pytest.importorskip for skipping pybamm tests if it is not installed
+
+- Skip seaborn tests if it is not installed
+  ([`ed8b04b`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ed8b04b72729bd7c5272f4863748176ac44bed72))
+
+
 ## v1.2.0 (2025-01-02)
 
 ### Bug Fixes
@@ -38,6 +221,9 @@ Prevents collection of columns if label argument happens to match a column name
 
 - Add setup for semantic release
   ([`0523185`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0523185db1bdcaf3d6027d2de8e1b1c990e8b9a7))
+
+- Release candidate 1.2.0 [skip ci]
+  ([`c29dddb`](https://github.com/ImperialCollegeLondon/PyProBE/commit/c29dddb5a621ec2f2a6166fbfbde0ddb39a1aec7))
 
 - Remove pip-tools requirements files
   ([`5924f31`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5924f311faa41540e13de85aa17df835f3331bc0))
