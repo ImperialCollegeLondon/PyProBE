@@ -244,6 +244,16 @@ class RawData(Result):
         Returns:
             The PyBaMM operating conditions.
         """
+        # reduce the full dataframe to only the steps as they appear in order in
+        # the data
+        only_steps = (
+            self.live_dataframe.with_row_index()
+            .group_by("Event", maintain_order=True)
+            .agg(pl.col("Step").first())
+        )
+        if isinstance(only_steps, pl.LazyFrame):
+            only_steps = only_steps.collect()
+
         step_description_df = pl.DataFrame(self.step_descriptions)
         no_step_descriptions = step_description_df.filter(
             pl.col("Description").is_null()
@@ -259,13 +269,6 @@ class RawData(Result):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # reduce the full dataframe to only the steps as they appear in order in
-        # the data
-        only_steps = (
-            self.live_dataframe.with_row_index()
-            .group_by("Event", maintain_order=True)
-            .agg(pl.col("Step").first())
-        )
         # match the step with its description
         all_steps_with_descriptions = only_steps.join(
             step_description_df, on="Step", how="left"

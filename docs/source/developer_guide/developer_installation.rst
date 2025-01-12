@@ -49,7 +49,9 @@ To run a jupyter notebook in VSCode from this environment you can run:
 
       uv run -m ipykernel install --user --name <your-chosen-name>
 
-This will create a kernel that you can select within VSCode in the usual way.
+This will create a kernel that you can select within VSCode in the usual way. To use
+:code:`%pip` within a jupyter notebook, run :code:`uv venv --seed` prior to the two 
+commands above.
 
 .. dropdown:: Alternative installation with pip (not recommended)
 

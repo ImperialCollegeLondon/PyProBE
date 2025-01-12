@@ -25,8 +25,8 @@ jobs:
       
       - name: Install the project
         run: |
+          uv venv --seed
           uv sync --all-extras
-          uv pip install ipykernel
           sudo apt-get install pandoc
       
       - name: Run sphinx-apidoc
