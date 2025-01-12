@@ -1,7 +1,9 @@
 name: "Build and test"
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+  push:
     branches:
       - main
   workflow_dispatch:
@@ -36,12 +38,6 @@ jobs:
       - name: Run tests
         run: uv run pytest tests --benchmark-json output.json --cov-report=xml
 
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage
-          path: coverage.xml
-
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -56,7 +52,8 @@ jobs:
           # Enable Job Summary for PRs
           summary-always: true
       - name: Test notebooks
-        run: uv run pytest --nbmake docs/source/examples/*ipynb --ignore docs/source/examples/comparing-pyprobe-performance.ipynb
+        if: github.event_name == 'pull_request'
+        run: uv run pytest --nbmake docs/source/examples/*ipynb
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
