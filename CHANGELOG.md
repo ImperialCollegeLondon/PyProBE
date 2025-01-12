@@ -55,6 +55,12 @@ Dependency groups are currently not supported for backwards compatibility with p
 - Recategorise xlsxwriter as dev dependency
   ([`699a850`](https://github.com/ImperialCollegeLondon/PyProBE/commit/699a8506cd5b58399885d3cfd7c363becb9b7615))
 
+- Release candidate 1.3.0 [skip ci]
+  ([`d14ffce`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d14ffce0e621b62dd301a1af663fb0cecc4bd7cf))
+
+- Remove lean differentiation example
+  ([`1a07ae9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/1a07ae99f2f3c3d81cf9e75262d299462ab53b60))
+
 - Remove ordered-set and distinctipy dependencies
   ([`314f0e9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/314f0e9c666df8eb732324b970bc3d70fbfbf796))
 
@@ -121,6 +127,12 @@ Dependency groups are currently not supported for backwards compatibility with p
 
 - Fix mistake with comparing parquet read times not overwriting exiting files
   ([`28c0526`](https://github.com/ImperialCollegeLondon/PyProBE/commit/28c0526d8dc17e22ec8129febe85b55e78f664e7))
+
+- Fix performance example for different parquet settings
+  ([`7ba7053`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7ba7053e4c8ed249b3face9e320fb96895f26565))
+
+- Fix syntax highlighting in examples
+  ([`9a724c7`](https://github.com/ImperialCollegeLondon/PyProBE/commit/9a724c72369cd7b5d7d838912922aa8733e29a8e))
 
 - Minor typo fix to paper
   ([`5017aec`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5017aec38f2e4ffddd0200339fe0bc874d0b2445))
