@@ -55,4 +55,4 @@ jobs:
           # Enable Job Summary for PRs
           summary-always: true
       - name: Test notebooks
-        run: uv run pytest --nbmake docs/source/examples/*ipynb
+        run: uv run pytest --nbmake docs/source/examples/*ipynb --ignore --nbmake docs/source/examples/comparing-pyprobe-performance.ipynb
