@@ -87,7 +87,6 @@ variants:
    current_mA = cell.procedure['Procedure Name'].experiment('Experiment Name').get("Current [mA]")
 
 To retrieve more than one column, simply pass multiple column names to 
-:func:`~pyprobe.result.Result.get` or use :func:`~pyprobe.result.Result.array` to
-return an N-dimensional array of the selected columns.
+:func:`~pyprobe.result.Result.get`.
 
 .. footbibliography::

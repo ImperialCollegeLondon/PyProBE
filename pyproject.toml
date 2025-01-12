@@ -6,6 +6,7 @@ authors = [
 dynamic = ["version"]
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
+readme = {file = "README.md", content-type = "text/markdown"}
 dependencies = [
     "deprecated>=1.2.15",
     "fastexcel>=0.12.0",
@@ -20,6 +21,19 @@ dependencies = [
     "streamlit>=1.41.1",
     "sympy>=1.13.3",
 ]
+
+classifiers = [
+  "License :: OSI Approved :: BSD License",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+]
+
+[project.urls]
+Homepage = "https://github.com/ImperialCollegeLondon/PyProBE"
+Documentation = "https://imperialcollegelondon.github.io/PyProBE/"
+Repository = "https://github.com/ImperialCollegeLondon/PyProBE"
+Releases = "https://github.com/ImperialCollegeLondon/PyProBE/releases"
+Changelog = "https://github.com/ImperialCollegeLondon/PyProBE/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 hvplot = [

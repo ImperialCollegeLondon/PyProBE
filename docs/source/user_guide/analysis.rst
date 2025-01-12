@@ -20,7 +20,7 @@ Most analysis functions are available at the module-level. In general:
 
 .. code-block:: python
 
-   result = analysis_modue.method(method_parameters)
+   result = analysis_module.method(method_parameters)
 
 or for the performing differentiation using the :func:`pyprobe.analysis.differentiation.gradient` function:
 

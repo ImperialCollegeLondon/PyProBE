@@ -24,12 +24,14 @@ Submodules
    pyprobe.cell
    pyprobe.dashboard
    pyprobe.filters
+   pyprobe.logger
    pyprobe.plot
+   pyprobe.pyprobe_types
    pyprobe.rawdata
    pyprobe.readme_processor
    pyprobe.result
-   pyprobe.typing
    pyprobe.units
+   pyprobe.utils
 
 
 .. footbibliography::

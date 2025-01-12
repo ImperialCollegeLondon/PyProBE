@@ -31,7 +31,7 @@ The steps to write a method are as follows:
 2. Check that inputs to the method are valid with the 
    :class:`~pyprobe.analysis.utils.AnalysisValidator` class. Provide the class the 
    input data to the method, the columns that are required for the computation to 
-   be performed and the required data type for `input_data``.
+   be performed and the required data type for :code:`input_data`.
 3. If needed, you can retrieve the columns specified in the `required_columns` field
    as numpy arrays by accessing the :attr:`~pyprobe.analysis.utils.AnalysisValidator.variables`
    attribute of the instance of :class:`~pyprobe.analysis.utils.AnalysisValidator`.
@@ -58,7 +58,7 @@ Base
 The :mod:`pyprobe.analysis.base` module exists as a repository for functions to work in
 the rest of the analysis module. Often with data analysis code, it is tempting to include
 data manipulation (forming arrays, dataframes etc. from your standard data format) 
-alongside calculations. By keeping the data manipulation inside the methods of classes
+alongside calculations. By keeping the data manipulation inside the methods 
 in the :mod:`pyprobe.analysis` and calculations in the :mod:`~pyprobe.analysis.base`
 submodule, these functions remain more readable, testable and portable.
 
