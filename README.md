@@ -1,4 +1,11 @@
 # PyProBE
+![CI](https://github.com/ImperialCollegeLondon/PyProBE/actions/workflows/ci.yml/badge.svg)
+![Docs](https://github.com/ImperialCollegeLondon/PyProBE/actions/workflows/sphinx.yml/badge.svg)
+[![codecov](https://codecov.io/gh/ImperialCollegeLondon/PyProBE/graph/badge.svg?token=Y5H9C8MA0A)](https://codecov.io/gh/ImperialCollegeLondon/PyProBE)
+[![PyPI - Version](https://img.shields.io/pypi/v/PyProBE-Data?label=pip%20install%20PyProBE-Data)](https://pypi.org/project/PyProBE-Data)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14635070.svg)](https://doi.org/10.5281/zenodo.14635070)
+
 PyProBE (Python Processing for Battery Experiments) is a Python package designed to simplify and accelerate the process of analysing data from 
 battery cyclers.
 
