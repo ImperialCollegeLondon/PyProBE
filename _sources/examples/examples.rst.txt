@@ -8,6 +8,7 @@ Examples
    filtering-data
    plotting
    sharing-data
+   working-with-pybamm-models
    analysing-GITT-data
    differentiating-voltage-data
    LEAN-differentiation

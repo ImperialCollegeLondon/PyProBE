@@ -15,6 +15,8 @@
    "metadata": {},
    "outputs": [],
    "source": [
+    "%pip install matplotlib\n",
+    "%pip install pandas\n",
     "import pyprobe\n",
     "import pandas as pd\n",
     "import polars as pl\n",
@@ -510,11 +512,6 @@
   }
  ],
  "metadata": {
-  "kernelspec": {
-   "display_name": "pyprobe-dev",
-   "language": "python",
-   "name": "python3"
-  },
   "language_info": {
    "codemirror_mode": {
     "name": "ipython",

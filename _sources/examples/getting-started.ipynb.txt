@@ -13,6 +13,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
+    "%pip install matplotlib\n",
     "import pyprobe\n",
     "from pprint import pprint\n",
     "\n",
@@ -337,11 +338,6 @@
   }
  ],
  "metadata": {
-  "kernelspec": {
-   "display_name": ".venv",
-   "language": "python",
-   "name": "python3"
-  },
   "language_info": {
    "codemirror_mode": {
     "name": "ipython",
