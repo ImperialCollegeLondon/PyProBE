@@ -11,7 +11,6 @@ Examples
    working-with-pybamm-models
    analysing-GITT-data
    differentiating-voltage-data
-   LEAN-differentiation
    ocv-fitting
    comparing-pyprobe-performance
    providing-valid-inputs
