@@ -34,7 +34,12 @@ jobs:
           uv sync --all-extras
 
       - name: Run tests
-        run: uv run pytest tests --benchmark-json output.json
+        run: uv run pytest tests --benchmark-json output.json --cov-branch --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
