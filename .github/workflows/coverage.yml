@@ -1,0 +1,25 @@
+name: "Upload coverage on PR merge"
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  coverage-upload:
+    # Only run if the pull request was actually merged, not just closed
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+          path: "."
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          override_branch: main
