@@ -558,7 +558,7 @@
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 2.06 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 2.09 times faster than Pandas.
 </pre></div></div>
 </div>
 <p>Confirm that the same data has been retrieved:</p>
@@ -583,7 +583,7 @@ The median execution time for the filtering query in PyProBE is 2.06 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f534ce11760&gt;
+&lt;matplotlib.legend.Legend at 0x7fde9742cd70&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -628,7 +628,7 @@ The median execution time for the filtering query in PyProBE is 2.06 times faste
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Reading from .parquet is on average 20.86 times faster than reading from .csv
+Reading from .parquet is on average 20.95 times faster than reading from .csv
 </pre></div></div>
 </div>
 <p>The sample dataset is not large, covering only around a week of testing. Battery degradation experiments can last for years, so the test below demonstrates the scalability of PyProBE to large data sets. We will now repeat our battery experiment multiple times and save the new dataset:</p>
@@ -701,7 +701,7 @@ Reading from .parquet is on average 20.86 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f536f97d460&gt;
+&lt;matplotlib.legend.Legend at 0x7fde9c512c30&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -800,12 +800,12 @@ Reading from .parquet is on average 20.86 times faster than reading from .csv
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-The median execution time for the filtering query in PyProBE is 17.46 times faster than Pandas.
+The median execution time for the filtering query in PyProBE is 17.85 times faster than Pandas.
 Execution time breakdown:
             Period   PyProBE    Pandas
-0           1 week  0.026056  0.053762
-1         12 weeks  0.026671  0.465769
-2  Increase Factor  1.023621  8.663535
+0           1 week  0.025949  0.054265
+1         12 weeks  0.026610  0.474897
+2  Increase Factor  1.025491  8.751488
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -837,7 +837,7 @@ Execution time breakdown:
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;matplotlib.legend.Legend at 0x7f534cefbaa0&gt;
+&lt;matplotlib.legend.Legend at 0x7fde9c516540&gt;
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -861,7 +861,8 @@ Execution time breakdown:
         <span class="n">cycler</span><span class="o">=</span><span class="s2">&quot;neware&quot;</span><span class="p">,</span>
         <span class="n">folder_path</span><span class="o">=</span><span class="n">data_directory</span><span class="p">,</span>
         <span class="n">input_filename</span><span class="o">=</span><span class="s2">&quot;sample_data_neware.xlsx&quot;</span><span class="p">,</span>
-        <span class="n">output_filename</span><span class="o">=</span><span class="s2">&quot;sample_data_neware.parquet&quot;</span><span class="p">,</span>
+        <span class="n">output_filename</span><span class="o">=</span><span class="s2">&quot;sample_data_neware_test.parquet&quot;</span><span class="p">,</span>
+        <span class="n">overwrite_existing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">compression_priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">file_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/sample_data_neware.parquet&quot;</span><span class="p">)</span>
@@ -894,6 +895,8 @@ Execution time breakdown:
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;File size (mb)&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">data_directory</span> <span class="o">+</span> <span class="s2">&quot;/sample_data_neware_test.parquet&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

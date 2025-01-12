@@ -350,8 +350,6 @@
                   
   <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
-<p>To install PyProBE you must be running Python 3.11 or later. It is recommended to use a
-virtual environment to install PyProBE, for example venv or conda.</p>
 <p>The steps to install PyProBE with developer settings are as follows:</p>
 <p><strong>Clone the repository</strong></p>
 <ol class="arabic">
@@ -370,13 +368,13 @@ main PyProBE repository or your own fork. This creates a directory called PyProB
 </ol>
 <p><strong>Installation with uv (recommended)</strong></p>
 <p>To guarantee a safe installation with compatible packages, it is recommended to use
-the <a class="reference external" href="https://uv.readthedocs.io/en/latest/">uv</a> tool.</p>
+the <a class="reference external" href="https://docs.astral.sh/uv/">uv</a> tool.</p>
 <p>First, follow the steps in the
 <a class="reference external" href="https://docs.astral.sh/uv/getting-started/installation/">uv installation guide</a>
 to install uv onto your system. Note: while uv can be installed into a virtual
 environment with pip, it is recommended to install system-wide.</p>
 <p>Once uv is installed we can continue with the PyProBE installation. With a single
-command uv installs PyProBE, alongside python and all of its dependencies in a
+command, uv installs PyProBE alongside Python and all of its dependencies in a
 virtual environment:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--all-extras
 </pre></div>

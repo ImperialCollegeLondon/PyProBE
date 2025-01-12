@@ -17,7 +17,7 @@ This enables the :func:`~pyprobe.result.Result.hvplot` method which creates inte
 visual inspection.
 
 The :func:`~pyprobe.result.Result.plot` and :func:`~pyprobe.result.Result.hvplot` 
-interfaces are very similar. For example, creation of a simple plot might look like:
+interfaces are very similar. For example, the creation of a simple plot might look like:
 
 .. code-block:: python
 
@@ -49,7 +49,7 @@ Seaborn must be installed as an optional dependency:
 
 All of these methods are light wrappers, meaning you can refer to the original package 
 documentation for details on methods to customise your plots further. To get started with
-plotting view the :doc:`example <../examples/plotting>`.
+plotting, view the :doc:`example <../examples/plotting>`.
 
 
 .. footbibliography::

@@ -372,7 +372,7 @@ object, which you can confirm has the necessary columns for your method with ste
 <li><p>Check that inputs to the method are valid with the
 <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a> class. Provide the class the
 input data to the method, the columns that are required for the computation to
-be performed and the required data type for <cite>input_data`</cite>.</p></li>
+be performed and the required data type for <code class="code docutils literal notranslate"><span class="pre">input_data</span></code>.</p></li>
 <li><p>If needed, you can retrieve the columns specified in the <cite>required_columns</cite> field
 as numpy arrays by accessing the <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator.variables" title="pyprobe.analysis.utils.AnalysisValidator.variables"><code class="xref py py-attr docutils literal notranslate"><span class="pre">variables</span></code></a>
 attribute of the instance of <a class="reference internal" href="../api/pyprobe.analysis.utils.html#pyprobe.analysis.utils.AnalysisValidator" title="pyprobe.analysis.utils.AnalysisValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalysisValidator</span></code></a>.</p></li>
@@ -440,7 +440,7 @@ replacing the data stored with a dataframe created from the provided dictionary.
 <p>The <a class="reference internal" href="../api/pyprobe.analysis.base.html#module-pyprobe.analysis.base" title="pyprobe.analysis.base"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.analysis.base</span></code></a> module exists as a repository for functions to work in
 the rest of the analysis module. Often with data analysis code, it is tempting to include
 data manipulation (forming arrays, dataframes etc. from your standard data format)
-alongside calculations. By keeping the data manipulation inside the methods of classes
+alongside calculations. By keeping the data manipulation inside the methods
 in the <a class="reference internal" href="../api/pyprobe.analysis.html#module-pyprobe.analysis" title="pyprobe.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyprobe.analysis</span></code></a> and calculations in the <a class="reference internal" href="../api/pyprobe.analysis.base.html#module-pyprobe.analysis.base" title="pyprobe.analysis.base"><code class="xref py py-mod docutils literal notranslate"><span class="pre">base</span></code></a>
 submodule, these functions remain more readable, testable and portable.</p>
 <p><a class="reference internal" href="../api/pyprobe.analysis.base.html#module-pyprobe.analysis.base" title="pyprobe.analysis.base"><code class="xref py py-mod docutils literal notranslate"><span class="pre">base</span></code></a> module functions should be defined as simply as possible,

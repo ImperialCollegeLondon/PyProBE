@@ -39,11 +39,12 @@ Once converted into the standard PyProBE format, the data columns stored in
    Date and time the measurement was taken
    
 - 'Time [s]' (`polars.datatypes.Float64 <https://docs.pola.rs/py-polars/html/reference/api/polars.datatypes.Float64.html#polars.datatypes.Float64>`_): elapsed time 
-   From the start of the filtered data section
+   From the start of the procedure
 - 'Step' (`polars.datatypes.Int64 <https://docs.pola.rs/py-polars/html/reference/api/polars.datatypes.Int64.html#polars.datatypes.Int64>`_): the unique step number 
    Corresponds to a single instruction in the cycling program. Step numbers repeat when instructions are cycled, i.e. the column might look like [1, 1, 1…, 2, 2, 2…, 1, 1, 1…, 2,2,2…, 3, 3, 3…] if steps 1 and 2 were cycled twice
 - 'Cycle' (`polars.datatypes.Int64 <https://docs.pola.rs/py-polars/html/reference/api/polars.datatypes.Int64.html#polars.datatypes.Int64>`_): the cycle number
-   Automatically identified when Step decreases
+   Automatically identified when Step decreases, or when detailed cycle information is 
+   provided in the :doc:`README <writing_a_readme_file>` file
 - 'Event' (`polars.datatypes.Int64 <https://docs.pola.rs/py-polars/html/reference/api/polars.datatypes.Int64.html#polars.datatypes.Int64>`_): the event number
    Automatically identified when Step changes
 - 'Current [A]' (`polars.datatypes.Float64 <https://docs.pola.rs/py-polars/html/reference/api/polars.datatypes.Float64.html#polars.datatypes.Float64>`_): the current in Amperes
