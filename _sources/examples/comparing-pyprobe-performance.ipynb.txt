@@ -15,6 +15,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
+    "%%capture\n",
     "%pip install matplotlib\n",
     "%pip install pandas\n",
     "import pyprobe\n",
