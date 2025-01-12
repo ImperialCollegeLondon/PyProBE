@@ -27,7 +27,15 @@
     "%%capture\n",
     "%pip install pybamm\n",
     "%pip install matplotlib\n",
-    "%pip install ipywidgets\n",
+    "%pip install ipywidgets"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
     "import pyprobe\n",
     "import pybamm\n",
     "import matplotlib.pyplot as plt\n",
