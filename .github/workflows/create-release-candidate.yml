@@ -31,7 +31,7 @@ jobs:
 
       - name: Install project
         run: |
-          uv sync --all-extras
+          uv sync --all-extras --frozen
 
       - name: Bump version
         id: bump
