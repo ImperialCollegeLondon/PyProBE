@@ -33,7 +33,7 @@ jobs:
       - name: Install the project
         run: |
           uv venv --seed
-          uv sync --all-extras
+          uv sync --all-extras --frozen
 
       - name: Run tests
         run: uv run pytest tests --benchmark-json output.json --cov-report=xml

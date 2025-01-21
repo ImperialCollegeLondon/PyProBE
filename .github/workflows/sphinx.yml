@@ -26,7 +26,7 @@ jobs:
       - name: Install the project
         run: |
           uv venv --seed
-          uv sync --all-extras
+          uv sync --all-extras --frozen
           sudo apt-get install pandoc
       
       - name: Run sphinx-apidoc
