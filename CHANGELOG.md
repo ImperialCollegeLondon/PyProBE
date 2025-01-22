@@ -1,6 +1,28 @@
 # CHANGELOG
 
 
+## v1.3.1 (2025-01-22)
+
+### Bug Fixes
+
+- Concat biologic MB files diagonally to prevent schema conflict errors
+  ([`95e97fc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/95e97fc6341669b172e5f5eab09c4757283a5cb1))
+
+- Paper figure typo
+  ([`8cfe8c1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/8cfe8c1cd4f8230dfc4ede316a1d24eeb1daf3d2))
+
+### Chores
+
+- Add --frozen flag to uv sync commands in workflows
+  ([`b158397`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b1583979908bac0a8fa9b92444c9e82e34d69545))
+
+- Replace warnings with logger for missing columns in data
+  ([`dbd16c9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/dbd16c9eeb85e9620f47e43f061e5cd32c100176))
+
+- Unfreeze uv sync for release candidate workflow
+  ([`3692bc5`](https://github.com/ImperialCollegeLondon/PyProBE/commit/3692bc535b20bfc82b6260e544da0d5e743944af))
+
+
 ## v1.3.0 (2025-01-12)
 
 ### Bug Fixes
@@ -54,6 +76,9 @@ Dependency groups are currently not supported for backwards compatibility with p
 
 - Recategorise xlsxwriter as dev dependency
   ([`699a850`](https://github.com/ImperialCollegeLondon/PyProBE/commit/699a8506cd5b58399885d3cfd7c363becb9b7615))
+
+- Release candidate 1.3.0 [skip ci]
+  ([`f0384a3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f0384a390aa81e25c970f14c9cbae51412175817))
 
 - Release candidate 1.3.0 [skip ci]
   ([`d14ffce`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d14ffce0e621b62dd301a1af663fb0cecc4bd7cf))
