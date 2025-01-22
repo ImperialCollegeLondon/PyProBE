@@ -114,7 +114,7 @@ class BiologicMB(Biologic):
         for i, df in enumerate(dataframe_list):
             df = df.with_columns(pl.lit(i).alias("MB File"))
             df_list.append(df)
-        complete_df = pl.concat(df_list, how="vertical")
+        complete_df = pl.concat(df_list, how="diagonal")
         complete_df = self.apply_step_correction(complete_df)
         return complete_df
 
