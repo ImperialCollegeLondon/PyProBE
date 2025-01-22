@@ -210,7 +210,7 @@ class BaseCycler(BaseModel):
         all_columns = set([col for df in list for col in df.collect_schema().names()])
         for i in range(len(list)):
             if len(list[i].collect_schema().names()) < len(all_columns):
-                warnings.warn(
+                logger.warning(
                     f"File {os.path.basename(files[i])} has missing columns, "
                     "these have been filled with null values."
                 )
