@@ -23,6 +23,9 @@ jobs:
 
       - name: Install uv & dependencies
         uses: astral-sh/setup-uv@v5
+        with:
+          # Install a specific version of uv.
+          version: "0.5.22"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -48,6 +51,6 @@ jobs:
         with:
           branch: release-candidates/rc-${{ steps.bump.outputs.version }}
           title: "Release Candidate ${{ steps.bump.outputs.version }}"
-          commit-message: "chore: release candidate ${{ steps.bump.outputs.version }} [skip ci]"
+          commit-message: "chore: release candidate ${{ steps.bump.outputs.version }}"
           base: main
           body: "This PR is the release candidate for version ${{ steps.bump.outputs.version }}."
