@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.3.2 (2025-01-22)
+
+### Bug Fixes
+
+- Fix uv version in pre-commit and workflows
+  ([`246d7b1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/246d7b1e46317d0b153158f515b4128d5c4395a5))
+
+
 ## v1.3.1 (2025-01-22)
 
 ### Bug Fixes
@@ -15,6 +23,9 @@
 
 - Add --frozen flag to uv sync commands in workflows
   ([`b158397`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b1583979908bac0a8fa9b92444c9e82e34d69545))
+
+- Release candidate 1.3.1 [skip ci]
+  ([`7764404`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7764404aaf6fb0253d6a3fafd25917c51859b913))
 
 - Replace warnings with logger for missing columns in data
   ([`dbd16c9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/dbd16c9eeb85e9620f47e43f061e5cd32c100176))
