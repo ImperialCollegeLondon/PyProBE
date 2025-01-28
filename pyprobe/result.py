@@ -11,6 +11,8 @@ import polars as pl
 from deprecated import deprecated
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
+from scipy.io import savemat
+import re
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import split_quantity_unit, unit_from_regexp
@@ -599,6 +601,33 @@ class Result(BaseModel):
                 data.append(step_data)
         data = pl.concat(data)
         return cls(base_dataframe=data, info=info)
+
+    def export_to_mat(self, filename: str) -> None:
+        """Export the data to a .mat file.
+
+        This method will export the data and info dictionary to a .mat file. The
+        variables in the .mat file will be named 'data' and 'info'. Column names and
+        dictionary keys will have any non-alphanumeric characters replaced with an
+        underscore, to comply with MATLAB variable naming rules.
+
+        Args:
+            filename: The name of the file to export to.
+        """
+        # Replace any non-alphanumeric character with an underscore in the DataFrame columns
+        renamed_data = self.data.rename(
+            {col: re.sub(r"\W", "_", col) for col in self.data.columns}
+        )
+
+        # Replace any non-alphanumeric character with an underscore in the info dictionary keys
+        renamed_info = {
+            re.sub(r"\W", "_", key): value for key, value in self.info.items()
+        }
+
+        variable_dict = {
+            "data": renamed_data.to_dict(),
+            "info": renamed_info,
+        }
+        savemat(filename, variable_dict, oned_as="column")
 
 
 def combine_results(

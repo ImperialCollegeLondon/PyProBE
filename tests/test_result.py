@@ -6,6 +6,8 @@ import numpy.testing as np_testing
 import polars as pl
 import polars.testing as pl_testing
 import pytest
+from scipy.io import loadmat
+import os
 
 from pyprobe.result import PolarsColumnCache, Result, combine_results
 
@@ -480,3 +482,25 @@ def test_combine_results():
     pl_testing.assert_frame_equal(
         combined_result.data, expected_data, check_column_order=False
     )
+
+
+def test_export_to_mat(Result_fixture):
+    """Test the export to mat function."""
+    Result_fixture.export_to_mat("./test_mat.mat")
+    saved_data = loadmat("./test_mat.mat")
+    assert "data" in saved_data.keys()
+    assert "info" in saved_data.keys()
+    expected_columns = set(
+        [
+            "Current__A_",
+            "Step",
+            "Event",
+            "Time__s_",
+            "Capacity__Ah_",
+            "Voltage__V_",
+            "Date",
+        ]
+    )
+    actual_columns = set(saved_data["data"].dtype.names)
+    assert actual_columns == expected_columns
+    os.remove("./test_mat.mat")
