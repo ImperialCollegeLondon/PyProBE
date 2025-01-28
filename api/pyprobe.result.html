@@ -995,6 +995,24 @@ step.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="pyprobe.result.Result.export_to_mat">
+<span class="sig-name descname"><span class="pre">export_to_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyprobe.result.Result.export_to_mat" title="Link to this definition">#</a></dt>
+<dd><p>Export the data to a .mat file.</p>
+<p>This method will export the data and info dictionary to a .mat file. The
+variables in the .mat file will be named ‘data’ and ‘info’. Column names and
+dictionary keys will have any non-alphanumeric characters replaced with an
+underscore, to comply with MATLAB variable naming rules.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em>) – The name of the file to export to.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
@@ -1100,6 +1118,7 @@ polars.concat method documentation for more information.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.join"><code class="docutils literal notranslate"><span class="pre">Result.join()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.extend"><code class="docutils literal notranslate"><span class="pre">Result.extend()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.build"><code class="docutils literal notranslate"><span class="pre">Result.build()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.Result.export_to_mat"><code class="docutils literal notranslate"><span class="pre">Result.export_to_mat()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pyprobe.result.combine_results"><code class="docutils literal notranslate"><span class="pre">combine_results()</span></code></a></li>
