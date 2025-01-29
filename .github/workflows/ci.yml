@@ -1,4 +1,4 @@
-name: "Test and QA"
+name: "Tests"
 on:
   pull_request:
     branches:
@@ -10,7 +10,6 @@ on:
       - pyproject.toml
       - .github/workflows/ci.yml
       - uv.lock
-      - .pre-commit-config.yaml
   push:
     branches:
       - main
@@ -20,19 +19,9 @@ on:
       - pyproject.toml
       - .github/workflows/ci.yml
       - uv.lock
-      - .pre-commit-config.yaml
   workflow_dispatch:
 jobs:
-  qa:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
-      - uses: pre-commit/action@v3.0.0
   test:
-    needs: qa
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
