@@ -1,4 +1,4 @@
-name: "Sphinx: Render docs"
+name: "Docs"
 
 on:
   push:
