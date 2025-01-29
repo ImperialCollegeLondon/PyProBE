@@ -1,12 +1,45 @@
 # CHANGELOG
 
 
+## v1.4.0 (2025-01-29)
+
+### Chores
+
+- Add JOSS status badge
+  ([`43a94a9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/43a94a9b5db654e90424105ab0e11e623f0a17bd))
+
+- Add path filters for sphinx workflow
+  ([`480dcca`](https://github.com/ImperialCollegeLondon/PyProBE/commit/480dccaf4e6080f0356275520498d322460911be))
+
+- Add pre-commit.ci badge
+  ([`247e5bc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/247e5bce085899dfdb3c7db7de9e8be95053bc02))
+
+- Add status badges to readme
+  ([`87de879`](https://github.com/ImperialCollegeLondon/PyProBE/commit/87de879e1b330b3c55dbaaa35e8e1a9c58bb5b54))
+
+- Replace pre-commit action with pre-commit.ci
+  ([`d360ec4`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d360ec45aa98d5b11a75b8ed65fa8b359b484c61))
+
+- Specify paths for ci workflow
+  ([`24f7119`](https://github.com/ImperialCollegeLondon/PyProBE/commit/24f7119f7e23ed6eac0da5af6e7a7af5fcc82d2c))
+
+### Features
+
+- Add capability to export any Result object to a .mat file
+  ([`d5b94a6`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d5b94a651aa1ce1352dabc5eccd733ed53428966))
+
+
 ## v1.3.2 (2025-01-22)
 
 ### Bug Fixes
 
 - Fix uv version in pre-commit and workflows
   ([`246d7b1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/246d7b1e46317d0b153158f515b4128d5c4395a5))
+
+### Chores
+
+- Release candidate 1.3.2
+  ([`7e77220`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7e77220ada092584510746b40cb225754389f4db))
 
 
 ## v1.3.1 (2025-01-22)
