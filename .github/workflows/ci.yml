@@ -1,23 +1,27 @@
-name: "Build and test"
+name: "Tests"
 on:
   pull_request:
     branches:
       - main
+    paths:
+      - pyprobe/*
+      - tests/*
+      - docs/source/examples/*ipynb
+      - pyproject.toml
+      - .github/workflows/ci.yml
+      - uv.lock
   push:
     branches:
       - main
+    paths:
+      - pyprobe/*
+      - tests/*
+      - pyproject.toml
+      - .github/workflows/ci.yml
+      - uv.lock
   workflow_dispatch:
 jobs:
-  qa:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
-      - uses: pre-commit/action@v3.0.0
   test:
-    needs: qa
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
