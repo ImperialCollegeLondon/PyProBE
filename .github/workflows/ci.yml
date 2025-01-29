@@ -3,9 +3,24 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - pyprobe/*
+      - tests/*
+      - docs/source/examples/*ipynb
+      - pyproject.toml
+      - .github/workflows/ci.yml
+      - uv.lock
+      - .pre-commit-config.yaml
   push:
     branches:
       - main
+    paths:
+      - pyprobe/*
+      - tests/*
+      - pyproject.toml
+      - .github/workflows/ci.yml
+      - uv.lock
+      - .pre-commit-config.yaml
   workflow_dispatch:
 jobs:
   qa:
