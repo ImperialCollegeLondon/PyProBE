@@ -1,0 +1,21 @@
+{
+  "creators": [
+    {
+      "name": "Holland, Thomas",
+      "orcid": "0009-0009-0670-1901",
+      "affiliation": "Department of Mechanical Engineering, Imperial College London, UK; The Faraday Institution, UK"
+    },
+    {
+      "name": "Cummins, Daniel",
+      "orcid": "0000-0003-2177-6521",
+      "affiliation": "Research Computing Service, ICT, Imperial College London, UK"
+    },
+    {
+      "name": "Marinescu, Monica",
+      "orcid": "0000-0003-1641-3371",
+      "affiliation": "Department of Mechanical Engineering, Imperial College London, UK; The Faraday Institution, UK"
+    }
+  ],
+  "title": "PyProBE: Python Processing for Battery Experiments",
+  "description": "PyProBE (Python Processing for Battery Experiments) is a Python package designed to simplify and accelerate the process of analysing data from battery cyclers."
+}
