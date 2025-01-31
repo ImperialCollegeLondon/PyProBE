@@ -7,7 +7,8 @@ import platform
 import subprocess
 from typing import List
 
-import plotly
+import distinctipy
+import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
 
@@ -158,17 +159,9 @@ if __name__ == "__main__":
     cell_identifier = col5.selectbox("Legend label", info.collect_schema().names())
     selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
 
-    # Select plot theme
-
-    themes = list(plotly.io.templates)
-    themes.remove("none")
-    themes.remove("streamlit")
-    themes.insert(0, "default")
-    plot_theme = "simple_white"
-
     # Create a figure
-    fig = Plot()
-
+    fig = go.Figure()
+    colors = distinctipy.get_colors(len(cell_list), rng=0)
     selected_data = []
     for i in range(len(selected_indices)):
         selected_index = selected_indices[i]
@@ -189,21 +182,79 @@ if __name__ == "__main__":
 
         if secondary_y_axis == "None":
             secondary_y_axis = None
-
-        fig = fig.add_line(
-            filtered_data,
-            x_axis,
-            y_axis,
-            secondary_y=secondary_y_axis,
-            label=cell_list[selected_index].info[cell_identifier],
-        )
         filtered_data = filtered_data.data.to_pandas()
+
+        # Add primary y-axis data
+        primary_trace = go.Scatter(
+            x=filtered_data[x_axis],
+            y=filtered_data[y_axis],
+            mode="lines",
+            name=f"{cell_list[selected_index].info[cell_identifier]}",
+            line=dict(color=distinctipy.get_hex(colors[selected_index])),
+        )
+        fig.add_trace(primary_trace)
+
+        # Add secondary y-axis data if specified
+        if secondary_y_axis:
+            secondary_trace = go.Scatter(
+                x=filtered_data[x_axis],
+                y=filtered_data[secondary_y_axis],
+                mode="lines",
+                name=f"{cell_list[selected_index].info[cell_identifier]}",
+                yaxis="y2",
+                line=dict(
+                    color=distinctipy.get_hex(colors[selected_index]), dash="dash"
+                ),  # Use the same color as the primary trace
+                showlegend=False,
+            )
+            fig.add_trace(secondary_trace)
+
+        title_font_size = 18
+        axis_font_size = 14
+        default_layout = go.Layout(
+            template="simple_white",
+            title_font=dict(size=title_font_size),
+            xaxis_title_font=dict(size=title_font_size),
+            yaxis_title_font=dict(size=title_font_size),
+            xaxis_tickfont=dict(size=axis_font_size),
+            yaxis_tickfont=dict(size=axis_font_size),
+            legend_font=dict(size=axis_font_size),
+            legend=dict(x=1.2),
+            width=800,
+            height=600,
+        )
+
+        # Update layout for dual-axis
+        fig.update_layout(
+            yaxis=dict(
+                title=y_axis,
+            ),
+            yaxis2=dict(title=secondary_y_axis, overlaying="y", side="right"),
+            xaxis=dict(
+                title=x_axis,
+            ),
+        )
+        fig.update_layout(default_layout)
+
         selected_data.append(filtered_data)
+
+    if secondary_y_axis:
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="lines",
+                line=dict(color="black", dash="dash"),
+                name=secondary_y_axis,
+                showlegend=True,
+            )
+        )
 
     # Show the plot
     if len(selected_data) > 0 and len(procedure_names) > 0:
         graph_placeholder.plotly_chart(
-            fig.fig, theme="streamlit" if plot_theme == "default" else None
+            fig,
+            theme="streamlit",  # if plot_theme == "default" else None
         )
 
     # Show raw data in tabs
