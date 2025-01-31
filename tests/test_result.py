@@ -1,5 +1,6 @@
 """Tests for the result module."""
 
+import os
 from datetime import datetime, timedelta
 
 import numpy.testing as np_testing
@@ -7,7 +8,6 @@ import polars as pl
 import polars.testing as pl_testing
 import pytest
 from scipy.io import loadmat
-import os
 
 from pyprobe.result import PolarsColumnCache, Result, combine_results
 
