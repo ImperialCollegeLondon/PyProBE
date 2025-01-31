@@ -1,9 +1,12 @@
 # CHANGELOG
 
 
-## v1.4.0 (2025-01-29)
+## v1.4.0 (2025-01-30)
 
 ### Chores
+
+- Add a .zenodo.json file
+  ([`29be1c1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/29be1c1e275561eebebbfcddb4f144ee9fa45cf6))
 
 - Add JOSS status badge
   ([`43a94a9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/43a94a9b5db654e90424105ab0e11e623f0a17bd))
@@ -16,6 +19,9 @@
 
 - Add status badges to readme
   ([`87de879`](https://github.com/ImperialCollegeLondon/PyProBE/commit/87de879e1b330b3c55dbaaa35e8e1a9c58bb5b54))
+
+- Release candidate 1.4.0
+  ([`e62a02d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e62a02d2554a7b6c3fb6412ffedd6f504bb87bc1))
 
 - Replace pre-commit action with pre-commit.ci
   ([`d360ec4`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d360ec45aa98d5b11a75b8ed65fa8b359b484c61))
