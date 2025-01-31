@@ -1,6 +1,7 @@
 """A module for the Result class."""
 
 import logging
+import re
 from functools import wraps
 from pprint import pprint
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
@@ -12,7 +13,6 @@ from deprecated import deprecated
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
-import re
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import split_quantity_unit, unit_from_regexp

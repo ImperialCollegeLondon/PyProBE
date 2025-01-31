@@ -100,7 +100,7 @@ match = "main"
 prerelease = false
 
 [tool.ruff.lint]
-select = ["D"]
+select = ["D", "I001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
