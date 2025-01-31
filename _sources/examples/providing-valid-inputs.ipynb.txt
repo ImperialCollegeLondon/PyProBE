@@ -36,8 +36,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "import pyprobe\n",
     "import polars as pl\n",
+    "\n",
+    "import pyprobe\n",
     "\n",
     "info_dictionary = {\n",
     "    \"Name\": \"Sample cell\",\n",

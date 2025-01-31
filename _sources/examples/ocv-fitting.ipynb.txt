@@ -25,11 +25,12 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "import pyprobe\n",
-    "import polars as pl\n",
-    "from pyprobe.analysis import degradation_mode_analysis as dma\n",
-    "import numpy as np\n",
     "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import polars as pl\n",
+    "\n",
+    "import pyprobe\n",
+    "from pyprobe.analysis import degradation_mode_analysis as dma\n",
     "\n",
     "%matplotlib inline"
    ]

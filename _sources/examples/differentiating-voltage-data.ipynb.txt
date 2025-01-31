@@ -34,8 +34,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "import pyprobe\n",
     "import matplotlib.pyplot as plt\n",
+    "\n",
+    "import pyprobe\n",
     "\n",
     "%matplotlib inline"
    ]
@@ -121,7 +122,6 @@
    "outputs": [],
    "source": [
     "from pyprobe.analysis import smoothing\n",
-    "\n",
     "\n",
     "downsampled_data = smoothing.downsample(\n",
     "    input_data=final_cycle.discharge(0),\n",
