@@ -3,6 +3,7 @@
 import copy
 import datetime
 import json
+import logging
 import os
 import shutil
 
@@ -10,6 +11,7 @@ import polars as pl
 import pytest
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
+from pydantic import ValidationError
 
 import pyprobe
 from pyprobe._version import __version__
@@ -77,7 +79,14 @@ def test_verify_filename():
     assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
 
 
-def test_process_cycler_file(cell_instance, lazyframe_fixture):
+@pytest.fixture
+def caplog_fixture(caplog):
+    """A fixture to capture log messages."""
+    caplog.set_level(logging.INFO)
+    return caplog
+
+
+def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture):
     """Test the process_cycler_file method."""
     folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
@@ -97,6 +106,29 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
     saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
     assert_frame_equal(expected_dataframe, saved_dataframe)
+
+    with pytest.raises(ValueError):
+        cell_instance.process_cycler_file(
+            "neware",
+            folder_path,
+            file_name,
+            "sample_data_neware_out*.parquet",
+            compression_priority="file size",
+            overwrite_existing=True,
+        )
+
+    cell_instance.process_cycler_file(
+        "neware",
+        folder_path,
+        file_name,
+        output_name,
+        compression_priority="file size",
+        overwrite_existing=False,
+    )
+    assert (
+        caplog_fixture.records[-1].message
+        == f"File {os.path.join(folder_path, output_name)} already exists. Skipping."
+    )
     os.remove(f"{folder_path}/{output_name}")
 
 
@@ -141,6 +173,14 @@ def test_process_generic_file(cell_instance):
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
+
+    with pytest.raises(ValidationError):
+        cell_instance.process_generic_file(
+            folder_path=folder_path,
+            input_filename="test_generic_file.csv",
+            output_filename="test_generic_file.parquet",
+        )
+
     os.remove(f"{folder_path}/test_generic_file.csv")
     os.remove(f"{folder_path}/test_generic_file.parquet")
 
