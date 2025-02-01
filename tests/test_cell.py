@@ -78,6 +78,10 @@ def test_verify_filename():
     file = "path/to/sample_data_neware.csv"
     assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
 
+    file = "path/to/sample_data_neware*.parquet"
+    with pytest.raises(ValueError):
+        Cell._verify_parquet(file)
+
 
 @pytest.fixture
 def caplog_fixture(caplog):
@@ -206,6 +210,20 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     )
     assert_frame_equal(
         cell_instance.procedure["Test_custom"].data,
+        procedure_fixture.data,
+        check_column_order=False,
+    )
+
+
+def test_quick_add_procedure(cell_instance, procedure_fixture):
+    """Test the quick_add_procedure method."""
+    input_path = "tests/sample_data/neware/"
+    file_name = "sample_data_neware.parquet"
+    title = "Test"
+
+    cell_instance.quick_add_procedure(title, input_path, file_name)
+    assert_frame_equal(
+        cell_instance.procedure[title].data,
         procedure_fixture.data,
         check_column_order=False,
     )
@@ -431,3 +449,63 @@ def test_archive(cell_instance):
     )
 
     shutil.rmtree(input_path + "archive")
+
+
+def test_get_data_paths(cell_instance):
+    """Test _get_data_paths with string filename."""
+    folder_path = "test/folder"
+    filename = "test.csv"
+    result = cell_instance._get_data_paths(folder_path, filename)
+    assert result == os.path.join("test/folder", "test.csv")
+
+    """Test _get_data_paths with function filename."""
+
+    def filename_func(name):
+        return f"cell_{name}.csv"
+
+    folder_path = "test/folder"
+    filename_inputs = ["Name"]
+    result = cell_instance._get_data_paths(folder_path, filename_func, filename_inputs)
+    assert result == os.path.join(
+        "test/folder", f"cell_{cell_instance.info['Name']}.csv"
+    )
+
+    """Test _get_data_paths with function filename but missing inputs."""
+    folder_path = "test/folder"
+    with pytest.raises(
+        ValueError, match="filename_inputs must be provided when filename is a function"
+    ):
+        cell_instance._get_data_paths(folder_path, filename_func)
+
+    """Test _get_data_paths with absolute folder path."""
+    folder_path = "/absolute/path"
+    filename = "test.csv"
+    result = cell_instance._get_data_paths(folder_path, filename)
+    assert result == os.path.join("/absolute/path", "test.csv")
+
+    """Test _get_data_paths with relative folder path."""
+    cell_instance = Cell(
+        info={
+            "Name": "Test_Cell",
+            "Chemistry": "NMC622",
+        }
+    )
+
+    folder_path = "../relative/path"
+    filename = "test.csv"
+    result = cell_instance._get_data_paths(folder_path, filename)
+    assert result == os.path.join("../relative/path", "test.csv")
+
+    """Test _get_data_paths with complex filename function using multiple inputs."""
+
+    def filename_func(name, chemistry):
+        return f"cell_{name}_{chemistry}.csv"
+
+    folder_path = "test/folder"
+    filename_inputs = ["Name", "Chemistry"]
+    result = cell_instance._get_data_paths(folder_path, filename_func, filename_inputs)
+    expected = os.path.join(
+        "test/folder",
+        f"cell_{cell_instance.info['Name']}_{cell_instance.info['Chemistry']}.csv",
+    )
+    assert result == expected

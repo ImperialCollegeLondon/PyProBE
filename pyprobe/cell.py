@@ -71,10 +71,6 @@ class Cell(BaseModel):
             folder_path, output_filename, filename_inputs
         )
         output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            error_msg = "* characters are not allowed for a complete data path."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
 
         if not os.path.exists(output_data_path) or overwrite_existing:
             t1 = time.time()
@@ -246,11 +242,6 @@ class Cell(BaseModel):
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            error_msg = "* characters are not allowed for a complete data path."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
         readme_path = os.path.join(data_folder, readme_name)
@@ -290,9 +281,6 @@ class Cell(BaseModel):
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            raise ValueError("* characters are not allowed for a complete data path.")
-
         base_dataframe = pl.scan_parquet(output_data_path)
         self.procedure[procedure_name] = Procedure(
             base_dataframe=base_dataframe, info=self.info, readme_dict={}
@@ -314,6 +302,10 @@ class Cell(BaseModel):
         # If the file extension is not .parquet, replace it with .parquet
         if ext != ".parquet":
             filename = os.path.splitext(filename)[0] + ".parquet"
+        if "*" in filename:
+            error_msg = "* characters are not allowed for output filename."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return filename
 
     def _write_parquet(
