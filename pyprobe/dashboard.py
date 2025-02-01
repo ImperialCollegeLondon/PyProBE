@@ -5,7 +5,7 @@ import os
 import pickle
 import platform
 import subprocess
-from typing import List
+from typing import Any, List
 
 import distinctipy
 import plotly.graph_objects as go
@@ -54,50 +54,39 @@ def launch_dashboard(cell_list: List[Cell]) -> None:
         )
 
 
-if __name__ == "__main__":
-    with open("dashboard_data.pkl", "rb") as f:
-        cell_list = pickle.load(f)
+def _dataframe_with_selections(df: pl.DataFrame) -> List[int]:
+    """Create a dataframe with a selection column for user input.
 
-    st.title("PyProBE Dashboard")
-    st.sidebar.title("Select data to plot")
+    Args:
+        df (pd.DataFrame): The dataframe to display.
 
-    info_list = []
-    for i in range(len(cell_list)):
-        info_list.append(cell_list[i].info)
-    info = pl.DataFrame(info_list)
+    Returns:
+        list: The list of selected row indices.
+    """
+    df = df.to_pandas()
+    df_with_selections = copy.deepcopy(df)
+    df_with_selections.insert(0, "Select", False)
 
-    def dataframe_with_selections(df: pl.DataFrame) -> List[int]:
-        """Create a dataframe with a selection column for user input.
+    # Get dataframe row-selections from user with st.data_editor
+    edited_df = st.sidebar.data_editor(
+        df_with_selections,
+        hide_index=True,  # Keep the index visible
+        column_config={"Select": st.column_config.CheckboxColumn(required=True)},
+        disabled=df.columns.tolist(),
+    )
 
-        Args:
-            df (pd.DataFrame): The dataframe to display.
+    # Filter the dataframe using the temporary column, then drop the column
+    selected_rows = edited_df[edited_df.Select]
+    selected_indices = (
+        selected_rows.index.tolist()
+    )  # Get the indices of the selected rows
+    return selected_indices
 
-        Returns:
-            list: The list of selected row indices.
-        """
-        df = df.to_pandas()
-        df_with_selections = copy.deepcopy(df)
-        df_with_selections.insert(0, "Select", False)
 
-        # Get dataframe row-selections from user with st.data_editor
-        edited_df = st.sidebar.data_editor(
-            df_with_selections,
-            hide_index=True,  # Keep the index visible
-            column_config={"Select": st.column_config.CheckboxColumn(required=True)},
-            disabled=df.columns.tolist(),
-        )
-
-        # Filter the dataframe using the temporary column, then drop the column
-        selected_rows = edited_df[edited_df.Select]
-        selected_indices = (
-            selected_rows.index.tolist()
-        )  # Get the indices of the selected rows
-        return selected_indices
-
-    # Display the DataFrame in the sidebar
-    selected_indices = dataframe_with_selections(info)
-
-    # Get the procedure names from the selected cells
+def _get_procedure_names(
+    cell_list: List[Cell], selected_indices: List[int]
+) -> List[str]:
+    """Get the common procedure names from the selected cells."""
     procedure_names_sets = [
         list(cell_list[i].procedure.keys()) for i in selected_indices
     ]
@@ -109,13 +98,22 @@ if __name__ == "__main__":
         procedure_names = list(procedure_names_sets[0])
         for s in procedure_names_sets[1:]:
             procedure_names = [x for x in procedure_names if x in s]
-    procedure_names = list(procedure_names)
-    selected_raw_data = st.sidebar.selectbox("Select a procedure", procedure_names)
+    return list(procedure_names)
+
+
+def _get_data_filters(
+    cell_list: List[Cell], selected_indices: List[int], procedure_names: List[str]
+) -> tuple[Any, tuple[Any, ...], Any]:
+    import streamlit as st
+
+    selected_procedure = st.sidebar.selectbox("Select a procedure", procedure_names)
 
     # Select an experiment
-    if selected_raw_data is not None:
+    if selected_procedure is not None:
         experiment_names = (
-            cell_list[selected_indices[0]].procedure[selected_raw_data].experiment_names
+            cell_list[selected_indices[0]]
+            .procedure[selected_procedure]
+            .experiment_names
         )
         selected_experiment = st.sidebar.multiselect(
             "Select an experiment", experiment_names
@@ -128,6 +126,13 @@ if __name__ == "__main__":
     cycle_step_input = st.sidebar.text_input(
         'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")'
     )
+    return selected_procedure, selected_experiment_tuple, cycle_step_input
+
+
+def _get_graph_inputs(
+    info: pl.DataFrame, cell_list: List[Cell], selected_indices: List[int]
+) -> tuple[Any, Any, Any, Any, list[Any | None]]:
+    """Get the user inputs for the graph."""
     x_options = [
         "Time [s]",
         "Time [min]",
@@ -143,9 +148,6 @@ if __name__ == "__main__":
         "Capacity [Ah]",
         "Capacity [mAh]",
     ]
-
-    graph_placeholder = st.empty()
-
     col1, col2, col3, col4, col5 = st.columns(5)
     # Create select boxes for the x and y axes
     filter_stage = col1.selectbox(
@@ -158,6 +160,34 @@ if __name__ == "__main__":
     # choose a cell identifier
     cell_identifier = col5.selectbox("Legend label", info.collect_schema().names())
     selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
+    return x_axis, y_axis, secondary_y_axis, cell_identifier, selected_names
+
+
+def _main() -> None:
+    """Main function to run the Streamlit dashboard."""
+    with open("dashboard_data.pkl", "rb") as f:
+        cell_list = pickle.load(f)
+
+    st.title("PyProBE Dashboard")
+    st.sidebar.title("Select data to plot")
+
+    info_list = []
+    for i in range(len(cell_list)):
+        info_list.append(cell_list[i].info)
+    info = pl.DataFrame(info_list)
+
+    # Display the DataFrame in the sidebar
+    selected_indices = _dataframe_with_selections(info)
+    procedure_names = _get_procedure_names(cell_list, selected_indices)
+
+    selected_procedure, selected_experiment_tuple, cycle_step_input = _get_data_filters(
+        cell_list, selected_indices, procedure_names
+    )
+    x_axis, y_axis, secondary_y_axis, cell_identifier, selected_names = (
+        _get_graph_inputs(info, cell_list, selected_indices)
+    )
+
+    graph_placeholder = st.empty()
 
     # Create a figure
     fig = go.Figure()
@@ -166,11 +196,11 @@ if __name__ == "__main__":
     for i in range(len(selected_indices)):
         selected_index = selected_indices[i]
         if len(selected_experiment_tuple) == 0:
-            experiment_data = cell_list[selected_index].procedure[selected_raw_data]
+            experiment_data = cell_list[selected_index].procedure[selected_procedure]
         else:
             experiment_data = (
                 cell_list[selected_index]
-                .procedure[selected_raw_data]
+                .procedure[selected_procedure]
                 .experiment(*selected_experiment_tuple)
             )
         # Check if the input is not empty
@@ -269,3 +299,7 @@ if __name__ == "__main__":
         ]
         for tab in tabs:
             tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
+
+
+if __name__ == "__main__":
+    _main()
