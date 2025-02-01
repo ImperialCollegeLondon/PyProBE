@@ -13,7 +13,6 @@ import polars as pl
 import streamlit as st
 
 from pyprobe.cell import Cell
-from pyprobe.plot import Plot
 
 
 def launch_dashboard(cell_list: List[Cell]) -> None:
