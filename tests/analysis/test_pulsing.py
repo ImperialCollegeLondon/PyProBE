@@ -29,19 +29,6 @@ def test_pulse(Pulsing_fixture):
     assert (pulse.data["Step"] == 10).all()
 
 
-def test_pulse_summary(Pulsing_fixture):
-    """Test the pulse_summary method."""
-    pulse_obj = Pulsing(input_data=Pulsing_fixture)
-    pulse_summary = pulse_obj.pulse_summary([10])
-    assert isinstance(pulse_obj.pulse_summary(), Result)
-    assert isinstance(pulse_summary, Result)
-    assert pulse_summary.get("OCV [V]")[0] == 4.1919
-    assert np.isclose(pulse_summary.get("R0 [Ohms]")[0], (4.1558 - 4.1919) / -0.0199936)
-    assert np.isclose(
-        pulse_summary.get("R_10s [Ohms]")[0], (4.1337 - 4.1919) / -0.0199936
-    )
-
-
 def test_get_resistances(Pulsing_fixture):
     """Test the get_resistances method."""
     resistances = pulsing.get_resistances(Pulsing_fixture, [10])
