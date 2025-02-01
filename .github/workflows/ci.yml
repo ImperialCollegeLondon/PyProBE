@@ -38,7 +38,7 @@ jobs:
           python-version-file: "pyproject.toml"
       
       - name: Install the project
-        run: |
+        run: | # install the project with pybamm for the import pybamm solution test
           uv venv --seed
           uv sync --all-extras --frozen
           source .venv/bin/activate
