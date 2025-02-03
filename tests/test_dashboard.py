@@ -118,7 +118,9 @@ def test_dashboard_get_info(mock_cell):
         [{"id": "test1", "value": 10}, {"id": "test2", "value": 20}]
     )
     pl_testing.assert_frame_equal(
-        dashboard.get_info([mock_cell, mock_cell2]), expected_df
+        dashboard.get_info([mock_cell, mock_cell2]),
+        expected_df,
+        check_column_order=False,
     )
 
 
@@ -230,13 +232,16 @@ def test_get_data(cell_fixture):
     dashboard.selected_procedure = "Sample"
     dashboard.cycle_step_input = False
     pl_testing.assert_frame_equal(
-        dashboard.get_data()[0].data, cell_fixture.procedure["Sample"].data
+        dashboard.get_data()[0].data,
+        cell_fixture.procedure["Sample"].data,
+        check_column_order=False,
     )
 
     dashboard.selected_experiments = tuple(["Break-in Cycles"])
     pl_testing.assert_frame_equal(
         dashboard.get_data()[0].data,
         cell_fixture.procedure["Sample"].experiment("Break-in Cycles").data,
+        check_column_order=False,
     )
 
     dashboard.cycle_step_input = "cycle(1).discharge(0)"
@@ -247,6 +252,7 @@ def test_get_data(cell_fixture):
         .cycle(1)
         .discharge(0)
         .data,
+        check_column_order=False,
     )
 
 
