@@ -236,7 +236,7 @@ class _Dashboard:
         axis_font_size = 14
         default_layout = go.Layout(
             template="simple_white",
-            title_font=dict(size=title_font_size),
+            title=None,
             xaxis_title_font=dict(size=title_font_size),
             yaxis_title_font=dict(size=title_font_size),
             xaxis_tickfont=dict(size=axis_font_size),
