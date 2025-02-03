@@ -1,6 +1,54 @@
 # CHANGELOG
 
 
+## v2.0.0 (2025-02-03)
+
+### Bug Fixes
+
+- Allow units module to deal with percentage symbols
+  ([`14f6176`](https://github.com/ImperialCollegeLondon/PyProBE/commit/14f6176ceeb52d1b058fd62bcdc8ccbbc3f8088d))
+
+- Move critical plot functionality for dashboard into dashboard script
+  ([`ff88c3d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ff88c3d922e9524178162244724753c618baffe6))
+
+- Remove blank title from plot
+  ([`df3ff12`](https://github.com/ImperialCollegeLondon/PyProBE/commit/df3ff123a8f4e8b46baf1cbe716a97c9f4600c36))
+
+### Chores
+
+- Add pybamm installation to ci workflow
+  ([`f8f21cc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f8f21cca89d3e7c8c17659384aafcf3b3225a9bc))
+
+- Run pytest with uv
+  ([`db65402`](https://github.com/ImperialCollegeLondon/PyProBE/commit/db65402bdef007d52cb36a84bced4f7b4927967a))
+
+- **ci**: Update ci workflow to install pybamm before running tests
+  ([`eaf42e1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/eaf42e1c35241ee9e925449a0698b3dd03889f03))
+
+### Refactoring
+
+- Remove deprecated analysis classes
+  ([`600c04a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/600c04a41fc49acf09d986f2de209a9160e99dae))
+
+BREAKING CHANGE: class-based structure for the analysis module has been replaced with single
+  functions within the same module
+
+- Remove deprecated Plot class
+  ([`b03ab52`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b03ab520ebeacf9be220729188ad6c813c313cf9))
+
+BREAKING CHANGE: removal of deprecated class due to maintenance overhead. Use Result.plot(),
+  Result.hvplot() or seaborn wrapper instead
+
+- Reorganise dashboard into class and add tests for full coverage
+  ([`a06ec46`](https://github.com/ImperialCollegeLondon/PyProBE/commit/a06ec4650dcf795c90741c87806cf6ed9f907ec0))
+
+- Reorganise data processing methods
+  ([`63a5bd7`](https://github.com/ImperialCollegeLondon/PyProBE/commit/63a5bd7c1fc13c0eedd62bee02ae7d1e71af4e75))
+
+- Split dashboard into functions and add tests
+  ([`bf38f5f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/bf38f5fc49b4d1332f6c53ebf67bc98a2311dd84))
+
+
 ## v1.4.0 (2025-01-31)
 
 ### Chores
@@ -22,6 +70,9 @@
 
 - Add status badges to readme
   ([`87de879`](https://github.com/ImperialCollegeLondon/PyProBE/commit/87de879e1b330b3c55dbaaa35e8e1a9c58bb5b54))
+
+- Release candidate 1.4.0
+  ([`a1e1a22`](https://github.com/ImperialCollegeLondon/PyProBE/commit/a1e1a22ad3b30ccaaadf9de70f4e58f03723be72))
 
 - Release candidate 1.4.0
   ([`0d3181d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0d3181d2ecda0c41cc6568748e0682026d557ad4))
