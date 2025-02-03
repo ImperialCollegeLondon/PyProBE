@@ -3,15 +3,16 @@
 import subprocess
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pandas as pd
 import polars as pl
+import polars.testing as pl_testing
 import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from pyprobe.dashboard import (
-    _dataframe_with_selections,
-    _get_procedure_names,
+    _Dashboard,
     launch_dashboard,
 )
 
@@ -99,269 +100,374 @@ def test_empty_cell_list():
                 mock_dump.assert_called_once_with([], mock_dump.call_args[0][1])
 
 
-@pytest.fixture
-def sample_df():
-    """Create a sample Polars DataFrame for testing."""
-    return pl.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
+def test_dashboard_init(mock_cell):
+    """Test Dashboard initialization."""
+    dashboard = _Dashboard([mock_cell])
+    assert dashboard.cell_list == [mock_cell]
+    assert isinstance(dashboard.info, pl.DataFrame)
 
 
-def test_dataframe_with_selections(sample_df):
-    """Test basic functionality of _dataframe_with_selections."""
-    with patch("streamlit.sidebar.data_editor") as mock_editor:
-        # Mock the returned DataFrame from st.data_editor
-        mock_edited_df = pd.DataFrame(
-            {"Select": [True, False, True], "col1": [1, 2, 3], "col2": ["a", "b", "c"]}
+def test_dashboard_get_info(mock_cell):
+    """Test info DataFrame creation."""
+    mock_cell.info = {"id": "test1", "value": 10}
+    mock_cell2 = MagicMock()
+    mock_cell2.info = {"id": "test2", "value": 20}
+
+    dashboard = _Dashboard([mock_cell, mock_cell2])
+    expected_df = pl.DataFrame(
+        [{"id": "test1", "value": 10}, {"id": "test2", "value": 20}]
+    )
+    pl_testing.assert_frame_equal(
+        dashboard.get_info([mock_cell, mock_cell2]), expected_df
+    )
+
+
+def testdataframe_with_selections():
+    """Test DataFrame filtering based on selections."""
+    data = pl.DataFrame({"id": ["test1", "test2"], "value": [10, 20]})
+    df_with_selections = _Dashboard.dataframe_with_selections(data)
+    assert "Select" in df_with_selections.columns
+    assert (df_with_selections["Select"].to_numpy() == False).all()
+
+
+def test_select_cell_indices(mock_cell):
+    """Test cell selection functionality."""
+    mock_cell.info = {"id": "test1", "value": 10}
+    mock_cell2 = MagicMock()
+    mock_cell2.info = {"id": "test2", "value": 20}
+    dashboard = _Dashboard([mock_cell, mock_cell2])
+
+    with patch("streamlit.sidebar.data_editor") as mock_select:
+        mock_select.return_value = pd.DataFrame(
+            {"id": ["test1", "test2"], "value": [10, 20], "Select": [True, False]}
         )
-        mock_editor.return_value = mock_edited_df
-
-        result = _dataframe_with_selections(sample_df)
-
-        assert result == [0, 2]
-        mock_editor.assert_called_once()
-
-        empty_df = pl.DataFrame()
-        mock_editor.return_value = pd.DataFrame({"Select": []})
-        result = _dataframe_with_selections(empty_df)
-        assert result == []
-
-        mock_edited_df = pd.DataFrame(
-            {
-                "Select": [False, False, False],
-                "col1": [1, 2, 3],
-                "col2": ["a", "b", "c"],
-            }
-        )
-        mock_editor.return_value = mock_edited_df
-
-        result = _dataframe_with_selections(sample_df)
-        assert result == []
-
-        mock_edited_df = pd.DataFrame(
-            {"Select": [True, True, True], "col1": [1, 2, 3], "col2": ["a", "b", "c"]}
-        )
-        mock_editor.return_value = mock_edited_df
-
-        result = _dataframe_with_selections(sample_df)
-        assert result == [0, 1, 2]
-
-        mock_edited_df = pd.DataFrame(
-            {"Select": [False, True, False], "col1": [1, 2, 3], "col2": ["a", "b", "c"]}
-        )
-        mock_editor.return_value = mock_edited_df
-
-        result = _dataframe_with_selections(sample_df)
-        assert result == [1]
+        result = dashboard.select_cell_indices()
+        assert result == [0]
 
 
-def test_get_procedure_names():
-    """Test with empty cell list or empty indices."""
-    cell_list = []
-    assert _get_procedure_names(cell_list, []) == []
-
+def test_dashboard_get_common_procedures():
+    """Test common procedures identification."""
     # Test with single cell having one procedure.
-    cell = MagicMock()
-    cell.procedure = {"proc1": MagicMock()}
-    assert _get_procedure_names([cell], [0]) == ["proc1"]
+    cell1 = MagicMock()
+    cell1.procedure = {"proc1": MagicMock(), "proc2": MagicMock()}
+    dashboard = _Dashboard([cell1])
+    dashboard.selected_indices = [0]
+    assert dashboard.get_common_procedures() == ["proc1", "proc2"]
 
     """Test finding common procedures across multiple cells."""
     cell1 = MagicMock()
     cell2 = MagicMock()
     cell1.procedure = {"proc1": MagicMock(), "proc2": MagicMock()}
     cell2.procedure = {"proc1": MagicMock(), "proc3": MagicMock()}
-    cell_list = [cell1, cell2]
-    assert _get_procedure_names(cell_list, [0, 1]) == ["proc1"]
+    dashboard = _Dashboard([cell1, cell2])
+    dashboard.selected_indices = [0, 1]
+    assert dashboard.get_common_procedures() == ["proc1"]
 
     """Test when cells have no common procedures."""
     cell1 = MagicMock()
     cell2 = MagicMock()
     cell1.procedure = {"proc1": MagicMock()}
     cell2.procedure = {"proc2": MagicMock()}
-    cell_list = [cell1, cell2]
-    assert _get_procedure_names(cell_list, [0, 1]) == []
+    dashboard = _Dashboard([cell1, cell2])
+    dashboard.selected_indices = [0, 1]
+    assert dashboard.get_common_procedures() == []
 
     """Test with cells having multiple common procedures."""
     cell1 = MagicMock()
     cell2 = MagicMock()
     cell1.procedure = {"proc1": MagicMock(), "proc2": MagicMock(), "proc3": MagicMock()}
     cell2.procedure = {"proc1": MagicMock(), "proc2": MagicMock(), "proc4": MagicMock()}
-    cell_list = [cell1, cell2]
-    assert sorted(_get_procedure_names(cell_list, [0, 1])) == ["proc1", "proc2"]
+    dashboard = _Dashboard([cell1, cell2])
+    dashboard.selected_indices = [0, 1]
+    assert dashboard.get_common_procedures() == ["proc1", "proc2"]
 
     """Test when one cell has no procedures."""
     cell1 = MagicMock()
     cell2 = MagicMock()
     cell1.procedure = {"proc1": MagicMock()}
     cell2.procedure = {}
-    cell_list = [cell1, cell2]
-    assert _get_procedure_names(cell_list, [0, 1]) == []
-
-    """Test behavior with invalid indices."""
-    cell = MagicMock()
-    cell.procedure = {"proc1": MagicMock()}
-    with pytest.raises(IndexError):
-        _get_procedure_names([cell], [1])
+    dashboard = _Dashboard([cell1, cell2])
+    dashboard.selected_indices = [0, 1]
+    assert dashboard.get_common_procedures() == []
 
 
-def filters_mini_app():
-    """Mini app for testing _get_data_filters."""
-    from unittest.mock import MagicMock
+def test_dashboard_select_experiment():
+    """Test experiment selection functionality."""
 
-    import streamlit as st
+    def select_exp_mini_app():
+        from unittest.mock import MagicMock
 
-    from pyprobe.dashboard import _get_data_filters
+        import streamlit as st
 
-    mock_cell = MagicMock()
-    mock_procedure = MagicMock()
-    mock_procedure.experiment_names = ["exp1", "exp2"]
-    mock_cell.procedure = {"proc1": mock_procedure}
-    selected_procedure, selected_experiment_tuple, cycle_step_input = _get_data_filters(
-        [mock_cell], [0], ["proc1"]
-    )
-    st.session_state.selected_procedure = selected_procedure
-    st.session_state.selected_experiment_tuple = selected_experiment_tuple
-    st.session_state.cycle_step_input = cycle_step_input
+        from pyprobe.dashboard import _Dashboard
 
+        cell = MagicMock()
+        mock_procedure = MagicMock()
+        mock_procedure.experiment_names = ["Exp1", "Exp2", "Exp3"]
+        cell.procedure = {"Pro1": mock_procedure, "Pro2": MagicMock()}
+        dashboard = _Dashboard([cell])
+        dashboard.selected_procedure = "Pro1"
+        dashboard.selected_indices = [0]
+        dashboard.select_experiment()
 
-def test_get_data_filters():
-    """Test Streamlit widget interactions directly using AppTest."""
-    at = AppTest.from_function(filters_mini_app)
+        dashboard = _Dashboard([cell])
+        dashboard.selected_indices = [0]
+        dashboard.selected_procedure = None
+        st.session_state.expected_blank_tuple = dashboard.select_experiment()
+
+    at = AppTest.from_function(select_exp_mini_app)
     at.run()
+    assert at.sidebar.multiselect[0].options == ["Exp1", "Exp2", "Exp3"]
 
-    # Verify widgets were created
-    selectbox = at.sidebar.selectbox[0]
-    assert selectbox.label == "Select a procedure"
-    assert selectbox.options == ["proc1"]
+    assert at.session_state.expected_blank_tuple == ()
 
-    multiselect = at.sidebar.multiselect[0]
-    assert multiselect.label == "Select an experiment"
-    assert multiselect.options == ["exp1", "exp2"]
 
-    text_input = at.sidebar.text_input[0]
-    assert (
-        text_input.label
-        == 'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")'
+def test_get_data(cell_fixture):
+    """Test data retrieval functionality."""
+    dashboard = _Dashboard([cell_fixture])
+    dashboard.selected_indices = [0]
+    dashboard.selected_experiments = ()
+    dashboard.selected_procedure = "Sample"
+    dashboard.cycle_step_input = False
+    pl_testing.assert_frame_equal(
+        dashboard.get_data()[0].data, cell_fixture.procedure["Sample"].data
     )
 
-    selectbox.select("proc1")
-    multiselect.select("exp1")
-    text_input.input("cycle(1)")
-    at.run()
-
-    # Verify return values
-    assert selectbox.value == "proc1"
-    assert multiselect.value == ["exp1"]
-    assert text_input.value == "cycle(1)"
-
-    assert at.session_state.selected_procedure == "proc1"
-    assert at.session_state.selected_experiment_tuple == ("exp1",)
-    assert at.session_state.cycle_step_input == "cycle(1)"
-
-
-def graph_inputs_mini_app():
-    """Mini app for testing _get_graph_inputs."""
-    from unittest.mock import MagicMock
-
-    import polars as pl
-    import streamlit as st
-
-    from pyprobe.dashboard import _get_graph_inputs
-
-    info = pl.DataFrame(
-        {"id": ["cell1", "cell2"], "temperature": [25, 30], "type": ["A", "B"]}
+    dashboard.selected_experiments = tuple(["Break-in Cycles"])
+    pl_testing.assert_frame_equal(
+        dashboard.get_data()[0].data,
+        cell_fixture.procedure["Sample"].experiment("Break-in Cycles").data,
     )
 
-    mock_cell = MagicMock()
-    mock_cell.info = {"id": "cell1", "temperature": 25, "type": "A"}
-    cell_list = [mock_cell]
+    dashboard.cycle_step_input = "cycle(1).discharge(0)"
+    pl_testing.assert_frame_equal(
+        dashboard.get_data()[0].data,
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .data,
+    )
 
-    x, y, sec_y, identifier, names = _get_graph_inputs(info, cell_list, [0])
-    st.session_state.x = x
-    st.session_state.y = y
-    st.session_state.sec_y = sec_y
-    st.session_state.identifier = identifier
-    st.session_state.names = names
 
+def test_dashboard_run(cell_fixture):
+    """Test running the dashboard."""
 
-def test_get_graph_inputs_widgets():
-    """Test widget creation and interactions for _get_graph_inputs."""
-    at = AppTest.from_function(graph_inputs_mini_app)
+    def run_mini_app():
+        from unittest.mock import patch
+
+        import streamlit as st
+
+        from pyprobe import Cell
+        from pyprobe.dashboard import _Dashboard
+
+        cell = Cell(
+            info={
+                "name": "test",
+                "temperature": 25,
+            }
+        )
+        cell.add_procedure(
+            "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
+        )
+        cell.add_procedure(
+            "Sample 2", "tests/sample_data/neware/", "sample_data_neware.parquet"
+        )
+
+        dashboard = _Dashboard([cell])
+        with patch.object(_Dashboard, "select_cell_indices", return_value=[0]):
+            dashboard.run()
+
+            st.session_state.figure = dashboard.fig
+
+    at = AppTest.from_function(run_mini_app)
     at.run()
 
-    # Verify all columns created
-    col1, col2, col3, col4, col5 = at.columns[0:5]
+    assert at.title[0].value == "PyProBE Dashboard"
+    assert at.sidebar.title[0].value == "Select data to plot"
 
-    # Test filter stage selectbox
-    filter_stage = col1.selectbox[0]
-    assert filter_stage.label == "Filter stage"
-    assert filter_stage.options == ["", "Experiment", "Cycle", "Step"]
-    assert filter_stage.index == 0
-
-    # Test x-axis selectbox
-    x_axis = col2.selectbox[0]
-    assert x_axis.label == "x axis"
-    assert x_axis.options == [
-        "Time [s]",
-        "Time [min]",
-        "Time [hr]",
-        "Capacity [Ah]",
-        "Capacity [mAh]",
-        "Capacity Throughput [Ah]",
-    ]
-    assert x_axis.index == 0
-
-    # Test y-axis selectbox
-    y_axis = col3.selectbox[0]
-    assert y_axis.label == "y axis"
-    assert y_axis.options == [
-        "Voltage [V]",
-        "Current [A]",
-        "Current [mA]",
-        "Capacity [Ah]",
-        "Capacity [mAh]",
-    ]
-    assert y_axis.index == 1
-
-    # Test secondary y-axis selectbox
-    secondary_y = col4.selectbox[0]
-    assert secondary_y.label == "Secondary y axis"
-    assert secondary_y.options == ["None"] + [
-        "Voltage [V]",
-        "Current [A]",
-        "Current [mA]",
-        "Capacity [Ah]",
-        "Capacity [mAh]",
-    ]
-    assert secondary_y.index == 0
-
-    # Test cell identifier selectbox
-    cell_id = col5.selectbox[0]
-    assert cell_id.label == "Legend label"
-    assert set(cell_id.options) == {"id", "temperature", "type"}
-
-
-def test_get_graph_inputs_interactions():
-    """Test user interactions and return values."""
-    at = AppTest.from_function(graph_inputs_mini_app)
+    # Check procedure selection
+    procedure_selector = at.sidebar.selectbox[0]
+    assert procedure_selector.options == ["Sample", "Sample 2"]
+    procedure_selector.select("Sample")
     at.run()
 
-    # Make selections
-    col1, col2, col3, col4, col5 = at.columns[0:5]
+    filter_stage_select = at.selectbox[0]
+    # Check plot
+    assert filter_stage_select.options == ["", "Experiment", "Cycle", "Step"]
+    assert at.selectbox[1].options == _Dashboard.x_options
+    assert at.selectbox[2].options == _Dashboard.y_options
+    assert at.selectbox[3].options == ["None"] + _Dashboard.y_options
+    assert at.selectbox[4].options == ["name", "temperature"]
 
-    filter_stage = col1.selectbox[0]
-    x_axis = col2.selectbox[0]
-    y_axis = col3.selectbox[0]
-    secondary_y = col4.selectbox[0]
-    cell_id = col5.selectbox[0]
-
-    filter_stage.select("Experiment")
-    x_axis.select("Time [min]")
-    y_axis.select("Voltage [V]")
-    secondary_y.select("Current [A]")
-    cell_id.select("id")
-    # Verify return values
+    filter_stage_select.select("")
+    at.selectbox[1].select("Time [s]")
+    at.selectbox[2].select("Voltage [V]")
+    at.selectbox[3].select("None")
+    at.selectbox[4].select("name")
     at.run()
-    assert at.session_state.x == "Experiment Time [min]"
-    assert at.session_state.y == "Voltage [V]"
-    assert at.session_state.sec_y == "Current [A]"
-    assert at.session_state.identifier == "id"
-    assert at.session_state.names == ["cell1"]
+
+    fig = at.session_state.figure
+    assert fig["layout"]["xaxis"]["title"]["text"] == "Time [s]"
+    assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
+    np.testing.assert_array_equal(
+        fig["data"][0]["x"], cell_fixture.procedure["Sample"].get("Time [s]")
+    )
+    np.testing.assert_array_equal(
+        fig["data"][0]["y"], cell_fixture.procedure["Sample"].get("Voltage [V]")
+    )
+
+    # Check plot with multiple y axes
+    at.selectbox[3].select("Current [A]")
+    at.run()
+    fig = at.session_state.figure
+    assert fig["layout"]["xaxis"]["title"]["text"] == "Time [s]"
+    assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
+    assert fig["layout"]["yaxis2"]["title"]["text"] == "Current [A]"
+    np.testing.assert_array_equal(
+        fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]")
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["y"], cell_fixture.procedure["Sample"].get("Current [A]")
+    )
+    assert fig["data"][2]["name"] == "Current [A]"
+    assert fig["data"][2]["line"]["color"] == "black"
+    assert fig["data"][2]["line"]["dash"] == "dash"
+    assert fig["data"][2]["x"] == (None,)
+    assert fig["data"][2]["y"] == (None,)
+
+    # Check unit conversion
+    at.selectbox[1].select("Time [hr]")
+    at.selectbox[3].select("Current [mA]")
+    at.run()
+    fig = at.session_state.figure
+    np.testing.assert_allclose(
+        fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]") / 3600
+    )
+    np.testing.assert_allclose(
+        fig["data"][1]["y"], cell_fixture.procedure["Sample"].get("Current [A]") * 1000
+    )
+
+    # Check filtering by experiment
+    experiment_selector = at.sidebar.multiselect[0]
+    assert experiment_selector.options == [
+        "Initial Charge",
+        "Break-in Cycles",
+        "Discharge Pulses",
+    ]
+    experiment_selector.select("Break-in Cycles")
+    at.run()
+    fig = at.session_state.figure
+    np.testing.assert_array_equal(
+        fig["data"][0]["x"],
+        cell_fixture.procedure["Sample"].experiment("Break-in Cycles").get("Time [hr]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][0]["y"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .get("Voltage [V]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"].experiment("Break-in Cycles").get("Time [hr]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .get("Current [mA]"),
+    )
+
+    # check filtering by cycle and step
+    at.sidebar.text_input[0].set_value("cycle(1).discharge(0)")
+    at.run()
+    fig = at.session_state.figure
+    np.testing.assert_array_equal(
+        fig["data"][0]["x"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Time [hr]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][0]["y"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Voltage [V]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Time [hr]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Current [mA]"),
+    )
+
+    at.selectbox[0].select("Cycle")
+    at.selectbox[1].select("Capacity [Ah]")
+    at.run()
+    fig = at.session_state.figure
+    np.testing.assert_array_equal(
+        fig["data"][0]["x"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Cycle Capacity [Ah]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][0]["y"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Voltage [V]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Cycle Capacity [Ah]"),
+    )
+    np.testing.assert_array_equal(
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .get("Current [mA]"),
+    )
+
+    # printed_data = at.dataframe[0].value
+    expected_df = (
+        cell_fixture.procedure["Sample"]
+        .experiment("Break-in Cycles")
+        .cycle(1)
+        .discharge(0)
+        .data.select(
+            [
+                "Time [s]",
+                "Step",
+                "Current [A]",
+                "Voltage [V]",
+                "Capacity [Ah]",
+            ]
+        )
+        .to_pandas()
+    )
+    assert at.dataframe[0].value.equals(expected_df)
