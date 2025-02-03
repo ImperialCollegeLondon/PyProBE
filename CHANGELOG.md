@@ -19,6 +19,9 @@
 - Add pybamm installation to ci workflow
   ([`f8f21cc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f8f21cca89d3e7c8c17659384aafcf3b3225a9bc))
 
+- Release candidate 2.0.0
+  ([`0918db3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0918db38cb297273f34baee22a435e042f96ee31))
+
 - Run pytest with uv
   ([`db65402`](https://github.com/ImperialCollegeLondon/PyProBE/commit/db65402bdef007d52cb36a84bced4f7b4927967a))
 
