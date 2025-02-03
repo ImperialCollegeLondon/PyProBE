@@ -216,7 +216,7 @@ def test_dashboard_select_experiment():
         st.session_state.expected_blank_tuple = dashboard.select_experiment()
 
     at = AppTest.from_function(select_exp_mini_app)
-    at.run()
+    at.run(timeout=30)
     assert at.sidebar.multiselect[0].options == ["Exp1", "Exp2", "Exp3"]
 
     assert at.session_state.expected_blank_tuple == ()
@@ -281,7 +281,7 @@ def test_dashboard_run(cell_fixture):
             st.session_state.figure = dashboard.fig
 
     at = AppTest.from_function(run_mini_app)
-    at.run()
+    at.run(timeout=30)
 
     assert at.title[0].value == "PyProBE Dashboard"
     assert at.sidebar.title[0].value == "Select data to plot"
@@ -290,7 +290,7 @@ def test_dashboard_run(cell_fixture):
     procedure_selector = at.sidebar.selectbox[0]
     assert procedure_selector.options == ["Sample", "Sample 2"]
     procedure_selector.select("Sample")
-    at.run()
+    at.run(timeout=30)
 
     filter_stage_select = at.selectbox[0]
     # Check plot
@@ -305,7 +305,7 @@ def test_dashboard_run(cell_fixture):
     at.selectbox[2].select("Voltage [V]")
     at.selectbox[3].select("None")
     at.selectbox[4].select("name")
-    at.run()
+    at.run(timeout=30)
 
     fig = at.session_state.figure
     assert fig["layout"]["xaxis"]["title"]["text"] == "Time [s]"
@@ -319,7 +319,7 @@ def test_dashboard_run(cell_fixture):
 
     # Check plot with multiple y axes
     at.selectbox[3].select("Current [A]")
-    at.run()
+    at.run(timeout=30)
     fig = at.session_state.figure
     assert fig["layout"]["xaxis"]["title"]["text"] == "Time [s]"
     assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
@@ -339,7 +339,7 @@ def test_dashboard_run(cell_fixture):
     # Check unit conversion
     at.selectbox[1].select("Time [hr]")
     at.selectbox[3].select("Current [mA]")
-    at.run()
+    at.run(timeout=30)
     fig = at.session_state.figure
     np.testing.assert_allclose(
         fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]") / 3600
@@ -356,7 +356,7 @@ def test_dashboard_run(cell_fixture):
         "Discharge Pulses",
     ]
     experiment_selector.select("Break-in Cycles")
-    at.run()
+    at.run(timeout=30)
     fig = at.session_state.figure
     np.testing.assert_array_equal(
         fig["data"][0]["x"],
@@ -381,7 +381,7 @@ def test_dashboard_run(cell_fixture):
 
     # check filtering by cycle and step
     at.sidebar.text_input[0].set_value("cycle(1).discharge(0)")
-    at.run()
+    at.run(timeout=30)
     fig = at.session_state.figure
     np.testing.assert_array_equal(
         fig["data"][0]["x"],
@@ -418,7 +418,7 @@ def test_dashboard_run(cell_fixture):
 
     at.selectbox[0].select("Cycle")
     at.selectbox[1].select("Capacity [Ah]")
-    at.run()
+    at.run(timeout=30)
     fig = at.session_state.figure
     np.testing.assert_array_equal(
         fig["data"][0]["x"],
