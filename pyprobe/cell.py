@@ -34,31 +34,22 @@ class Cell(BaseModel):
 
     def _convert_to_parquet(
         self,
-        cycler: Literal[
-            "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
-        ],
+        importer: basecycler.BaseCycler,
         folder_path: str,
-        input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
         filename_inputs: Optional[List[str]] = None,
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
         ] = "performance",
         overwrite_existing: bool = False,
-        column_dict: Optional[Dict[str, str]] = None,
-        header_row_index: int = 0,
-        date_column_format: Optional[str] = None,
     ) -> None:
         """Convert a file into PyProBE format.
 
         Args:
-            cycler:
-                The cycler used to produce the data.
+            importer:
+                The cycler object to import the data.
             folder_path:
                 The path to the folder containing the data file.
-            input_filename:
-                A filename string or a function to generate the file name for cycler
-                data.
             output_filename:
                 A filename string or a function to generate the file name for PyProBE
                 data.
@@ -75,54 +66,14 @@ class Cell(BaseModel):
                 If True, any existing parquet file with the output_filename will be
                 overwritten. If False, the function will skip the conversion if the
                 parquet file already exists.
-            column_dict:
-                A dictionary mapping the column names in the cycler file to the PyProBE
-                column names. The keys of the dictionary are the cycler column names and
-                the values are the PyProBE column names. You must use asterisks to
-                indicate the units of the columns. Only used for the 'generic' cycler.
-                E.g. :code:`{"V (*)": "Voltage [*]"}`.
-            header_row_index:
-                The index of the header row in the file. Only used for the 'generic'
-                cycler.
-            date_column_format:
-                The format of the date column in the generic file. Only used for the
-                'generic' cycler.
         """
-        input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_inputs
-        )
         output_data_path = self._get_data_paths(
             folder_path, output_filename, filename_inputs
         )
         output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            error_msg = "* characters are not allowed for a complete data path."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
 
         if not os.path.exists(output_data_path) or overwrite_existing:
-            cycler_dict = {
-                "neware": neware.Neware,
-                "biologic": biologic.Biologic,
-                "biologic_MB": biologic.BiologicMB,
-                "arbin": arbin.Arbin,
-                "basytec": basytec.Basytec,
-                "maccor": maccor.Maccor,
-            }
             t1 = time.time()
-            if cycler == "generic":
-                if column_dict is None:
-                    error_msg = "column_dict must be provided for the generic cycler."
-                    logger.error(error_msg)
-                    raise ValueError(error_msg)
-                importer = basecycler.BaseCycler(
-                    input_data_path=input_data_path,
-                    column_dict=column_dict,
-                    header_row_index=header_row_index,
-                    datetime_format=date_column_format,
-                )
-            else:
-                importer = cycler_dict[cycler](input_data_path=input_data_path)
             compression_dict = {
                 "uncompressed": "uncompressed",
                 "performance": "lz4",
@@ -179,10 +130,21 @@ class Cell(BaseModel):
                 overwritten. If False, the function will skip the conversion if the
                 parquet file already exists.
         """
+        cycler_dict = {
+            "neware": neware.Neware,
+            "biologic": biologic.Biologic,
+            "biologic_MB": biologic.BiologicMB,
+            "arbin": arbin.Arbin,
+            "basytec": basytec.Basytec,
+            "maccor": maccor.Maccor,
+        }
+        input_data_path = self._get_data_paths(
+            folder_path, input_filename, filename_inputs
+        )
+        importer = cycler_dict[cycler](input_data_path=input_data_path)
         self._convert_to_parquet(
-            cycler,
+            importer,
             folder_path,
-            input_filename,
             output_filename,
             filename_inputs,
             compression_priority,
@@ -234,16 +196,21 @@ class Cell(BaseModel):
                 - 'file size': Use the 'zstd' compression algorithm.
                 - 'uncompressed': Do not use compression.
         """
+        input_data_path = self._get_data_paths(
+            folder_path, input_filename, filename_inputs
+        )
+        importer = basecycler.BaseCycler(
+            input_data_path=input_data_path,
+            column_dict=column_dict,
+            header_row_index=header_row_index,
+            datetime_format=date_column_format,
+        )
         self._convert_to_parquet(
-            "generic",
+            importer,
             folder_path,
-            input_filename,
             output_filename,
             filename_inputs,
             compression_priority,
-            column_dict=column_dict,
-            header_row_index=header_row_index,
-            date_column_format=date_column_format,
         )
 
     @validate_call
@@ -275,11 +242,6 @@ class Cell(BaseModel):
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            error_msg = "* characters are not allowed for a complete data path."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
         readme_path = os.path.join(data_folder, readme_name)
@@ -319,9 +281,6 @@ class Cell(BaseModel):
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         output_data_path = self._verify_parquet(output_data_path)
-        if "*" in output_data_path:
-            raise ValueError("* characters are not allowed for a complete data path.")
-
         base_dataframe = pl.scan_parquet(output_data_path)
         self.procedure[procedure_name] = Procedure(
             base_dataframe=base_dataframe, info=self.info, readme_dict={}
@@ -343,6 +302,10 @@ class Cell(BaseModel):
         # If the file extension is not .parquet, replace it with .parquet
         if ext != ".parquet":
             filename = os.path.splitext(filename)[0] + ".parquet"
+        if "*" in filename:
+            error_msg = "* characters are not allowed for output filename."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         return filename
 
     def _write_parquet(

@@ -82,6 +82,16 @@ def step_descriptions_fixture():
 
 
 @pytest.fixture
+def cell_fixture(info_fixture):
+    """Pytest fixture for example cell."""
+    cell = Cell(info=info_fixture)
+    cell.add_procedure(
+        "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
+    )
+    return cell
+
+
+@pytest.fixture
 def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
     cell = Cell(info=info_fixture)

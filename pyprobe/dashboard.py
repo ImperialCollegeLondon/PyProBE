@@ -5,14 +5,17 @@ import os
 import pickle
 import platform
 import subprocess
-from typing import List
+from typing import TYPE_CHECKING, Any, List
 
-import plotly
+import distinctipy
+import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
 
 from pyprobe.cell import Cell
-from pyprobe.plot import Plot
+
+if TYPE_CHECKING:
+    from pyprobe.result import Result
 
 
 def launch_dashboard(cell_list: List[Cell]) -> None:
@@ -53,80 +56,14 @@ def launch_dashboard(cell_list: List[Cell]) -> None:
         )
 
 
-if __name__ == "__main__":
-    with open("dashboard_data.pkl", "rb") as f:
-        cell_list = pickle.load(f)
+class _Dashboard:
+    """Class to create a Streamlit dashboard for PyProBE."""
 
-    st.title("PyProBE Dashboard")
-    st.sidebar.title("Select data to plot")
+    def __init__(self, cell_list: List[Cell]) -> None:
+        """Initialize the dashboard with the cell list."""
+        self.cell_list = cell_list
+        self.info = self.get_info(self.cell_list)
 
-    info_list = []
-    for i in range(len(cell_list)):
-        info_list.append(cell_list[i].info)
-    info = pl.DataFrame(info_list)
-
-    def dataframe_with_selections(df: pl.DataFrame) -> List[int]:
-        """Create a dataframe with a selection column for user input.
-
-        Args:
-            df (pd.DataFrame): The dataframe to display.
-
-        Returns:
-            list: The list of selected row indices.
-        """
-        df = df.to_pandas()
-        df_with_selections = copy.deepcopy(df)
-        df_with_selections.insert(0, "Select", False)
-
-        # Get dataframe row-selections from user with st.data_editor
-        edited_df = st.sidebar.data_editor(
-            df_with_selections,
-            hide_index=True,  # Keep the index visible
-            column_config={"Select": st.column_config.CheckboxColumn(required=True)},
-            disabled=df.columns.tolist(),
-        )
-
-        # Filter the dataframe using the temporary column, then drop the column
-        selected_rows = edited_df[edited_df.Select]
-        selected_indices = (
-            selected_rows.index.tolist()
-        )  # Get the indices of the selected rows
-        return selected_indices
-
-    # Display the DataFrame in the sidebar
-    selected_indices = dataframe_with_selections(info)
-
-    # Get the procedure names from the selected cells
-    procedure_names_sets = [
-        list(cell_list[i].procedure.keys()) for i in selected_indices
-    ]
-
-    # Find the common procedure names
-    if len(procedure_names_sets) == 0:
-        procedure_names: List[str] = []
-    else:
-        procedure_names = list(procedure_names_sets[0])
-        for s in procedure_names_sets[1:]:
-            procedure_names = [x for x in procedure_names if x in s]
-    procedure_names = list(procedure_names)
-    selected_raw_data = st.sidebar.selectbox("Select a procedure", procedure_names)
-
-    # Select an experiment
-    if selected_raw_data is not None:
-        experiment_names = (
-            cell_list[selected_indices[0]].procedure[selected_raw_data].experiment_names
-        )
-        selected_experiment = st.sidebar.multiselect(
-            "Select an experiment", experiment_names
-        )
-        selected_experiment_tuple = tuple(selected_experiment)
-    else:
-        selected_experiment_tuple = ()
-
-    # Get the cycle and step numbers from the user
-    cycle_step_input = st.sidebar.text_input(
-        'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")'
-    )
     x_options = [
         "Time [s]",
         "Time [min]",
@@ -143,78 +80,247 @@ if __name__ == "__main__":
         "Capacity [mAh]",
     ]
 
-    graph_placeholder = st.empty()
+    @staticmethod
+    def get_info(cell_list: List[Cell]) -> pl.DataFrame:
+        """Get the cell information from the cell list.
 
-    col1, col2, col3, col4, col5 = st.columns(5)
-    # Create select boxes for the x and y axes
-    filter_stage = col1.selectbox(
-        "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
-    )
-    x_axis = col2.selectbox("x axis", x_options, index=0)
-    x_axis = f"{filter_stage} {x_axis}".strip()
-    y_axis = col3.selectbox("y axis", y_options, index=1)
-    secondary_y_axis = col4.selectbox("Secondary y axis", ["None"] + y_options, index=0)
-    # choose a cell identifier
-    cell_identifier = col5.selectbox("Legend label", info.collect_schema().names())
-    selected_names = [cell_list[i].info[cell_identifier] for i in selected_indices]
+        Args:
+            cell_list (list): The list of cell objects.
 
-    # Select plot theme
+        Returns:
+            The dataframe with the cell information.
+        """
+        info_list = []
+        for i in range(len(cell_list)):
+            info_list.append(cell_list[i].info)
+        return pl.DataFrame(info_list)
 
-    themes = list(plotly.io.templates)
-    themes.remove("none")
-    themes.remove("streamlit")
-    themes.insert(0, "default")
-    plot_theme = "simple_white"
+    @staticmethod
+    def dataframe_with_selections(df: pl.DataFrame) -> List[int]:
+        """Create a dataframe with a selection column for user input.
 
-    # Create a figure
-    fig = Plot()
+        Args:
+            df (pd.DataFrame): The dataframe to display.
 
-    selected_data = []
-    for i in range(len(selected_indices)):
-        selected_index = selected_indices[i]
-        if len(selected_experiment_tuple) == 0:
-            experiment_data = cell_list[selected_index].procedure[selected_raw_data]
-        else:
-            experiment_data = (
-                cell_list[selected_index]
-                .procedure[selected_raw_data]
-                .experiment(*selected_experiment_tuple)
-            )
-        # Check if the input is not empty
-        if cycle_step_input:
-            # Use eval to evaluate the input as Python code
-            filtered_data = eval(f"experiment_data.{cycle_step_input}")
-        else:
-            filtered_data = experiment_data
+        Returns:
+            list: The list of selected row indices.
+        """
+        df = df.to_pandas()
+        df_with_selections = copy.deepcopy(df)
+        df_with_selections.insert(0, "Select", False)
+        return df_with_selections
 
-        if secondary_y_axis == "None":
-            secondary_y_axis = None
-
-        fig = fig.add_line(
-            filtered_data,
-            x_axis,
-            y_axis,
-            secondary_y=secondary_y_axis,
-            label=cell_list[selected_index].info[cell_identifier],
-        )
-        filtered_data = filtered_data.data.to_pandas()
-        selected_data.append(filtered_data)
-
-    # Show the plot
-    if len(selected_data) > 0 and len(procedure_names) > 0:
-        graph_placeholder.plotly_chart(
-            fig.fig, theme="streamlit" if plot_theme == "default" else None
+    def select_cell_indices(self) -> List[int]:
+        """Get dataframe row selections."""
+        edited_df = st.sidebar.data_editor(
+            self.dataframe_with_selections(self.info),
+            hide_index=True,  # Keep the index visible
+            column_config={"Select": st.column_config.CheckboxColumn(required=True)},
+            disabled=self.info.columns,
         )
 
-    # Show raw data in tabs
-    if selected_data:
-        tabs = st.tabs(selected_names)
-        columns = [
-            "Time [s]",
-            "Step",
-            "Current [A]",
-            "Voltage [V]",
-            "Capacity [Ah]",
+        # Filter the dataframe using the temporary column, then drop the column
+        selected_rows = edited_df[edited_df.Select]
+        selected_indices = (
+            selected_rows.index.tolist()
+        )  # Get the indices of the selected rows
+        return selected_indices
+
+    def get_common_procedures(self) -> List[str]:
+        """Get the common procedure names from the selected cells."""
+        procedure_names_sets = [
+            list(self.cell_list[i].procedure.keys()) for i in self.selected_indices
         ]
-        for tab in tabs:
-            tab.dataframe(selected_data[tabs.index(tab)][columns], hide_index=True)
+
+        # Find the common procedure names
+        if len(procedure_names_sets) == 0:
+            procedure_names: List[str] = []
+        else:
+            procedure_names = list(procedure_names_sets[0])
+            for s in procedure_names_sets[1:]:
+                procedure_names = [x for x in procedure_names if x in s]
+        return list(procedure_names)
+
+    def select_experiment(self) -> tuple[Any, ...]:
+        """Select an experiment from the selected procedure."""
+        if self.selected_procedure is not None:
+            experiment_names = (
+                self.cell_list[self.selected_indices[0]]
+                .procedure[self.selected_procedure]
+                .experiment_names
+            )
+            selected_experiment = st.sidebar.multiselect(
+                "Select an experiment", experiment_names
+            )
+            return tuple(selected_experiment)
+        else:
+            return ()
+
+    def get_data(self) -> List["Result"]:
+        """Get the data from the selected cells."""
+        selected_data = []
+        for i in range(len(self.selected_indices)):
+            selected_index = self.selected_indices[i]
+            experiment_data: "Result"
+            if len(self.selected_experiments) == 0:
+                experiment_data = self.cell_list[selected_index].procedure[
+                    self.selected_procedure
+                ]
+            else:
+                experiment_data = (
+                    self.cell_list[selected_index]
+                    .procedure[self.selected_procedure]
+                    .experiment(*self.selected_experiments)
+                )
+            # Check if the input is not empty
+            if self.cycle_step_input:
+                # Use eval to evaluate the input as Python code
+                filtered_data = eval(f"experiment_data.{self.cycle_step_input}")
+            else:
+                filtered_data = experiment_data
+            selected_data.append(filtered_data)
+        return selected_data
+
+    def add_primary_trace(self, data: "Result", color: str) -> None:
+        """Add the primary trace to the plot.
+
+        Args:
+            data (Result): The data to plot.
+            color (str): The color for the trace.
+        """
+        primary_trace = go.Scatter(
+            x=data.get(f"{self.filter_stage} {self.x_axis}".strip()),
+            y=data.get(self.y_axis),
+            mode="lines",
+            name=f"{data.info[self.cell_identifier]}",
+            line=dict(color=color),
+        )
+        self.fig.add_trace(primary_trace)
+
+    def add_secondary_trace(self, data: "Result", color: str) -> None:
+        """Add the secondary trace to the plot.
+
+        Args:
+            data (Result): The data to plot.
+            color (str): The color for the trace.
+        """
+        secondary_trace = go.Scatter(
+            x=data.get(f"{self.filter_stage} {self.x_axis}".strip()),
+            y=data.get(self.secondary_y_axis),
+            mode="lines",
+            name=f"{data.info[self.cell_identifier]}",
+            yaxis="y2",
+            line=dict(
+                color=color, dash="dash"
+            ),  # Use the same color as the primary trace
+            showlegend=False,
+        )
+        self.fig.add_trace(secondary_trace)
+
+    def add_secondary_y_legend(self) -> None:
+        """Add the secondary y-axis legend to the plot."""
+        self.fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="lines",
+                line=dict(color="black", dash="dash"),
+                name=self.secondary_y_axis,
+                showlegend=True,
+            )
+        )
+
+    def style_fig(self) -> None:
+        """Style the plot."""
+        title_font_size = 18
+        axis_font_size = 14
+        default_layout = go.Layout(
+            template="simple_white",
+            title=None,
+            xaxis_title_font=dict(size=title_font_size),
+            yaxis_title_font=dict(size=title_font_size),
+            xaxis_tickfont=dict(size=axis_font_size),
+            yaxis_tickfont=dict(size=axis_font_size),
+            legend_font=dict(size=axis_font_size),
+            legend=dict(x=1.2),
+            width=800,
+            height=600,
+        )
+        # Update layout for dual-axis
+        self.fig.update_layout(
+            yaxis=dict(
+                title=self.y_axis,
+            ),
+            yaxis2=dict(title=self.secondary_y_axis, overlaying="y", side="right"),
+            xaxis=dict(
+                title=self.x_axis,
+            ),
+        )
+        self.fig.update_layout(default_layout)
+
+    def run(self) -> None:
+        """Run the Streamlit dashboard."""
+        st.title("PyProBE Dashboard")
+        st.sidebar.title("Select data to plot")
+        self.selected_indices = self.select_cell_indices()
+        self.selected_procedure = st.sidebar.selectbox(
+            "Select a procedure", self.get_common_procedures()
+        )
+        self.selected_experiments = self.select_experiment()
+        self.cycle_step_input = st.sidebar.text_input(
+            'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")'
+        )
+        col1, col2, col3, col4, col5 = st.columns(5)
+        self.filter_stage = col1.selectbox(
+            "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
+        )
+        self.x_axis = col2.selectbox("x axis", self.x_options, index=0)
+        self.y_axis = col3.selectbox("y axis", self.y_options, index=1)
+        self.secondary_y_axis = col4.selectbox(
+            "Secondary y axis", ["None"] + self.y_options, index=0
+        )
+        self.cell_identifier = col5.selectbox(
+            "Legend label", self.info.collect_schema().names()
+        )
+        selected_names = [
+            self.cell_list[i].info[self.cell_identifier] for i in self.selected_indices
+        ]
+        selected_data = self.get_data()
+        graph_placeholder = st.empty()
+        self.fig = go.Figure()
+        colors = distinctipy.get_colors(len(self.cell_list), rng=0)
+        for i, data in enumerate(selected_data):
+            color = distinctipy.get_hex(colors[i])
+            self.add_primary_trace(data, color)
+            if self.secondary_y_axis != "None":
+                self.add_secondary_trace(data, color)
+
+        if self.secondary_y_axis != "None":
+            self.add_secondary_y_legend()
+        self.style_fig()
+        if len(selected_data) > 0 and len(self.selected_procedure) > 0:
+            graph_placeholder.plotly_chart(
+                self.fig,
+                theme="streamlit",  # if plot_theme == "default" else None
+            )
+
+        if selected_data:
+            tabs = st.tabs(selected_names)
+            columns = [
+                "Time [s]",
+                "Step",
+                "Current [A]",
+                "Voltage [V]",
+                "Capacity [Ah]",
+            ]
+            for tab in tabs:
+                tab.dataframe(
+                    selected_data[tabs.index(tab)].data.select(columns).to_pandas(),
+                    hide_index=True,
+                )
+
+
+if __name__ == "__main__":
+    with open("dashboard_data.pkl", "rb") as f:
+        cell_list = pickle.load(f)
+    _Dashboard(cell_list).run()

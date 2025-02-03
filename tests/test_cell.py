@@ -3,6 +3,7 @@
 import copy
 import datetime
 import json
+import logging
 import os
 import shutil
 
@@ -10,6 +11,7 @@ import polars as pl
 import pytest
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
+from pydantic import ValidationError
 
 import pyprobe
 from pyprobe._version import __version__
@@ -76,8 +78,19 @@ def test_verify_filename():
     file = "path/to/sample_data_neware.csv"
     assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
 
+    file = "path/to/sample_data_neware*.parquet"
+    with pytest.raises(ValueError):
+        Cell._verify_parquet(file)
 
-def test_process_cycler_file(cell_instance, lazyframe_fixture):
+
+@pytest.fixture
+def caplog_fixture(caplog):
+    """A fixture to capture log messages."""
+    caplog.set_level(logging.INFO)
+    return caplog
+
+
+def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture):
     """Test the process_cycler_file method."""
     folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
@@ -97,6 +110,29 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture):
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
     saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
     assert_frame_equal(expected_dataframe, saved_dataframe)
+
+    with pytest.raises(ValueError):
+        cell_instance.process_cycler_file(
+            "neware",
+            folder_path,
+            file_name,
+            "sample_data_neware_out*.parquet",
+            compression_priority="file size",
+            overwrite_existing=True,
+        )
+
+    cell_instance.process_cycler_file(
+        "neware",
+        folder_path,
+        file_name,
+        output_name,
+        compression_priority="file size",
+        overwrite_existing=False,
+    )
+    assert (
+        caplog_fixture.records[-1].message
+        == f"File {os.path.join(folder_path, output_name)} already exists. Skipping."
+    )
     os.remove(f"{folder_path}/{output_name}")
 
 
@@ -141,6 +177,14 @@ def test_process_generic_file(cell_instance):
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
+
+    with pytest.raises(ValidationError):
+        cell_instance.process_generic_file(
+            folder_path=folder_path,
+            input_filename="test_generic_file.csv",
+            output_filename="test_generic_file.parquet",
+        )
+
     os.remove(f"{folder_path}/test_generic_file.csv")
     os.remove(f"{folder_path}/test_generic_file.parquet")
 
@@ -166,6 +210,20 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     )
     assert_frame_equal(
         cell_instance.procedure["Test_custom"].data,
+        procedure_fixture.data,
+        check_column_order=False,
+    )
+
+
+def test_quick_add_procedure(cell_instance, procedure_fixture):
+    """Test the quick_add_procedure method."""
+    input_path = "tests/sample_data/neware/"
+    file_name = "sample_data_neware.parquet"
+    title = "Test"
+
+    cell_instance.quick_add_procedure(title, input_path, file_name)
+    assert_frame_equal(
+        cell_instance.procedure[title].data,
         procedure_fixture.data,
         check_column_order=False,
     )
@@ -391,3 +449,63 @@ def test_archive(cell_instance):
     )
 
     shutil.rmtree(input_path + "archive")
+
+
+def test_get_data_paths(cell_instance):
+    """Test _get_data_paths with string filename."""
+    folder_path = "test/folder"
+    filename = "test.csv"
+    result = cell_instance._get_data_paths(folder_path, filename)
+    assert result == os.path.join("test/folder", "test.csv")
+
+    """Test _get_data_paths with function filename."""
+
+    def filename_func(name):
+        return f"cell_{name}.csv"
+
+    folder_path = "test/folder"
+    filename_inputs = ["Name"]
+    result = cell_instance._get_data_paths(folder_path, filename_func, filename_inputs)
+    assert result == os.path.join(
+        "test/folder", f"cell_{cell_instance.info['Name']}.csv"
+    )
+
+    """Test _get_data_paths with function filename but missing inputs."""
+    folder_path = "test/folder"
+    with pytest.raises(
+        ValueError, match="filename_inputs must be provided when filename is a function"
+    ):
+        cell_instance._get_data_paths(folder_path, filename_func)
+
+    """Test _get_data_paths with absolute folder path."""
+    folder_path = "/absolute/path"
+    filename = "test.csv"
+    result = cell_instance._get_data_paths(folder_path, filename)
+    assert result == os.path.join("/absolute/path", "test.csv")
+
+    """Test _get_data_paths with relative folder path."""
+    cell_instance = Cell(
+        info={
+            "Name": "Test_Cell",
+            "Chemistry": "NMC622",
+        }
+    )
+
+    folder_path = "../relative/path"
+    filename = "test.csv"
+    result = cell_instance._get_data_paths(folder_path, filename)
+    assert result == os.path.join("../relative/path", "test.csv")
+
+    """Test _get_data_paths with complex filename function using multiple inputs."""
+
+    def filename_func(name, chemistry):
+        return f"cell_{name}_{chemistry}.csv"
+
+    folder_path = "test/folder"
+    filename_inputs = ["Name", "Chemistry"]
+    result = cell_instance._get_data_paths(folder_path, filename_func, filename_inputs)
+    expected = os.path.join(
+        "test/folder",
+        f"cell_{cell_instance.info['Name']}_{cell_instance.info['Chemistry']}.csv",
+    )
+    assert result == expected

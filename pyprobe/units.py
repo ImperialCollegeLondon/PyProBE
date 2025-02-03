@@ -44,6 +44,7 @@ class Units:
         "C": "Temperature",
         "Ohms": "Resistance",
         "Seconds": "Time",
+        "%": "Percentage",
     }
     """A dictionary of units and their corresponding quantities."""
 
@@ -73,7 +74,7 @@ class Units:
         Returns:
             Tuple[Optional[str], str]: The prefix and default unit.
         """
-        unit = re.sub(r"[^a-zA-Z]", "", unit)  # Remove non-alphabetic characters
+        unit = re.sub(r"[^a-zA-Z%]", "", unit)  # Remove non-alphabetic characters
         if unit in self.time_unit_dict.keys():
             return None, "s"
         if unit[0] in self.prefix_dict:
@@ -117,7 +118,7 @@ class Units:
 
 
 def split_quantity_unit(
-    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]*)\])?$"
+    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]+)\])?$"
 ) -> Tuple[str, str]:
     """Split a column name into quantity and unit.
 

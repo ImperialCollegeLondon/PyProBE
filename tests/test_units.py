@@ -24,6 +24,11 @@ def test_from_regexp():
     assert unit_object.input_quantity == "Current"
     assert unit_object.input_unit == "mA"
 
+    name = "Percentage [%]"
+    unit_object = unit_from_regexp(name)
+    assert unit_object.input_quantity == "Percentage"
+    assert unit_object.input_unit == "%"
+
 
 def test_split_quantity_unit():
     """Test the split_quantity_unit method."""
@@ -36,6 +41,16 @@ def test_split_quantity_unit():
     quantity, unit = split_quantity_unit(name)
     assert quantity == "SOC"
     assert unit == ""
+
+    name = "Capacity [Ah]"
+    quantity, unit = split_quantity_unit(name)
+    assert quantity == "Capacity"
+    assert unit == "Ah"
+
+    name = "Percentage [%]"
+    quantity, unit = split_quantity_unit(name)
+    assert quantity == "Percentage"
+    assert unit == "%"
 
 
 def test_init():
