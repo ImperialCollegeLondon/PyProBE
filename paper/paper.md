@@ -20,11 +20,11 @@ authors:
       orchid: 0000-0003-1641-3371
       affiliation: "1, 2"
 affiliations:
-    - name: Department of Mechanical Engineering, Imperial College London, UK
+    - name: Department of Mechanical Engineering, Imperial College London, United Kingdom
       index: 1
-    - name: The Faraday Institution, UK
+    - name: The Faraday Institution, United Kingdom
       index: 2
-    - name: Research Computing Service, ICT, Imperial College London, UK
+    - name: Research Computing Service, ICT, Imperial College London, United Kingdom
       index: 3
 bibliography: paper.bib
 ---
