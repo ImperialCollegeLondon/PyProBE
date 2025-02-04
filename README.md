@@ -125,7 +125,9 @@ Contributions to PyProBE are welcome. Please see the [contributing guidelines](C
 
 ## Citing PyProBE
 
-TBC
+If you use PyProBE for a scientific paper, please cite our paper:
+
+>Holland, T., Cummins, D., & Marinescu, M. (2025). PyProBE: Python Processing for Battery Experiments. Journal of Open Source Software, 10(106), 7474. https://doi.org/10.21105/joss.07474
 
 
 ## License
