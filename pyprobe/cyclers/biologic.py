@@ -23,6 +23,7 @@ class Biologic(BaseCycler):
         "Q charge/*": "Charge Capacity [*]",
         "Q discharge/*": "Discharge Capacity [*]",
         "Temperature/*": "Temperature [*]",
+        "Ewe/*": "Voltage [*]",
     }
 
     @staticmethod
