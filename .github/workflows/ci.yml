@@ -4,8 +4,8 @@ on:
     branches:
       - main
     paths:
-      - pyprobe/*
-      - tests/*
+      - pyprobe/**
+      - tests/**
       - docs/source/examples/*ipynb
       - pyproject.toml
       - .github/workflows/ci.yml
@@ -14,8 +14,8 @@ on:
     branches:
       - main
     paths:
-      - pyprobe/*
-      - tests/*
+      - pyprobe/**
+      - tests/**
       - pyproject.toml
       - .github/workflows/ci.yml
       - uv.lock
