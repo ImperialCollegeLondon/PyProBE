@@ -1,6 +1,33 @@
 # CHANGELOG
 
 
+## v2.0.1 (2025-02-10)
+
+### Bug Fixes
+
+- **cyclers.biologic**: Add "Ewe/*" as a column alias for "Voltage [V]"
+  ([`e662e46`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e662e466982e3cf2b56452c6f512fd0c76797023))
+
+### Chores
+
+- Add CITATION.cff file
+  ([`06d1b9a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/06d1b9ab2aafb85d852e750e392597f3ac9b8e30))
+
+- **workflows**: Fix path filters to search recursively into folders
+  ([`5eaa122`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5eaa122db78a5c061fced9aa50447de41205458e))
+
+### Documentation
+
+- Add citation guidelines to readme
+  ([`82a173d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/82a173def1ca2e3a0556f0f8e9b9d41a479cfc12))
+
+- Change affiliation location from UK to United Kingdom
+  ([`01e2d30`](https://github.com/ImperialCollegeLondon/PyProBE/commit/01e2d30c1f936334653edb01a7f088eaafdbdffb))
+
+- Correct missing word typo in paper
+  ([`3c04e46`](https://github.com/ImperialCollegeLondon/PyProBE/commit/3c04e463f0c9a897be91df7a76b810aaeb752408))
+
+
 ## v2.0.0 (2025-02-03)
 
 ### Bug Fixes
@@ -18,6 +45,9 @@
 
 - Add pybamm installation to ci workflow
   ([`f8f21cc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f8f21cca89d3e7c8c17659384aafcf3b3225a9bc))
+
+- Release candidate 2.0.0
+  ([`42d0f98`](https://github.com/ImperialCollegeLondon/PyProBE/commit/42d0f984765a18cc6f5b85cc88ef27e17c772cd6))
 
 - Release candidate 2.0.0
   ([`0918db3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0918db38cb297273f34baee22a435e042f96ee31))
