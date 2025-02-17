@@ -1,5 +1,6 @@
 """A module for unit conversion of PyProBE data."""
 
+import itertools
 import logging
 import re
 from typing import Dict, Optional, Tuple
@@ -7,6 +8,125 @@ from typing import Dict, Optional, Tuple
 import polars as pl
 
 logger = logging.getLogger(__name__)
+
+unit_dict: Dict[str, str] = {
+    "A": "Current",
+    "V": "Voltage",
+    "Ah": "Capacity",
+    "A.h": "Capacity",
+    "s": "Time",
+    "C": "Temperature",
+    "Ohms": "Resistance",
+    "Seconds": "Time",
+    "%": "Percentage",
+    "K": "Temperature",
+}
+"""A dictionary of valid units and their corresponding quantities."""
+
+prefix_dict: Dict[str, float] = {
+    "m": 1e-3,
+    "µ": 1e-6,
+    "n": 1e-9,
+    "p": 1e-12,
+    "k": 1e3,
+    "M": 1e6,
+}
+"""A dictionary of SI prefixes and their corresponding factors."""
+time_unit_dict: Dict[str, float] = {
+    "s": 1,
+    "min": 60,
+    "hr": 3600,
+    "Seconds": 1,
+}
+"""A dictionary of valid time units and their corresponding factors."""
+valid_units = set(
+    # Generate prefixed units
+    [f"{prefix}{unit}" for prefix, unit in itertools.product(prefix_dict, unit_dict)]
+    +
+    # Add base units
+    list(unit_dict)
+    +
+    # Add time units
+    list(time_unit_dict)
+)
+"""A set of all valid units, including prefixed combinations."""
+
+
+def split_quantity_unit(
+    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]+)\])?$"
+) -> Tuple[str, str]:
+    """Split a column name into quantity and unit.
+
+    Args:
+        name: The column name (e.g. "Current [A]" or "Temperature")
+        regular_expression: The pattern to match the column name.
+
+    Returns:
+        The quantity and unit.
+    """
+    pattern = re.compile(regular_expression)
+    match = pattern.match(name)
+    if match is not None:
+        quantity = match.group(1).strip()
+        unit = match.group(2) or ""  # Group 2 will be None if no brackets
+        return quantity, unit
+    else:
+        error_msg = f"Name {name} does not match pattern."
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
+
+def get_unit_scaling(unit: str) -> tuple[float, str]:
+    """Return the default unit and prefix of a given unit.
+
+    Args:
+        unit (str): The unit to convert.
+
+    Returns:
+        Tuple[Optional[str], str]: The prefix and default unit.
+    """
+    if unit in time_unit_dict.keys():
+        return time_unit_dict[unit], "s"
+    if len(unit) == 1:
+        return 1, unit
+    if unit[0] in prefix_dict:
+        return prefix_dict[unit[0]], unit[1:]
+    else:
+        return 1, unit
+
+
+@pl.api.register_expr_namespace("units")
+class UnitsExpr:
+    """A polars namespace for unit conversion of columns."""
+
+    def __init__(self, expr: pl.Expr) -> None:
+        """Initialize the UnitsExpr object."""
+        self._expr = expr
+
+    def to_default(self, regexp: str = r"^(.*?)(?:\s*\[([^\]]*)\])?$") -> pl.Expr:
+        """Convert a column to the default unit.
+
+        Args:
+            regexp (str): The pattern to match the column name.
+        """
+        column_name = self._expr.meta.output_name()
+        quantity, unit = split_quantity_unit(column_name, regexp)
+        if unit == "":
+            return self._expr
+        scaling, si_unit = get_unit_scaling(unit)
+        default_name = f"{quantity} [{si_unit}]"
+        return (self._expr.cast(pl.Float64) * scaling).alias(default_name)
+
+    def to_si(self, unit: str) -> pl.Expr:
+        """Convert a from a given unit to its SI equivalent.
+
+        Args:
+            unit (str): The unit to convert.
+        """
+        if unit not in self._expr.meta.output_name():
+            raise ValueError(f"Unit {unit} is not in the column name.")
+        scaling, _ = get_unit_scaling(unit)
+        return self._expr.cast(pl.Float64) * scaling
 
 
 class Units:
@@ -115,30 +235,6 @@ class Units:
             pl.col(f"{self.input_quantity} [{self.input_unit}]").cast(pl.Float64)
             * self.factor
         ).alias(f"{self.input_quantity} [{self.default_unit}]")
-
-
-def split_quantity_unit(
-    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]+)\])?$"
-) -> Tuple[str, str]:
-    """Split a column name into quantity and unit.
-
-    Args:
-        name: The column name (e.g. "Current [A]" or "Temperature")
-        regular_expression: The pattern to match the column name.
-
-    Returns:
-        The quantity and unit.
-    """
-    pattern = re.compile(regular_expression)
-    match = pattern.match(name)
-    if match is not None:
-        quantity = match.group(1).strip()
-        unit = match.group(2) or ""  # Group 2 will be None if no brackets
-        return quantity, unit
-    else:
-        error_msg = f"Name {name} does not match pattern."
-        logger.error(error_msg)
-        raise ValueError(error_msg)
 
 
 def unit_from_regexp(
