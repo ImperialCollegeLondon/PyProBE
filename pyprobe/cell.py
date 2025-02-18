@@ -7,10 +7,10 @@ import shutil
 import time
 import warnings
 import zipfile
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Annotated, Any, Callable, Dict, List, Literal, Optional
 
 import polars as pl
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel, Field, TypeAdapter, validate_call
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -32,12 +32,16 @@ class Cell(BaseModel):
     procedure: Dict[str, Procedure] = Field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
 
+    class Config:
+        """Pydantic configuration."""
+
+        arbitrary_types_allowed = True
+
+    @classmethod
     def _convert_to_parquet(
-        self,
+        cls,
         importer: basecycler.BaseCycler,
-        folder_path: str,
-        output_filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        output_data_path: str,
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
         ] = "performance",
@@ -48,14 +52,8 @@ class Cell(BaseModel):
         Args:
             importer:
                 The cycler object to import the data.
-            folder_path:
-                The path to the folder containing the data file.
-            output_filename:
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            filename_inputs:
-                The list of inputs to input_filename and output_filename, if they are
-                functions. These must be keys of the cell info.
+            output_data_path:
+                The path to write the parquet file.
             compression_priority:
                 The priority of the compression algorithm to use on the resulting
                 parquet file. Available options are:
@@ -67,22 +65,12 @@ class Cell(BaseModel):
                 overwritten. If False, the function will skip the conversion if the
                 parquet file already exists.
         """
-        output_data_path = self._get_data_paths(
-            folder_path, output_filename, filename_inputs
-        )
-        output_data_path = self._verify_parquet(output_data_path)
-
         if not os.path.exists(output_data_path) or overwrite_existing:
             t1 = time.time()
-            compression_dict = {
-                "uncompressed": "uncompressed",
-                "performance": "lz4",
-                "file size": "zstd",
-            }
-            self._write_parquet(
+            cls._write_parquet(
                 importer,
                 output_data_path,
-                compression=compression_dict[compression_priority],
+                compression=compression_priority,
             )
             logger.info(f"\tparquet written in {time.time()-t1: .2f} seconds.")
         else:
@@ -142,11 +130,14 @@ class Cell(BaseModel):
             folder_path, input_filename, filename_inputs
         )
         importer = cycler_dict[cycler](input_data_path=input_data_path)
+
+        output_data_path = self._get_data_paths(
+            folder_path, output_filename, filename_inputs
+        )
+        output_data_path = self._verify_parquet(output_data_path)
         self._convert_to_parquet(
             importer,
-            folder_path,
-            output_filename,
-            filename_inputs,
+            output_data_path,
             compression_priority,
             overwrite_existing,
         )
@@ -157,13 +148,13 @@ class Cell(BaseModel):
         folder_path: str,
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
-        column_dict: Dict[str, str],
+        column_importers: List[basecycler.ColumnMap],
         header_row_index: int = 0,
-        date_column_format: Optional[str] = None,
         filename_inputs: Optional[List[str]] = None,
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
         ] = "performance",
+        overwrite_existing: bool = False,
     ) -> None:
         """Convert generic file into PyProBE format.
 
@@ -176,12 +167,11 @@ class Cell(BaseModel):
             output_filename (str | function):
                 A filename string or a function to generate the file name for PyProBE
                 data.
-            column_dict (dict):
-                A dictionary mapping the column names in the generic file to the PyProBE
-                column names. The keys of the dictionary are the cycler column names and
-                the values are the PyProBE column names. You must use asterisks to
-                indicate the units of the columns.
-                E.g. :code:`{"V (*)": "Voltage [*]"}`.
+            column_importers (list):
+                A list of :class:`~pyprobe.cyclers.basecycler.ColumnMap` objects to map
+                the columns in the generic file to the PyProBE format. The
+                :mod:`~pyprobe.cyclers.basecycler` module contains a list of predefined
+                column importers, that can be used as a starting point.
             header_row_index (int, optional):
                 The index of the header row in the file. Defaults to 0.
             date_column_format (str, optional):
@@ -195,22 +185,28 @@ class Cell(BaseModel):
                 - 'performance': Use the 'lz4' compression algorithm (default).
                 - 'file size': Use the 'zstd' compression algorithm.
                 - 'uncompressed': Do not use compression.
+            overwrite_existing:
+                If True, any existing parquet file with the output_filename will be
+                overwritten. If False, the function will skip the conversion if the
+                parquet file already exists.
         """
         input_data_path = self._get_data_paths(
             folder_path, input_filename, filename_inputs
         )
         importer = basecycler.BaseCycler(
             input_data_path=input_data_path,
-            column_dict=column_dict,
+            column_importers=column_importers,
             header_row_index=header_row_index,
-            datetime_format=date_column_format,
         )
+        output_data_path = self._get_data_paths(
+            folder_path, output_filename, filename_inputs
+        )
+        output_data_path = self._verify_parquet(output_data_path)
         self._convert_to_parquet(
             importer,
-            folder_path,
-            output_filename,
-            filename_inputs,
+            output_data_path,
             compression_priority,
+            overwrite_existing,
         )
 
     @validate_call
@@ -308,11 +304,11 @@ class Cell(BaseModel):
             raise ValueError(error_msg)
         return filename
 
+    @staticmethod
     def _write_parquet(
-        self,
         importer: basecycler.BaseCycler,
         output_data_path: str,
-        compression: str,
+        compression: Literal["uncompressed", "performance", "file size"],
     ) -> None:
         """Import data from a cycler file and write to a PyProBE parquet file.
 
@@ -321,10 +317,17 @@ class Cell(BaseModel):
             output_data_path (str): The path to write the parquet file.
             compression (str): The compression algorithm to use.
         """
-        dataframe = importer.pyprobe_dataframe
+        compression_dict = {
+            "uncompressed": "uncompressed",
+            "performance": "lz4",
+            "file size": "zstd",
+        }
+        dataframe = importer.get_pyprobe_dataframe()
         if isinstance(dataframe, pl.LazyFrame):
             dataframe = dataframe.collect()
-        dataframe.write_parquet(output_data_path, compression=compression)
+        dataframe.write_parquet(
+            output_data_path, compression=compression_dict[compression]
+        )
 
     @staticmethod
     def _get_filename(

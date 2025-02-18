@@ -8,6 +8,7 @@ import os
 import shutil
 
 import polars as pl
+import polars.testing as pl_testing
 import pytest
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
@@ -16,6 +17,7 @@ from pydantic import ValidationError
 import pyprobe
 from pyprobe._version import __version__
 from pyprobe.cell import Cell
+from pyprobe.cyclers import basecycler
 
 
 @pytest.fixture
@@ -90,7 +92,24 @@ def caplog_fixture(caplog):
     return caplog
 
 
-def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture):
+def test_write_parquet(mocker):
+    """Test the _write_parquet method."""
+    data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    importer = mocker.Mock()
+    importer.get_pyprobe_dataframe.return_value = data
+    for compression in ["uncompressed", "performance", "file size"]:
+        Cell._write_parquet(
+            importer=importer,
+            output_data_path=compression + ".parquet",
+            compression=compression,
+        )
+        written_data = pl.read_parquet(compression + ".parquet")
+        pl_testing.assert_frame_equal(written_data, data)
+        os.remove(compression + ".parquet")
+
+
+def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture, mocker):
     """Test the process_cycler_file method."""
     folder_path = "tests/sample_data/neware/"
     file_name = "sample_data_neware.xlsx"
@@ -109,7 +128,7 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture):
     )
     saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
     saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
-    assert_frame_equal(expected_dataframe, saved_dataframe)
+    assert_frame_equal(expected_dataframe, saved_dataframe, check_column_order=False)
 
     with pytest.raises(ValueError):
         cell_instance.process_cycler_file(
@@ -136,6 +155,25 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture):
     os.remove(f"{folder_path}/{output_name}")
 
 
+def test_convert_to_parquet(mocker):
+    """Test the _convert_to_parquet method."""
+    mocker.patch("pyprobe.cell.Cell._write_parquet")
+    importer = mocker.Mock()
+    Cell._convert_to_parquet(
+        importer=importer,
+        output_data_path="tests/sample_data/neware/sample_data_neware.parquet",
+        overwrite_existing=False,
+    )
+    pyprobe.cell.Cell._write_parquet.assert_not_called()
+
+    Cell._convert_to_parquet(
+        importer=importer,
+        output_data_path="tests/sample_data/neware/sample_data_neware.parquet",
+        overwrite_existing=True,
+    )
+    pyprobe.cell.Cell._write_parquet.assert_called_once()
+
+
 def test_process_generic_file(cell_instance):
     """Test the process_generic_file method."""
     folder_path = "tests/sample_data/"
@@ -149,21 +187,21 @@ def test_process_generic_file(cell_instance):
         }
     )
 
+    column_importers = [
+        basecycler.ConvertUnits("Time [s]", "T [*]"),
+        basecycler.ConvertUnits("Voltage [V]", "V [*]"),
+        basecycler.ConvertUnits("Current [A]", "I [*]"),
+        basecycler.ConvertUnits("Capacity [Ah]", "Q [*]"),
+        basecycler.CastAndRename("Step", "Count", pl.Int64),
+    ]
+
     df.write_csv(f"{folder_path}/test_generic_file.csv")
-    column_dict = {
-        "Date": "Date",
-        "T [*]": "Time [*]",
-        "V [*]": "Voltage [*]",
-        "I [*]": "Current [*]",
-        "Q [*]": "Capacity [*]",
-        "Count": "Step",
-        "Temp [*]": "Temperature [C]",
-    }
+
     cell_instance.process_generic_file(
         folder_path=folder_path,
         input_filename="test_generic_file.csv",
         output_filename="test_generic_file.parquet",
-        column_dict=column_dict,
+        column_importers=column_importers,
     )
     expected_df = pl.DataFrame(
         {

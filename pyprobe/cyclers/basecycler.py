@@ -5,10 +5,11 @@ import logging
 import os
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import polars as pl
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, GetCoreSchemaHandler, field_validator, model_validator
+from pydantic_core import CoreSchema, core_schema
 
 from pyprobe.units import valid_units
 
@@ -22,6 +23,14 @@ class ColumnMap(ABC):
         """Initialize the ColumnMap class."""
         self.pyprobe_name = pyprobe_name
         self.required_cycler_cols = required_cycler_cols
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        """Get the Pydantic core schema for the ColumnMap class."""
+        # Checks only that the value is an instance of ColumnMap.
+        return core_schema.is_instance_schema(cls)
 
     @property
     @abstractmethod
@@ -321,15 +330,11 @@ class BaseCycler(BaseModel):
 
     input_data_path: str
     """The path to the input data."""
-    datetime_format: Optional[str] = None
-    """The string format of the date column if present. See the
-    `chrono crate <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>`_
-    documentation for more information on the format string.
-    """
     header_row_index: int = 0
     """The index of the header row in the data file."""
 
     column_importers: List[ColumnMap]
+    """A list of :class:`ColumnMap` objects to map cycler columns to PyProBE columns."""
 
     class Config:
         """Pydantic configuration."""
