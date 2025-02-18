@@ -57,6 +57,7 @@ dev = [
     "types-toml>=0.10.8.20240310",
     "xlsxwriter>=3.2.0",
     "ruff>=0.9.1",
+    "pytest-xdist>=3.6.1",
 ]
 docs = [
     "nbsphinx>=0.9.6",
