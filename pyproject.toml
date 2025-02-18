@@ -104,6 +104,8 @@ select = [
     "A",    # flake8-builtins: Check for Python builtins being used as variables or parameters
     "D",    # flake8-docstrings: Check docstrings
     "I",    # isort: Check and enforce import ordering
+    "TID",  # flake8-tidy-imports
+    "SLF001",  # private-member-access: Checks for accesses on "private" class members.
 ]
 
 [tool.ruff.lint.pydocstyle]

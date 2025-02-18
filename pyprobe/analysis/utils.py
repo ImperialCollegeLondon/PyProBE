@@ -49,7 +49,7 @@ class AnalysisValidator(BaseModel):
         Raises:
             ValueError: If any of the required columns are missing.
         """
-        self.input_data._polars_cache.collect_columns(*self.required_columns)
+        self.input_data.cache_columns(*self.required_columns)
         return self
 
     @property

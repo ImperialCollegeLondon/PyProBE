@@ -123,7 +123,11 @@ class PolarsColumnCache:
         """Return the cached dataframe as a Polars DataFrame."""
         if self._cached_dataframe is None:
             self._cached_dataframe = pl.DataFrame(self.cache)
-        return pl.DataFrame(self.cache)
+        elif set(self._cached_dataframe.collect_schema().names()) != set(
+            self.cache.keys()
+        ):
+            self._cached_dataframe = pl.DataFrame(self.cache)
+        return self._cached_dataframe
 
     @cached_dataframe.setter
     def cached_dataframe(self, value: pl.DataFrame) -> None:
@@ -202,6 +206,19 @@ class Result(BaseModel):
         """Set the data as a polars DataFrame."""
         self._polars_cache.base_dataframe = value
 
+    def cache_columns(self, *columns: str) -> None:
+        """Collect columns from the base dataframe and add to the cache.
+
+        If no columns are provided, all columns will be cached.
+
+        Args:
+            *columns (str): The columns to cache.
+        """
+        if columns:
+            self._polars_cache.collect_columns(*columns)
+        else:
+            self._polars_cache.collect_columns(*self.column_list)
+
     @property
     def data(self) -> pl.DataFrame:
         """Return the data as a polars DataFrame.
@@ -261,11 +278,11 @@ class Result(BaseModel):
         ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
     )
 
-    def _get_data_subset(self, *column_names: str) -> pl.DataFrame:
+    def data_with_columns(self, *column_names: str) -> pl.DataFrame:
         """Return a subset of the data with the specified columns.
 
         Args:
-            *column_names: The columns to include in the new result object.
+            *column_names: The columns to include in the returned dataframe.
 
         Returns:
             A subset of the data with the specified columns.
@@ -283,7 +300,7 @@ class Result(BaseModel):
             Result: A new result object with the specified columns.
         """
         return Result(
-            base_dataframe=self._get_data_subset(*column_names), info=self.info
+            base_dataframe=self.data_with_columns(*column_names), info=self.info
         )
 
     def get(
@@ -302,7 +319,7 @@ class Result(BaseModel):
             ValueError: If no column names are provided.
             ValueError: If a column name is not in the data.
         """
-        array = self._get_data_subset(*column_names).to_numpy()
+        array = self.data_with_columns(*column_names).to_numpy()
         if len(column_names) == 0:
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)

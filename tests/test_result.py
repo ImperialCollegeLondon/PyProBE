@@ -44,6 +44,10 @@ def test_collect_columns():
     assert cache.cache["a"].to_list() == expected_a.to_list()
     pl_testing.assert_frame_equal(cache.cached_dataframe, lf.select("a").collect())
 
+    # Test making a second collection
+    cache.collect_columns("b")
+    pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
+
     # Test multiple column collection
     cache = PolarsColumnCache(lf)
     cache.collect_columns("a", "b")
@@ -67,6 +71,26 @@ def test_collect_columns():
     cache.collect_columns("Current [mA]")
     expected_current = pl.Series("Current [mA]", [1000, 2000, 3000])
     assert cache.cache["Current [mA]"].to_list() == expected_current.to_list()
+
+
+def test_cached_dataframe():
+    """Test the cached_dataframe property."""
+    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    cache = PolarsColumnCache(lf)
+    assert cache._cached_dataframe is None
+    assert cache.cached_dataframe.is_empty()
+
+    cache.collect_columns("a")
+    assert cache._cached_dataframe.is_empty()
+    pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a").collect())
+    pl.testing.assert_frame_equal(cache._cached_dataframe, lf.select("a").collect())
+
+    cache.collect_columns("b")
+    pl.testing.assert_frame_equal(cache._cached_dataframe, lf.select("a").collect())
+    pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
+    pl.testing.assert_frame_equal(
+        cache._cached_dataframe, lf.select("a", "b").collect()
+    )
 
 
 def test_live_dataframe():
@@ -113,6 +137,32 @@ def test_init(Result_fixture):
     assert isinstance(Result_fixture, Result)
     assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(Result_fixture.info, dict)
+
+
+def test_cache_columns():
+    """Test the collect method."""
+    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    result_object = Result(base_dataframe=lf, info={})
+    result_object.cache_columns("a")
+    pl_testing.assert_frame_equal(
+        result_object._polars_cache.cached_dataframe, lf.select("a").collect()
+    )
+
+    result_object = Result(base_dataframe=lf, info={})
+    result_object.cache_columns("a", "b")
+    pl_testing.assert_frame_equal(
+        result_object._polars_cache.cached_dataframe,
+        lf.select("a", "b").collect(),
+        check_column_order=False,
+    )
+
+    result_object = Result(base_dataframe=lf, info={})
+    result_object.cache_columns()
+    pl_testing.assert_frame_equal(
+        result_object._polars_cache.cached_dataframe,
+        lf.collect(),
+        check_column_order=False,
+    )
 
 
 def test_get(Result_fixture):

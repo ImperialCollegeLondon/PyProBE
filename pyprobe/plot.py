@@ -46,14 +46,13 @@ def _retrieve_relevant_columns(
 
         except ValueError:
             continue
-        if quantity in result_obj._polars_cache.quantities:
+        if quantity in result_obj.quantities:
             relevant_columns.append(arg)
     if len(relevant_columns) == 0:
         raise ValueError(
             f"None of the columns in {all_args} are present in the Result object."
         )
-    result_obj._polars_cache.collect_columns(*relevant_columns)
-    return result_obj._get_data_subset(*relevant_columns)
+    return result_obj.data_with_columns(*relevant_columns)
 
 
 try:
