@@ -111,48 +111,25 @@ def test_write_parquet(mocker):
 
 def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture, mocker):
     """Test the process_cycler_file method."""
-    folder_path = "tests/sample_data/neware/"
-    file_name = "sample_data_neware.xlsx"
-    output_name = "sample_data_neware_out.parquet"
-    cell_instance.process_cycler_file(
-        "neware",
-        folder_path,
-        file_name,
-        output_name,
-        compression_priority="file size",
-        overwrite_existing=True,
-    )
-    expected_dataframe = lazyframe_fixture.collect()
-    expected_dataframe = expected_dataframe.with_columns(
-        pl.col("Date").dt.cast_time_unit("us")
-    )
-    saved_dataframe = pl.read_parquet(f"{folder_path}/{output_name}")
-    saved_dataframe = saved_dataframe.select(pl.all().exclude("Temperature [C]"))
-    assert_frame_equal(expected_dataframe, saved_dataframe, check_column_order=False)
+    folder_path = "tests/sample_data/biologic/"
+    file_name = "sample_data_biologic.mpt"
+    output_name = "sample_data_biologic.parquet"
+    mocker.patch("pyprobe.cell.Cell._get_data_paths")
+    mocker.patch("pyprobe.cell.Cell._convert_to_parquet")
 
-    with pytest.raises(ValueError):
+    cyclers = ["neware", "maccor", "biologic", "basytec"]
+
+    for cycler in cyclers:
+        mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}")
         cell_instance.process_cycler_file(
-            "neware",
+            cycler,
             folder_path,
             file_name,
-            "sample_data_neware_out*.parquet",
+            output_name,
             compression_priority="file size",
             overwrite_existing=True,
         )
-
-    cell_instance.process_cycler_file(
-        "neware",
-        folder_path,
-        file_name,
-        output_name,
-        compression_priority="file size",
-        overwrite_existing=False,
-    )
-    assert (
-        caplog_fixture.records[-1].message
-        == f"File {os.path.join(folder_path, output_name)} already exists. Skipping."
-    )
-    os.remove(f"{folder_path}/{output_name}")
+        eval(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.assert_called_once()")
 
 
 def test_convert_to_parquet(mocker):
