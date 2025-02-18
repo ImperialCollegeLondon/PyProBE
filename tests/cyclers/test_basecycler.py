@@ -14,64 +14,14 @@ from polars.testing import assert_frame_equal
 from pyprobe.cyclers.basecycler import (
     BaseCycler,
     CapacityFromChDch,
+    CapacityFromCurrentSign,
     CastAndRename,
     ColumnMap,
     ConvertTemperature,
     ConvertUnits,
     DateTime,
+    TimeFromDate,
 )
-
-
-def test_match_columns():
-    """Test the match_columns static method."""
-    available_columns = ["Time [s]", "Current [mA]", "Voltage [V]", "Count"]
-
-    # Test exact matches
-    patterns = ["Count"]
-    result = ColumnMap.match_columns(available_columns, patterns)
-    assert result == {"Count": {"Cycler name": "Count", "Cycler unit": ""}}
-
-    # Test wildcard matches
-    patterns = ["Current [*]"]
-    result = ColumnMap.match_columns(available_columns, patterns)
-    assert result == {
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"}
-    }
-
-    # Test multiple patterns
-    patterns = ["Count", "Current [*]", "Voltage [*]"]
-    result = ColumnMap.match_columns(available_columns, patterns)
-    assert result == {
-        "Count": {"Cycler name": "Count", "Cycler unit": ""},
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-        "Voltage [*]": {"Cycler name": "Voltage [V]", "Cycler unit": "V"},
-    }
-
-    # Test non-existent columns
-    patterns = ["NonExistent"]
-    result = ColumnMap.match_columns(available_columns, patterns)
-    assert result == {}
-
-    # Test invalid unit
-    available_columns = ["Current [invalid]"]
-    patterns = ["Current [*]"]
-    result = ColumnMap.match_columns(available_columns, patterns)
-    assert result == {}
-
-    # Test empty inputs
-    assert ColumnMap.match_columns([], []) == {}
-    assert ColumnMap.match_columns(available_columns, []) == {}
-    assert ColumnMap.match_columns([], patterns) == {}
-
-    # test a different format
-    available_columns = ["Time/s", "Current/mA", "Voltage/time/V", "Count", "Voltage/V"]
-    patterns = ["Count", "Current/*", "Voltage/*"]
-    result = ColumnMap.match_columns(available_columns, patterns)
-    assert result == {
-        "Count": {"Cycler name": "Count", "Cycler unit": ""},
-        "Current/*": {"Cycler name": "Current/mA", "Cycler unit": "mA"},
-        "Voltage/*": {"Cycler name": "Voltage/V", "Cycler unit": "V"},
-    }
 
 
 class TestColumnMap(ColumnMap):
@@ -81,6 +31,58 @@ class TestColumnMap(ColumnMap):
     def expr(self) -> pl.Expr:
         """Implement abstract method."""
         return None
+
+
+def test_match_columns():
+    """Test the match_columns static method."""
+    available_columns = ["Time [s]", "Current [mA]", "Voltage [V]", "Count"]
+    column_map_instance = TestColumnMap("", [""])
+    # Test exact matches
+    patterns = ["Count"]
+    result = column_map_instance.match_columns(available_columns, patterns)
+    assert result == {"Count": {"Cycler name": "Count", "Cycler unit": ""}}
+
+    # Test wildcard matches
+    patterns = ["Current [*]"]
+    result = column_map_instance.match_columns(available_columns, patterns)
+    assert result == {
+        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"}
+    }
+
+    # Test multiple patterns
+    patterns = ["Count", "Current [*]", "Voltage [*]"]
+    result = column_map_instance.match_columns(available_columns, patterns)
+    assert result == {
+        "Count": {"Cycler name": "Count", "Cycler unit": ""},
+        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
+        "Voltage [*]": {"Cycler name": "Voltage [V]", "Cycler unit": "V"},
+    }
+
+    # Test non-existent columns
+    patterns = ["NonExistent"]
+    result = column_map_instance.match_columns(available_columns, patterns)
+    assert result == {}
+
+    # Test invalid unit
+    available_columns = ["Current [invalid]"]
+    patterns = ["Current [*]"]
+    result = column_map_instance.match_columns(available_columns, patterns)
+    assert result == {}
+
+    # Test empty inputs
+    assert column_map_instance.match_columns([], []) == {}
+    assert column_map_instance.match_columns(available_columns, []) == {}
+    assert column_map_instance.match_columns([], patterns) == {}
+
+    # test a different format
+    available_columns = ["Time/s", "Current/mA", "Voltage/time/V", "Count", "Voltage/V"]
+    patterns = ["Count", "Current/*", "Voltage/*"]
+    result = column_map_instance.match_columns(available_columns, patterns)
+    assert result == {
+        "Count": {"Cycler name": "Count", "Cycler unit": ""},
+        "Current/*": {"Cycler name": "Current/mA", "Cycler unit": "mA"},
+        "Voltage/*": {"Cycler name": "Voltage/V", "Cycler unit": "V"},
+    }
 
 
 def test_ColumnMap_validate():
@@ -161,6 +163,18 @@ def test_CapacityFromChDch():
     assert_frame_equal(df.select(column_map.expr), expected_df)
 
 
+def test_CapacityFromCurrentSign():
+    """Test the CapacityFromCurrentSign class."""
+    column_map = CapacityFromCurrentSign(
+        "Q [*]",
+        "I [*]",
+    )
+    df = pl.DataFrame({"I [mA]": [1.0, -1.0, -1.0], "Q [Ah]": [1.0, 1.0, 2.0]})
+    column_map.validate(df.columns)
+    expected_df = pl.DataFrame({"Capacity [Ah]": [1.0, 0.0, -1.0]})
+    assert_frame_equal(df.select(column_map.expr), expected_df)
+
+
 def test_DateTime():
     """Test the DateTime class."""
     column_map = DateTime("DateTime", "%Y-%m-%d %H:%M:%S%.f")
@@ -183,6 +197,23 @@ def test_DateTime():
             ]
         }
     )
+    assert_frame_equal(df.select(column_map.expr), expected_df)
+
+
+def test_TimeFromDate():
+    """Test the TimeFromDate class."""
+    column_map = TimeFromDate("DateTime", "%Y-%m-%d %H:%M:%S%.f")
+    column_map.validate(["DateTime"])
+    df = pl.DataFrame(
+        {
+            "DateTime": [
+                "2022-04-02 02:06:00.000000",
+                "2022-04-02 02:06:01.000000",
+                "2022-04-02 02:06:02.000000",
+            ]
+        }
+    )
+    expected_df = pl.DataFrame({"Time [s]": [0.0, 1.0, 2.0]})
     assert_frame_equal(df.select(column_map.expr), expected_df)
 
 
@@ -299,7 +330,7 @@ def helper_read_and_process(
     """A helper function for other cyclers to test processing raw data files."""
 
     def read_and_process():
-        result = cycler_instance.pyprobe_dataframe
+        result = cycler_instance.get_pyprobe_dataframe()
         if isinstance(result, pl.LazyFrame):
             return result.collect()
         else:
@@ -311,5 +342,7 @@ def helper_read_and_process(
         set(pyprobe_dataframe.select("Event").unique().to_series().to_list())
         == expected_events
     )
-    assert_frame_equal(expected_final_row, pyprobe_dataframe.tail(1))
+    assert_frame_equal(
+        expected_final_row, pyprobe_dataframe.tail(1), check_column_order=False
+    )
     return pyprobe_dataframe

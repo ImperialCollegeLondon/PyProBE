@@ -41,15 +41,14 @@ class ColumnMap(ABC):
         return pl.col(self.column_map[column]["Cycler name"])
 
     @property
-    def single_cycler_column(self) -> str:
+    def cycler_col(self) -> str:
         """Get the single cycler column name, if only one is required."""
         if len(self.column_map) != 1:
             raise ValueError("Method only valid for single column mappings")
         return list(self.column_map.keys())[0]
 
-    @staticmethod
     def match_columns(
-        available_columns: List[str], required_patterns: List[str]
+        self, available_columns: List[str], required_patterns: List[str]
     ) -> Dict[str, Dict[str, str]]:
         """Find columns that match the required patterns, handling wildcards.
 
@@ -83,8 +82,11 @@ class ColumnMap(ABC):
                             if suffix
                             else col[len(prefix) :]
                         )
-                        if unit not in valid_units:
-                            return matches
+                        if (
+                            unit not in valid_units
+                            and self.pyprobe_name != "Temperature [C]"
+                        ):
+                            continue
                         matches[pattern] = {"Cycler name": col, "Cycler unit": unit}
 
         return matches
@@ -123,11 +125,7 @@ class CastAndRename(ColumnMap):
     @property
     def expr(self) -> pl.Expr:
         """Get the polars expression for the column mapping."""
-        return (
-            pl.col(self.single_cycler_column)
-            .cast(self.data_type)
-            .alias(self.pyprobe_name)
-        )
+        return pl.col(self.cycler_col).cast(self.data_type).alias(self.pyprobe_name)
 
 
 class DateTime(ColumnMap):
@@ -148,10 +146,40 @@ class DateTime(ColumnMap):
     def expr(self) -> pl.Expr:
         """Get the polars expression for the column mapping."""
         return (
-            self.get(self.single_cycler_column)
+            self.get(self.cycler_col)
             .str.strip_chars()
             .str.to_datetime(format=self.datetime_format, time_unit="us")
         ).alias(self.pyprobe_name)
+
+
+class TimeFromDate(ColumnMap):
+    """A template mapping for extracting time from a date column.
+
+    Args:
+        required_cycler_col: The name of the required cycler column.
+    """
+
+    def __init__(self, required_cycler_col: str, datetime_format: str) -> None:
+        """Initialize the TimeFromDate class."""
+        pyprobe_name = "Time [s]"
+        self.datetime_format = datetime_format
+        super().__init__(pyprobe_name, [required_cycler_col])
+
+    @property
+    def expr(self) -> pl.Expr:
+        """Get the polars expression for the column mapping."""
+        return (
+            (
+                self.get(self.cycler_col)
+                .str.to_datetime(format=self.datetime_format, time_unit="us")
+                .diff()
+                .dt.total_microseconds()
+                .cum_sum()
+                / 1e6
+            )
+            .fill_null(strategy="zero")
+            .alias(self.pyprobe_name)
+        )
 
 
 class ConvertUnits(ColumnMap):
@@ -169,12 +197,8 @@ class ConvertUnits(ColumnMap):
     @property
     def expr(self) -> pl.Expr:
         """Get the polars expression for the column mapping."""
-        unit = self.column_map[self.single_cycler_column]["Cycler unit"]
-        return (
-            self.get(self.single_cycler_column)
-            .units.to_si(unit)
-            .alias(self.pyprobe_name)
-        )
+        unit = self.column_map[self.cycler_col]["Cycler unit"]
+        return self.get(self.cycler_col).units.to_si(unit).alias(self.pyprobe_name)
 
 
 class ConvertTemperature(ColumnMap):
@@ -192,19 +216,15 @@ class ConvertTemperature(ColumnMap):
     @property
     def expr(self) -> pl.Expr:
         """Get the polars expression for the column mapping."""
-        unit = self.column_map[self.single_cycler_column]["Cycler unit"]
+        unit = self.column_map[self.cycler_col]["Cycler unit"]
         if unit == "K":
             return (
-                (self.get(self.single_cycler_column) - 273.15)
+                (self.get(self.cycler_col) - 273.15)
                 .cast(pl.Float64)
                 .alias(self.pyprobe_name)
             )
         else:
-            return (
-                self.get(self.single_cycler_column)
-                .cast(pl.Float64)
-                .alias(self.pyprobe_name)
-            )
+            return self.get(self.cycler_col).cast(pl.Float64).alias(self.pyprobe_name)
 
 
 class CapacityFromChDch(ColumnMap):
@@ -236,6 +256,46 @@ class CapacityFromChDch(ColumnMap):
         discharge_capacity = self.get(self.discharge_capacity_col).units.to_si(
             discharge_capacity_unit
         )
+        diff_charge_capacity = (
+            charge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
+        )
+
+        diff_discharge_capacity = (
+            discharge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
+        )
+        return (
+            (diff_charge_capacity - diff_discharge_capacity).cum_sum()
+            + charge_capacity.max()
+        ).alias(self.pyprobe_name)
+
+
+class CapacityFromCurrentSign(ColumnMap):
+    """A template mapping for calculating capacity from current and time columns.
+
+    Args:
+        capacity_col: The name of the capacity column.
+        current_col: The name of the current column.
+    """
+
+    def __init__(self, capacity_col: str, current_col: str) -> None:
+        """Initialize the CapacityFromCurrentSign class."""
+        pyprobe_name = "Capacity [Ah]"
+        self.current_col = current_col
+        self.capacity_col = capacity_col
+        required_cycler_cols = [self.current_col, self.capacity_col]
+        super().__init__(pyprobe_name, required_cycler_cols)
+
+    @property
+    def expr(self) -> pl.Expr:
+        """Get the polars expression for the column mapping."""
+        current = self.get(self.current_col)
+        current_direction = current.sign()
+        capacity = self.get(self.capacity_col).units.to_si(
+            self.column_map[self.capacity_col]["Cycler unit"]
+        )
+        print(str(capacity))
+        charge_capacity = capacity * current_direction.replace(-1, 0).abs()
+        discharge_capacity = capacity * current_direction.replace(1, 0).abs()
         diff_charge_capacity = (
             charge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
         )
@@ -366,6 +426,7 @@ class BaseCycler(BaseModel):
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
         for column_importer in self.column_importers:
             column_importer.validate(self._imported_dataframe.collect_schema().names())
+            print(column_importer.column_map)
         return self
 
     def get_pyprobe_dataframe(self) -> pl.DataFrame:
