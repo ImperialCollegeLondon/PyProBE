@@ -6,10 +6,10 @@ from typing import List
 
 import polars as pl
 
-from pyprobe.cyclers.basecycler import BaseCycler
+from pyprobe.cyclers import basecycler as bc
 
 
-class Biologic(BaseCycler):
+class Biologic(bc.BaseCycler):
     """A class to load and process Biologic battery cycler data."""
 
     input_data_path: str
@@ -25,6 +25,18 @@ class Biologic(BaseCycler):
         "Temperature/*": "Temperature [*]",
         "Ewe/*": "Voltage [*]",
     }
+
+    column_importers: list[bc.ColumnMap] = [
+        bc.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        bc.CastAndRename("Step", "Ns", pl.Int64),
+        bc.ConvertUnits("Time [s]", "time/*"),
+        bc.ConvertUnits("Current [A]", "I/*"),
+        bc.ConvertUnits("Current [A]", "<I>/*"),
+        bc.ConvertUnits("Voltage [V]", "Ecell/*"),
+        bc.CapacityFromChDch("Q charge/*", "Q discharge/*"),
+        bc.ConvertTemperature("Temperature/*"),
+        bc.ConvertUnits("Voltage [V]", "Ewe/*"),
+    ]
 
     @staticmethod
     def read_file(

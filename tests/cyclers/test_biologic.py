@@ -180,26 +180,26 @@ def test_read_and_process_biologic_no_header(benchmark):
     )
 
 
-def test_process_dataframe(monkeypatch):
+def test_process_dataframe():
     """Test the Biologic method."""
-    mock_dataframe = pl.DataFrame(
+    mock_dataframe = pl.LazyFrame(
         {
             "Date": [
-                datetime(2022, 2, 2, 2, 2, 0),
-                datetime(2022, 2, 2, 2, 2, 1),
-                datetime(2022, 2, 2, 2, 2, 2),
-                datetime(2022, 2, 2, 2, 2, 3),
-                datetime(2022, 2, 2, 2, 2, 4),
-                datetime(2022, 2, 2, 2, 2, 5),
-                datetime(2022, 2, 2, 2, 2, 6),
+                "2024-01-15 10:30:00.000000",  # Using ISO format
+                "2024-01-15 10:30:01.000000",
+                "2024-01-15 10:30:02.000000",
+                "2024-01-15 10:30:03.000000",
+                "2024-01-15 10:30:04.000000",
+                "2024-01-15 10:30:05.000000",
+                "2024-01-15 10:30:06.000000",
             ],
-            "time/s": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "Ns": [0, 0, 1, 1, 1, 0, 0],
-            "I/mA": [1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0],
-            "Ecell/V": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
-            "Q charge/mA.h": [0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "Q discharge/mA.h": [0.0, 0.0, 10.0, 20.0, 0.0, 0.0, 0.0],
-            "Temperature/�C": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
+            "time/s": ["0.0", "1.0", "2.0", "3.0", "4.0", "5.0", "6.0"],
+            "Ns": ["0", "0", "1", "1", "1", "0", "0"],
+            "I/mA": ["1.0", "2.0", "3.0", "4.0", "0.0", "0.0", "0.0"],
+            "Ecell/V": ["4.0", "5.0", "6.0", "7.0", "0.0", "0.0", "0.0"],
+            "Q charge/mA.h": ["0.0", "20.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
+            "Q discharge/mA.h": ["0.0", "0.0", "10.0", "20.0", "0.0", "0.0", "0.0"],
+            "Temperature/�C": ["25.0", "25.0", "25.0", "25.0", "25.0", "25.0", "25.0"],
         }
     )
 
@@ -207,7 +207,7 @@ def test_process_dataframe(monkeypatch):
         input_data_path="tests/sample_data/biologic/Sample_data_biologic_CA1.txt"
     )
     biologic_cycler._imported_dataframe = mock_dataframe
-    pyprobe_dataframe = biologic_cycler.pyprobe_dataframe.select(
+    pyprobe_dataframe = biologic_cycler.get_pyprobe_dataframe().select(
         [
             "Time [s]",
             "Step",

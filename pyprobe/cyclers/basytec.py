@@ -4,22 +4,21 @@ from datetime import datetime
 
 import polars as pl
 
-from pyprobe.cyclers.basecycler import BaseCycler
+from pyprobe.cyclers import basecycler as bc
 
 
-class Basytec(BaseCycler):
+class Basytec(bc.BaseCycler):
     """A class to load and process Basytec battery cycler data."""
 
-    input_data_path: str
-    column_dict: dict[str, str] = {
-        "Date": "Date",
-        "~Time[*]": "Time [*]",
-        "Line": "Step",
-        "I[*]": "Current [*]",
-        "U[*]": "Voltage [*]",
-        "Ah[*]": "Capacity [*]",
-        "T1[*]": "Temperature [*]",
-    }
+    column_importers: list[bc.ColumnMap] = [
+        bc.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        bc.CastAndRename("Step", "Line", pl.Int64),
+        bc.ConvertUnits("Time [s]", "~Time[*]"),
+        bc.ConvertUnits("Current [A]", "I[*]"),
+        bc.ConvertUnits("Voltage [V]", "U[*]"),
+        bc.ConvertUnits("Capacity [Ah]", "Ah[*]"),
+        bc.ConvertTemperature("T1[*]"),
+    ]
 
     @staticmethod
     def read_file(
