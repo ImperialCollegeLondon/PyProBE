@@ -133,8 +133,11 @@ def test_process_dataframe(mocker):
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
 
-def test_read_and_process_neware(benchmark, neware_cycler):
+def test_read_and_process_neware(benchmark):
     """Test the full process of reading and processing a file."""
+    neware_cycler = Neware(
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+    )
     last_row = pl.DataFrame(
         {
             "Date": [datetime(2024, 3, 6, 21, 39, 38, 591000)],

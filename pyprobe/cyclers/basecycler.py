@@ -286,16 +286,23 @@ class CapacityFromCurrentSign(ColumnMap):
         super().__init__(pyprobe_name, required_cycler_cols)
 
     @property
-    def expr(self) -> pl.Expr:
-        """Get the polars expression for the column mapping."""
-        current = self.get(self.current_col)
-        current_direction = current.sign()
-        capacity = self.get(self.capacity_col).units.to_si(
+    def capacity(self) -> pl.Expr:
+        """Get the capacity column."""
+        return self.get(self.capacity_col).units.to_si(
             self.column_map[self.capacity_col]["Cycler unit"]
         )
-        print(str(capacity))
-        charge_capacity = capacity * current_direction.replace(-1, 0).abs()
-        discharge_capacity = capacity * current_direction.replace(1, 0).abs()
+
+    @property
+    def current(self) -> pl.Expr:
+        """Get the current column."""
+        return self.get(self.current_col).cast(pl.Float64)
+
+    @property
+    def expr(self) -> pl.Expr:
+        """Get the polars expression for the column mapping."""
+        current_direction = self.current.sign()
+        charge_capacity = self.capacity * current_direction.replace(-1, 0).abs()
+        discharge_capacity = self.capacity * current_direction.replace(1, 0).abs()
         diff_charge_capacity = (
             charge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
         )
@@ -426,7 +433,6 @@ class BaseCycler(BaseModel):
         self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
         for column_importer in self.column_importers:
             column_importer.validate(self._imported_dataframe.collect_schema().names())
-            print(column_importer.column_map)
         return self
 
     def get_pyprobe_dataframe(self) -> pl.DataFrame:
