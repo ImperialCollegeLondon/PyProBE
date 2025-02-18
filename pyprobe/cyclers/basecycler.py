@@ -408,15 +408,17 @@ class BaseCycler(BaseModel):
         """
         files = glob.glob(self.input_data_path)
         files.sort()
-        list = [self.read_file(file, self.header_row_index) for file in files]
-        all_columns = set([col for df in list for col in df.collect_schema().names()])
-        for i in range(len(list)):
-            if len(list[i].collect_schema().names()) < len(all_columns):
+        df_list = [self.read_file(file, self.header_row_index) for file in files]
+        all_columns = set(
+            [col for df in df_list for col in df.collect_schema().names()]
+        )
+        for i in range(len(df_list)):
+            if len(df_list[i].collect_schema().names()) < len(all_columns):
                 logger.warning(
                     f"File {os.path.basename(files[i])} has missing columns, "
                     "these have been filled with null values."
                 )
-        return list
+        return df_list
 
     def get_imported_dataframe(
         self, dataframe_list: List[pl.DataFrame]

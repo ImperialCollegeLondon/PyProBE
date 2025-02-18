@@ -23,7 +23,7 @@ def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
     Returns:
         NDArray: The assembled array.
     """
-    return np.vstack([input.get(name) for input in input_data])
+    return np.vstack([input_item.get(name) for input_item in input_data])
 
 
 class AnalysisValidator(BaseModel):

@@ -99,12 +99,18 @@ match = "main"
 prerelease = false
 
 [tool.ruff.lint]
-select = ["D", "I001"]
+select = [
+    "A",    # flake8-builtins: Check for Python builtins being used as variables or parameters
+    "D",    # flake8-docstrings: Check docstrings
+    "I",    # isort: Check and enforce import ordering
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+"docs/source/conf.py" = ["A"]
+"tests/*" = ["SLF001"]
 "docs/source/examples/*" = ["D103"]
 
 [tool.mypy]

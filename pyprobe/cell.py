@@ -535,10 +535,10 @@ class Cell(BaseModel):
             path (str): The path to the archive directory or zip file.
         """
         if path.endswith(".zip"):
-            zip = True
+            zip_file = True
             path = path[:-4]
         else:
-            zip = False
+            zip_file = False
         if not os.path.exists(path):
             os.makedirs(path)
         metadata = self.dict()
@@ -557,7 +557,7 @@ class Cell(BaseModel):
         with open(os.path.join(path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
 
-        if zip:
+        if zip_file:
             with zipfile.ZipFile(path + ".zip", "w") as zipf:
                 for root, _, files in os.walk(path):
                     for file in files:
