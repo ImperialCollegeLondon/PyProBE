@@ -1664,7 +1664,6 @@ dev = [
     { name = "pytest-benchmark" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
-    { name = "pytest-mypy" },
     { name = "python-semantic-release" },
     { name = "ruff" },
     { name = "types-deprecated" },
@@ -1707,7 +1706,6 @@ requires-dist = [
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
-    { name = "pytest-mypy", marker = "extra == 'dev'", specifier = ">=0.10.3" },
     { name = "python-semantic-release", marker = "extra == 'dev'", specifier = ">=9.15.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ray", specifier = ">=2.40.0" },
@@ -1777,21 +1775,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c6/90/a955c3ab35ccd41ad4de556596fa86685bf4fc5ffcc62d22d856cfd4e29a/pytest-mock-3.14.0.tar.gz", hash = "sha256:2719255a1efeceadbc056d6bf3df3d1c5015530fb40cf347c0f9afac88410bd0", size = 32814 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f2/3b/b26f90f74e2986a82df6e7ac7e319b8ea7ccece1caec9f8ab6104dc70603/pytest_mock-3.14.0-py3-none-any.whl", hash = "sha256:0b72c38033392a5f4621342fe11e9219ac11ec9d375f8e2a0c164539e0d70f6f", size = 9863 },
-]
-
-[[package]]
-name = "pytest-mypy"
-version = "0.10.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "attrs" },
-    { name = "filelock" },
-    { name = "mypy" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/85/3a/318c91140f242cafff64ddac97d6999640bc3da9afbf37253475c2208e79/pytest-mypy-0.10.3.tar.gz", hash = "sha256:f8458f642323f13a2ca3e2e61509f7767966b527b4d8adccd5032c3e7b4fd3db", size = 14020 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/02/36a48da6d4168db8fb596c040680665bee89a7bced22ba1eee75920059c4/pytest_mypy-0.10.3-py3-none-any.whl", hash = "sha256:7638d0d3906848fc1810cb2f5cc7fceb4cc5c98524aafcac58f28620e3102053", size = 7110 },
 ]
 
 [[package]]

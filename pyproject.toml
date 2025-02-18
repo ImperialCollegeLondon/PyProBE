@@ -52,7 +52,6 @@ dev = [
     "pytest-benchmark>=5.1.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
-    "pytest-mypy>=0.10.3",
     "types-deprecated>=1.2.15.20241117",
     "types-pyyaml>=6.0.12.20241230",
     "types-toml>=0.10.8.20240310",
@@ -130,7 +129,8 @@ module = "deprecated.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "-v --mypy -p no:warnings --cov=pyprobe --cov-report=html --doctest-modules --ignore=docs/ --ignore=pyprobe/"
+testpaths = "tests/"
+addopts = "-v -p no:warnings --doctest-modules --benchmark-disable"
 
 [tool.coverage.report]
 exclude_also = [
