@@ -12,9 +12,9 @@ from pyprobe.result import Result
 @pytest.fixture
 def noisy_data():
     """Generate noisy data."""
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     x = np.arange(1, 6, 0.01)
-    y = x**2 + np.random.normal(0, 0.01, size=x.size)  # y = x^2 with noise
+    y = x**2 + rng.normal(0, 0.01, size=x.size)  # y = x^2 with noise
 
     return Result(
         base_dataframe=pl.LazyFrame({"x": x, "y": y}),
@@ -26,9 +26,9 @@ def noisy_data():
 @pytest.fixture
 def noisy_data_reversed():
     """Generate noisy data."""
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     x = np.arange(1, 6, 0.01)
-    y = x**2 + np.random.normal(0, 0.5, size=x.size)  # y = x^2 with noise
+    y = x**2 + rng.normal(0, 0.5, size=x.size)  # y = x^2 with noise
     flipped_x = np.flip(x)
     flipped_y = np.flip(y)
     return Result(
@@ -280,9 +280,9 @@ def test_downsample_monotonic(noisy_data, benchmark):
 
 def test_downsample_non_monotonic(benchmark):
     """Test non-monotonic downsampling."""
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     x = np.arange(-3, 3, 0.01)
-    y = x**2 + np.random.normal(0, 0.01, size=x.size)  # y = x^2 with noise
+    y = x**2 + rng.normal(0, 0.01, size=x.size)  # y = x^2 with noise
 
     data = Result(
         base_dataframe=pl.LazyFrame({"x": x, "y": y}),
