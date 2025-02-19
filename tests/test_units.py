@@ -118,7 +118,7 @@ def test_UnitsExpr_to_default():
 def test_UnitsExpr_to_si():
     """Test the to_si method."""
     df = pl.DataFrame({"Current [mA]": [1.0, 2.0, 3.0]})
-    expected_df = df.with_columns((pl.col("Current [mA]").cast(pl.Float64) * 1e-3))
+    expected_df = df.with_columns(pl.col("Current [mA]").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
         df.with_columns(pl.col("Current [mA]").units.to_si("mA")), expected_df
     )
@@ -130,26 +130,26 @@ def test_UnitsExpr_to_si():
         df.with_columns(pl.col("Current [mA]").units.to_si("mV"))
 
     df = pl.DataFrame({"Capacity 1 [mAh]": [1.0, 2.0, 3.0]})
-    expected_df = df.with_columns((pl.col("Capacity 1 [mAh]").cast(pl.Float64) * 1e-3))
+    expected_df = df.with_columns(pl.col("Capacity 1 [mAh]").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
         df.with_columns(pl.col("Capacity 1 [mAh]").units.to_si("mAh")), expected_df
     )
 
     df = pl.DataFrame({"Time [hr]": [1.0, 2.0, 3.0]})
-    expected_df = df.with_columns((pl.col("Time [hr]").cast(pl.Float64) * 3600))
+    expected_df = df.with_columns(pl.col("Time [hr]").cast(pl.Float64) * 3600)
     assert_frame_equal(
         df.with_columns(pl.col("Time [hr]").units.to_si("hr")), expected_df
     )
 
     df = pl.DataFrame({"Time [ms]": [1.0, 2.0, 3.0]})
-    expected_df = df.with_columns((pl.col("Time [ms]").cast(pl.Float64) * 1e-3))
+    expected_df = df.with_columns(pl.col("Time [ms]").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
         df.with_columns(pl.col("Time [ms]").units.to_si("ms")), expected_df
     )
 
     df = pl.DataFrame({"Current/voltage [mA/V]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        (pl.col("Current/voltage [mA/V]").cast(pl.Float64) * 1e-3)
+        pl.col("Current/voltage [mA/V]").cast(pl.Float64) * 1e-3
     )
     assert_frame_equal(
         df.with_columns(pl.col("Current/voltage [mA/V]").units.to_si("mA/V")),
@@ -157,15 +157,13 @@ def test_UnitsExpr_to_si():
     )
 
     df = pl.DataFrame({"Current/voltage/V": [1.0, 2.0, 3.0]})
-    expected_df = df.with_columns((pl.col("Current/voltage/V").cast(pl.Float64) * 1))
+    expected_df = df.with_columns(pl.col("Current/voltage/V").cast(pl.Float64) * 1)
     assert_frame_equal(
         df.with_columns(pl.col("Current/voltage/V").units.to_si("V")), expected_df
     )
 
     df = pl.DataFrame({"Current/voltage/mV": [1.0, 2.0, 3.0]})
-    expected_df = df.with_columns(
-        (pl.col("Current/voltage/mV").cast(pl.Float64) * 1e-3)
-    )
+    expected_df = df.with_columns(pl.col("Current/voltage/mV").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
         df.with_columns(pl.col("Current/voltage/mV").units.to_si("mV")), expected_df
     )

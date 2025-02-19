@@ -1,13 +1,9 @@
 """Test the basecycler module."""
 
-import copy
 import datetime
 import os
-import re
 
-import numpy as np
 import polars as pl
-import polars.testing as pl_testing
 import pytest
 from polars.testing import assert_frame_equal
 

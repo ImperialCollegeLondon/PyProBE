@@ -142,10 +142,10 @@ def get_resistances(
     )
 
     # calculate the resistance at the start of the pulse
-    R0 = ((pl.col("Voltage [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")).alias(
+    r0 = ((pl.col("Voltage [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")).alias(
         "R0 [Ohms]"
     )
-    pulse_df = pulse_df.with_columns(R0)
+    pulse_df = pulse_df.with_columns(r0)
 
     t_col_names = [f"t_{time}s [s]" for time in r_times]
     r_t_col_names = [f"R_{time}s [Ohms]" for time in r_times]

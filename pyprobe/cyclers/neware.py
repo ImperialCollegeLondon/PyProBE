@@ -6,7 +6,6 @@ import os
 import polars as pl
 
 from pyprobe.cyclers import basecycler as bc
-from pyprobe.units import Units
 
 logger = logging.getLogger(__name__)
 

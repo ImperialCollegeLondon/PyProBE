@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 import polars as pl
+from deprecated import deprecated
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
@@ -131,7 +132,7 @@ class RawData(Result):
         """
         return abs(self.data["Capacity [Ah]"].max() - self.data["Capacity [Ah]"].min())
 
-    def set_SOC(
+    def set_soc(
         self,
         reference_capacity: float | None = None,
         reference_charge: Optional["RawData"] = None,
@@ -201,6 +202,33 @@ class RawData(Result):
                 ).alias("SOC")
             )
         self.define_column("SOC", "The full cell State-of-Charge.")
+
+    @deprecated(
+        reason="Use set_soc instead.",
+        version="2.0.1",
+    )
+    def set_SOC(  # noqa: N802
+        self,
+        reference_capacity: float | None = None,
+        reference_charge: Optional["RawData"] = None,
+    ) -> None:
+        """Add an SOC column to the data.
+
+        Apply this method on a filtered data object to add an `SOC` column to the data.
+        This column remains with the data if the object is filtered further.
+
+
+        The SOC column is calculated either relative to a provided reference capacity
+        value, a reference charge (provided as a RawData object), or the maximum
+        capacity delta across the data in the RawData object upon which this method
+        is called.
+
+        Args:
+            reference_capacity (Optional[float]): The reference capacity value.
+            reference_charge (Optional[RawData]):
+                A RawData object containing a charge to use as a reference.
+        """
+        self.set_soc(reference_capacity, reference_charge)
 
     def set_reference_capacity(self, reference_capacity: float | None = None) -> None:
         """Fix the capacity to a reference value.

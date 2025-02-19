@@ -111,7 +111,8 @@ select = [
     "W",   # pycodestyle: Check for PEP 8 warnings
     "ISC", # flake8-implicit-str-concat: Check for implicit string concatenation
     "UP",  # pyupgrade: Check for outdated Python syntax
-    "T20" # flake8-print: Check for print statements
+    "T20", # flake8-print: Check for print statements
+    "N",  # pep8-naming: Check for naming conventions
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -124,7 +125,9 @@ keep-runtime-typing = true
 [tool.ruff.lint.per-file-ignores]
 "docs/source/conf.py" = ["A"]
 "tests/*" = ["SLF001", "N", "B"]
-"docs/source/examples/*" = ["D103", "T20"]
+"docs/source/examples/*" = ["D103", "T20", "N"]
+"pyprobe/analysis/degradation_mode_analysis.py" = ["N"]
+"pyprobe/analysis/base/degradation_mode_analysis_functions.py" = ["N"]
 
 [tool.mypy]
 disallow_any_explicit = false

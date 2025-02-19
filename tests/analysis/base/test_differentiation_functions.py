@@ -25,15 +25,15 @@ def test_differentiate_LEAN():
     if remainder > 0:
         y = np.append(y, levels[:remainder])
 
-    x_pts, _, dxdy = diff_functions.calc_gradient_with_LEAN(x, y, 1, "dxdy")
+    x_pts, _, dxdy = diff_functions.calc_gradient_with_lean(x, y, 1, "dxdy")
     assert np.isclose(np.median(dxdy), 1 / average_gradient, rtol=0.1)
-    x_pts, _, dydx = diff_functions.calc_gradient_with_LEAN(x, y, 1, "dydx")
+    x_pts, _, dydx = diff_functions.calc_gradient_with_lean(x, y, 1, "dydx")
     assert np.isclose(np.median(dydx), average_gradient, rtol=0.1)
 
     # flip the data
     y = np.flip(y)
     x = np.flip(x)
-    x_pts, _, dxdy = diff_functions.calc_gradient_with_LEAN(x, y, 1, "dxdy")
+    x_pts, _, dxdy = diff_functions.calc_gradient_with_lean(x, y, 1, "dxdy")
     assert np.isclose(np.median(dxdy), 1 / average_gradient, rtol=0.1)
 
 

@@ -2,6 +2,7 @@
 
 import numpy as np
 import polars as pl
+from deprecated import deprecated
 from pydantic import validate_call
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
@@ -57,7 +58,7 @@ def gradient(  # 1. Define the method
 
 
 @validate_call
-def differentiate_LEAN(
+def differentiate_lean(
     input_data: PyProBEDataType,
     x: str,
     y: str,
@@ -124,7 +125,7 @@ def differentiate_LEAN(
     for i in range(len(x_sections)):
         x_data = x_data[x_sections[i]]
         y_data = y_data[x_sections[i]]
-        x_pts, y_pts, calculated_gradient = diff_functions.calc_gradient_with_LEAN(
+        x_pts, y_pts, calculated_gradient = diff_functions.calc_gradient_with_lean(
             x_data, y_data, k, gradient
         )
         x_all = np.append(x_all, x_pts)
@@ -144,3 +145,69 @@ def differentiate_LEAN(
     gradient_result.column_definitions = input_data.column_definitions
     gradient_result.column_definitions[gradient_title] = "The calculated gradient."
     return gradient_result
+
+
+@deprecated(
+    reason="Use the `differentiate_lean` method instead.",
+    version="2.0.1",
+)
+def differentiate_LEAN(  # noqa: N802
+    input_data: PyProBEDataType,
+    x: str,
+    y: str,
+    k: int = 1,
+    gradient: str = "dydx",
+    smoothing_filter: list[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
+    section: str = "longest",
+) -> Result:
+    r"""A method for differentiating noisy data.
+
+    Uses 'Level Evaluation ANalysis' (LEAN) method described in the paper of
+    :footcite:t:`Feng2020`.
+
+    This method assumes :math:`x` datapoints to be evenly spaced, it can return
+    either :math:`\frac{dy}{dx}` or :math:`\frac{dx}{dy}` depending on the argument
+    provided to the `gradient` parameter.
+
+    Args:
+        input_data:
+            The input data PyProBE object for the differentiation.
+        x:
+            The name of the x variable.
+        y:
+            The name of the y variable.
+        k:
+            The integer multiple to apply to the sampling interval for the bin size
+            (:math:`\delta R` in paper). Default is 1.
+        gradient:
+            The gradient to calculate, either 'dydx' or 'dxdy'. Default is 'dydx'.
+        smoothing_filter:
+            The coefficients of the smoothing matrix.
+
+            Examples provided by :footcite:t:`Feng2020` include:
+
+                - [0.25, 0.5, 0.25] for a 3-point smoothing filter.
+                - [0.0668, 0.2417, 0.3830, 0.2417, 0.0668] (default) for a 5-point
+                    smoothing filter.
+                - [0.1059, 0.121, 0.1745, 0.1972, 0.1745, 0.121, 0.1059] for a
+                    7-point smoothing filter.
+
+        section:
+            The section of the data with constant sample rate in x to be considered.
+            Default is 'longest', which just returns the longest unifomly sampled
+            section. Alternative is 'all', which returns all sections.
+
+    Returns:
+        Result:
+            A result object containing the columns, `x`, `y` and the calculated
+            gradient.
+    """
+    return differentiate_lean(
+        input_data=input_data,
+        x=x,
+        y=y,
+        k=k,
+        gradient=gradient,
+        smoothing_filter=smoothing_filter,
+        section=section,
+    )

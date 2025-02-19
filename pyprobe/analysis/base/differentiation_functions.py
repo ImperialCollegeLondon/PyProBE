@@ -12,7 +12,7 @@ def get_x_sections(x: NDArray[np.float64]) -> list[slice]:
         x (NDArray[np.float64]): The x values.
 
     Returns:
-        List[slice]: A list of slices representing the uniformly sampled sections.
+        List[slice]: a list of slices representing the uniformly sampled sections.
     """
     dx = np.diff(x)
     ddx = np.diff(dx)
@@ -75,9 +75,9 @@ def get_dy_and_counts(
         dy = y_bins[1] - y_bins[0]
     else:
         dy = -y_bins[1] + y_bins[0]
-    N, _ = np.histogram(y, bins=y_bins)
+    n, _ = np.histogram(y, bins=y_bins)
     y_midpoints = y_bins[:-1] + np.diff(y_bins) / 2
-    return dy, y_midpoints, N
+    return dy, y_midpoints, n
 
 
 def y_sampling_interval(y: NDArray[np.float64]) -> float:
@@ -95,7 +95,7 @@ def y_sampling_interval(y: NDArray[np.float64]) -> float:
     return np.min(y_diff)
 
 
-def calc_gradient_with_LEAN(
+def calc_gradient_with_lean(
     x: NDArray[np.float64], y: NDArray[np.float64], k: int, gradient: str
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     r"""Calculate the gradient of the data, assuming x is uniformly spaced.
@@ -114,8 +114,8 @@ def calc_gradient_with_LEAN(
     """
     dx = get_dx(x)
     dy = k * y_sampling_interval(y)
-    dy, y_midpoints, N = get_dy_and_counts(y, dy)
-    dxdy = N * dx / dy
+    dy, y_midpoints, n = get_dy_and_counts(y, dy)
+    dxdy = n * dx / dy
 
     if gradient == "dydx":
         grad = np.divide(1, dxdy, where=dxdy != 0)
@@ -138,11 +138,11 @@ def smooth_gradient(
     Returns:
         NDArray[np.float64]: The smoothed gradient vector.
     """
-    A = np.zeros((len(gradient), len(gradient)))
+    a = np.zeros((len(gradient), len(gradient)))
     w = np.floor(len(alpha) / 2)
     for n in range(len(alpha)):
         k = n - w
         vector = np.ones(int(len(gradient) - abs(k)))
         diag = np.diag(vector, int(k))
-        A += alpha[n] * diag
-    return A @ gradient
+        a += alpha[n] * diag
+    return a @ gradient

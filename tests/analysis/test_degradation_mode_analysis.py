@@ -710,7 +710,7 @@ def test_calc_full_cell_ocv_composite():
 def test_average_ocvs(BreakinCycles_fixture):
     """Test the average_ocvs method."""
     break_in = BreakinCycles_fixture.cycle(0)
-    break_in.set_SOC()
+    break_in.set_soc()
     corrected_r = dma.average_ocvs(break_in, charge_filter="constant_current(1)")
     assert math.isclose(corrected_r.get("Voltage [V]")[0], 3.14476284763849)
     assert math.isclose(corrected_r.get("Voltage [V]")[-1], 4.170649780122139)

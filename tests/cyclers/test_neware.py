@@ -1,11 +1,9 @@
 """Tests for the neware module."""
 
-import os
 from datetime import datetime
 
 import polars as pl
 import polars.testing as pl_testing
-import pytest
 
 from pyprobe.cyclers.neware import Neware
 
@@ -57,7 +55,6 @@ def test_process_dataframe(mocker):
     neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
 
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
-    print(pyprobe_dataframe)
 
     pyprobe_dataframe = pyprobe_dataframe.select(
         [
