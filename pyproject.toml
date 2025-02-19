@@ -108,6 +108,8 @@ select = [
     "SLF001",  # private-member-access: Checks for accesses on "private" class members.
     "F",   # pyflakes: Check for errors in Python code
     "E",   # pycodestyle: Check for PEP 8 violations
+    "W",   # pycodestyle: Check for PEP 8 warnings
+    "ISC", # flake8-implicit-str-concat: Check for implicit string concatenation
 ]
 
 [tool.ruff.lint.pydocstyle]
