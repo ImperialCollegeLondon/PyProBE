@@ -391,7 +391,7 @@ class Result(BaseModel):
 
     def print_definitions(self) -> None:
         """Print the definitions of the columns stored in this result object."""
-        pprint(self.column_definitions)
+        pprint(self.column_definitions)  # noqa: T203
 
     def clean_copy(
         self,

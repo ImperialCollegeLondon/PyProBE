@@ -111,6 +111,7 @@ select = [
     "W",   # pycodestyle: Check for PEP 8 warnings
     "ISC", # flake8-implicit-str-concat: Check for implicit string concatenation
     "UP",  # pyupgrade: Check for outdated Python syntax
+    "T20" # flake8-print: Check for print statements
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -122,8 +123,8 @@ keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
 "docs/source/conf.py" = ["A"]
-"tests/*" = ["SLF001", "N"]
-"docs/source/examples/*" = ["D103"]
+"tests/*" = ["SLF001", "N", "B"]
+"docs/source/examples/*" = ["D103", "T20"]
 
 [tool.mypy]
 disallow_any_explicit = false

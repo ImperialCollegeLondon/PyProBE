@@ -449,7 +449,9 @@ class Cell(BaseModel):
             raise ValueError(error_msg)
 
         lazyframe_created = False
-        for experiment_name, pybamm_solution in zip(experiment_names, pybamm_solutions):
+        for experiment_name, pybamm_solution in zip(
+            experiment_names, pybamm_solutions, strict=False
+        ):
             # get the data from the PyBaMM solution object
             pybamm_data = pybamm_solution.get_data_dict(import_variables)
             # convert the PyBaMM data to a polars dataframe and add the experiment name
