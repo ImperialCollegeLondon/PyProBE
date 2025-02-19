@@ -116,7 +116,8 @@ select = [
     "ANN", # flake8-annotations: Check for missing type annotations
     "COM", # flake8-commas: Check for missing trailing commas
     "C4", # flake8-comprehensions: Check list comprehensions
-    "NPY"
+    "NPY", # numpy: Check numpy issues
+    "ERA", # check for commented out code
 ]
 ignore = ["ANN401"]
 

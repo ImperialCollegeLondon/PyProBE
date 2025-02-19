@@ -468,7 +468,6 @@ def test_dashboard_run(cell_fixture):
         .get("Current [mA]"),
     )
 
-    # printed_data = at.dataframe[0].value
     expected_df = (
         cell_fixture.procedure["Sample"]
         .experiment("Break-in Cycles")

@@ -473,16 +473,3 @@ class BaseCycler(BaseModel):
             .with_columns(event_expr)
             .collect()
         )
-
-    # column_dict = {
-    #     "Step": ["Count"],
-    # }
-    # column_map = [
-    #     CastAndRename("Step", "Count", pl.Int64),
-    # ]
-
-    # def cast_and_rename(cycler_column, pyprobe_column, data_type):
-    #     return pl.col(cycler_column).cast(data_type).alias(pyprobe_column)
-
-    # def convert_units(cycler_column):
-    #     return pl.col(cycler_column).units.to_default()

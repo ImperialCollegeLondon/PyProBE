@@ -352,7 +352,6 @@ def test_downsample_non_monotonic_data():
     def smooth_data():
         return smoothing._downsample_non_monotonic_data(df, "values", min_distance)
 
-    # resampled_first = benchmark(smooth_data)["values"].to_numpy()
     resampled_first = smooth_data()["values"].to_numpy()
     np.testing.assert_array_equal(
         resampled_first,

@@ -138,7 +138,6 @@ def calc_full_cell_OCV(
     # interpolate the real electrode OCP data with the created stoichiometry vectors
     OCP_ne = np.interp(z_ne, x_ne, ocp_ne)
     OCP_pe = np.interp(z_pe, x_pe, ocp_pe)
-    # OCP_pe = np.flip(OCP_pe) # flip the cathode OCP to match charge direction
 
     # interpolate the final OCV curve with the original SOC vector
     OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
