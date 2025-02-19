@@ -213,7 +213,9 @@ class ConvertUnits(ColumnMap):
     def expr(self) -> pl.Expr:
         """Get the polars expression for the column mapping."""
         unit = self.column_map[self.cycler_col]["Cycler unit"]
-        return self.get(self.cycler_col).units.to_si(unit).alias(self.pyprobe_name)
+        return (
+            self.get(self.cycler_col).units.to_base_unit(unit).alias(self.pyprobe_name)
+        )
 
 
 class ConvertTemperature(ColumnMap):
@@ -265,10 +267,10 @@ class CapacityFromChDch(ColumnMap):
         discharge_capacity_unit = self.column_map[self.discharge_capacity_col][
             "Cycler unit"
         ]
-        charge_capacity = self.get(self.charge_capacity_col).units.to_si(
+        charge_capacity = self.get(self.charge_capacity_col).units.to_base_unit(
             charge_capacity_unit,
         )
-        discharge_capacity = self.get(self.discharge_capacity_col).units.to_si(
+        discharge_capacity = self.get(self.discharge_capacity_col).units.to_base_unit(
             discharge_capacity_unit,
         )
         diff_charge_capacity = (
@@ -303,7 +305,7 @@ class CapacityFromCurrentSign(ColumnMap):
     @property
     def capacity(self) -> pl.Expr:
         """Get the capacity column."""
-        return self.get(self.capacity_col).units.to_si(
+        return self.get(self.capacity_col).units.to_base_unit(
             self.column_map[self.capacity_col]["Cycler unit"],
         )
 

@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
-from pyprobe.units import split_quantity_unit, unit_from_regexp
+from pyprobe.units import get_unit_scaling, split_quantity_unit
 
 logger = logging.getLogger(__name__)
 
@@ -102,9 +102,13 @@ class PolarsColumnCache:
                 # convert the missing columns to the requested units and add to the
                 # lazyframe
                 for col in missing_from_data:
-                    converter_object = unit_from_regexp(col)
-                    instruction = converter_object.from_default_unit()
-                    self.base_dataframe = self.base_dataframe.with_columns(instruction)
+                    quantity, unit = split_quantity_unit(col)
+                    if unit == "":
+                        continue
+                    _, base_unit = get_unit_scaling(unit)
+                    self.base_dataframe = self.base_dataframe.with_columns(
+                        (pl.col(f"{quantity} [{base_unit}]").units.to_unit(unit)),
+                    )
             # collect any missing columns and add to the cache
             if isinstance(self.base_dataframe, pl.LazyFrame):
                 dataframe = self.base_dataframe.select(missing_from_cache).collect()
