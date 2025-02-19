@@ -113,7 +113,9 @@ select = [
     "UP",  # pyupgrade: Check for outdated Python syntax
     "T20", # flake8-print: Check for print statements
     "N",  # pep8-naming: Check for naming conventions
+    "ANN", # flake8-annotations: Check for missing type annotations
 ]
+ignore = ["ANN401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -124,8 +126,8 @@ keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
 "docs/source/conf.py" = ["A"]
-"tests/*" = ["SLF001", "N", "B"]
-"docs/source/examples/*" = ["D103", "T20", "N"]
+"tests/*" = ["SLF001", "N", "B", "ANN"]
+"docs/source/examples/*" = ["D103", "T20", "N", "ANN"]
 "pyprobe/analysis/degradation_mode_analysis.py" = ["N"]
 "pyprobe/analysis/base/degradation_mode_analysis_functions.py" = ["N"]
 
