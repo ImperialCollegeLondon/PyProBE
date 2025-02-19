@@ -1,16 +1,9 @@
 """A module to contain plotting functions for PyProBE."""
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
 
-import numpy as np
-import plotly.graph_objects as go
 import polars as pl
-from deprecated import deprecated
-from numpy.typing import NDArray
-from plotly.express.colors import sample_colorscale
-from plotly.subplots import make_subplots
-from sklearn.preprocessing import minmax_scale
 
 if TYPE_CHECKING:
     from pyprobe.result import Result

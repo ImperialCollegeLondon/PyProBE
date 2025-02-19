@@ -6,9 +6,8 @@ from typing import Any, Callable, Literal, Optional, Tuple
 
 import numpy as np
 import polars as pl
-from deprecated import deprecated
 from numpy.typing import NDArray
-from pydantic import BaseModel, validate_call
+from pydantic import validate_call
 from scipy import interpolate
 from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter

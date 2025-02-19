@@ -1,11 +1,10 @@
 """A module for the Cycling class."""
 
 import polars as pl
-from deprecated import deprecated
-from pydantic import BaseModel, validate_call
+from pydantic import validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.filters import Experiment, get_cycle_column
+from pyprobe.filters import get_cycle_column
 from pyprobe.pyprobe_types import FilterToCycleType
 from pyprobe.result import Result
 

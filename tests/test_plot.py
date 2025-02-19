@@ -1,12 +1,8 @@
 """Tests for the Plot class."""
 
-import numpy as np
-import plotly.graph_objects as go
 import polars as pl
 import polars.testing as pl_testing
 import pytest
-from plotly.express.colors import sample_colorscale
-from sklearn.preprocessing import minmax_scale
 
 from pyprobe import plot
 from pyprobe.result import Result

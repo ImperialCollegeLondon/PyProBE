@@ -3,7 +3,6 @@
 from typing import List
 
 import polars as pl
-from deprecated import deprecated
 from pydantic import BaseModel, validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator

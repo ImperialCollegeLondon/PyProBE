@@ -8,7 +8,6 @@ import pandas as pd
 import polars as pl
 import polars.testing as pl_testing
 import pytest
-import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from pyprobe.dashboard import (
@@ -199,7 +198,7 @@ def test_dashboard_select_experiment():
     def select_exp_mini_app():
         from unittest.mock import MagicMock
 
-        import streamlit as st
+        import streamlit as st  # noqa: F811
 
         from pyprobe.dashboard import _Dashboard
 
@@ -262,7 +261,7 @@ def test_dashboard_run(cell_fixture):
     def run_mini_app():
         from unittest.mock import patch
 
-        import streamlit as st
+        import streamlit as st  # noqa: F811
 
         from pyprobe import Cell
         from pyprobe.dashboard import _Dashboard
