@@ -139,19 +139,17 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
         step_descriptions=step_descriptions_fixture,
     )
     definition_keys = list(rawdata.column_definitions.keys())
-    assert set(definition_keys) == set(
-        [
-            "Time",
-            "Current",
-            "Voltage",
-            "Capacity",
-            "Cycle",
-            "Step",
-            "Event",
-            "Date",
-            "Temperature",
-        ],
-    )
+    assert set(definition_keys) == {
+        "Time",
+        "Current",
+        "Voltage",
+        "Capacity",
+        "Cycle",
+        "Step",
+        "Event",
+        "Date",
+        "Temperature",
+    }
 
 
 def test_pybamm_experiment():

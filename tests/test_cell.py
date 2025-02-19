@@ -352,7 +352,7 @@ def test_import_pybamm_solution(benchmark):
     benchmark(add_two_experiments)
     assert set(
         cell_instance.procedure["PyBaMM two experiments"].experiment_names,
-    ) == set(["Test1", "Test2"])
+    ) == {"Test1", "Test2"}
     assert_array_equal(
         cell_instance.procedure["PyBaMM two experiments"].get("Voltage [V]"),
         sol2["Terminal voltage [V]"].entries,

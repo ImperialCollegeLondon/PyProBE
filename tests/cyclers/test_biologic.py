@@ -101,7 +101,7 @@ def test_read_and_process_biologic(benchmark, biologic_cycler):
         benchmark,
         biologic_cycler,
         expected_final_row=last_row,
-        expected_events=set([0, 1]),
+        expected_events={0, 1},
     )
     pyprobe_dataframe = pyprobe_dataframe.with_columns(
         [
@@ -133,7 +133,7 @@ def test_read_and_process_biologic_MB(benchmark, biologic_MB_cycler):
         benchmark,
         biologic_MB_cycler,
         expected_final_row=last_row,
-        expected_events=set([0, 1, 2, 3, 4, 5]),
+        expected_events={0, 1, 2, 3, 4, 5},
     )
     pyprobe_dataframe = pyprobe_dataframe.with_columns(
         [
@@ -167,7 +167,7 @@ def test_read_and_process_biologic_no_header(benchmark):
         benchmark,
         cycler,
         expected_final_row=last_row,
-        expected_events=set([0]),
+        expected_events={0},
         expected_columns=[
             "Time [s]",
             "Step",

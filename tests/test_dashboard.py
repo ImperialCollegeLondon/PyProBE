@@ -236,7 +236,7 @@ def test_get_data(cell_fixture):
         check_column_order=False,
     )
 
-    dashboard.selected_experiments = tuple(["Break-in Cycles"])
+    dashboard.selected_experiments = ("Break-in Cycles",)
     pl_testing.assert_frame_equal(
         dashboard.get_data()[0].data,
         cell_fixture.procedure["Sample"].experiment("Break-in Cycles").data,

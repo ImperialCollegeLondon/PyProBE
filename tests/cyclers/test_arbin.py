@@ -26,7 +26,7 @@ def test_read_and_process_arbin(benchmark):
             "Temperature [C]": [24.68785],
         },
     )
-    expected_events = set([0, 1, 2])
+    expected_events = {0, 1, 2}
     helper_read_and_process(
         benchmark,
         arbin_cycler,

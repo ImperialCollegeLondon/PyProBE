@@ -231,9 +231,15 @@ def test_data(Result_fixture):
 
 def test_quantities(Result_fixture):
     """Test the quantities property."""
-    assert set(Result_fixture.quantities) == set(
-        ["Time", "Current", "Voltage", "Capacity", "Event", "Date", "Step"],
-    )
+    assert set(Result_fixture.quantities) == {
+        "Time",
+        "Current",
+        "Voltage",
+        "Capacity",
+        "Event",
+        "Date",
+        "Step",
+    }
 
 
 def test_print_definitions(Result_fixture, capsys):
@@ -570,17 +576,15 @@ def test_export_to_mat(Result_fixture):
     saved_data = loadmat("./test_mat.mat")
     assert "data" in saved_data.keys()
     assert "info" in saved_data.keys()
-    expected_columns = set(
-        [
-            "Current__A_",
-            "Step",
-            "Event",
-            "Time__s_",
-            "Capacity__Ah_",
-            "Voltage__V_",
-            "Date",
-        ],
-    )
+    expected_columns = {
+        "Current__A_",
+        "Step",
+        "Event",
+        "Time__s_",
+        "Capacity__Ah_",
+        "Voltage__V_",
+        "Date",
+    }
     actual_columns = set(saved_data["data"].dtype.names)
     assert actual_columns == expected_columns
     os.remove("./test_mat.mat")

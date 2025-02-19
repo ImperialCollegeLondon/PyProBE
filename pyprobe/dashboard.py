@@ -194,7 +194,7 @@ class _Dashboard:
             y=data.get(self.y_axis),
             mode="lines",
             name=f"{data.info[self.cell_identifier]}",
-            line=dict(color=color),
+            line={"color": color},
         )
         self.fig.add_trace(primary_trace)
 
@@ -211,10 +211,10 @@ class _Dashboard:
             mode="lines",
             name=f"{data.info[self.cell_identifier]}",
             yaxis="y2",
-            line=dict(
-                color=color,
-                dash="dash",
-            ),  # Use the same color as the primary trace
+            line={
+                "color": color,
+                "dash": "dash",
+            },  # Use the same color as the primary trace
             showlegend=False,
         )
         self.fig.add_trace(secondary_trace)
@@ -226,7 +226,7 @@ class _Dashboard:
                 x=[None],
                 y=[None],
                 mode="lines",
-                line=dict(color="black", dash="dash"),
+                line={"color": "black", "dash": "dash"},
                 name=self.secondary_y_axis,
                 showlegend=True,
             ),
@@ -239,24 +239,24 @@ class _Dashboard:
         default_layout = go.Layout(
             template="simple_white",
             title=None,
-            xaxis_title_font=dict(size=title_font_size),
-            yaxis_title_font=dict(size=title_font_size),
-            xaxis_tickfont=dict(size=axis_font_size),
-            yaxis_tickfont=dict(size=axis_font_size),
-            legend_font=dict(size=axis_font_size),
-            legend=dict(x=1.2),
+            xaxis_title_font={"size": title_font_size},
+            yaxis_title_font={"size": title_font_size},
+            xaxis_tickfont={"size": axis_font_size},
+            yaxis_tickfont={"size": axis_font_size},
+            legend_font={"size": axis_font_size},
+            legend={"x": 1.2},
             width=800,
             height=600,
         )
         # Update layout for dual-axis
         self.fig.update_layout(
-            yaxis=dict(
-                title=self.y_axis,
-            ),
-            yaxis2=dict(title=self.secondary_y_axis, overlaying="y", side="right"),
-            xaxis=dict(
-                title=self.x_axis,
-            ),
+            yaxis={
+                "title": self.y_axis,
+            },
+            yaxis2={"title": self.secondary_y_axis, "overlaying": "y", "side": "right"},
+            xaxis={
+                "title": self.x_axis,
+            },
         )
         self.fig.update_layout(default_layout)
 

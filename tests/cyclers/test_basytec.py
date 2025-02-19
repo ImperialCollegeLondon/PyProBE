@@ -40,5 +40,5 @@ def test_read_and_process_basytec(benchmark):
         benchmark,
         basytec_cycler,
         expected_final_row=last_row,
-        expected_events=set([0, 1]),
+        expected_events={0, 1},
     )
