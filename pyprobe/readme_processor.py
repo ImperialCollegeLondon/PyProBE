@@ -24,7 +24,7 @@ class ReadmeModel:
         ] = {name: {} for name in experiment_names}
         self.step_details = None
         for experiment_name in experiment_names:
-            if "Steps" in self.readme_dict[experiment_name].keys():
+            if "Steps" in self.readme_dict[experiment_name]:
                 if isinstance(self.readme_dict[experiment_name]["Steps"], dict):
                     self._process_explicit_experiment(experiment_name)
                 elif isinstance(self.readme_dict[experiment_name]["Steps"], list):
@@ -33,7 +33,7 @@ class ReadmeModel:
                     error_msg = "Invalid format for steps in README file"
                     logger.error(error_msg)
                     raise ValueError(error_msg)
-            elif "Total Steps" in self.readme_dict[experiment_name].keys():
+            elif "Total Steps" in self.readme_dict[experiment_name]:
                 self._process_total_steps_experiment(experiment_name)
             else:
                 error_msg = "Each experiment must have a 'Steps' or 'Total Steps' key."

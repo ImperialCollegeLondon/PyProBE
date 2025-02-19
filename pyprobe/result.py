@@ -125,9 +125,9 @@ class PolarsColumnCache:
     @property
     def cached_dataframe(self) -> pl.DataFrame:
         """Return the cached dataframe as a Polars DataFrame."""
-        if self._cached_dataframe is None:
-            self._cached_dataframe = pl.DataFrame(self.cache)
-        elif set(self._cached_dataframe.collect_schema().names()) != set(
+        if self._cached_dataframe is None or set(
+            self._cached_dataframe.collect_schema().names()
+        ) != set(
             self.cache.keys(),
         ):
             self._cached_dataframe = pl.DataFrame(self.cache)
@@ -692,9 +692,7 @@ def combine_results(
         Result: A new result object with the combined data.
     """
     for result in results:
-        instructions = [
-            pl.lit(result.info[key]).alias(key) for key in result.info.keys()
-        ]
+        instructions = [pl.lit(result.info[key]).alias(key) for key in result.info]
         result.live_dataframe = result.live_dataframe.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]

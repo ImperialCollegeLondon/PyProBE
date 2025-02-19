@@ -72,10 +72,7 @@ def get_dy_and_counts(
     y_range = y.max() - y.min()
     y_bins = np.linspace(y.min(), y.max(), int(np.ceil(y_range / dy)))
     # ensure sign of dy matches direction of input data
-    if y[0] < y[-1]:
-        dy = y_bins[1] - y_bins[0]
-    else:
-        dy = -y_bins[1] + y_bins[0]
+    dy = y_bins[1] - y_bins[0] if y[0] < y[-1] else -y_bins[1] + y_bins[0]
     n, _ = np.histogram(y, bins=y_bins)
     y_midpoints = y_bins[:-1] + np.diff(y_bins) / 2
     return dy, y_midpoints, n
@@ -121,10 +118,7 @@ def calc_gradient_with_lean(
     dy, y_midpoints, n = get_dy_and_counts(y, dy)
     dxdy = n * dx / dy
 
-    if gradient == "dydx":
-        grad = np.divide(1, dxdy, where=dxdy != 0)
-    else:
-        grad = dxdy
+    grad = np.divide(1, dxdy, where=dxdy != 0) if gradient == "dydx" else dxdy
     f = interp.interp1d(y, x, assume_sorted=False)
     x_pts = f(y_midpoints)
     return x_pts, y_midpoints, grad

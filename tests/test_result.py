@@ -574,8 +574,8 @@ def test_export_to_mat(Result_fixture):
     """Test the export to mat function."""
     Result_fixture.export_to_mat("./test_mat.mat")
     saved_data = loadmat("./test_mat.mat")
-    assert "data" in saved_data.keys()
-    assert "info" in saved_data.keys()
+    assert "data" in saved_data
+    assert "info" in saved_data
     expected_columns = {
         "Current__A_",
         "Step",

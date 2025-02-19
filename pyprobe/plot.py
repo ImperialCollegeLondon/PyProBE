@@ -101,9 +101,8 @@ def _create_seaborn_wrapper() -> Any:
                     args,
                     kwargs,
                 ).to_pandas()
-            if func.__name__ == "lineplot":
-                if "estimator" not in kwargs:
-                    kwargs["estimator"] = None
+            if func.__name__ == "lineplot" and "estimator" not in kwargs:
+                kwargs["estimator"] = None
             return func(*args, **kwargs)
 
         return wrapper

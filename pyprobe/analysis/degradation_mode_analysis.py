@@ -570,14 +570,8 @@ def run_ocv_curve_fit(
         "dVdQ": dVdSOC,
     }[fitting_target]
 
-    if isinstance(ocp_pe, CompositeOCP):
-        composite_pe = True
-    else:
-        composite_pe = False
-    if isinstance(ocp_ne, CompositeOCP):
-        composite_ne = True
-    else:
-        composite_ne = False
+    composite_pe = bool(isinstance(ocp_pe, CompositeOCP))
+    composite_ne = bool(isinstance(ocp_ne, CompositeOCP))
 
     objective_function = _build_objective_function(
         ocp_pe,
@@ -930,10 +924,7 @@ def run_batch_dma_sequential(
     fitted_OCVs: list[Result] = []
     # Run the OCV curve fitting sequentially
     for index, input_data in enumerate(input_data_list):
-        if len(optimizer) == 1:
-            current_optimizer = optimizer[0]
-        else:
-            current_optimizer = optimizer[index]
+        current_optimizer = optimizer[0] if len(optimizer) == 1 else optimizer[index]
         if len(optimizer_options) == 1:
             current_optimizer_options = optimizer_options[0]
         else:

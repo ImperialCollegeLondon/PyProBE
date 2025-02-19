@@ -85,7 +85,7 @@ def get_unit_scaling(unit: str) -> tuple[float, str]:
     Returns:
         Tuple[Optional[str], str]: The prefix and default unit.
     """
-    if unit in time_unit_dict.keys():
+    if unit in time_unit_dict:
         return time_unit_dict[unit], "s"
     if len(unit) == 1:
         return 1, unit

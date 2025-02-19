@@ -118,8 +118,9 @@ select = [
     "C4", # flake8-comprehensions: Check list comprehensions
     "NPY", # numpy: Check numpy issues
     "ERA", # check for commented out code
+    "SIM" # flake8-simplify: Check for simplifications
 ]
-ignore = ["ANN401"]
+ignore = ["ANN401", "COM812"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

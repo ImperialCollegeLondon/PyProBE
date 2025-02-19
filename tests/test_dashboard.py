@@ -48,55 +48,59 @@ def test_pickle_dump(cell_list, mocker):
 
 def test_windows_launch(cell_list):
     """Test Windows subprocess launch."""
-    with patch("platform.system", return_value="Windows"):
-        with patch("subprocess.Popen") as mock_popen:
-            with patch("builtins.open"):
-                with patch("pickle.dump"):
-                    launch_dashboard(cell_list)
-
-                    mock_popen.assert_called_once()
-                    args = mock_popen.call_args[0][0]
-
-                    assert args[0:5] == ["cmd", "/c", "start", "/B", "streamlit"]
-                    assert "dashboard.py" in args[6]
-                    assert args[-3:] == [">", "nul", "2>&1"]
-                    assert mock_popen.call_args[1]["shell"] is True
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch("subprocess.Popen") as mock_popen,
+        patch("builtins.open"),
+        patch("pickle.dump"),
+    ):
+        launch_dashboard(cell_list)
+        mock_popen.assert_called_once()
+        args = mock_popen.call_args[0][0]
+        assert args[0:5] == ["cmd", "/c", "start", "/B", "streamlit"]
+        assert "dashboard.py" in args[6]
+        assert args[-3:] == [">", "nul", "2>&1"]
+        assert mock_popen.call_args[1]["shell"] is True
 
 
 def test_darwin_launch(cell_list):
     """Test Darwin/MacOS subprocess launch."""
-    with patch("platform.system", return_value="Darwin"):
-        with patch("subprocess.Popen") as mock_popen:
-            with patch("builtins.open"):
-                with patch("pickle.dump"):
-                    launch_dashboard(cell_list)
-
-                    mock_popen.assert_called_once()
-                    args = mock_popen.call_args[0][0]
-
-                    assert args[0:3] == ["nohup", "streamlit", "run"]
-                    assert "dashboard.py" in args[3]
-                    assert mock_popen.call_args[1]["stdout"] is subprocess.DEVNULL
-                    assert mock_popen.call_args[1]["stderr"] is subprocess.STDOUT
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("subprocess.Popen") as mock_popen,
+        patch("builtins.open"),
+        patch("pickle.dump"),
+    ):
+        launch_dashboard(cell_list)
+        mock_popen.assert_called_once()
+        args = mock_popen.call_args[0][0]
+        assert args[0:3] == ["nohup", "streamlit", "run"]
+        assert "dashboard.py" in args[3]
+        assert mock_popen.call_args[1]["stdout"] is subprocess.DEVNULL
+        assert mock_popen.call_args[1]["stderr"] is subprocess.STDOUT
 
 
 def test_other_platform(cell_list):
     """Test that no subprocess is launched on unsupported platforms."""
-    with patch("platform.system", return_value="Linux"):
-        with patch("subprocess.Popen") as mock_popen:
-            with patch("builtins.open"):
-                with patch("pickle.dump"):
-                    launch_dashboard(cell_list)
-                    mock_popen.assert_not_called()
+    with (
+        patch("platform.system", return_value="Linux"),
+        patch("subprocess.Popen") as mock_popen,
+        patch("builtins.open"),
+        patch("pickle.dump"),
+    ):
+        launch_dashboard(cell_list)
+        mock_popen.assert_not_called()
 
 
 def test_empty_cell_list():
     """Test handling of empty cell list."""
-    with patch("builtins.open"):
-        with patch("pickle.dump") as mock_dump:
-            with patch("subprocess.Popen"):
-                launch_dashboard([])
-                mock_dump.assert_called_once_with([], mock_dump.call_args[0][1])
+    with (
+        patch("builtins.open"),
+        patch("pickle.dump") as mock_dump,
+        patch("subprocess.Popen"),
+    ):
+        launch_dashboard([])
+        mock_dump.assert_called_once_with([], mock_dump.call_args[0][1])
 
 
 def test_dashboard_init(mock_cell):
