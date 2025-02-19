@@ -107,6 +107,7 @@ select = [
     "TID",  # flake8-tidy-imports
     "SLF001",  # private-member-access: Checks for accesses on "private" class members.
     "F",   # pyflakes: Check for errors in Python code
+    "E",   # pycodestyle: Check for PEP 8 violations
 ]
 
 [tool.ruff.lint.pydocstyle]

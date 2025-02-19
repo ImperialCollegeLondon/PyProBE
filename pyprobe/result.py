@@ -630,12 +630,14 @@ class Result(BaseModel):
         Args:
             filename: The name of the file to export to.
         """
-        # Replace any non-alphanumeric character with an underscore in the DataFrame columns
+        # Replace any non-alphanumeric character with an underscore in the DataFrame
+        # columns
         renamed_data = self.data.rename(
             {col: re.sub(r"\W", "_", col) for col in self.data.columns}
         )
 
-        # Replace any non-alphanumeric character with an underscore in the info dictionary keys
+        # Replace any non-alphanumeric character with an underscore in the info
+        # dictionary keys
         renamed_info = {
             re.sub(r"\W", "_", key): value for key, value in self.info.items()
         }

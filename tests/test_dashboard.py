@@ -128,7 +128,7 @@ def testdataframe_with_selections():
     data = pl.DataFrame({"id": ["test1", "test2"], "value": [10, 20]})
     df_with_selections = _Dashboard.dataframe_with_selections(data)
     assert "Select" in df_with_selections.columns
-    assert (df_with_selections["Select"].to_numpy() == False).all()
+    assert not df_with_selections["Select"].to_numpy().all()
 
 
 def test_select_cell_indices(mock_cell):

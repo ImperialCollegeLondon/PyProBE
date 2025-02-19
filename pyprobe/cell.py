@@ -7,10 +7,10 @@ import shutil
 import time
 import warnings
 import zipfile
-from typing import Annotated, Any, Callable, Dict, List, Literal, Optional
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 import polars as pl
-from pydantic import BaseModel, Field, TypeAdapter, validate_call
+from pydantic import BaseModel, Field, validate_call
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -72,7 +72,7 @@ class Cell(BaseModel):
                 output_data_path,
                 compression=compression_priority,
             )
-            logger.info(f"\tparquet written in {time.time()-t1: .2f} seconds.")
+            logger.info(f"\tparquet written in {time.time() - t1: .2f} seconds.")
         else:
             logger.info(f"File {output_data_path} already exists. Skipping.")
 

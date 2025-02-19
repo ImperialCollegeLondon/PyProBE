@@ -106,7 +106,7 @@ def test_create_interpolator_linear():
     x = np.array([1, 2, 3])
     y = np.array([4, 5, 6])
     interpolator = smoothing._create_interpolator(smoothing._LinearInterpolator, x, y)
-    assert type(interpolator) == smoothing._LinearInterpolator
+    assert type(interpolator) is smoothing._LinearInterpolator
     assert isinstance(interpolator, interpolate.PPoly)
     x_new = np.array([1.5, 2.5])
     y_new = interpolator(x_new)
@@ -118,7 +118,7 @@ def test_create_interpolator_cubic():
     x = np.array([1, 2, 3])
     y = np.array([4, 5, 6])
     interpolator = smoothing._create_interpolator(interpolate.CubicSpline, x, y)
-    assert type(interpolator) == interpolate.CubicSpline
+    assert type(interpolator) is interpolate.CubicSpline
     x_new = np.array([1.5, 2.5])
     y_new = interpolator(x_new)
     assert y_new.shape == x_new.shape
@@ -129,7 +129,7 @@ def test_create_interpolator_pchip():
     x = np.array([1, 2, 3])
     y = np.array([4, 5, 6])
     interpolator = smoothing._create_interpolator(interpolate.PchipInterpolator, x, y)
-    assert type(interpolator) == interpolate.PchipInterpolator
+    assert type(interpolator) is interpolate.PchipInterpolator
     x_new = np.array([1.5, 2.5])
     y_new = interpolator(x_new)
     assert y_new.shape == x_new.shape
@@ -140,7 +140,7 @@ def test_create_interpolator_akima():
     x = np.array([1, 2, 3])
     y = np.array([4, 5, 6])
     interpolator = smoothing._create_interpolator(interpolate.Akima1DInterpolator, x, y)
-    assert type(interpolator) == interpolate.Akima1DInterpolator
+    assert type(interpolator) is interpolate.Akima1DInterpolator
     x_new = np.array([1.5, 2.5])
     y_new = interpolator(x_new)
     assert y_new.shape == x_new.shape

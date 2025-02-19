@@ -221,8 +221,7 @@ def get_resistances(
         "Pulse Number": "An index for each pulse.",
         "Capacity": input_data.column_definitions["Capacity"],
         "SOC": input_data.column_definitions["SOC"],
-        "OCV": "The voltage value at the final data point in the rest before a "
-        "pulse.",
+        "OCV": "The voltage value at the final data point in the rest before a pulse.",
         "R0": "The instantaneous resistance measured between the final rest "
         "point and the first data point in the pulse.",
     }

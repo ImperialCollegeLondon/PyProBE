@@ -70,7 +70,8 @@ def _step(
     """Return a step object. Filters to a numerical condition on the Event column.
 
     Args:
-        filtered_object (FilterToCycleType): A filter object that this method is called on.
+        filtered_object (FilterToCycleType):
+            A filter object that this method is called on.
         step_numbers (int | range):
             Variable-length argument list of step indices or a range object.
         condition (pl.Expr, optional):
@@ -141,7 +142,8 @@ def _cycle(
     """Return a cycle object. Filters on the Cycle column.
 
     Args:
-        filtered_object (FilterToExperimentType): A filter object that this method is called on.
+        filtered_object (FilterToExperimentType):
+            A filter object that this method is called on.
         cycle_numbers (int | range):
             Variable-length argument list of cycle indices or a range object.
 
@@ -172,7 +174,8 @@ def _charge(
     """Return a charge step.
 
     Args:
-        filtered_object (FilterToCycleType): A filter object that this method is called on.
+        filtered_object (FilterToCycleType):
+            A filter object that this method is called on.
         charge_numbers (int | range):
             Variable-length argument list of charge indices or a range object.
 
@@ -190,7 +193,8 @@ def _discharge(
     """Return a discharge step.
 
     Args:
-        filtered_object (FilterToCycleType): A filter object that this method is called on.
+        filtered_object (FilterToCycleType):
+            A filter object that this method is called on.
         discharge_numbers (int | range):
             Variable-length argument list of discharge indices or a range object.
 
@@ -208,7 +212,8 @@ def _chargeordischarge(
     """Return a charge or discharge step.
 
     Args:
-        filtered_object (FilterToCycleType): A filter object that this method is called on.
+        filtered_object (FilterToCycleType):
+            A filter object that this method is called on.
         chargeordischarge_numbers (int | range):
             Variable-length argument list of charge or discharge indices or a range
             object.
@@ -230,7 +235,8 @@ def _rest(
     """Return a rest step object.
 
     Args:
-        filtered_object (FilterToCycleType): A filter object that this method is called on.
+        filtered_object (FilterToCycleType):
+            A filter object that this method is called on.
         rest_numbers (int | range):
             Variable-length argument list of rest indices or a range object.
 
@@ -248,7 +254,8 @@ def _constant_current(
     """Return a constant current step object.
 
     Args:
-        filtered_object (FilterToCycleType): A filter object that this method is called on.
+        filtered_object (FilterToCycleType):
+            A filter object that this method is called on.
         constant_current_numbers (int | range):
             Variable-length argument list of constant current indices or a range object.
 
