@@ -1,7 +1,5 @@
 """A module for the Pulsing class."""
 
-from typing import List
-
 import polars as pl
 from pydantic import BaseModel, validate_call
 
@@ -73,7 +71,7 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
 
 @validate_call
 def get_resistances(
-    input_data: PyProBEDataType, r_times: List[float | int] = []
+    input_data: PyProBEDataType, r_times: list[float | int] = []
 ) -> Result:
     """Returns a result object summarising the pulsing experiment.
 

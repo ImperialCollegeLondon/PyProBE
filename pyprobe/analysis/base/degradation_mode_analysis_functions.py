@@ -1,7 +1,5 @@
 """A module containing functions for degradation mode analysis."""
 
-from typing import Tuple
-
 import numpy as np
 import scipy.interpolate as interp
 import scipy.optimize as opt
@@ -75,7 +73,7 @@ def calc_electrode_capacities(
     x_ne_lo: float,
     x_ne_hi: float,
     cell_capacity: float,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Calculate the electrode capacities.
 
     Args:
@@ -238,7 +236,7 @@ def calculate_dma_parameters(
     pe_capacity: NDArray[np.float64],
     ne_capacity: NDArray[np.float64],
     li_inventory: NDArray[np.float64],
-) -> Tuple[
+) -> tuple[
     NDArray[np.float64],
     NDArray[np.float64],
     NDArray[np.float64],
@@ -269,7 +267,7 @@ def average_OCV_curves(
     discharge_SOC: NDArray[np.float64],
     discharge_OCV: NDArray[np.float64],
     discharge_current: NDArray[np.float64],
-) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Average the charge and discharge OCV curves.
 
     Args:

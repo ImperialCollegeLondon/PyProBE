@@ -3,13 +3,12 @@
 import itertools
 import logging
 import re
-from typing import Dict, Optional, Tuple
 
 import polars as pl
 
 logger = logging.getLogger(__name__)
 
-unit_dict: Dict[str, str] = {
+unit_dict: dict[str, str] = {
     "A": "Current",
     "V": "Voltage",
     "Ah": "Capacity",
@@ -23,7 +22,7 @@ unit_dict: Dict[str, str] = {
 }
 """A dictionary of valid units and their corresponding quantities."""
 
-prefix_dict: Dict[str, float] = {
+prefix_dict: dict[str, float] = {
     "m": 1e-3,
     "µ": 1e-6,
     "n": 1e-9,
@@ -32,7 +31,7 @@ prefix_dict: Dict[str, float] = {
     "M": 1e6,
 }
 """A dictionary of SI prefixes and their corresponding factors."""
-time_unit_dict: Dict[str, float] = {
+time_unit_dict: dict[str, float] = {
     "s": 1,
     "min": 60,
     "hr": 3600,
@@ -54,7 +53,7 @@ valid_units = set(
 
 def split_quantity_unit(
     name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]+)\])?$"
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Split a column name into quantity and unit.
 
     Args:
@@ -137,7 +136,7 @@ class Units:
         input_unit (str): The unit of the column.
     """
 
-    prefix_dict: Dict[str, float] = {
+    prefix_dict: dict[str, float] = {
         "m": 1e-3,
         "µ": 1e-6,
         "n": 1e-9,
@@ -147,7 +146,7 @@ class Units:
     }
     """A dictionary of SI prefixes and their corresponding factors."""
 
-    time_unit_dict: Dict[str, float] = {
+    time_unit_dict: dict[str, float] = {
         "s": 1.0,
         "min": 60.0,
         "hr": 3600.0,
@@ -155,7 +154,7 @@ class Units:
     }
     """A dictionary of time units and their corresponding factors."""
 
-    unit_dict: Dict[str, str] = {
+    unit_dict: dict[str, str] = {
         "A": "Current",
         "V": "Voltage",
         "Ah": "Capacity",
@@ -185,7 +184,7 @@ class Units:
                 self.prefix_dict[self.prefix] if self.prefix is not None else 1
             )
 
-    def _get_default_unit(self, unit: str) -> Tuple[Optional[str], str]:
+    def _get_default_unit(self, unit: str) -> tuple[str | None, str]:
         """Return the default unit and prefix of a given unit.
 
         Args:

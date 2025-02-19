@@ -2,7 +2,8 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union, cast
+from collections.abc import Callable
+from typing import Any, Literal, cast
 
 import numpy as np
 import polars as pl
@@ -23,11 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 def _get_gradient(
-    any_function: Union[
-        Callable[[NDArray[np.float64]], NDArray[np.float64]],
-        PPoly,
-        sp.Expr,
-    ],
+    any_function: Callable[[NDArray[np.float64]], NDArray[np.float64]]
+    | PPoly
+    | sp.Expr,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Retrieve the gradient of the OCP function.
 
@@ -88,11 +87,9 @@ class OCP(_AbstractOCP):
 
     def __init__(
         self,
-        ocp_function: Union[
-            Callable[[NDArray[np.float64]], NDArray[np.float64]],
-            PPoly,
-            sp.Expr,
-        ],
+        ocp_function: Callable[[NDArray[np.float64]], NDArray[np.float64]]
+        | PPoly
+        | sp.Expr,
     ) -> None:
         """Initialize the OCP object."""
         self.ocp_function = ocp_function
@@ -166,12 +163,8 @@ class CompositeOCP(_AbstractOCP):
 
     def __init__(
         self,
-        ocp_list: List[
-            Union[
-                Callable[[NDArray[np.float64]], NDArray[np.float64]],
-                PPoly,
-                sp.Expr,
-            ]
+        ocp_list: list[
+            Callable[[NDArray[np.float64]], NDArray[np.float64]] | PPoly | sp.Expr
         ],
         ocp_vector: NDArray[np.float64],
     ) -> None:
@@ -248,8 +241,8 @@ class CompositeOCP(_AbstractOCP):
 
 
 def _f_OCV(
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     SOC: NDArray[np.float64],
     x_pe_lo: NDArray[np.float64],
     x_pe_hi: NDArray[np.float64],
@@ -279,8 +272,8 @@ def _f_OCV(
 
 
 def _f_grad_OCV(
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     SOC: NDArray[np.float64],
     x_pe_lo: NDArray[np.float64],
     x_pe_hi: NDArray[np.float64],
@@ -318,8 +311,8 @@ def _f_grad_OCV(
 
 
 def _build_objective_function(
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     SOC: NDArray[np.float64],
     fitting_target_data: NDArray[np.float64],
     fitting_target: Literal["OCV", "dQdV", "dVdQ"],
@@ -342,14 +335,14 @@ def _build_objective_function(
     if not composite_pe and not composite_ne:
 
         def unwrap_params(
-            params: Tuple[np.float64, ...],
-        ) -> Tuple[
+            params: tuple[np.float64, ...],
+        ) -> tuple[
             float,
             float,
             float,
             float,
-            Union[OCP, CompositeOCP],
-            Union[OCP, CompositeOCP],
+            OCP | CompositeOCP,
+            OCP | CompositeOCP,
         ]:
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi = params
             return (
@@ -364,14 +357,14 @@ def _build_objective_function(
     elif composite_pe and not composite_ne:
 
         def unwrap_params(
-            params: Tuple[np.float64, ...],
-        ) -> Tuple[
+            params: tuple[np.float64, ...],
+        ) -> tuple[
             float,
             float,
             float,
             float,
-            Union[OCP, CompositeOCP],
-            Union[OCP, CompositeOCP],
+            OCP | CompositeOCP,
+            OCP | CompositeOCP,
         ]:
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac = params
             updated_ocp_pe = cast(CompositeOCP, ocp_pe)
@@ -381,14 +374,14 @@ def _build_objective_function(
     elif not composite_pe and composite_ne:
 
         def unwrap_params(
-            params: Tuple[np.float64, ...],
-        ) -> Tuple[
+            params: tuple[np.float64, ...],
+        ) -> tuple[
             float,
             float,
             float,
             float,
-            Union[OCP, CompositeOCP],
-            Union[OCP, CompositeOCP],
+            OCP | CompositeOCP,
+            OCP | CompositeOCP,
         ]:
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, ne_frac = params
             updated_ocp_ne = cast(CompositeOCP, ocp_ne)
@@ -398,14 +391,14 @@ def _build_objective_function(
     else:  # composite_pe and composite_ne are both True
 
         def unwrap_params(
-            params: Tuple[np.float64, ...],
-        ) -> Tuple[
+            params: tuple[np.float64, ...],
+        ) -> tuple[
             float,
             float,
             float,
             float,
-            Union[OCP, CompositeOCP],
-            Union[OCP, CompositeOCP],
+            OCP | CompositeOCP,
+            OCP | CompositeOCP,
         ]:
             x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, pe_frac, ne_frac = params
             updated_ocp_pe = cast(CompositeOCP, ocp_pe)
@@ -418,8 +411,8 @@ def _build_objective_function(
     if fitting_target == "OCV":
 
         def model_function(
-            ocp_pe: Union[OCP, CompositeOCP],
-            ocp_ne: Union[OCP, CompositeOCP],
+            ocp_pe: OCP | CompositeOCP,
+            ocp_ne: OCP | CompositeOCP,
             SOC: NDArray[np.float64],
             x_pe_lo: float,
             x_pe_hi: float,
@@ -439,8 +432,8 @@ def _build_objective_function(
     elif fitting_target == "dVdQ":
 
         def model_function(
-            ocp_pe: Union[OCP, CompositeOCP],
-            ocp_ne: Union[OCP, CompositeOCP],
+            ocp_pe: OCP | CompositeOCP,
+            ocp_ne: OCP | CompositeOCP,
             SOC: NDArray[np.float64],
             x_pe_lo: float,
             x_pe_hi: float,
@@ -452,8 +445,8 @@ def _build_objective_function(
     elif fitting_target == "dQdV":
 
         def model_function(
-            ocp_pe: Union[OCP, CompositeOCP],
-            ocp_ne: Union[OCP, CompositeOCP],
+            ocp_pe: OCP | CompositeOCP,
+            ocp_ne: OCP | CompositeOCP,
             SOC: NDArray[np.float64],
             x_pe_lo: float,
             x_pe_hi: float,
@@ -502,15 +495,15 @@ def _build_objective_function(
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_ocv_curve_fit(
     input_data: PyProBEDataType,
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
     optimizer: Literal["minimize", "differential_evolution"] = "minimize",
-    optimizer_options: Dict[str, Any] = {
+    optimizer_options: dict[str, Any] = {
         "x0": np.array([0.9, 0.1, 0.1, 0.9]),
         "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
     },
-) -> Tuple[Result, Result]:
+) -> tuple[Result, Result]:
     """Fit half cell open circuit potential curves to full cell OCV data.
 
     Args:
@@ -680,7 +673,7 @@ def run_ocv_curve_fit(
 
 @validate_call
 def quantify_degradation_modes(
-    stoichiometry_limits_list: List[Result],
+    stoichiometry_limits_list: list[Result],
 ) -> Result:
     """Quantify the change in degradation modes between at least two OCV fits.
 
@@ -759,12 +752,12 @@ def quantify_degradation_modes(
 def _run_ocv_curve_fit_with_index(
     index: int,
     input_data: PyProBEDataType,
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     fitting_target: Literal["OCV", "dQdV", "dVdQ"],
     optimizer: Literal["minimize", "differential_evolution"],
-    optimizer_options: Dict[str, Any],
-) -> Tuple[int, Tuple[Result, Result]]:
+    optimizer_options: dict[str, Any],
+) -> tuple[int, tuple[Result, Result]]:
     """Wrapper function for running the OCV curve fitting with an index."""
     result = run_ocv_curve_fit(
         input_data=input_data,
@@ -779,16 +772,16 @@ def _run_ocv_curve_fit_with_index(
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_parallel(
-    input_data_list: List[PyProBEDataType],
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    input_data_list: list[PyProBEDataType],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
     optimizer: Literal["minimize", "differential_evolution"] = "minimize",
-    optimizer_options: Dict[str, Any] = {
+    optimizer_options: dict[str, Any] = {
         "x0": np.array([0.9, 0.1, 0.1, 0.9]),
         "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
     },
-) -> Tuple[Result, List[Result]]:
+) -> tuple[Result, list[Result]]:
     """Fit half cell open circuit potential curves to full cell OCV data.
 
     DMA analysis is run in parallel across all provided input_data.
@@ -854,19 +847,19 @@ def run_batch_dma_parallel(
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_sequential(
-    input_data_list: List[PyProBEDataType],
-    ocp_pe: Union[OCP, CompositeOCP],
-    ocp_ne: Union[OCP, CompositeOCP],
+    input_data_list: list[PyProBEDataType],
+    ocp_pe: OCP | CompositeOCP,
+    ocp_ne: OCP | CompositeOCP,
     fitting_target: Literal["OCV", "dQdV", "dVdQ"] = "OCV",
-    optimizer: List[Literal["minimize", "differential_evolution"]] = ["minimize"],
-    optimizer_options: List[Dict[str, Any]] = [
+    optimizer: list[Literal["minimize", "differential_evolution"]] = ["minimize"],
+    optimizer_options: list[dict[str, Any]] = [
         {
             "x0": np.array([0.9, 0.1, 0.1, 0.9]),
             "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
         }
     ],
     link_results: bool = False,
-) -> Tuple[Result, List[Result]]:
+) -> tuple[Result, list[Result]]:
     """Fit half cell open circuit potential curves to full cell OCV data.
 
     DMA analysis is run sequentially across all provided input_data.
@@ -903,8 +896,8 @@ def run_batch_dma_sequential(
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
     # Initialize the results list
-    stoichiometry_limit_list: List[Result] = []
-    fitted_OCVs: List[Result] = []
+    stoichiometry_limit_list: list[Result] = []
+    fitted_OCVs: list[Result] = []
     # Run the OCV curve fitting sequentially
     for index, input_data in enumerate(input_data_list):
         if len(optimizer) == 1:
@@ -951,8 +944,8 @@ def run_batch_dma_sequential(
 @validate_call
 def average_ocvs(
     input_data: FilterToCycleType,
-    discharge_filter: Optional[str] = None,
-    charge_filter: Optional[str] = None,
+    discharge_filter: str | None = None,
+    charge_filter: str | None = None,
 ) -> Result:
     """Average the charge and discharge OCV curves.
 

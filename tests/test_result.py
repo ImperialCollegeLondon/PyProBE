@@ -107,7 +107,7 @@ def test_live_dataframe():
     )
     result_object._polars_cache.collect_columns("a")
     pl_testing.assert_frame_equal(
-        result_object.live_dataframe, lf.with_columns((pl.col("a") * 10))
+        result_object.live_dataframe, lf.with_columns(pl.col("a") * 10)
     )
 
     result_object = Result(base_dataframe=lf, info={})

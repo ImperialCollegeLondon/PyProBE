@@ -1,13 +1,12 @@
 """Module for configuring logging for the PyProBE package."""
 
 import logging
-from typing import Optional
 
 
 def configure_logging(
     level: str | int = logging.WARNING,
     str_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
 ) -> None:
     """Configure the logging level, format, and handlers for the PyProBE package.
 

@@ -5,7 +5,7 @@ import os
 import pickle
 import platform
 import subprocess
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import distinctipy
 import plotly.graph_objects as go
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pyprobe.result import Result
 
 
-def launch_dashboard(cell_list: List[Cell]) -> None:
+def launch_dashboard(cell_list: list[Cell]) -> None:
     """Function to launch the dashboard for the preprocessed data.
 
     Args:
@@ -59,7 +59,7 @@ def launch_dashboard(cell_list: List[Cell]) -> None:
 class _Dashboard:
     """Class to create a Streamlit dashboard for PyProBE."""
 
-    def __init__(self, cell_list: List[Cell]) -> None:
+    def __init__(self, cell_list: list[Cell]) -> None:
         """Initialize the dashboard with the cell list."""
         self.cell_list = cell_list
         self.info = self.get_info(self.cell_list)
@@ -81,7 +81,7 @@ class _Dashboard:
     ]
 
     @staticmethod
-    def get_info(cell_list: List[Cell]) -> pl.DataFrame:
+    def get_info(cell_list: list[Cell]) -> pl.DataFrame:
         """Get the cell information from the cell list.
 
         Args:
@@ -96,7 +96,7 @@ class _Dashboard:
         return pl.DataFrame(info_list)
 
     @staticmethod
-    def dataframe_with_selections(df: pl.DataFrame) -> List[int]:
+    def dataframe_with_selections(df: pl.DataFrame) -> list[int]:
         """Create a dataframe with a selection column for user input.
 
         Args:
@@ -110,7 +110,7 @@ class _Dashboard:
         df_with_selections.insert(0, "Select", False)
         return df_with_selections
 
-    def select_cell_indices(self) -> List[int]:
+    def select_cell_indices(self) -> list[int]:
         """Get dataframe row selections."""
         edited_df = st.sidebar.data_editor(
             self.dataframe_with_selections(self.info),
@@ -126,7 +126,7 @@ class _Dashboard:
         )  # Get the indices of the selected rows
         return selected_indices
 
-    def get_common_procedures(self) -> List[str]:
+    def get_common_procedures(self) -> list[str]:
         """Get the common procedure names from the selected cells."""
         procedure_names_sets = [
             list(self.cell_list[i].procedure.keys()) for i in self.selected_indices
@@ -134,7 +134,7 @@ class _Dashboard:
 
         # Find the common procedure names
         if len(procedure_names_sets) == 0:
-            procedure_names: List[str] = []
+            procedure_names: list[str] = []
         else:
             procedure_names = list(procedure_names_sets[0])
             for s in procedure_names_sets[1:]:
@@ -156,12 +156,12 @@ class _Dashboard:
         else:
             return ()
 
-    def get_data(self) -> List["Result"]:
+    def get_data(self) -> list["Result"]:
         """Get the data from the selected cells."""
         selected_data = []
         for i in range(len(self.selected_indices)):
             selected_index = self.selected_indices[i]
-            experiment_data: "Result"
+            experiment_data: Result
             if len(self.selected_experiments) == 0:
                 experiment_data = self.cell_list[selected_index].procedure[
                     self.selected_procedure

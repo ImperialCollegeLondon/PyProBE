@@ -34,7 +34,7 @@ class Basytec(bc.BaseCycler):
             pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
         n_header_lines = 0
-        with open(filepath, "r", encoding="utf-8") as file:
+        with open(filepath, encoding="utf-8") as file:
             for line in file:
                 if line.startswith("~"):
                     n_header_lines += 1

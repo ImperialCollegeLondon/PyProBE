@@ -1,7 +1,7 @@
 """A module for the RawData class."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Optional
 
 import polars as pl
 from pydantic import Field, field_validator
@@ -54,10 +54,10 @@ class RawData(Result):
     This defines the PyProBE format.
     """
 
-    column_definitions: Dict[str, str] = Field(
+    column_definitions: dict[str, str] = Field(
         default_factory=lambda: default_column_definitions.copy()
     )
-    step_descriptions: Dict[str, List[Optional[str | int]]] = {}
+    step_descriptions: dict[str, list[str | int | None]] = {}
     """A dictionary containing the fields 'Step' and 'Description'.
 
     - 'Step' is a list of step numbers.
@@ -99,7 +99,7 @@ class RawData(Result):
         self,
         column: str,
         new_column_name: str,
-        new_column_definition: Optional[str] = None,
+        new_column_definition: str | None = None,
     ) -> None:
         """Set the first value of a column to zero.
 
@@ -133,7 +133,7 @@ class RawData(Result):
 
     def set_SOC(
         self,
-        reference_capacity: Optional[float] = None,
+        reference_capacity: float | None = None,
         reference_charge: Optional["RawData"] = None,
     ) -> None:
         """Add an SOC column to the data.
@@ -202,9 +202,7 @@ class RawData(Result):
             )
         self.define_column("SOC", "The full cell State-of-Charge.")
 
-    def set_reference_capacity(
-        self, reference_capacity: Optional[float] = None
-    ) -> None:
+    def set_reference_capacity(self, reference_capacity: float | None = None) -> None:
         """Fix the capacity to a reference value.
 
         Apply this method on a filtered data object to fix the capacity to a reference.

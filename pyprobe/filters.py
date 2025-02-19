@@ -2,7 +2,7 @@
 
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def _filter_numerical(
     dataframe: pl.LazyFrame | pl.DataFrame,
     column: str,
-    indices: Tuple[Union[int, range], ...],
+    indices: tuple[int | range, ...],
 ) -> pl.LazyFrame | pl.DataFrame:
     """Filter a polars Lazyframe or Dataframe by a numerical condition.
 
@@ -64,8 +64,8 @@ def _filter_numerical(
 
 def _step(
     filtered_object: "FilterToCycleType",
-    *step_numbers: Union[int, range],
-    condition: Optional[pl.Expr] = None,
+    *step_numbers: int | range,
+    condition: pl.Expr | None = None,
 ) -> "Step":
     """Return a step object. Filters to a numerical condition on the Event column.
 
@@ -136,9 +136,7 @@ def get_cycle_column(
     return filtered_object.live_dataframe.with_columns(cycle_column)
 
 
-def _cycle(
-    filtered_object: "ExperimentOrCycleType", *cycle_numbers: Union[int]
-) -> "Cycle":
+def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cycle":
     """Return a cycle object. Filters on the Cycle column.
 
     Args:
@@ -169,7 +167,7 @@ def _cycle(
 
 
 def _charge(
-    filtered_object: "FilterToCycleType", *charge_numbers: Union[int, range]
+    filtered_object: "FilterToCycleType", *charge_numbers: int | range
 ) -> "Step":
     """Return a charge step.
 
@@ -188,7 +186,7 @@ def _charge(
 
 def _discharge(
     filtered_object: "FilterToCycleType",
-    *discharge_numbers: Union[int, range],
+    *discharge_numbers: int | range,
 ) -> "Step":
     """Return a discharge step.
 
@@ -207,7 +205,7 @@ def _discharge(
 
 def _chargeordischarge(
     filtered_object: "FilterToCycleType",
-    *chargeordischarge_numbers: Union[int, range],
+    *chargeordischarge_numbers: int | range,
 ) -> "Step":
     """Return a charge or discharge step.
 
@@ -229,9 +227,7 @@ def _chargeordischarge(
     return filtered_object.step(*chargeordischarge_numbers, condition=condition)
 
 
-def _rest(
-    filtered_object: "FilterToCycleType", *rest_numbers: Union[int, range]
-) -> "Step":
+def _rest(filtered_object: "FilterToCycleType", *rest_numbers: int | range) -> "Step":
     """Return a rest step object.
 
     Args:
@@ -249,7 +245,7 @@ def _rest(
 
 def _constant_current(
     filtered_object: "FilterToCycleType",
-    *constant_current_numbers: Union[int, range],
+    *constant_current_numbers: int | range,
 ) -> "Step":
     """Return a constant current step object.
 
@@ -278,7 +274,7 @@ def _constant_current(
 
 def _constant_voltage(
     filtered_object: "FilterToCycleType",
-    *constant_voltage_numbers: Union[int, range],
+    *constant_voltage_numbers: int | range,
 ) -> "Step":
     """Return a constant voltage step object.
 
@@ -303,10 +299,10 @@ def _constant_voltage(
 class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
-    readme_dict: Dict[str, Dict[str, List[str | int | Tuple[int, int, int]]]]
+    readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]]
     """A dictionary representing the data contained in the README yaml file."""
 
-    cycle_info: List[Tuple[int, int, int]] = []
+    cycle_info: list[tuple[int, int, int]] = []
     """A list of tuples representing the cycle information from the README yaml file.
 
     The tuple format is
@@ -329,11 +325,11 @@ class Procedure(RawData):
         )
         self.step_descriptions = {"Step": [], "Description": []}
         for experiment in self.readme_dict:
-            steps = cast(List[int], self.readme_dict[experiment]["Steps"])
-            descriptions: List[str | None] = [None] * len(steps)
+            steps = cast(list[int], self.readme_dict[experiment]["Steps"])
+            descriptions: list[str | None] = [None] * len(steps)
             if "Step Descriptions" in self.readme_dict[experiment]:
                 descriptions = cast(
-                    List[str | None], self.readme_dict[experiment]["Step Descriptions"]
+                    list[str | None], self.readme_dict[experiment]["Step Descriptions"]
                 )
             self.step_descriptions["Step"].extend(steps)
             self.step_descriptions["Description"].extend(descriptions)
@@ -369,7 +365,7 @@ class Procedure(RawData):
             pl.col("Step").is_in(flattened_steps),
         ]
         lf_filtered = self.live_dataframe.filter(conditions)
-        cycles_list: List[Tuple[int, int, int]] = []
+        cycles_list: list[tuple[int, int, int]] = []
         if len(experiment_names) > 1:
             warnings.warn(
                 "Multiple experiments selected. Cycles will be inferred from "
@@ -413,7 +409,7 @@ class Procedure(RawData):
         self.live_dataframe = self.live_dataframe.filter(conditions)
 
     @property
-    def experiment_names(self) -> List[str]:
+    def experiment_names(self) -> list[str]:
         """Return the names of the experiments in the procedure.
 
         Returns:
@@ -424,7 +420,7 @@ class Procedure(RawData):
     def add_external_data(
         self,
         filepath: str,
-        importing_columns: List[str] | Dict[str, str],
+        importing_columns: list[str] | dict[str, str],
         date_column_name: str = "Date",
     ) -> None:
         """Add data from another source to the procedure.
@@ -434,7 +430,7 @@ class Procedure(RawData):
 
         Args:
             filepath (str): The path to the external file.
-            importing_columns (List[str] | Dict[str, str]):
+            importing_columns (List[str] | dict[str, str]):
                 The columns to import from the external file. If a list, the columns
                 will be imported as is. If a dict, the keys are the columns in the data
                 you want to import and the values are the columns you want to rename
@@ -481,7 +477,7 @@ class Procedure(RawData):
 class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure."""
 
-    cycle_info: List[Tuple[int, int, int]] = []
+    cycle_info: list[tuple[int, int, int]] = []
     """A list of tuples representing the cycle information from the README yaml file.
 
     The tuple format is
@@ -516,7 +512,7 @@ class Experiment(RawData):
 class Cycle(RawData):
     """A class for a cycle in a battery experimental procedure."""
 
-    cycle_info: List[Tuple[int, int, int]] = []
+    cycle_info: list[tuple[int, int, int]] = []
     """A list of tuples representing the cycle information from the README yaml file.
 
     The tuple format is

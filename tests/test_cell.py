@@ -417,7 +417,7 @@ def test_archive(cell_instance):
     )
 
     # test loading an incorrect pyprobe version
-    with open(os.path.join(input_path, "archive", "metadata.json"), "r") as f:
+    with open(os.path.join(input_path, "archive", "metadata.json")) as f:
         metadata = json.load(f)
     metadata["PyProBE Version"] = "0.0.0"
     with open(os.path.join(input_path, "archive", "metadata.json"), "w") as f:

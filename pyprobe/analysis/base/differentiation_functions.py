@@ -1,13 +1,11 @@
 """Module containing functions for differentiating experimental data."""
 
-from typing import List, Tuple
-
 import numpy as np
 import scipy.interpolate as interp
 from numpy.typing import NDArray
 
 
-def get_x_sections(x: NDArray[np.float64]) -> List[slice]:
+def get_x_sections(x: NDArray[np.float64]) -> list[slice]:
     """Split the x data into uniformly sampled sections.
 
     Args:
@@ -59,7 +57,7 @@ def get_dx(x: NDArray[np.float64]) -> float:
 
 def get_dy_and_counts(
     y: NDArray[np.float64], dy: float
-) -> Tuple[float, NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[float, NDArray[np.float64], NDArray[np.float64]]:
     """Get the y sampling interval, bin midpoints and counts.
 
     Args:
@@ -99,7 +97,7 @@ def y_sampling_interval(y: NDArray[np.float64]) -> float:
 
 def calc_gradient_with_LEAN(
     x: NDArray[np.float64], y: NDArray[np.float64], k: int, gradient: str
-) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     r"""Calculate the gradient of the data, assuming x is uniformly spaced.
 
     Args:
@@ -129,7 +127,7 @@ def calc_gradient_with_LEAN(
 
 
 def smooth_gradient(
-    gradient: NDArray[np.float64], alpha: List[float]
+    gradient: NDArray[np.float64], alpha: list[float]
 ) -> NDArray[np.float64]:
     """Smooth the calculated gradient.
 

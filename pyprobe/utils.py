@@ -1,9 +1,9 @@
 """A collection of utility functions for PyProBE."""
 
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
 
-def flatten_list(lst: int | List[Any]) -> List[int]:
+def flatten_list(lst: int | list[Any]) -> list[int]:
     """Flatten a list of lists into a single list.
 
     Args:
@@ -23,8 +23,8 @@ class PyBaMMSolution(Protocol):
 
     def get_data_dict(
         self,
-        variables: Optional[List[str]] = None,
-        short_names: Optional[Dict[str, str]] = None,
+        variables: list[str] | None = None,
+        short_names: dict[str, str] | None = None,
         cycles_and_steps: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get solution data as dictionary."""

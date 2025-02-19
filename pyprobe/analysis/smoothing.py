@@ -2,7 +2,8 @@
 
 import copy
 import logging
-from typing import Any, Callable, Literal, Optional, Tuple
+from collections.abc import Callable
+from typing import Any, Literal
 
 import numpy as np
 import polars as pl
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 def spline_smoothing(
     input_data: PyProBEDataType,
     target_column: str,
-    smoothing_lambda: Optional[float] = None,
+    smoothing_lambda: float | None = None,
     x: str = "Time [s]",
 ) -> Result:
     """A method for smoothing noisy data using a spline.
@@ -285,7 +286,7 @@ class _LinearInterpolator(interpolate.PPoly):
 
 def _validate_interp_input_vectors(
     x: NDArray[np.float64], y: NDArray[np.float64]
-) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Validate the input vectors x and y.
 
     Args:

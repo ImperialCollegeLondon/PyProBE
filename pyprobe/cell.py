@@ -7,7 +7,8 @@ import shutil
 import time
 import warnings
 import zipfile
-from typing import Any, Callable, Dict, List, Literal, Optional
+from collections.abc import Callable
+from typing import Any, Literal
 
 import polars as pl
 from pydantic import BaseModel, Field, validate_call
@@ -24,12 +25,12 @@ logger = logging.getLogger(__name__)
 class Cell(BaseModel):
     """A class for a cell in a battery experiment."""
 
-    info: dict[str, Optional[Any]]
+    info: dict[str, Any | None]
     """Dictionary containing information about the cell.
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
     """
-    procedure: Dict[str, Procedure] = Field(default_factory=dict)
+    procedure: dict[str, Procedure] = Field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
 
     class Config:
@@ -85,7 +86,7 @@ class Cell(BaseModel):
         folder_path: str,
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        filename_inputs: list[str] | None = None,
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
         ] = "performance",
@@ -148,9 +149,9 @@ class Cell(BaseModel):
         folder_path: str,
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
-        column_importers: List[basecycler.ColumnMap],
+        column_importers: list[basecycler.ColumnMap],
         header_row_index: int = 0,
-        filename_inputs: Optional[List[str]] = None,
+        filename_inputs: list[str] | None = None,
         compression_priority: Literal[
             "performance", "file size", "uncompressed"
         ] = "performance",
@@ -215,7 +216,7 @@ class Cell(BaseModel):
         procedure_name: str,
         folder_path: str,
         filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        filename_inputs: list[str] | None = None,
         readme_name: str = "README.yaml",
     ) -> None:
         """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
@@ -255,7 +256,7 @@ class Cell(BaseModel):
         procedure_name: str,
         folder_path: str,
         filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        filename_inputs: list[str] | None = None,
     ) -> None:
         """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
 
@@ -331,9 +332,9 @@ class Cell(BaseModel):
 
     @staticmethod
     def _get_filename(
-        info: Dict[str, Optional[Any]],
+        info: dict[str, Any | None],
         filename_function: Callable[[str], str],
-        filename_inputs: List[str],
+        filename_inputs: list[str],
     ) -> str:
         """Function to generate the filename for the data, if provided as a function.
 
@@ -355,7 +356,7 @@ class Cell(BaseModel):
         self,
         folder_path: str,
         filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        filename_inputs: list[str] | None = None,
     ) -> str:
         """Function to generate the input and output paths for the data file.
 
@@ -388,8 +389,8 @@ class Cell(BaseModel):
         procedure_name: str,
         experiment_names: list[str] | str,
         pybamm_solutions: list[PyBaMMSolution] | PyBaMMSolution,
-        output_data_path: Optional[str] = None,
-        optional_variables: Optional[list[str]] = None,
+        output_data_path: str | None = None,
+        optional_variables: list[str] | None = None,
     ) -> None:
         """Import a PyBaMM solution object into a procedure of the cell.
 
@@ -588,7 +589,7 @@ def load_archive(path: str) -> Cell:
     else:
         archive_path = path
 
-    with open(os.path.join(archive_path, "metadata.json"), "r") as f:
+    with open(os.path.join(archive_path, "metadata.json")) as f:
         metadata = json.load(f)
     if metadata["PyProBE Version"] != __version__:
         warnings.warn(
@@ -611,7 +612,7 @@ def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
     header_row: int = 0,
-) -> List[Cell]:
+) -> list[Cell]:
     """Function to make a list of cell objects from a record of tests in Excel format.
 
     Args:

@@ -110,14 +110,19 @@ select = [
     "E",   # pycodestyle: Check for PEP 8 violations
     "W",   # pycodestyle: Check for PEP 8 warnings
     "ISC", # flake8-implicit-str-concat: Check for implicit string concatenation
+    "UP",  # pyupgrade: Check for outdated Python syntax
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
 [tool.ruff.lint.per-file-ignores]
 "docs/source/conf.py" = ["A"]
-"tests/*" = ["SLF001"]
+"tests/*" = ["SLF001", "N"]
 "docs/source/examples/*" = ["D103"]
 
 [tool.mypy]

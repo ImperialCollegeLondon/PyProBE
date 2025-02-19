@@ -2,7 +2,6 @@
 
 import re
 from datetime import datetime
-from typing import List
 
 import polars as pl
 
@@ -51,7 +50,7 @@ class Biologic(bc.BaseCycler):
         Returns:
             pl.DataFrame | pl.LazyFrame: The DataFrame.
         """
-        with open(filepath, "r", encoding="iso-8859-1") as file:
+        with open(filepath, encoding="iso-8859-1") as file:
             file.readline()  # Skip the first line
             second_line = file.readline().strip()  # Read the second line
             if second_line.startswith("Nb header lines"):
@@ -88,7 +87,7 @@ class Biologic(bc.BaseCycler):
         # if the date column is not in datetime format try to retrieve date information
         # from header
         elif read_header_lines:
-            with open(filepath, "r", encoding="iso-8859-1") as file:
+            with open(filepath, encoding="iso-8859-1") as file:
                 for i in range(n_header_lines):
                     line = file.readline()
                     if "Acquisition started on" in line:
@@ -113,7 +112,7 @@ class BiologicMB(Biologic):
     """A class to load and process Biologic Modulo Bat  battery cycler data."""
 
     def get_imported_dataframe(
-        self, dataframe_list: List[pl.DataFrame]
+        self, dataframe_list: list[pl.DataFrame]
     ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 

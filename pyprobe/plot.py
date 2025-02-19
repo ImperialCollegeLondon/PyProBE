@@ -1,7 +1,8 @@
 """A module to contain plotting functions for PyProBE."""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 
@@ -12,7 +13,7 @@ from pyprobe.units import split_quantity_unit
 
 
 def _retrieve_relevant_columns(
-    result_obj: "Result", args: Tuple[Any, ...], kwargs: Dict[Any, Any]
+    result_obj: "Result", args: tuple[Any, ...], kwargs: dict[Any, Any]
 ) -> pl.DataFrame:
     """Retrieve relevant columns from a Result object for plotting.
 

@@ -4,7 +4,7 @@ import logging
 import re
 from functools import wraps
 from pprint import pprint
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
+from typing import Any, Literal, Union
 
 import numpy as np
 import pandas as pd
@@ -35,7 +35,7 @@ class PolarsColumnCache:
 
     def __init__(self, base_dataframe: pl.LazyFrame | pl.DataFrame) -> None:
         """Initialize the PolarsColumnCache object."""
-        self.cache: Dict[str, pl.Series] = {}
+        self.cache: dict[str, pl.Series] = {}
         self._cached_dataframe = None
         self._base_dataframe = base_dataframe
         if isinstance(base_dataframe, pl.DataFrame):
@@ -57,7 +57,7 @@ class PolarsColumnCache:
         self._base_dataframe = value
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         """The columns in the data.
 
         Returns:
@@ -66,7 +66,7 @@ class PolarsColumnCache:
         return self.base_dataframe.collect_schema().names()
 
     @property
-    def quantities(self) -> Set[str]:
+    def quantities(self) -> set[str]:
         """The quantities of the data, with unit information removed.
 
         Returns:
@@ -136,7 +136,7 @@ class PolarsColumnCache:
         self._cached_dataframe = value
 
     @staticmethod
-    def get_quantities(column_list: List[str]) -> Set[str]:
+    def get_quantities(column_list: list[str]) -> set[str]:
         """The quantities of the data, with unit information removed.
 
         Args:
@@ -145,7 +145,7 @@ class PolarsColumnCache:
         Returns:
             Set[str]: The quantities of the data.
         """
-        _quantities: List[str] = []
+        _quantities: list[str] = []
         for _, column in enumerate(column_list):
             try:
                 quantity, _ = split_quantity_unit(column)
@@ -177,11 +177,11 @@ class Result(BaseModel):
 
         arbitrary_types_allowed = True
 
-    base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
+    base_dataframe: pl.LazyFrame | pl.DataFrame
     """The data as a polars DataFrame or LazyFrame."""
-    info: dict[str, Optional[Any]]
+    info: dict[str, Any | None]
     """Dictionary containing information about the cell."""
-    column_definitions: Dict[str, str] = Field(default_factory=dict)
+    column_definitions: dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
 
     def model_post_init(self, __context: Any) -> None:
@@ -305,7 +305,7 @@ class Result(BaseModel):
 
     def get(
         self, *column_names: str
-    ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         """Return one or more columns of the data as separate 1D numpy arrays.
 
         Args:
@@ -363,7 +363,7 @@ class Result(BaseModel):
         return column
 
     @property
-    def quantities(self) -> Set[str]:
+    def quantities(self) -> set[str]:
         """The quantities of the data, with unit information removed.
 
         Returns:
@@ -372,7 +372,7 @@ class Result(BaseModel):
         return self._polars_cache.quantities
 
     @property
-    def column_list(self) -> List[str]:
+    def column_list(self) -> list[str]:
         """The columns in the data.
 
         Returns:
@@ -395,15 +395,15 @@ class Result(BaseModel):
 
     def clean_copy(
         self,
-        dataframe: Optional[Union[pl.DataFrame, pl.LazyFrame]] = None,
-        column_definitions: Optional[Dict[str, str]] = None,
+        dataframe: pl.DataFrame | pl.LazyFrame | None = None,
+        column_definitions: dict[str, str] | None = None,
     ) -> "Result":
         """Create a copy of the result object with info dictionary but without data.
 
         Args:
             dataframe (Optional[Union[pl.DataFrame, pl.LazyFrame]):
                 The data to include in the new Result object.
-            column_definitions (Optional[Dict[str, str]]):
+            column_definitions (Optional[dict[str, str]]):
                 The definitions of the columns in the new result object.
 
         Returns:
@@ -421,12 +421,10 @@ class Result(BaseModel):
 
     @staticmethod
     def _verify_compatible_frames(
-        base_frame: Union[pl.DataFrame, pl.LazyFrame],
-        frames: List[Union[pl.DataFrame, pl.LazyFrame]],
+        base_frame: pl.DataFrame | pl.LazyFrame,
+        frames: list[pl.DataFrame | pl.LazyFrame],
         mode: Literal["match 1", "collect all"] = "collect all",
-    ) -> Tuple[
-        Union[pl.DataFrame, pl.LazyFrame], List[Union[pl.DataFrame, pl.LazyFrame]]
-    ]:
+    ) -> tuple[pl.DataFrame | pl.LazyFrame, list[pl.DataFrame | pl.LazyFrame]]:
         """Verify that frames are compatible and return them as DataFrames.
 
         Args:
@@ -517,7 +515,7 @@ class Result(BaseModel):
     def join(
         self,
         other: "Result",
-        on: Union[str, List[str]],
+        on: str | list[str],
         how: str = "inner",
         coalesce: bool = True,
     ) -> None:
@@ -547,7 +545,9 @@ class Result(BaseModel):
         }
 
     def extend(
-        self, other: "Result" | List["Result"], concat_method: str = "diagonal"
+        self,
+        other: Union["Result", list["Result"]],  # noqa: UP007
+        concat_method: str = "diagonal",
     ) -> None:
         """Extend the data in this Result object with the data in another Result object.
 
@@ -580,26 +580,26 @@ class Result(BaseModel):
     @classmethod
     def build(
         cls,
-        data_list: List[
+        data_list: list[
             pl.LazyFrame
             | pl.DataFrame
-            | Dict[str, NDArray[np.float64] | List[float]]
-            | List[
+            | dict[str, NDArray[np.float64] | list[float]]
+            | list[
                 pl.LazyFrame
                 | pl.DataFrame
-                | Dict[str, NDArray[np.float64] | List[float]]
+                | dict[str, NDArray[np.float64] | list[float]]
             ]
         ],
-        info: Dict[str, Optional[Any]],
+        info: dict[str, Any | None],
     ) -> "Result":
         """Build a Result object from a list of dataframes.
 
         Args:
-            data_list (List[List[pl.LazyFrame | pl.DataFrame | Dict]]):
+            data_list (List[List[pl.LazyFrame | pl.DataFrame | dict]]):
                 The data to include in the new result object.
                 The first index indicates the cycle and the second index indicates the
                 step.
-            info (Dict[str, Optional[str | int | float]]): A dict containing test info.
+            info (dict[str, Optional[str | int | float]]): A dict containing test info.
 
         Returns:
             Result: A new result object with the specified data.
@@ -650,7 +650,7 @@ class Result(BaseModel):
 
 
 def combine_results(
-    results: List[Result],
+    results: list[Result],
     concat_method: str = "diagonal",
 ) -> Result:
     """Combine multiple Result objects into a single Result object.

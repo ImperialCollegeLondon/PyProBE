@@ -1,7 +1,5 @@
 """A module for differentiating experimental data."""
 
-from typing import List
-
 import numpy as np
 import polars as pl
 from pydantic import validate_call
@@ -65,7 +63,7 @@ def differentiate_LEAN(
     y: str,
     k: int = 1,
     gradient: str = "dydx",
-    smoothing_filter: List[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
+    smoothing_filter: list[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
     section: str = "longest",
 ) -> Result:
     r"""A method for differentiating noisy data.

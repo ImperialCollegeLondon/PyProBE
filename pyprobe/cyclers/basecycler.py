@@ -3,9 +3,8 @@
 import glob
 import logging
 import os
-import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import polars as pl
 from pydantic import BaseModel, GetCoreSchemaHandler, field_validator, model_validator
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ColumnMap(ABC):
     """A class to map cycler columns to PyProBE columns."""
 
-    def __init__(self, pyprobe_name: str, required_cycler_cols: List[str]) -> None:
+    def __init__(self, pyprobe_name: str, required_cycler_cols: list[str]) -> None:
         """Initialize the ColumnMap class."""
         self.pyprobe_name = pyprobe_name
         self.required_cycler_cols = required_cycler_cols
@@ -57,8 +56,8 @@ class ColumnMap(ABC):
         return list(self.column_map.keys())[0]
 
     def match_columns(
-        self, available_columns: List[str], required_patterns: List[str]
-    ) -> Dict[str, Dict[str, str]]:
+        self, available_columns: list[str], required_patterns: list[str]
+    ) -> dict[str, dict[str, str]]:
         """Find columns that match the required patterns, handling wildcards.
 
         Args:
@@ -66,7 +65,7 @@ class ColumnMap(ABC):
             required_patterns: List of required column patterns with * wildcards
 
         Returns:
-            Dict[str, Dict[str, str]]: Nested mapping of pattern to column details:
+            dict[str, dict[str, str]]: Nested mapping of pattern to column details:
                 - pattern -> {
                     "Cycler name": full column name,
                     "Cycler unit": extracted unit (if pattern contains *)
@@ -100,7 +99,7 @@ class ColumnMap(ABC):
 
         return matches
 
-    def validate(self, column_list: List[str]) -> None:
+    def validate(self, column_list: list[str]) -> None:
         """Validate the column mapping.
 
         This method checks if the required columns are present in the cycler data. It
@@ -333,7 +332,7 @@ class BaseCycler(BaseModel):
     header_row_index: int = 0
     """The index of the header row in the data file."""
 
-    column_importers: List[ColumnMap]
+    column_importers: list[ColumnMap]
     """A list of :class:`ColumnMap` objects to map cycler columns to PyProBE columns."""
 
     class Config:
@@ -421,7 +420,7 @@ class BaseCycler(BaseModel):
         return df_list
 
     def get_imported_dataframe(
-        self, dataframe_list: List[pl.DataFrame]
+        self, dataframe_list: list[pl.DataFrame]
     ) -> pl.DataFrame:
         """Return a single DataFrame from a list of DataFrames.
 
