@@ -56,7 +56,9 @@ def test_collect_columns():
     assert cache.cache["a"].to_list() == expected_a.to_list()
     assert cache.cache["b"].to_list() == expected_b.to_list()
     pl_testing.assert_frame_equal(
-        cache.cached_dataframe, lf.select("a", "b").collect(), check_column_order=False
+        cache.cached_dataframe,
+        lf.select("a", "b").collect(),
+        check_column_order=False,
     )
 
     # Test unit conversion
@@ -65,7 +67,7 @@ def test_collect_columns():
             "Current [A]": [1, 2, 3],
             "Voltage [V]": [4, 5, 6],
             "Date": [5, 6, 7],
-        }
+        },
     )
     cache = PolarsColumnCache(lf)
     cache.collect_columns("Current [mA]")
@@ -89,7 +91,8 @@ def test_cached_dataframe():
     pl.testing.assert_frame_equal(cache._cached_dataframe, lf.select("a").collect())
     pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
     pl.testing.assert_frame_equal(
-        cache._cached_dataframe, lf.select("a", "b").collect()
+        cache._cached_dataframe,
+        lf.select("a", "b").collect(),
     )
 
 
@@ -103,20 +106,22 @@ def test_live_dataframe():
 
     # test updating a column of the live_dataframe
     result_object.live_dataframe = result_object.live_dataframe.with_columns(
-        (pl.col("a") * 10).alias("a")
+        (pl.col("a") * 10).alias("a"),
     )
     result_object._polars_cache.collect_columns("a")
     pl_testing.assert_frame_equal(
-        result_object.live_dataframe, lf.with_columns(pl.col("a") * 10)
+        result_object.live_dataframe,
+        lf.with_columns(pl.col("a") * 10),
     )
 
     result_object = Result(base_dataframe=lf, info={})
     result_object._polars_cache.collect_columns("a")
     result_object.live_dataframe = result_object.live_dataframe.with_columns(
-        (pl.col("a") * 10).alias("d")
+        (pl.col("a") * 10).alias("d"),
     )
     pl.testing.assert_frame_equal(
-        result_object.live_dataframe, lf.with_columns((pl.col("a") * 10).alias("d"))
+        result_object.live_dataframe,
+        lf.with_columns((pl.col("a") * 10).alias("d")),
     )
 
 
@@ -145,7 +150,8 @@ def test_cache_columns():
     result_object = Result(base_dataframe=lf, info={})
     result_object.cache_columns("a")
     pl_testing.assert_frame_equal(
-        result_object._polars_cache.cached_dataframe, lf.select("a").collect()
+        result_object._polars_cache.cached_dataframe,
+        lf.select("a").collect(),
     )
 
     result_object = Result(base_dataframe=lf, info={})
@@ -169,17 +175,20 @@ def test_get(Result_fixture):
     """Test the get method."""
     current = Result_fixture.get("Current [A]")
     np_testing.assert_array_equal(
-        current, Result_fixture.data["Current [A]"].to_numpy()
+        current,
+        Result_fixture.data["Current [A]"].to_numpy(),
     )
     current_mA = Result_fixture.get("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
 
     current, voltage = Result_fixture.get("Current [A]", "Voltage [V]")
     np_testing.assert_array_equal(
-        current, Result_fixture.data["Current [A]"].to_numpy()
+        current,
+        Result_fixture.data["Current [A]"].to_numpy(),
     )
     np_testing.assert_array_equal(
-        voltage, Result_fixture.data["Voltage [V]"].to_numpy()
+        voltage,
+        Result_fixture.data["Voltage [V]"].to_numpy(),
     )
 
 
@@ -187,7 +196,8 @@ def test_get_only(Result_fixture):
     """Test the get_only method."""
     current = Result_fixture.get("Current [A]")
     np_testing.assert_array_equal(
-        current, Result_fixture.data["Current [A]"].to_numpy()
+        current,
+        Result_fixture.data["Current [A]"].to_numpy(),
     )
     current_mA = Result_fixture.get("Current [mA]")
     np_testing.assert_array_equal(current_mA, current * 1000)
@@ -199,13 +209,15 @@ def test_getitem(Result_fixture):
     assert "Current [A]" in current.column_list
     assert isinstance(current, Result)
     pl_testing.assert_frame_equal(
-        current.data, Result_fixture.data.select("Current [A]")
+        current.data,
+        Result_fixture.data.select("Current [A]"),
     )
     current_mA = Result_fixture["Current [mA]"]
     assert "Current [mA]" in current_mA.column_list
     assert "Current [A]" not in current_mA.column_list
     np_testing.assert_allclose(
-        current_mA.get("Current [mA]"), Result_fixture.get("Current [mA]")
+        current_mA.get("Current [mA]"),
+        Result_fixture.get("Current [mA]"),
     )
 
 
@@ -220,7 +232,7 @@ def test_data(Result_fixture):
 def test_quantities(Result_fixture):
     """Test the quantities property."""
     assert set(Result_fixture.quantities) == set(
-        ["Time", "Current", "Voltage", "Capacity", "Event", "Date", "Step"]
+        ["Time", "Current", "Voltage", "Capacity", "Event", "Date", "Step"],
     )
 
 
@@ -251,10 +263,13 @@ def test_build():
             "y": [4, 5, 6, 10, 11, 12],
             "Step": [0, 0, 0, 1, 1, 1],
             "Cycle": [0, 0, 0, 0, 0, 0],
-        }
+        },
     )
     pl_testing.assert_frame_equal(
-        result.data, expected_data, check_column_order=False, check_dtype=False
+        result.data,
+        expected_data,
+        check_column_order=False,
+        check_dtype=False,
     )
 
 
@@ -270,7 +285,7 @@ def test_add_new_data_columns():
                 eager=True,
             ).alias("datetime"),
             "Data": [2, 4, 6, 8, 10, 12],
-        }
+        },
     )
     new_data = pl.LazyFrame(
         {
@@ -283,7 +298,7 @@ def test_add_new_data_columns():
             ).alias("datetime"),
             "Data 1": [2, 4, 6, 8, 10, 12],
             "Data 2": [4, 8, 12, 16, 20, 24],
-        }
+        },
     )
     result_object = Result(base_dataframe=existing_data, info={})
     result_object.add_new_data_columns(new_data, date_column_name="DateTime")
@@ -301,10 +316,12 @@ def test_add_new_data_columns():
             "Data": [2, 4, 6, 8, 10, 12],
             "Data 1": [None, None, None, 3.0, 5.0, 7.0],
             "Data 2": [None, None, None, 6.0, 10.0, 14.0],
-        }
+        },
     )
     pl_testing.assert_frame_equal(
-        result_object.data, expected_data, check_column_order=False
+        result_object.data,
+        expected_data,
+        check_column_order=False,
     )
 
 
@@ -315,7 +332,7 @@ def reduced_result_fixture():
         {
             "Current [A]": [1, 2, 3],
             "Voltage [V]": [1, 2, 3],
-        }
+        },
     )
     return Result(
         base_dataframe=data,
@@ -351,7 +368,9 @@ def test_verify_compatible_frames():
 
     # Test with two LazyFrames
     result1, result2 = Result._verify_compatible_frames(
-        lazy_df1, [lazy_df2], mode="collect all"
+        lazy_df1,
+        [lazy_df2],
+        mode="collect all",
     )
     assert isinstance(result1, pl.LazyFrame)
     assert isinstance(result2[0], pl.LazyFrame)
@@ -373,7 +392,9 @@ def test_verify_compatible_frames():
 
     # Test matching the first df with a list of frames
     result1, result2 = Result._verify_compatible_frames(
-        lazy_df1, [df2, lazy_df2], mode="match 1"
+        lazy_df1,
+        [df2, lazy_df2],
+        mode="match 1",
     )
     assert isinstance(result1, pl.LazyFrame)
     assert isinstance(result2[0], pl.LazyFrame)
@@ -386,7 +407,7 @@ def test_join_left(reduced_result_fixture):
         {
             "Current [A]": [1, 2, 3],
             "Capacity [Ah]": [4, 5, 6],
-        }
+        },
     )
     other_result = Result(
         base_dataframe=other_data,
@@ -399,10 +420,12 @@ def test_join_left(reduced_result_fixture):
             "Current [A]": [1, 2, 3],
             "Voltage [V]": [1, 2, 3],
             "Capacity [Ah]": [4, 5, 6],
-        }
+        },
     )
     pl_testing.assert_frame_equal(
-        reduced_result_fixture.data, expected_data, check_column_order=False
+        reduced_result_fixture.data,
+        expected_data,
+        check_column_order=False,
     )
     assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
 
@@ -413,7 +436,7 @@ def test_extend(reduced_result_fixture):
         {
             "Current [A]": [4, 5, 6],
             "Voltage [V]": [4, 5, 6],
-        }
+        },
     )
     other_result = Result(
         base_dataframe=other_data,
@@ -425,10 +448,12 @@ def test_extend(reduced_result_fixture):
         {
             "Current [A]": [1, 2, 3, 4, 5, 6],
             "Voltage [V]": [1, 2, 3, 4, 5, 6],
-        }
+        },
     )
     pl_testing.assert_frame_equal(
-        reduced_result_fixture.data, expected_data, check_column_order=False
+        reduced_result_fixture.data,
+        expected_data,
+        check_column_order=False,
     )
     assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
 
@@ -440,7 +465,7 @@ def test_extend_with_new_columns(reduced_result_fixture):
             "Current [A]": [4, 5, 6],
             "Voltage [V]": [4, 5, 6],
             "Capacity [Ah]": [8, 9, 10],
-        }
+        },
     )
     other_result = Result(
         base_dataframe=other_data,
@@ -457,10 +482,12 @@ def test_extend_with_new_columns(reduced_result_fixture):
             "Current [A]": [1, 2, 3, 4, 5, 6],
             "Voltage [V]": [1, 2, 3, 4, 5, 6],
             "Capacity [Ah]": [None, None, None, 8, 9, 10],
-        }
+        },
     )
     pl_testing.assert_frame_equal(
-        reduced_result_fixture.data, expected_data, check_column_order=False
+        reduced_result_fixture.data,
+        expected_data,
+        check_column_order=False,
     )
     assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
     assert (
@@ -496,7 +523,8 @@ def test_clean_copy(reduced_result_fixture):
 
     # Test with both new dataframe and column definitions
     clean_result = reduced_result_fixture.clean_copy(
-        dataframe=new_df, column_definitions=new_defs
+        dataframe=new_df,
+        column_definitions=new_defs,
     )
     assert isinstance(clean_result, Result)
     pl_testing.assert_frame_equal(clean_result.data, new_df)
@@ -527,10 +555,12 @@ def test_combine_results():
             "a": [1, 2, 3, 7, 8, 9],
             "b": [4, 5, 6, 10, 11, 12],
             "test index": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
-        }
+        },
     )
     pl_testing.assert_frame_equal(
-        combined_result.data, expected_data, check_column_order=False
+        combined_result.data,
+        expected_data,
+        check_column_order=False,
     )
 
 
@@ -549,7 +579,7 @@ def test_export_to_mat(Result_fixture):
             "Capacity__Ah_",
             "Voltage__V_",
             "Date",
-        ]
+        ],
     )
     actual_columns = set(saved_data["data"].dtype.names)
     assert actual_columns == expected_columns

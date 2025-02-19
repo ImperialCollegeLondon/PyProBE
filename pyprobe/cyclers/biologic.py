@@ -39,7 +39,8 @@ class Biologic(bc.BaseCycler):
 
     @staticmethod
     def read_file(
-        filepath: str, header_row_index: int = 0
+        filepath: str,
+        header_row_index: int = 0,
     ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
@@ -64,7 +65,10 @@ class Biologic(bc.BaseCycler):
             n_header_lines = 1
 
         dataframe = pl.scan_csv(
-            filepath, skip_rows=n_header_lines - 1, separator="\t", infer_schema=False
+            filepath,
+            skip_rows=n_header_lines - 1,
+            separator="\t",
+            infer_schema=False,
         )
 
         # check if the time column is in datetime format
@@ -74,15 +78,16 @@ class Biologic(bc.BaseCycler):
             dataframe = dataframe.with_columns(
                 (
                     pl.col("time/s").str.strptime(
-                        dtype=pl.Datetime, format="%m/%d/%Y %H:%M:%S%.f"
+                        dtype=pl.Datetime,
+                        format="%m/%d/%Y %H:%M:%S%.f",
                     )
-                ).alias("Date")
+                ).alias("Date"),
             )
             dataframe = dataframe.with_columns(
                 (pl.col("Date").diff().dt.total_microseconds().cum_sum() / 1e6)
                 .fill_null(strategy="zero")
                 .cast(str)
-                .alias("time/s")
+                .alias("time/s"),
             )
         # if the date column is not in datetime format try to retrieve date information
         # from header
@@ -102,7 +107,7 @@ class Biologic(bc.BaseCycler):
                     + pl.lit(start_time)
                 )
                 .cast(str)
-                .alias("Date")
+                .alias("Date"),
             )
 
         return dataframe
@@ -112,7 +117,8 @@ class BiologicMB(Biologic):
     """A class to load and process Biologic Modulo Bat  battery cycler data."""
 
     def get_imported_dataframe(
-        self, dataframe_list: list[pl.DataFrame]
+        self,
+        dataframe_list: list[pl.DataFrame],
     ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
@@ -147,7 +153,7 @@ class BiologicMB(Biologic):
         """
         # get the max step number for each MB file and add 1
         max_steps = df.group_by("MB File").agg(
-            (pl.col("Ns").cast(pl.Int64).max() + 1).alias("Max_Step")
+            (pl.col("Ns").cast(pl.Int64).max() + 1).alias("Max_Step"),
         )
         # sort the max steps by MB file
         max_steps = max_steps.sort("MB File")
@@ -159,5 +165,5 @@ class BiologicMB(Biologic):
         df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
         # add the max step number to the step number
         return df_with_max_step.with_columns(
-            pl.col("Ns").cast(pl.Int64) + pl.col("Max_Step")
+            pl.col("Ns").cast(pl.Int64) + pl.col("Max_Step"),
         )

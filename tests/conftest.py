@@ -86,7 +86,9 @@ def cell_fixture(info_fixture):
     """Pytest fixture for example cell."""
     cell = Cell(info=info_fixture)
     cell.add_procedure(
-        "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
+        "Sample",
+        "tests/sample_data/neware/",
+        "sample_data_neware.parquet",
     )
     return cell
 
@@ -96,7 +98,9 @@ def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
     cell = Cell(info=info_fixture)
     cell.add_procedure(
-        "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
+        "Sample",
+        "tests/sample_data/neware/",
+        "sample_data_neware.parquet",
     )
     return cell.procedure["Sample"]
 

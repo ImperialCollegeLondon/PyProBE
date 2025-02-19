@@ -16,7 +16,7 @@ from .test_basecycler import helper_read_and_process
 def biologic_MB_cycler():
     """Create a Biologic cycler object."""
     return BiologicMB(
-        input_data_path="tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt"
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_*_MB_CA1.txt",
     )
 
 
@@ -24,7 +24,7 @@ def biologic_MB_cycler():
 def biologic_cycler():
     """Create a Biologic cycler object."""
     return Biologic(
-        input_data_path="tests/sample_data/biologic/Sample_data_biologic_CA1.txt"
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_CA1.txt",
     )
 
 
@@ -51,7 +51,7 @@ def test_read_file_timestamp():
     """Test the read_file method."""
     unprocessed_dataframe = Biologic(
         input_data_path="tests/sample_data/biologic/"
-        "Sample_data_biologic_timestamped.txt"
+        "Sample_data_biologic_timestamped.txt",
     )._imported_dataframe
     assert isinstance(unprocessed_dataframe, pl.LazyFrame)
     time_s = (
@@ -95,7 +95,7 @@ def test_read_and_process_biologic(benchmark, biologic_cycler):
             "Voltage [V]": [3.4854481],
             "Capacity [Ah]": [-0.03237135133365209],
             "Temperature [C]": [23.029291],
-        }
+        },
     )
     pyprobe_dataframe = helper_read_and_process(
         benchmark,
@@ -108,7 +108,7 @@ def test_read_and_process_biologic(benchmark, biologic_cycler):
             pl.col("Time [s]").diff().fill_null(strategy="zero").alias("dt"),
             pl.col("Date").diff().fill_null(strategy="zero").alias("dd"),
             pl.col("Step").diff().fill_null(strategy="zero").alias("ds"),
-        ]
+        ],
     )
     assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).to_numpy())
     assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).to_numpy())
@@ -127,7 +127,7 @@ def test_read_and_process_biologic_MB(benchmark, biologic_MB_cycler):
             "Voltage [V]": [3.062546],
             "Capacity [Ah]": [0.307727],
             "Temperature [C]": [22.989878],
-        }
+        },
     )
     pyprobe_dataframe = helper_read_and_process(
         benchmark,
@@ -140,7 +140,7 @@ def test_read_and_process_biologic_MB(benchmark, biologic_MB_cycler):
             pl.col("Time [s]").diff().fill_null(strategy="zero").alias("dt"),
             pl.col("Date").diff().fill_null(strategy="zero").alias("dd"),
             pl.col("Step").diff().fill_null(strategy="zero").alias("ds"),
-        ]
+        ],
     )
     assert not any(pyprobe_dataframe.select(pl.col("dt") < 0).to_numpy())
     assert not any(pyprobe_dataframe.select(pl.col("dd") < 0).to_numpy())
@@ -150,7 +150,7 @@ def test_read_and_process_biologic_MB(benchmark, biologic_MB_cycler):
 def test_read_and_process_biologic_no_header(benchmark):
     """Test reading a Biologic file without a header."""
     cycler = Biologic(
-        input_data_path="tests/sample_data/biologic/Sample_data_biologic_no_header.mpt"
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_no_header.mpt",
     )
     last_row = pl.DataFrame(
         {
@@ -161,7 +161,7 @@ def test_read_and_process_biologic_no_header(benchmark):
             "Voltage [V]": [2.9814022],
             "Capacity [Ah]": [0.0],
             "Temperature [C]": [24.506462],
-        }
+        },
     )
     helper_read_and_process(
         benchmark,
@@ -200,11 +200,11 @@ def test_process_dataframe():
             "Q charge/mA.h": ["0.0", "20.0", "0.0", "0.0", "0.0", "0.0", "0.0"],
             "Q discharge/mA.h": ["0.0", "0.0", "10.0", "20.0", "0.0", "0.0", "0.0"],
             "Temperature/�C": ["25.0", "25.0", "25.0", "25.0", "25.0", "25.0", "25.0"],
-        }
+        },
     )
 
     biologic_cycler = Biologic(
-        input_data_path="tests/sample_data/biologic/Sample_data_biologic_CA1.txt"
+        input_data_path="tests/sample_data/biologic/Sample_data_biologic_CA1.txt",
     )
     biologic_cycler._imported_dataframe = mock_dataframe
     pyprobe_dataframe = biologic_cycler.get_pyprobe_dataframe().select(
@@ -215,7 +215,7 @@ def test_process_dataframe():
             "Voltage [V]",
             "Capacity [Ah]",
             "Temperature [C]",
-        ]
+        ],
     )
     expected_dataframe = pl.DataFrame(
         {
@@ -225,7 +225,7 @@ def test_process_dataframe():
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 0.0, 0.0, 0.0],
             "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
-        }
+        },
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
@@ -290,7 +290,7 @@ def test_apply_step_correction():
                 2,
                 2,
             ],
-        }
+        },
     )
 
     expected_step_col = pl.DataFrame(
@@ -322,8 +322,8 @@ def test_apply_step_correction():
                 11,
                 12,
                 13,
-            ]
-        }
+            ],
+        },
     )
 
     step_col = BiologicMB.apply_step_correction(df).select("Ns")

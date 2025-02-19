@@ -48,7 +48,7 @@ def gradient(  # 1. Define the method
 
     # 5. Create a Result object to store the results
     gradient_result = input_data.clean_copy(
-        pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data})
+        pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data}),
     )
     # 6. Define the column definitions for the Result object
     gradient_result.column_definitions = input_data.column_definitions
@@ -126,7 +126,10 @@ def differentiate_lean(
         x_data = x_data[x_sections[i]]
         y_data = y_data[x_sections[i]]
         x_pts, y_pts, calculated_gradient = diff_functions.calc_gradient_with_lean(
-            x_data, y_data, k, gradient
+            x_data,
+            y_data,
+            k,
+            gradient,
         )
         x_all = np.append(x_all, x_pts)
         y_all = np.append(y_all, y_pts)
@@ -134,13 +137,14 @@ def differentiate_lean(
 
     # smooth the calculated gradient
     smoothed_gradient = diff_functions.smooth_gradient(
-        calc_gradient_all, smoothing_filter
+        calc_gradient_all,
+        smoothing_filter,
     )
 
     # output the results
     gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
     gradient_result = input_data.clean_copy(
-        pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient})
+        pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient}),
     )
     gradient_result.column_definitions = input_data.column_definitions
     gradient_result.column_definitions[gradient_title] = "The calculated gradient."

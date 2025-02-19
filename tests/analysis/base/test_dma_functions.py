@@ -22,7 +22,15 @@ def test_calc_full_cell_OCV():
     expected_result = np.array([1.1, 1.06, 1.02, 0.98, 0.94, 0.9])
 
     result = dma_functions.calc_full_cell_OCV(
-        SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, x_pe, ocp_pe, x_ne, ocp_ne
+        SOC,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+        x_pe,
+        ocp_pe,
+        x_ne,
+        ocp_ne,
     )
     np.testing.assert_allclose(result, expected_result)
 
@@ -36,7 +44,11 @@ def test_calc_electrode_capacities():
     cell_capacity = 100.0
 
     pe_capacity, ne_capacity, li_inventory = dma_functions.calc_electrode_capacities(
-        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+        cell_capacity,
     )
 
     assert math.isclose(pe_capacity, 125.0)
@@ -52,7 +64,10 @@ def test_calculate_dma_parameters():
     li_inventory = np.array([20, 18, 16, 14])
 
     SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
-        cell_capacity, pe_capacity, ne_capacity, li_inventory
+        cell_capacity,
+        pe_capacity,
+        ne_capacity,
+        li_inventory,
     )
 
     np.testing.assert_allclose(SOH, [1.0, 0.9, 0.8, 0.7])

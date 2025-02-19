@@ -42,7 +42,7 @@ def test_match_columns():
     patterns = ["Current [*]"]
     result = column_map_instance.match_columns(available_columns, patterns)
     assert result == {
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"}
+        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
     }
 
     # Test multiple patterns
@@ -87,7 +87,7 @@ def test_ColumnMap_validate():
     column_map.validate(["DateTime"])
     assert column_map.pyprobe_name == "Date"
     assert column_map.column_map == {
-        "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""}
+        "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
     }
     assert column_map.columns_validated
 
@@ -110,7 +110,7 @@ def test_ColumnMap_validate():
     column_map.validate(["Date", "Current [mA]", "Voltage [V]"])
     assert column_map.pyprobe_name == "Date"
     assert column_map.column_map == {
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"}
+        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
     }
     assert not column_map.columns_validated
 
@@ -181,8 +181,8 @@ def test_DateTime():
                 "2022-04-02 02:06:00.000000",
                 "2022-04-02 02:06:01.000000",
                 "2022-04-02 02:06:02.000000",
-            ]
-        }
+            ],
+        },
     )
     expected_df = pl.DataFrame(
         {
@@ -190,8 +190,8 @@ def test_DateTime():
                 datetime.datetime(2022, 4, 2, 2, 6),
                 datetime.datetime(2022, 4, 2, 2, 6, 1),
                 datetime.datetime(2022, 4, 2, 2, 6, 2),
-            ]
-        }
+            ],
+        },
     )
     assert_frame_equal(df.select(column_map.expr), expected_df)
 
@@ -206,8 +206,8 @@ def test_TimeFromDate():
                 "2022-04-02 02:06:00.000000",
                 "2022-04-02 02:06:01.000000",
                 "2022-04-02 02:06:02.000000",
-            ]
-        }
+            ],
+        },
     )
     expected_df = pl.DataFrame({"Time [s]": [0.0, 1.0, 2.0]})
     assert_frame_equal(df.select(column_map.expr), expected_df)
@@ -227,7 +227,7 @@ def test_input_data_path_validator():
     # test with valid path
     assert (
         BaseCycler._check_input_data_path(
-            "tests/sample_data/neware/sample_data_neware.csv"
+            "tests/sample_data/neware/sample_data_neware.csv",
         )
         == "tests/sample_data/neware/sample_data_neware.csv"
     )
@@ -251,7 +251,7 @@ def sample_dataframe():
             ],
             "Q_ch [mAh]": [1.0, 0.0, 0.0],
             "Q_dis [Ah]": [0.0, 0.5, 2],
-        }
+        },
     )
 
 
@@ -272,7 +272,7 @@ def sample_pyprobe_dataframe():
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [1.0, 0.5, -1.5],
             "Temperature [C]": [13.0, 14.0, 15.0],
-        }
+        },
     ).with_columns(pl.col("Date").str.to_datetime())
 
 
@@ -292,7 +292,9 @@ def column_importer_fixture():
 
 
 def test_get_pyprobe_dataframe(
-    sample_dataframe, sample_pyprobe_dataframe, column_importer_fixture
+    sample_dataframe,
+    sample_pyprobe_dataframe,
+    column_importer_fixture,
 ):
     """Test the get_pyprobe_dataframe method."""
     sample_dataframe.write_csv("tests/sample_data/sample_data.csv")
@@ -302,7 +304,9 @@ def test_get_pyprobe_dataframe(
     )
     pyprobe_dataframe = cycler_instance.get_pyprobe_dataframe()
     assert_frame_equal(
-        pyprobe_dataframe, sample_pyprobe_dataframe, check_column_order=False
+        pyprobe_dataframe,
+        sample_pyprobe_dataframe,
+        check_column_order=False,
     )
     os.remove("tests/sample_data/sample_data.csv")
 
@@ -339,6 +343,8 @@ def helper_read_and_process(
         == expected_events
     )
     assert_frame_equal(
-        expected_final_row, pyprobe_dataframe.tail(1), check_column_order=False
+        expected_final_row,
+        pyprobe_dataframe.tail(1),
+        check_column_order=False,
     )
     return pyprobe_dataframe

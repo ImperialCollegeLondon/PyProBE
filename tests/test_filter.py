@@ -232,7 +232,7 @@ def generic_experiment():
             "Current [A]": steps,
             "Voltage [V]": steps,
             "Capacity [Ah]": steps,
-        }
+        },
     )
     info = {}
     step_descriptions = {
@@ -265,13 +265,13 @@ def test_cycle_generic(generic_experiment):
     next_cycle = filters._cycle(generic_experiment, 1)
     assert next_cycle.cycle_info == [(0, 1, 2)]
     assert filters._cycle(next_cycle, 0).data["Time [s]"].unique().to_list() == list(
-        range(26, 31)
+        range(26, 31),
     )
     assert filters._cycle(next_cycle, 3).data["Time [s]"].unique().to_list() == list(
-        range(41, 46)
+        range(41, 46),
     )
     assert filters._cycle(next_cycle, -1).data["Time [s]"].unique().to_list() == list(
-        range(46, 52)
+        range(46, 52),
     )
 
     # test when cycle numbers are inferred

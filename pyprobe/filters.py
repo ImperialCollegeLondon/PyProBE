@@ -52,7 +52,7 @@ def _filter_numerical(
         elif all(item < 0 for item in index_list):
             index_list = [item * -1 for item in index_list]
             return dataframe.filter(
-                pl.col(column).rank("dense", descending=True).is_in(index_list)
+                pl.col(column).rank("dense", descending=True).is_in(index_list),
             )
         else:
             error_msg = "Indices must be all positive or all negative."
@@ -83,11 +83,15 @@ def _step(
     """
     if condition is not None:
         base_dataframe = _filter_numerical(
-            filtered_object.live_dataframe.filter(condition), "Event", step_numbers
+            filtered_object.live_dataframe.filter(condition),
+            "Event",
+            step_numbers,
         )
     else:
         base_dataframe = _filter_numerical(
-            filtered_object.live_dataframe, "Event", step_numbers
+            filtered_object.live_dataframe,
+            "Event",
+            step_numbers,
         )
     return Step(
         base_dataframe=base_dataframe,
@@ -125,7 +129,7 @@ def get_cycle_column(
     else:
         warnings.warn(
             "No cycle information provided. Cycles will be inferred from the step "
-            "numbers."
+            "numbers.",
         )
         cycle_column = (
             (pl.col("Step").cast(pl.Int64) - pl.col("Step").cast(pl.Int64).shift() < 0)
@@ -167,7 +171,8 @@ def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cy
 
 
 def _charge(
-    filtered_object: "FilterToCycleType", *charge_numbers: int | range
+    filtered_object: "FilterToCycleType",
+    *charge_numbers: int | range,
 ) -> "Step":
     """Return a charge step.
 
@@ -329,7 +334,8 @@ class Procedure(RawData):
             descriptions: list[str | None] = [None] * len(steps)
             if "Step Descriptions" in self.readme_dict[experiment]:
                 descriptions = cast(
-                    list[str | None], self.readme_dict[experiment]["Step Descriptions"]
+                    list[str | None],
+                    self.readme_dict[experiment]["Step Descriptions"],
                 )
             self.step_descriptions["Step"].extend(steps)
             self.step_descriptions["Description"].extend(descriptions)
@@ -369,7 +375,7 @@ class Procedure(RawData):
         if len(experiment_names) > 1:
             warnings.warn(
                 "Multiple experiments selected. Cycles will be inferred from "
-                "the step numbers."
+                "the step numbers.",
             )
         elif "Cycles" in self.readme_dict[experiment_names[0]]:
             # ignore type on below line due to persistent mypy warnings about
@@ -441,7 +447,7 @@ class Procedure(RawData):
         external_data = self.load_external_file(filepath)
         if isinstance(importing_columns, dict):
             external_data = external_data.select(
-                [date_column_name] + list(importing_columns.keys())
+                [date_column_name] + list(importing_columns.keys()),
             )
             external_data = external_data.rename(importing_columns)
         elif isinstance(importing_columns, list):

@@ -114,6 +114,7 @@ select = [
     "T20", # flake8-print: Check for print statements
     "N",  # pep8-naming: Check for naming conventions
     "ANN", # flake8-annotations: Check for missing type annotations
+    "COM", # flake8-commas: Check for missing trailing commas
 ]
 ignore = ["ANN401"]
 

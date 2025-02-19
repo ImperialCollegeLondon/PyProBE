@@ -46,13 +46,14 @@ valid_units = set(
     list(unit_dict)
     +
     # Add time units
-    list(time_unit_dict)
+    list(time_unit_dict),
 )
 """A set of all valid units, including prefixed combinations."""
 
 
 def split_quantity_unit(
-    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]+)\])?$"
+    name: str,
+    regular_expression: str = r"^(.*?)(?:\s*\[([^\]]+)\])?$",
 ) -> tuple[str, str]:
     """Split a column name into quantity and unit.
 
@@ -237,7 +238,8 @@ class Units:
 
 
 def unit_from_regexp(
-    name: str, regular_expression: str = r"^(.*?)(?:\s*\[([^\]]*)\])?$"
+    name: str,
+    regular_expression: str = r"^(.*?)(?:\s*\[([^\]]*)\])?$",
 ) -> "Units":
     """Create an instance of a units class from column name and regular expression.
 

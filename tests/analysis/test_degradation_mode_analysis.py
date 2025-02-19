@@ -119,7 +119,10 @@ def test_comp_from_data(stoichiometry_data):
     """Test the from_data method."""
     ocp_data = 2 * stoichiometry_data**2 + 3 * stoichiometry_data + 1
     ocp = CompositeOCP.from_data(
-        stoichiometry_data, ocp_data, stoichiometry_data, ocp_data
+        stoichiometry_data,
+        ocp_data,
+        stoichiometry_data,
+        ocp_data,
     )
     assert isinstance(ocp.ocp_list, list)
 
@@ -219,10 +222,22 @@ def test_f_grad_OCV(ne_ocp_fixture, pe_ocp_fixture):
     x_ne_lo = 0.1
     x_ne_hi = 0.7
     d_ocv = dma._f_grad_OCV(
-        pe_ocp_fixture, ne_ocp_fixture, soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+        pe_ocp_fixture,
+        ne_ocp_fixture,
+        soc,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
     )
     ocv_pts = dma._f_OCV(
-        pe_ocp_fixture, ne_ocp_fixture, soc, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+        pe_ocp_fixture,
+        ne_ocp_fixture,
+        soc,
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
     )
     numerical_d_ocv = np.gradient(ocv_pts, soc)
     np.testing.assert_allclose(d_ocv, numerical_d_ocv)
@@ -259,7 +274,7 @@ def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
                 (x_pe_hi - 0.05, x_pe_hi + 0.05),
                 (x_ne_lo - 0.05, x_ne_lo + 0.05),
                 (x_ne_hi - 0.05, x_ne_hi + 0.05),
-            ]
+            ],
         },
     )
     assert isinstance(limits, Result)
@@ -280,7 +295,10 @@ def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
 
     np.testing.assert_allclose(fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target)
     np.testing.assert_allclose(
-        fit.data["Fitted dVdSOC [V]"].to_numpy(), d_ocv_target, rtol=0.005, atol=0.005
+        fit.data["Fitted dVdSOC [V]"].to_numpy(),
+        d_ocv_target,
+        rtol=0.005,
+        atol=0.005,
     )
 
     # test with invalid input
@@ -327,7 +345,7 @@ def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
                 (x_pe_hi - 0.05, x_pe_hi + 0.05),
                 (x_ne_lo - 0.05, x_ne_lo + 0.05),
                 (x_ne_hi - 0.05, x_ne_hi + 0.05),
-            ]
+            ],
         },
     )
     assert isinstance(limits, Result)
@@ -342,23 +360,36 @@ def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
         "Li Inventory [Ah]",
     ]
     np.testing.assert_allclose(
-        limits.data["x_pe low SOC"].to_numpy()[0], x_pe_lo, rtol=1e-5
+        limits.data["x_pe low SOC"].to_numpy()[0],
+        x_pe_lo,
+        rtol=1e-5,
     )
     np.testing.assert_allclose(
-        limits.data["x_pe high SOC"].to_numpy()[0], x_pe_hi, rtol=1e-5
+        limits.data["x_pe high SOC"].to_numpy()[0],
+        x_pe_hi,
+        rtol=1e-5,
     )
     np.testing.assert_allclose(
-        limits.data["x_ne low SOC"].to_numpy()[0], x_ne_lo, rtol=1e-5
+        limits.data["x_ne low SOC"].to_numpy()[0],
+        x_ne_lo,
+        rtol=1e-5,
     )
     np.testing.assert_allclose(
-        limits.data["x_ne high SOC"].to_numpy()[0], x_ne_hi, rtol=1e-5
+        limits.data["x_ne high SOC"].to_numpy()[0],
+        x_ne_hi,
+        rtol=1e-5,
     )
 
     np.testing.assert_allclose(
-        fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target, rtol=1e-6
+        fit.data["Fitted Voltage [V]"].to_numpy(),
+        ocv_target,
+        rtol=1e-6,
     )
     np.testing.assert_allclose(
-        fit.data["Fitted dSOCdV [1/V]"].to_numpy(), dQdV_target, rtol=0.005, atol=0.005
+        fit.data["Fitted dSOCdV [1/V]"].to_numpy(),
+        dQdV_target,
+        rtol=0.005,
+        atol=0.005,
     )
 
 
@@ -394,7 +425,7 @@ def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
                 (x_pe_hi - 0.05, x_pe_hi + 0.05),
                 (x_ne_lo - 0.05, x_ne_lo + 0.05),
                 (x_ne_hi - 0.05, x_ne_hi + 0.05),
-            ]
+            ],
         },
     )
     assert isinstance(limits, Result)
@@ -415,7 +446,10 @@ def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
 
     np.testing.assert_allclose(fit.data["Fitted Voltage [V]"].to_numpy(), ocv_target)
     np.testing.assert_allclose(
-        fit.data["Fitted dVdSOC [V]"].to_numpy(), dVdQ_target, rtol=0.005, atol=0.005
+        fit.data["Fitted dVdSOC [V]"].to_numpy(),
+        dVdQ_target,
+        rtol=0.005,
+        atol=0.005,
     )
 
 
@@ -444,7 +478,7 @@ def test_run_batch_dma():
     input_data_list = [
         Result(
             base_dataframe=pl.DataFrame(
-                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc}
+                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc},
             ),
             info={},
             column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
@@ -459,38 +493,56 @@ def test_run_batch_dma():
         fitting_target="OCV",
         optimizer="differential_evolution",
         optimizer_options={
-            "bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)]
+            "bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)],
         },
     )
     np.testing.assert_allclose(dma_result.data["Index"], [0, 1, 2])
     np.testing.assert_allclose(
-        dma_result.data["x_pe low SOC"], [0.83, 0.7, 0.6], rtol=1e-6
+        dma_result.data["x_pe low SOC"],
+        [0.83, 0.7, 0.6],
+        rtol=1e-6,
     )
     np.testing.assert_allclose(
-        dma_result.data["x_pe high SOC"], [0.1, 0.2, 0.3], rtol=1e-5, atol=1e-5
+        dma_result.data["x_pe high SOC"],
+        [0.1, 0.2, 0.3],
+        rtol=1e-5,
+        atol=1e-5,
     )
     np.testing.assert_allclose(
-        dma_result.data["x_ne low SOC"], [0.1, 0.1, 0.3], rtol=1e-5, atol=5e-5
+        dma_result.data["x_ne low SOC"],
+        [0.1, 0.1, 0.3],
+        rtol=1e-5,
+        atol=5e-5,
     )
     np.testing.assert_allclose(
-        dma_result.data["x_ne high SOC"], [0.73, 0.7, 0.65], rtol=1e-5, atol=1e-5
+        dma_result.data["x_ne high SOC"],
+        [0.73, 0.7, 0.65],
+        rtol=1e-5,
+        atol=1e-5,
     )
     np.testing.assert_allclose(dma_result.data["Cell Capacity [Ah]"], [1, 1, 1])
     np.testing.assert_allclose(
-        dma_result.data["Cathode Capacity [Ah]"], [1.3699, 2, 3.333], rtol=5e-4
+        dma_result.data["Cathode Capacity [Ah]"],
+        [1.3699, 2, 3.333],
+        rtol=5e-4,
     )
     np.testing.assert_allclose(
-        dma_result.data["LAM_pe"], [0, -0.45996, -1.43327], rtol=5e-4
+        dma_result.data["LAM_pe"],
+        [0, -0.45996, -1.43327],
+        rtol=5e-4,
     )
 
     np.testing.assert_allclose(
-        fitted_ocvs[0].data["Input Voltage [V]"], ocv_target_list[0]
+        fitted_ocvs[0].data["Input Voltage [V]"],
+        ocv_target_list[0],
     )
     np.testing.assert_allclose(
-        fitted_ocvs[1].data["Input Voltage [V]"], ocv_target_list[1]
+        fitted_ocvs[1].data["Input Voltage [V]"],
+        ocv_target_list[1],
     )
     np.testing.assert_allclose(
-        fitted_ocvs[2].data["Input Voltage [V]"], ocv_target_list[2]
+        fitted_ocvs[2].data["Input Voltage [V]"],
+        ocv_target_list[2],
     )
 
     # test with invalid input
@@ -563,7 +615,9 @@ def eol_capacity_fixture(eol_ne_limits_fixture, eol_pe_limits_fixture):
 
 @pytest.fixture
 def bol_stoich_fixture(
-    bol_capacity_fixture, bol_ne_limits_fixture, bol_pe_limits_fixture
+    bol_capacity_fixture,
+    bol_ne_limits_fixture,
+    bol_pe_limits_fixture,
 ):
     """Return a Result instance."""
     stoichiometry_limits = Result(
@@ -577,7 +631,7 @@ def bol_stoich_fixture(
                 "Cathode Capacity [Ah]": bol_capacity_fixture[1],
                 "Anode Capacity [Ah]": bol_capacity_fixture[2],
                 "Li Inventory [Ah]": bol_capacity_fixture[3],
-            }
+            },
         ),
         info={},
     )
@@ -586,7 +640,9 @@ def bol_stoich_fixture(
 
 @pytest.fixture
 def eol_stoich_fixture(
-    eol_capacity_fixture, eol_ne_limits_fixture, eol_pe_limits_fixture
+    eol_capacity_fixture,
+    eol_ne_limits_fixture,
+    eol_pe_limits_fixture,
 ):
     """Return a Result instance."""
     stoichiometry_limits = Result(
@@ -600,7 +656,7 @@ def eol_stoich_fixture(
                 "Cathode Capacity [Ah]": eol_capacity_fixture[1],
                 "Anode Capacity [Ah]": eol_capacity_fixture[2],
                 "Li Inventory [Ah]": eol_capacity_fixture[3],
-            }
+            },
         ),
         info={},
     )
@@ -608,7 +664,10 @@ def eol_stoich_fixture(
 
 
 def test_quantify_degradation_modes(
-    bol_capacity_fixture, eol_capacity_fixture, bol_stoich_fixture, eol_stoich_fixture
+    bol_capacity_fixture,
+    eol_capacity_fixture,
+    bol_stoich_fixture,
+    eol_stoich_fixture,
 ):
     """Test the calculate_dma_parameters method."""
     expected_SOH = eol_capacity_fixture[0] / bol_capacity_fixture[0]
@@ -647,7 +706,7 @@ def test_quantify_degradation_modes(
             {
                 "Voltage [V]": np.linspace(0, 1, 10),
                 "Capacity [Ah]": np.linspace(0, 1, 10),
-            }
+            },
         ),
         info={},
     )
@@ -699,7 +758,7 @@ def test_calc_full_cell_ocv_composite():
             1.98541701,
             1.93616816,
             1.88691932,
-        ]
+        ],
     )
 
     # Assertions
@@ -715,7 +774,8 @@ def test_average_ocvs(BreakinCycles_fixture):
     assert math.isclose(corrected_r.get("Voltage [V]")[0], 3.14476284763849)
     assert math.isclose(corrected_r.get("Voltage [V]")[-1], 4.170649780122139)
     np.testing.assert_allclose(
-        corrected_r.get("SOC"), break_in.constant_current(1).get("SOC")
+        corrected_r.get("SOC"),
+        break_in.constant_current(1).get("SOC"),
     )
 
     # test invalid input
@@ -747,17 +807,21 @@ def test_run_batch_dma_sequential_basic():
         fitting_target="OCV",
         optimizer=["differential_evolution"],
         optimizer_options=[
-            {"bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)]}
+            {"bounds": [(0.6, 0.85), (0.05, 0.4), (0.05, 0.4), (0.6, 0.75)]},
         ],
     )
 
     # Verify results
     assert len(fitted_ocvs) == 3
     np.testing.assert_allclose(
-        dma_results.data["x_pe low SOC"], [0.83, 0.7, 0.6], rtol=1e-6
+        dma_results.data["x_pe low SOC"],
+        [0.83, 0.7, 0.6],
+        rtol=1e-6,
     )
     np.testing.assert_allclose(
-        dma_results.data["x_pe high SOC"], [0.1, 0.2, 0.3], rtol=1e-5
+        dma_results.data["x_pe high SOC"],
+        [0.1, 0.2, 0.3],
+        rtol=1e-5,
     )
 
 

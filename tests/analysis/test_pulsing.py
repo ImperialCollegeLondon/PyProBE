@@ -12,7 +12,7 @@ from pyprobe.result import Result
 def Pulsing_fixture(procedure_fixture):
     """Pytest fixture for example pulsing experiment."""
     procedure_fixture.set_soc(
-        reference_charge=procedure_fixture.experiment("Break-in Cycles").charge(-1)
+        reference_charge=procedure_fixture.experiment("Break-in Cycles").charge(-1),
     )
     return procedure_fixture.experiment("Discharge Pulses")
 

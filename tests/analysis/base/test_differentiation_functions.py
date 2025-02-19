@@ -44,7 +44,7 @@ def test_x_sections():
     assert x_sections == [slice(0, 5)]
 
     x = np.array(
-        [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 20.5, 21, 21.5, 22, 22.5, 23]
+        [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 20.5, 21, 21.5, 22, 22.5, 23],
     )
     x_sections = diff_functions.get_x_sections(x)
     assert x_sections == [

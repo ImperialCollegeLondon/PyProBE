@@ -150,7 +150,7 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
             "Event",
             "Date",
             "Temperature",
-        ]
+        ],
     )
 
 
@@ -165,7 +165,7 @@ def test_pybamm_experiment():
             "Current [A]": [0.1, 0.2, 0.3],
             "Voltage [V]": [3.0, 3.1, 3.2],
             "Capacity [Ah]": [0.1, 0.2, 0.3],
-        }
+        },
     )
 
     step_descriptions = {
@@ -174,7 +174,9 @@ def test_pybamm_experiment():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+        base_dataframe=test_data,
+        info={},
+        step_descriptions=step_descriptions,
     )
 
     result = raw_data.pybamm_experiment
@@ -194,7 +196,7 @@ def test_pybamm_experiment_missing_descriptions():
             "Current [A]": [0.1, 0.2, 0.3],
             "Voltage [V]": [3.0, 3.1, 3.2],
             "Capacity [Ah]": [0.1, 0.2, 0.3],
-        }
+        },
     )
 
     step_descriptions = {
@@ -203,7 +205,9 @@ def test_pybamm_experiment_missing_descriptions():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+        base_dataframe=test_data,
+        info={},
+        step_descriptions=step_descriptions,
     )
 
     with pytest.raises(ValueError, match="Descriptions for steps.*are missing"):
@@ -220,7 +224,7 @@ def test_pybamm_experiment_multiple_conditions():
             "Current [A]": [0.1, 0.2],
             "Voltage [V]": [3.0, 3.1],
             "Capacity [Ah]": [0.1, 0.2],
-        }
+        },
     )
 
     step_descriptions = {
@@ -232,7 +236,9 @@ def test_pybamm_experiment_multiple_conditions():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+        base_dataframe=test_data,
+        info={},
+        step_descriptions=step_descriptions,
     )
 
     result = raw_data.pybamm_experiment
@@ -253,7 +259,7 @@ def test_pybamm_experiment_with_loops():
             "Current [A]": [0.1] * 9,
             "Capacity [Ah]": [0.1] * 9,
             "Event": [1, 1, 1, 2, 2, 3, 3, 4, 4],
-        }
+        },
     )
 
     step_descriptions = {

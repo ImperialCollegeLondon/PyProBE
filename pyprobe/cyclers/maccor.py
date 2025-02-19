@@ -29,7 +29,10 @@ class MaccorDateTime(bc.ColumnMap):
     """
 
     def __init__(
-        self, date_column: str, time_column: str, datetime_format: str
+        self,
+        date_column: str,
+        time_column: str,
+        datetime_format: str,
     ) -> None:
         """Initialize the DateTime object."""
         self.pyprobe_name = "Date"
@@ -42,7 +45,8 @@ class MaccorDateTime(bc.ColumnMap):
     def expr(self) -> pl.Expr:
         """Get the expression to convert the columns."""
         date_col = self.get(self.date_column).str.to_datetime(
-            format=self.datetime_format, time_unit="us"
+            format=self.datetime_format,
+            time_unit="us",
         )
         return (
             (self.get(self.time_column).cast(pl.Float64) * 1000000).cast(pl.Duration)
@@ -65,7 +69,8 @@ class Maccor(bc.BaseCycler):
 
     @staticmethod
     def read_file(
-        filepath: str, header_row_index: int = 0
+        filepath: str,
+        header_row_index: int = 0,
     ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 

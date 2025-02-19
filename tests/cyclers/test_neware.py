@@ -44,7 +44,7 @@ def test_process_dataframe(mocker):
             "DChg. Cap.(mAh)": [0, 0, 10, 20, 0, 0],
             "Capacity(mAh)": [0, 20, 10, 20, 0, 0],
             "T1(℃)": [25, 25, 25, 25, 25, 25],
-        }
+        },
     )
 
     mocker.patch("os.path.exists", return_value=True)
@@ -64,7 +64,7 @@ def test_process_dataframe(mocker):
             "Voltage [V]",
             "Capacity [Ah]",
             "Temperature [C]",
-        ]
+        ],
     )
     expected_dataframe = pl.DataFrame(
         {
@@ -74,7 +74,7 @@ def test_process_dataframe(mocker):
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
             "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
-        }
+        },
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
@@ -95,7 +95,7 @@ def test_process_dataframe(mocker):
             "Voltage [V]",
             "Capacity [Ah]",
             "Temperature [C]",
-        ]
+        ],
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
@@ -115,7 +115,7 @@ def test_process_dataframe(mocker):
             "Voltage [V]",
             "Capacity [Ah]",
             "Temperature [C]",
-        ]
+        ],
     )
     expected_dataframe = pl.DataFrame(
         {
@@ -125,7 +125,7 @@ def test_process_dataframe(mocker):
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
             "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
-        }
+        },
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
@@ -133,7 +133,7 @@ def test_process_dataframe(mocker):
 def test_read_and_process_neware(benchmark):
     """Test the full process of reading and processing a file."""
     neware_cycler = Neware(
-        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx",
     )
     last_row = pl.DataFrame(
         {
@@ -144,7 +144,7 @@ def test_read_and_process_neware(benchmark):
             "Current [A]": [0.0],
             "Voltage [V]": [3.4513],
             "Capacity [Ah]": [0.022805],
-        }
+        },
     )
     expected_events = set(range(62))
     expected_columns = [
@@ -157,5 +157,9 @@ def test_read_and_process_neware(benchmark):
         "Capacity [Ah]",
     ]
     helper_read_and_process(
-        benchmark, neware_cycler, last_row, expected_events, expected_columns
+        benchmark,
+        neware_cycler,
+        last_row,
+        expected_events,
+        expected_columns,
     )

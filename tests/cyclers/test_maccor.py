@@ -12,7 +12,7 @@ from .test_basecycler import helper_read_and_process
 def test_read_and_process_maccor(benchmark):
     """Test reading and processing a sample Maccor file."""
     maccor_cycler = Maccor(
-        input_data_path="tests/sample_data/maccor/sample_data_maccor.csv"
+        input_data_path="tests/sample_data/maccor/sample_data_maccor.csv",
     )
     last_row = pl.DataFrame(
         {
@@ -24,7 +24,7 @@ def test_read_and_process_maccor(benchmark):
             "Voltage [V]": [3.716],
             "Capacity [Ah]": [0.048],
             "Temperature [C]": [22.2591],
-        }
+        },
     )
     helper_read_and_process(
         benchmark,

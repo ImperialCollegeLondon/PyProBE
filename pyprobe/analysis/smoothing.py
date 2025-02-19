@@ -48,7 +48,8 @@ def spline_smoothing(
     """
     # validate and identify variables
     validator = AnalysisValidator(
-        input_data=input_data, required_columns=[x, target_column]
+        input_data=input_data,
+        required_columns=[x, target_column],
     )
     x_data, y_data = validator.variables
 
@@ -71,13 +72,13 @@ def spline_smoothing(
     data = copy.deepcopy(input_data)
     smoothed_data_column = pl.Series(target_column, smoothed_y)
     smoothed_dataframe = data.live_dataframe.with_columns(
-        smoothed_data_column.alias(target_column)
+        smoothed_data_column.alias(target_column),
     )
 
     gradient_column_name = f"d({target_column})/d({x})"
     dydx_column = pl.Series(gradient_column_name, smoothed_dydx)
     smoothed_dataframe = smoothed_dataframe.with_columns(
-        dydx_column.alias(gradient_column_name)
+        dydx_column.alias(gradient_column_name),
     )
     result = data.clean_copy(smoothed_dataframe, data.column_definitions)
     result.define_column(
@@ -115,9 +116,9 @@ def _downsample_monotonic_data(
     df = df.with_columns(
         [
             ((pl.col(target) / sampling_interval).floor() * sampling_interval).alias(
-                "bin"
-            )
-        ]
+                "bin",
+            ),
+        ],
     )
     # Group by 'group' and select the desired occurrence
     if occurrence == "first":
@@ -257,17 +258,21 @@ def savgol_smoothing(
     """
     # validate and identify variables
     validator = AnalysisValidator(
-        input_data=input_data, required_columns=[target_column]
+        input_data=input_data,
+        required_columns=[target_column],
     )
     x = validator.variables
     smoothed_y = savgol_filter(
-        x=x, window_length=window_length, polyorder=polyorder, deriv=derivative
+        x=x,
+        window_length=window_length,
+        polyorder=polyorder,
+        deriv=derivative,
     )
 
     smoothed_data_column = pl.Series(target_column, smoothed_y)
     result = copy.deepcopy(input_data)
     result.live_dataframe = result.live_dataframe.with_columns(
-        smoothed_data_column.alias(target_column)
+        smoothed_data_column.alias(target_column),
     )
     return result
 
@@ -276,7 +281,10 @@ class _LinearInterpolator(interpolate.PPoly):
     """A class to interpolate data linearly."""
 
     def __init__(
-        self, x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
+        self,
+        x: NDArray[np.float64],
+        y: NDArray[np.float64],
+        **kwargs: Any,
     ) -> None:
         """Initialize the interpolator."""
         slopes = np.diff(y) / np.diff(x)
@@ -285,7 +293,8 @@ class _LinearInterpolator(interpolate.PPoly):
 
 
 def _validate_interp_input_vectors(
-    x: NDArray[np.float64], y: NDArray[np.float64]
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Validate the input vectors x and y.
 
@@ -332,7 +341,9 @@ def _create_interpolator(
 
 
 def linear_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    **kwargs: Any,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a linear interpolator.
 
@@ -348,7 +359,9 @@ def linear_interpolator(
 
 
 def cubic_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    **kwargs: Any,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a Scipy cubic spline interpolator.
 
@@ -365,7 +378,9 @@ def cubic_interpolator(
 
 
 def pchip_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    **kwargs: Any,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a Scipy Pchip interpolator.
 
@@ -381,7 +396,9 @@ def pchip_interpolator(
 
 
 def akima_interpolator(
-    x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    **kwargs: Any,
 ) -> Callable[[NDArray[np.float64]], NDArray[np.float64]]:
     """Create a Scipy Akima interpolator.
 

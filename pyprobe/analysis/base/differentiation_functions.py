@@ -56,7 +56,8 @@ def get_dx(x: NDArray[np.float64]) -> float:
 
 
 def get_dy_and_counts(
-    y: NDArray[np.float64], dy: float
+    y: NDArray[np.float64],
+    dy: float,
 ) -> tuple[float, NDArray[np.float64], NDArray[np.float64]]:
     """Get the y sampling interval, bin midpoints and counts.
 
@@ -96,7 +97,10 @@ def y_sampling_interval(y: NDArray[np.float64]) -> float:
 
 
 def calc_gradient_with_lean(
-    x: NDArray[np.float64], y: NDArray[np.float64], k: int, gradient: str
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int,
+    gradient: str,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     r"""Calculate the gradient of the data, assuming x is uniformly spaced.
 
@@ -127,7 +131,8 @@ def calc_gradient_with_lean(
 
 
 def smooth_gradient(
-    gradient: NDArray[np.float64], alpha: list[float]
+    gradient: NDArray[np.float64],
+    alpha: list[float],
 ) -> NDArray[np.float64]:
     """Smooth the calculated gradient.
 

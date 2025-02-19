@@ -25,7 +25,9 @@ class ColumnMap(ABC):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
     ) -> CoreSchema:
         """Get the Pydantic core schema for the ColumnMap class."""
         # Checks only that the value is an instance of ColumnMap.
@@ -56,7 +58,9 @@ class ColumnMap(ABC):
         return list(self.column_map.keys())[0]
 
     def match_columns(
-        self, available_columns: list[str], required_patterns: list[str]
+        self,
+        available_columns: list[str],
+        required_patterns: list[str],
     ) -> dict[str, dict[str, str]]:
         """Find columns that match the required patterns, handling wildcards.
 
@@ -124,7 +128,10 @@ class CastAndRename(ColumnMap):
     """
 
     def __init__(
-        self, pyprobe_name: str, required_cycler_col: str, data_type: pl.DataType
+        self,
+        pyprobe_name: str,
+        required_cycler_col: str,
+        data_type: pl.DataType,
     ) -> None:
         """Initialize the CastAndRename class."""
         super().__init__(pyprobe_name, [required_cycler_col])
@@ -259,10 +266,10 @@ class CapacityFromChDch(ColumnMap):
             "Cycler unit"
         ]
         charge_capacity = self.get(self.charge_capacity_col).units.to_si(
-            charge_capacity_unit
+            charge_capacity_unit,
         )
         discharge_capacity = self.get(self.discharge_capacity_col).units.to_si(
-            discharge_capacity_unit
+            discharge_capacity_unit,
         )
         diff_charge_capacity = (
             charge_capacity.diff().clip(lower_bound=0).fill_null(strategy="zero")
@@ -297,7 +304,7 @@ class CapacityFromCurrentSign(ColumnMap):
     def capacity(self) -> pl.Expr:
         """Get the capacity column."""
         return self.get(self.capacity_col).units.to_si(
-            self.column_map[self.capacity_col]["Cycler unit"]
+            self.column_map[self.capacity_col]["Cycler unit"],
         )
 
     @property
@@ -365,7 +372,8 @@ class BaseCycler(BaseModel):
 
     @staticmethod
     def read_file(
-        filepath: str, header_row_index: int = 0
+        filepath: str,
+        header_row_index: int = 0,
     ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
@@ -389,7 +397,9 @@ class BaseCycler(BaseModel):
                 )
             case ".csv":
                 return pl.scan_csv(
-                    filepath, infer_schema=False, skip_rows=header_row_index
+                    filepath,
+                    infer_schema=False,
+                    skip_rows=header_row_index,
                 )
             case _:
                 error_msg = f"Unsupported file extension: {file_ext}"
@@ -409,18 +419,19 @@ class BaseCycler(BaseModel):
         files.sort()
         df_list = [self.read_file(file, self.header_row_index) for file in files]
         all_columns = set(
-            [col for df in df_list for col in df.collect_schema().names()]
+            [col for df in df_list for col in df.collect_schema().names()],
         )
         for i in range(len(df_list)):
             if len(df_list[i].collect_schema().names()) < len(all_columns):
                 logger.warning(
                     f"File {os.path.basename(files[i])} has missing columns, "
-                    "these have been filled with null values."
+                    "these have been filled with null values.",
                 )
         return df_list
 
     def get_imported_dataframe(
-        self, dataframe_list: list[pl.DataFrame]
+        self,
+        dataframe_list: list[pl.DataFrame],
     ) -> pl.DataFrame:
         """Return a single DataFrame from a list of DataFrames.
 

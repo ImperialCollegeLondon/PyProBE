@@ -161,7 +161,7 @@ def test_process_generic_file(cell_instance):
             "I [A]": [7.0, 8.0, 9.0],
             "Q [Ah]": [10.0, 11.0, 12.0],
             "Count": [1, 2, 3],
-        }
+        },
     )
 
     column_importers = [
@@ -188,7 +188,7 @@ def test_process_generic_file(cell_instance):
             "Current [A]": [7.0, 8.0, 9.0],
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [10.0, 11.0, 12.0],
-        }
+        },
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
@@ -221,7 +221,10 @@ def test_add_procedure(cell_instance, procedure_fixture, benchmark):
     )
 
     cell_instance.add_procedure(
-        "Test_custom", input_path, file_name, readme_name="README_total_steps.yaml"
+        "Test_custom",
+        input_path,
+        file_name,
+        readme_name="README_total_steps.yaml",
     )
     assert_frame_equal(
         cell_instance.procedure["Test_custom"].data,
@@ -257,15 +260,17 @@ def test_import_pybamm_solution(benchmark):
                 "Charge at 1 A until 4.1 V",
                 "Hold at 4.1 V until 50 mA",
                 "Rest for 1 hour",
-            )
+            ),
         ]
         * 3
         + [
             "Discharge at 1C until 3.3 V",
-        ]
+        ],
     )
     sim = pybamm.Simulation(
-        spm, experiment=experiment, parameter_values=parameter_values
+        spm,
+        experiment=experiment,
+        parameter_values=parameter_values,
     )
     sol = sim.solve()
     cell_instance = Cell(info={})
@@ -325,12 +330,14 @@ def test_import_pybamm_solution(benchmark):
                 "Charge at 1 A until 4.1 V",
                 "Hold at 4.1 V until 50 mA",
                 "Rest for 1 hour",
-            )
+            ),
         ]
-        * 5
+        * 5,
     )
     sim2 = pybamm.Simulation(
-        spm, experiment=experiment2, parameter_values=parameter_values
+        spm,
+        experiment=experiment2,
+        parameter_values=parameter_values,
     )
 
     sol2 = sim2.solve(starting_solution=sol)
@@ -344,7 +351,7 @@ def test_import_pybamm_solution(benchmark):
 
     benchmark(add_two_experiments)
     assert set(
-        cell_instance.procedure["PyBaMM two experiments"].experiment_names
+        cell_instance.procedure["PyBaMM two experiments"].experiment_names,
     ) == set(["Test1", "Test2"])
     assert_array_equal(
         cell_instance.procedure["PyBaMM two experiments"].get("Voltage [V]"),
@@ -374,7 +381,7 @@ def test_import_pybamm_solution(benchmark):
     written_data = pl.read_parquet("tests/sample_data/pybamm.parquet")
     assert_frame_equal(
         cell_instance.procedure["PyBaMM"].data.drop(
-            ["Procedure Time [s]", "Procedure Capacity [Ah]"]
+            ["Procedure Time [s]", "Procedure Capacity [Ah]"],
         ),
         written_data,
         check_column_order=False,
@@ -482,13 +489,15 @@ def test_get_data_paths(cell_instance):
     filename_inputs = ["Name"]
     result = cell_instance._get_data_paths(folder_path, filename_func, filename_inputs)
     assert result == os.path.join(
-        "test/folder", f"cell_{cell_instance.info['Name']}.csv"
+        "test/folder",
+        f"cell_{cell_instance.info['Name']}.csv",
     )
 
     """Test _get_data_paths with function filename but missing inputs."""
     folder_path = "test/folder"
     with pytest.raises(
-        ValueError, match="filename_inputs must be provided when filename is a function"
+        ValueError,
+        match="filename_inputs must be provided when filename is a function",
     ):
         cell_instance._get_data_paths(folder_path, filename_func)
 
@@ -503,7 +512,7 @@ def test_get_data_paths(cell_instance):
         info={
             "Name": "Test_Cell",
             "Chemistry": "NMC622",
-        }
+        },
     )
 
     folder_path = "../relative/path"

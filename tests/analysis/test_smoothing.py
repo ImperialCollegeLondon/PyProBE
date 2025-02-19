@@ -43,7 +43,9 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
 
     def smooth():
         return smoothing.spline_smoothing(
-            input_data=noisy_data, x="x", target_column="y"
+            input_data=noisy_data,
+            x="x",
+            target_column="y",
         ).get("y")
 
     benchmark(smooth)
@@ -65,7 +67,9 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
     # reverse the data
     flipped_x = np.flip(x)
     result = smoothing.spline_smoothing(
-        input_data=noisy_data_reversed, x="x", target_column="y"
+        input_data=noisy_data_reversed,
+        x="x",
+        target_column="y",
     )
     flipped_expected_y = flipped_x**2
     np.testing.assert_allclose(result.get("y"), flipped_expected_y, rtol=0.2)
@@ -76,13 +80,19 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
 
     def smooth():
         return smoothing.savgol_smoothing(
-            input_data=noisy_data, target_column="y", window_length=100, polyorder=2
+            input_data=noisy_data,
+            target_column="y",
+            window_length=100,
+            polyorder=2,
         ).get("y")
 
     benchmark(smooth)
 
     result = smoothing.savgol_smoothing(
-        input_data=noisy_data, target_column="y", window_length=100, polyorder=2
+        input_data=noisy_data,
+        target_column="y",
+        window_length=100,
+        polyorder=2,
     )
     x = np.arange(1, 6, 0.01)
     expected_y = x**2
@@ -201,24 +211,36 @@ def test_downsample_df():
 
     def smooth_data():
         return smoothing._downsample_monotonic_data(
-            df, "values", min_distance, occurrence="first"
+            df,
+            "values",
+            min_distance,
+            occurrence="first",
         )
 
     resampled_first = smooth_data()["values"].to_numpy()
     resampled_last = smoothing._downsample_monotonic_data(
-        df, "values", min_distance, occurrence="last"
+        df,
+        "values",
+        min_distance,
+        occurrence="last",
     )["values"].to_numpy()
     resampled_middle = smoothing._downsample_monotonic_data(
-        df, "values", min_distance, occurrence="middle"
+        df,
+        "values",
+        min_distance,
+        occurrence="middle",
     )["values"].to_numpy()
     np.testing.assert_array_equal(
-        resampled_first, np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        resampled_first,
+        np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]),
     )
     np.testing.assert_array_equal(
-        resampled_last, np.array([9, 19, 29, 39, 49, 59, 69, 79, 89, 99, 100])
+        resampled_last,
+        np.array([9, 19, 29, 39, 49, 59, 69, 79, 89, 99, 100]),
     )
     np.testing.assert_array_equal(
-        resampled_middle, np.array([5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 100])
+        resampled_middle,
+        np.array([5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 100]),
     )
 
     # test with decreasing x
@@ -226,11 +248,15 @@ def test_downsample_df():
     values = times[::-1]
     df = pl.DataFrame({"Time [s]": times, "values": values})
     resampled_first = smoothing._downsample_monotonic_data(
-        df, "values", min_distance, occurrence="first"
+        df,
+        "values",
+        min_distance,
+        occurrence="first",
     )["values"].to_numpy()
 
     np.testing.assert_array_equal(
-        resampled_first, np.array([100, 99, 89, 79, 69, 59, 49, 39, 29, 19, 9])
+        resampled_first,
+        np.array([100, 99, 89, 79, 69, 59, 49, 39, 29, 19, 9]),
     )
 
 
@@ -329,7 +355,8 @@ def test_downsample_non_monotonic_data():
     # resampled_first = benchmark(smooth_data)["values"].to_numpy()
     resampled_first = smooth_data()["values"].to_numpy()
     np.testing.assert_array_equal(
-        resampled_first, np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        resampled_first,
+        np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]),
     )
 
     # test with decreasing x
@@ -337,10 +364,13 @@ def test_downsample_non_monotonic_data():
     values = times[::-1]
     df = pl.DataFrame({"Time [s]": times, "values": values})
     resampled_first = smoothing._downsample_non_monotonic_data(
-        df, "values", min_distance
+        df,
+        "values",
+        min_distance,
     )["values"].to_numpy()
     np.testing.assert_array_equal(
-        resampled_first, np.array([100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0])
+        resampled_first,
+        np.array([100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0]),
     )
 
     # test with non-monotonic data
@@ -348,7 +378,9 @@ def test_downsample_non_monotonic_data():
     values = np.concatenate((times[:101], times[100:0:-1]))
     df = pl.DataFrame({"Time [s]": times, "values": values})
     resampled_first = smoothing._downsample_non_monotonic_data(
-        df, "values", min_distance
+        df,
+        "values",
+        min_distance,
     )["values"].to_numpy()
     np.testing.assert_array_equal(
         resampled_first,
@@ -374,6 +406,6 @@ def test_downsample_non_monotonic_data():
                 30,
                 20,
                 10,
-            ]
+            ],
         ),
     )

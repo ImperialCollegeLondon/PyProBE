@@ -124,7 +124,7 @@ class PolarsColumnCache:
         if self._cached_dataframe is None:
             self._cached_dataframe = pl.DataFrame(self.cache)
         elif set(self._cached_dataframe.collect_schema().names()) != set(
-            self.cache.keys()
+            self.cache.keys(),
         ):
             self._cached_dataframe = pl.DataFrame(self.cache)
         return self._cached_dataframe
@@ -264,7 +264,7 @@ class Result(BaseModel):
             raise ImportError(
                 "Optional dependency hvplot is not installed. Please install it via "
                 "'pip install hvplot' or by installing PyProBE with hvplot as an "
-                "optional dependency: pip install 'PyProBE-Data[hvplot]'."
+                "optional dependency: pip install 'PyProBE-Data[hvplot]'.",
             )
 
     hvplot.__doc__ = (
@@ -300,11 +300,13 @@ class Result(BaseModel):
             Result: A new result object with the specified columns.
         """
         return Result(
-            base_dataframe=self.data_with_columns(*column_names), info=self.info
+            base_dataframe=self.data_with_columns(*column_names),
+            info=self.info,
         )
 
     def get(
-        self, *column_names: str
+        self,
+        *column_names: str,
     ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         """Return one or more columns of the data as separate 1D numpy arrays.
 
@@ -447,7 +449,8 @@ class Result(BaseModel):
                 elif mode == "collect all":
                     base_frame = base_frame.collect()
             elif isinstance(base_frame, pl.DataFrame) and isinstance(
-                frame, pl.LazyFrame
+                frame,
+                pl.LazyFrame,
             ):
                 frame = frame.collect()
             verified_frames.append(frame)
@@ -455,7 +458,9 @@ class Result(BaseModel):
         return base_frame, verified_frames
 
     def add_new_data_columns(
-        self, new_data: pl.DataFrame | pl.LazyFrame, date_column_name: str
+        self,
+        new_data: pl.DataFrame | pl.LazyFrame,
+        date_column_name: str,
     ) -> None:
         """Add new data columns to the result object.
 
@@ -481,7 +486,9 @@ class Result(BaseModel):
         new_data_cols.remove(date_column_name)
         # check if the new data is lazyframe or not
         _, new_data = self._verify_compatible_frames(
-            self.live_dataframe, [new_data], mode="match 1"
+            self.live_dataframe,
+            [new_data],
+            mode="match 1",
         )
         new_data = new_data[0]
         if (
@@ -492,10 +499,10 @@ class Result(BaseModel):
 
         # Ensure both DataFrames have DateTime columns in the same unit
         new_data = new_data.with_columns(
-            pl.col(date_column_name).dt.cast_time_unit("us")
+            pl.col(date_column_name).dt.cast_time_unit("us"),
         )
         self.live_dataframe = self.live_dataframe.with_columns(
-            pl.col("Date").dt.cast_time_unit("us")
+            pl.col("Date").dt.cast_time_unit("us"),
         )
 
         all_data = self.live_dataframe.clone().join(
@@ -506,10 +513,13 @@ class Result(BaseModel):
             coalesce=True,
         )
         interpolated = all_data.with_columns(
-            pl.col(new_data_cols).interpolate_by("Date")
+            pl.col(new_data_cols).interpolate_by("Date"),
         ).select(pl.col(["Date"] + new_data_cols))
         self.live_dataframe = self.live_dataframe.join(
-            interpolated, on="Date", how="left", coalesce=True
+            interpolated,
+            on="Date",
+            how="left",
+            coalesce=True,
         )
 
     def join(
@@ -532,12 +542,17 @@ class Result(BaseModel):
             coalesce (bool): Whether to coalesce the columns. Default is True.
         """
         _, other_frame = self._verify_compatible_frames(
-            self.live_dataframe, [other.live_dataframe], mode="match 1"
+            self.live_dataframe,
+            [other.live_dataframe],
+            mode="match 1",
         )
         if isinstance(on, str):
             on = [on]
         self.live_dataframe = self.live_dataframe.join(
-            other_frame[0], on=on, how=how, coalesce=coalesce
+            other_frame[0],
+            on=on,
+            how=how,
+            coalesce=coalesce,
         )
         self.column_definitions = {
             **other.column_definitions,
@@ -567,10 +582,13 @@ class Result(BaseModel):
             other = [other]
         other_frame_list = [other_result.live_dataframe for other_result in other]
         self.live_dataframe, other_frame_list = self._verify_compatible_frames(
-            self.live_dataframe, other_frame_list, mode="collect all"
+            self.live_dataframe,
+            other_frame_list,
+            mode="collect all",
         )
         self.live_dataframe = pl.concat(
-            [self.live_dataframe] + other_frame_list, how=concat_method
+            [self.live_dataframe] + other_frame_list,
+            how=concat_method,
         )
         original_column_definitions = self.column_definitions.copy()
         for other_result in other:
@@ -613,7 +631,8 @@ class Result(BaseModel):
                 if isinstance(step_data, dict):
                     step_data = pl.DataFrame(step_data)
                 step_data = step_data.with_columns(
-                    pl.lit(cycle).alias("Cycle"), pl.lit(step).alias("Step")
+                    pl.lit(cycle).alias("Cycle"),
+                    pl.lit(step).alias("Step"),
                 )
                 data.append(step_data)
         data = pl.concat(data)
@@ -633,7 +652,7 @@ class Result(BaseModel):
         # Replace any non-alphanumeric character with an underscore in the DataFrame
         # columns
         renamed_data = self.data.rename(
-            {col: re.sub(r"\W", "_", col) for col in self.data.columns}
+            {col: re.sub(r"\W", "_", col) for col in self.data.columns},
         )
 
         # Replace any non-alphanumeric character with an underscore in the info

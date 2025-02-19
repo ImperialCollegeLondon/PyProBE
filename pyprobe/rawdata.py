@@ -56,7 +56,7 @@ class RawData(Result):
     """
 
     column_definitions: dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy()
+        default_factory=lambda: default_column_definitions.copy(),
     )
     step_descriptions: dict[str, list[str | int | None]] = {}
     """A dictionary containing the fields 'Step' and 'Description'.
@@ -68,7 +68,8 @@ class RawData(Result):
     @field_validator("base_dataframe")
     @classmethod
     def check_required_columns(
-        cls, dataframe: pl.LazyFrame | pl.DataFrame
+        cls,
+        dataframe: pl.LazyFrame | pl.DataFrame,
     ) -> "RawData":
         """Check if the required columns are present in the input_data."""
         column_list = dataframe.collect_schema().names()
@@ -91,7 +92,7 @@ class RawData(Result):
         """
         dataframe = super().data
         unsorted_columns = set(dataframe.collect_schema().names()) - set(
-            required_columns
+            required_columns,
         )
         sorted_columns = list(required_columns) + list(unsorted_columns)
         return dataframe.select(sorted_columns)
@@ -113,14 +114,15 @@ class RawData(Result):
             pl.DataFrame | pl.LazyFrame: The dataframe or lazyframe with the new column.
         """
         self.live_dataframe = self.live_dataframe.with_columns(
-            (pl.col(column) - pl.col(column).first()).alias(new_column_name)
+            (pl.col(column) - pl.col(column).first()).alias(new_column_name),
         )
         new_column_quantity, _ = split_quantity_unit(new_column_name)
         if new_column_definition is not None:
             self.define_column(new_column_quantity, new_column_definition)
         else:
             self.define_column(
-                new_column_quantity, f"{column} with first value zeroed."
+                new_column_quantity,
+                f"{column} with first value zeroed.",
             )
 
     @property
@@ -166,15 +168,18 @@ class RawData(Result):
                         + reference_capacity
                     )
                     / reference_capacity
-                ).alias("SOC")
+                ).alias("SOC"),
             )
         else:
             if self.contains_lazyframe:
                 reference_charge_data = reference_charge.live_dataframe.select(
-                    "Time [s]", "Capacity [Ah]"
+                    "Time [s]",
+                    "Capacity [Ah]",
                 )
                 self.live_dataframe = self.live_dataframe.join(
-                    reference_charge_data, on="Time [s]", how="left"
+                    reference_charge_data,
+                    on="Time [s]",
+                    how="left",
                 )
                 self.live_dataframe = self.live_dataframe.with_columns(
                     pl.col("Capacity [Ah]_right")
@@ -187,7 +192,7 @@ class RawData(Result):
                 )
                 self.live_dataframe = self.live_dataframe.with_columns(
                     pl.lit(full_charge_reference_capacity).alias(
-                        "Full charge reference capacity"
+                        "Full charge reference capacity",
                     ),
                 )
 
@@ -199,7 +204,7 @@ class RawData(Result):
                         + reference_capacity
                     )
                     / reference_capacity
-                ).alias("SOC")
+                ).alias("SOC"),
             )
         self.define_column("SOC", "The full cell State-of-Charge.")
 
@@ -252,7 +257,7 @@ class RawData(Result):
                 pl.col("Capacity [Ah]")
                 - pl.col("Capacity [Ah]").max()
                 + reference_capacity
-            ).alias("Capacity - Referenced [Ah]")
+            ).alias("Capacity - Referenced [Ah]"),
         )
 
     @property
@@ -282,7 +287,7 @@ class RawData(Result):
 
         step_description_df = pl.DataFrame(self.step_descriptions)
         no_step_descriptions = step_description_df.filter(
-            pl.col("Description").is_null()
+            pl.col("Description").is_null(),
         )
         missing_steps = no_step_descriptions.select("Step").to_numpy().flatten()
         if len(missing_steps) > 0:
@@ -297,7 +302,9 @@ class RawData(Result):
 
         # match the step with its description
         all_steps_with_descriptions = only_steps.join(
-            step_description_df, on="Step", how="left"
+            step_description_df,
+            on="Step",
+            how="left",
         ).select("Description")
         # form a list of all the descriptions
         all_steps_with_descriptions = all_steps_with_descriptions.to_numpy().flatten()

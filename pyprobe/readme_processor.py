@@ -19,7 +19,8 @@ class ReadmeModel:
         experiment_names = self.readme_dict.keys()
 
         self.experiment_dict: dict[
-            str, dict[str, list[str | int | tuple[int, int, int]]]
+            str,
+            dict[str, list[str | int | tuple[int, int, int]]],
         ] = {name: {} for name in experiment_names}
         self.step_details = None
         for experiment_name in experiment_names:
@@ -71,7 +72,8 @@ class ReadmeModel:
         step_numbers = list(range(max_step + 1, max_step + len(step_descriptions) + 1))
 
         self.experiment_dict[experiment_name]["Steps"] = cast(
-            list[str | int | tuple[int, int, int]], step_numbers
+            list[str | int | tuple[int, int, int]],
+            step_numbers,
         )  # cast to satisfy mypy
         self.experiment_dict[experiment_name]["Step Descriptions"] = step_descriptions
         self.experiment_dict[experiment_name]["Cycles"] = []
@@ -86,7 +88,8 @@ class ReadmeModel:
         max_step = self._get_max_step()
         step_numbers = list(range(max_step + 1, max_step + total_steps + 1))
         self.experiment_dict[experiment_name]["Steps"] = cast(
-            list[str | int | tuple[int, int, int]], step_numbers
+            list[str | int | tuple[int, int, int]],
+            step_numbers,
         )  # cast to satisfy mypy
         self.experiment_dict[experiment_name]["Step Descriptions"] = []
         self.experiment_dict[experiment_name]["Cycles"] = []

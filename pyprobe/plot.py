@@ -13,7 +13,9 @@ from pyprobe.units import split_quantity_unit
 
 
 def _retrieve_relevant_columns(
-    result_obj: "Result", args: tuple[Any, ...], kwargs: dict[Any, Any]
+    result_obj: "Result",
+    args: tuple[Any, ...],
+    kwargs: dict[Any, Any],
 ) -> pl.DataFrame:
     """Retrieve relevant columns from a Result object for plotting.
 
@@ -44,7 +46,7 @@ def _retrieve_relevant_columns(
             relevant_columns.append(arg)
     if len(relevant_columns) == 0:
         raise ValueError(
-            f"None of the columns in {all_args} are present in the Result object."
+            f"None of the columns in {all_args} are present in the Result object.",
         )
     return result_obj.data_with_columns(*relevant_columns)
 
@@ -65,7 +67,7 @@ def _create_seaborn_wrapper() -> Any:
                 raise ImportError(
                     "Optional dependency 'seaborn' is not installed. Please install by "
                     "running 'pip install seaborn' or installing PyProBE with seaborn "
-                    "as an optional dependency: `pip install 'PyProBE-Data[seaborn]'."
+                    "as an optional dependency: `pip install 'PyProBE-Data[seaborn]'.",
                 )
 
         return SeabornWrapper()
@@ -95,7 +97,9 @@ def _create_seaborn_wrapper() -> Any:
             """
             if "data" in kwargs:
                 kwargs["data"] = _retrieve_relevant_columns(
-                    kwargs["data"], args, kwargs
+                    kwargs["data"],
+                    args,
+                    kwargs,
                 ).to_pandas()
             if func.__name__ == "lineplot":
                 if "estimator" not in kwargs:

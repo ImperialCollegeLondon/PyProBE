@@ -114,7 +114,7 @@ def test_dashboard_get_info(mock_cell):
 
     dashboard = _Dashboard([mock_cell, mock_cell2])
     expected_df = pl.DataFrame(
-        [{"id": "test1", "value": 10}, {"id": "test2", "value": 20}]
+        [{"id": "test1", "value": 10}, {"id": "test2", "value": 20}],
     )
     pl_testing.assert_frame_equal(
         dashboard.get_info([mock_cell, mock_cell2]),
@@ -140,7 +140,7 @@ def test_select_cell_indices(mock_cell):
 
     with patch("streamlit.sidebar.data_editor") as mock_select:
         mock_select.return_value = pd.DataFrame(
-            {"id": ["test1", "test2"], "value": [10, 20], "Select": [True, False]}
+            {"id": ["test1", "test2"], "value": [10, 20], "Select": [True, False]},
         )
         result = dashboard.select_cell_indices()
         assert result == [0]
@@ -270,13 +270,17 @@ def test_dashboard_run(cell_fixture):
             info={
                 "name": "test",
                 "temperature": 25,
-            }
+            },
         )
         cell.add_procedure(
-            "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
+            "Sample",
+            "tests/sample_data/neware/",
+            "sample_data_neware.parquet",
         )
         cell.add_procedure(
-            "Sample 2", "tests/sample_data/neware/", "sample_data_neware.parquet"
+            "Sample 2",
+            "tests/sample_data/neware/",
+            "sample_data_neware.parquet",
         )
 
         dashboard = _Dashboard([cell])
@@ -316,10 +320,12 @@ def test_dashboard_run(cell_fixture):
     assert fig["layout"]["xaxis"]["title"]["text"] == "Time [s]"
     assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
     np.testing.assert_array_equal(
-        fig["data"][0]["x"], cell_fixture.procedure["Sample"].get("Time [s]")
+        fig["data"][0]["x"],
+        cell_fixture.procedure["Sample"].get("Time [s]"),
     )
     np.testing.assert_array_equal(
-        fig["data"][0]["y"], cell_fixture.procedure["Sample"].get("Voltage [V]")
+        fig["data"][0]["y"],
+        cell_fixture.procedure["Sample"].get("Voltage [V]"),
     )
 
     # Check plot with multiple y axes
@@ -330,10 +336,12 @@ def test_dashboard_run(cell_fixture):
     assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
     assert fig["layout"]["yaxis2"]["title"]["text"] == "Current [A]"
     np.testing.assert_array_equal(
-        fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]")
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"].get("Time [s]"),
     )
     np.testing.assert_array_equal(
-        fig["data"][1]["y"], cell_fixture.procedure["Sample"].get("Current [A]")
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"].get("Current [A]"),
     )
     assert fig["data"][2]["name"] == "Current [A]"
     assert fig["data"][2]["line"]["color"] == "black"
@@ -347,10 +355,12 @@ def test_dashboard_run(cell_fixture):
     at.run(timeout=30)
     fig = at.session_state.figure
     np.testing.assert_allclose(
-        fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]") / 3600
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"].get("Time [s]") / 3600,
     )
     np.testing.assert_allclose(
-        fig["data"][1]["y"], cell_fixture.procedure["Sample"].get("Current [A]") * 1000
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"].get("Current [A]") * 1000,
     )
 
     # Check filtering by experiment
@@ -471,7 +481,7 @@ def test_dashboard_run(cell_fixture):
                 "Current [A]",
                 "Voltage [V]",
                 "Capacity [Ah]",
-            ]
+            ],
         )
         .to_pandas()
     )

@@ -139,7 +139,9 @@ class OCP(_AbstractOCP):
         if not hasattr(self, "_eval"):
             if isinstance(self.ocp_function, sp.Expr):
                 self._eval = sp.lambdify(
-                    self.ocp_function.free_symbols.pop(), self.ocp_function, "numpy"
+                    self.ocp_function.free_symbols.pop(),
+                    self.ocp_function,
+                    "numpy",
                 )
             else:
                 self._eval = self.ocp_function
@@ -205,7 +207,9 @@ class CompositeOCP(_AbstractOCP):
 
         # Create a linearly spaced voltage series
         ocp_vector_composite = np.linspace(
-            composite_voltage_limits[0], composite_voltage_limits[1], 10001
+            composite_voltage_limits[0],
+            composite_voltage_limits[1],
+            10001,
         )
 
         interpolator = {
@@ -217,10 +221,12 @@ class CompositeOCP(_AbstractOCP):
 
         ocp_list = [
             interpolator(
-                ocp_comp1[valid_indices_c1], stoichiometry_comp1[valid_indices_c1]
+                ocp_comp1[valid_indices_c1],
+                stoichiometry_comp1[valid_indices_c1],
             ),
             interpolator(
-                ocp_comp2[valid_indices_c2], stoichiometry_comp2[valid_indices_c2]
+                ocp_comp2[valid_indices_c2],
+                stoichiometry_comp2[valid_indices_c2],
             ),
         ]
         return CompositeOCP(ocp_list=ocp_list, ocp_vector=ocp_vector_composite)
@@ -455,7 +461,13 @@ def _build_objective_function(
         ) -> NDArray[np.float64]:
             with np.errstate(divide="ignore", invalid="ignore"):
                 model = 1 / _f_grad_OCV(
-                    ocp_pe, ocp_ne, SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+                    ocp_pe,
+                    ocp_ne,
+                    SOC,
+                    x_pe_lo,
+                    x_pe_hi,
+                    x_ne_lo,
+                    x_ne_hi,
                 )
                 model[~np.isfinite(model)] = np.inf
             return model
@@ -485,7 +497,13 @@ def _build_objective_function(
             updated_ocp_ne,
         ) = unwrap_params(params)
         model = model_function(
-            updated_ocp_pe, updated_ocp_ne, SOC, x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi
+            updated_ocp_pe,
+            updated_ocp_ne,
+            SOC,
+            x_pe_lo,
+            x_pe_hi,
+            x_ne_lo,
+            x_ne_hi,
         )
         return np.sum((model - fitting_target_data) ** 2)
 
@@ -528,14 +546,16 @@ def run_ocv_curve_fit(
     if "SOC" in input_data.column_list:
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
         validator = AnalysisValidator(
-            input_data=input_data, required_columns=required_columns
+            input_data=input_data,
+            required_columns=required_columns,
         )
         voltage, capacity, SOC = validator.variables
         cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
     else:
         required_columns = ["Voltage [V]", "Capacity [Ah]"]
         validator = AnalysisValidator(
-            input_data=input_data, required_columns=required_columns
+            input_data=input_data,
+            required_columns=required_columns,
         )
         voltage, capacity = validator.variables
         cell_capacity = np.abs(np.ptp(capacity))
@@ -592,7 +612,11 @@ def run_ocv_curve_fit(
         ne_capacity,
         li_inventory,
     ) = dma_functions.calc_electrode_capacities(
-        x_pe_lo, x_pe_hi, x_ne_lo, x_ne_hi, cell_capacity
+        x_pe_lo,
+        x_pe_hi,
+        x_ne_lo,
+        x_ne_hi,
+        cell_capacity,
     )
 
     data_dict = {
@@ -660,8 +684,8 @@ def run_ocv_curve_fit(
                 "Fitted dSOCdV [1/V]": 1 / fitted_dVdSOC,
                 "Input dVdSOC [V]": dVdSOC,
                 "Fitted dVdSOC [V]": fitted_dVdSOC,
-            }
-        )
+            },
+        ),
     )
     fitted_OCV.column_definitions = {
         "SOC": "Cell state of charge.",
@@ -697,7 +721,8 @@ def quantify_degradation_modes(
     ]
     for stoichiometry_limits in stoichiometry_limits_list:
         AnalysisValidator(
-            input_data=stoichiometry_limits, required_columns=required_columns
+            input_data=stoichiometry_limits,
+            required_columns=required_columns,
         )
     x_pe_lo = utils.assemble_array(stoichiometry_limits_list, "x_pe low SOC")
     x_pe_hi = utils.assemble_array(stoichiometry_limits_list, "x_pe high SOC")
@@ -705,15 +730,20 @@ def quantify_degradation_modes(
     x_ne_hi = utils.assemble_array(stoichiometry_limits_list, "x_ne high SOC")
 
     cell_capacity = utils.assemble_array(
-        stoichiometry_limits_list, "Cell Capacity [Ah]"
+        stoichiometry_limits_list,
+        "Cell Capacity [Ah]",
     )
     pe_capacity = utils.assemble_array(
-        stoichiometry_limits_list, "Cathode Capacity [Ah]"
+        stoichiometry_limits_list,
+        "Cathode Capacity [Ah]",
     )
     ne_capacity = utils.assemble_array(stoichiometry_limits_list, "Anode Capacity [Ah]")
     li_inventory = utils.assemble_array(stoichiometry_limits_list, "Li Inventory [Ah]")
     SOH, LAM_pe, LAM_ne, LLI = dma_functions.calculate_dma_parameters(
-        cell_capacity, pe_capacity, ne_capacity, li_inventory
+        cell_capacity,
+        pe_capacity,
+        ne_capacity,
+        li_inventory,
     )
 
     dma_result = stoichiometry_limits_list[0].clean_copy(
@@ -732,11 +762,11 @@ def quantify_degradation_modes(
                 "LAM_pe": LAM_pe[:, 0],
                 "LAM_ne": LAM_ne[:, 0],
                 "LLI": LLI[:, 0],
-            }
-        )
+            },
+        ),
     )
     dma_result.live_dataframe = dma_result.live_dataframe.with_columns(
-        pl.col("Index").cast(pl.Int64)
+        pl.col("Index").cast(pl.Int64),
     )
     dma_result.column_definitions = {
         "Index": "The index of the data point from the provided list of input data.",
@@ -838,7 +868,7 @@ def run_batch_dma_parallel(
 
     for index, sto_limit in enumerate(stoichiometry_limit_list):
         sto_limit.live_dataframe = sto_limit.live_dataframe.with_columns(
-            pl.lit(index).cast(pl.Int64).alias("Index")
+            pl.lit(index).cast(pl.Int64).alias("Index"),
         )
 
     dma_results = quantify_degradation_modes(stoichiometry_limit_list)
@@ -856,7 +886,7 @@ def run_batch_dma_sequential(
         {
             "x0": np.array([0.9, 0.1, 0.1, 0.9]),
             "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
-        }
+        },
     ],
     link_results: bool = False,
 ) -> tuple[Result, list[Result]]:
@@ -916,7 +946,10 @@ def run_batch_dma_sequential(
                 previous_x_ne_lo,
                 previous_x_ne_hi,
             ) = previous_stoichiometry_limits.get(
-                "x_pe low SOC", "x_pe high SOC", "x_ne low SOC", "x_ne high SOC"
+                "x_pe low SOC",
+                "x_pe high SOC",
+                "x_ne low SOC",
+                "x_ne high SOC",
             )
             if current_optimizer == "minimize":
                 current_optimizer_options["x0"] = np.array(
@@ -925,7 +958,7 @@ def run_batch_dma_sequential(
                         previous_x_pe_hi[0],
                         previous_x_ne_lo[0],
                         previous_x_ne_hi[0],
-                    ]
+                    ],
                 )
         stoichiometry_limits, fitted_OCV = run_ocv_curve_fit(
             input_data=input_data,
@@ -977,10 +1010,14 @@ def average_ocvs(
     else:
         charge_result = eval(f"input_data.{charge_filter}")
     charge_SOC, charge_OCV, charge_current = charge_result.get(
-        "SOC", "Voltage [V]", "Current [A]"
+        "SOC",
+        "Voltage [V]",
+        "Current [A]",
     )
     discharge_SOC, discharge_OCV, discharge_current = discharge_result.get(
-        "SOC", "Voltage [V]", "Current [A]"
+        "SOC",
+        "Voltage [V]",
+        "Current [A]",
     )
 
     average_OCV = dma_functions.average_OCV_curves(
@@ -998,6 +1035,6 @@ def average_ocvs(
                 "Voltage [V]": average_OCV,
                 "Capacity [Ah]": charge_result.get("Capacity [Ah]"),
                 "SOC": charge_SOC,
-            }
-        )
+            },
+        ),
     )

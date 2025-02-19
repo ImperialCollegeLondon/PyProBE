@@ -109,7 +109,7 @@ def test_retrieve_relevant_columns_with_unit_conversion():
     output = plot._retrieve_relevant_columns(result, args, kwargs)
 
     expected_data = pl.DataFrame(
-        {"I [mA]": [1e3, 2e3, 3e3], "V [kV]": [4e-3, 5e-3, 6e-3]}
+        {"I [mA]": [1e3, 2e3, 3e3], "V [kV]": [4e-3, 5e-3, 6e-3]},
     )
     pl_testing.assert_frame_equal(output, expected_data, check_column_order=False)
 

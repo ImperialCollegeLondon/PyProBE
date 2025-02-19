@@ -90,7 +90,7 @@ def test_add_external_data(procedure_fixture):
     )
     assert "Value" in procedure1.column_list
     assert procedure1.data.select(
-        pl.col("Value").tail(69).is_null()
+        pl.col("Value").tail(69).is_null(),
     ).unique().to_numpy() == np.array([True])
 
     procedure2 = copy.deepcopy(procedure_fixture)

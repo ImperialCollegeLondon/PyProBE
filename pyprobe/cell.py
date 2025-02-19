@@ -44,7 +44,9 @@ class Cell(BaseModel):
         importer: basecycler.BaseCycler,
         output_data_path: str,
         compression_priority: Literal[
-            "performance", "file size", "uncompressed"
+            "performance",
+            "file size",
+            "uncompressed",
         ] = "performance",
         overwrite_existing: bool = False,
     ) -> None:
@@ -81,14 +83,22 @@ class Cell(BaseModel):
     def process_cycler_file(
         self,
         cycler: Literal[
-            "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
+            "neware",
+            "biologic",
+            "biologic_MB",
+            "arbin",
+            "basytec",
+            "maccor",
+            "generic",
         ],
         folder_path: str,
         input_filename: str | Callable[[str], str],
         output_filename: str | Callable[[str], str],
         filename_inputs: list[str] | None = None,
         compression_priority: Literal[
-            "performance", "file size", "uncompressed"
+            "performance",
+            "file size",
+            "uncompressed",
         ] = "performance",
         overwrite_existing: bool = False,
     ) -> None:
@@ -128,12 +138,16 @@ class Cell(BaseModel):
             "maccor": maccor.Maccor,
         }
         input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_inputs
+            folder_path,
+            input_filename,
+            filename_inputs,
         )
         importer = cycler_dict[cycler](input_data_path=input_data_path)
 
         output_data_path = self._get_data_paths(
-            folder_path, output_filename, filename_inputs
+            folder_path,
+            output_filename,
+            filename_inputs,
         )
         output_data_path = self._verify_parquet(output_data_path)
         self._convert_to_parquet(
@@ -153,7 +167,9 @@ class Cell(BaseModel):
         header_row_index: int = 0,
         filename_inputs: list[str] | None = None,
         compression_priority: Literal[
-            "performance", "file size", "uncompressed"
+            "performance",
+            "file size",
+            "uncompressed",
         ] = "performance",
         overwrite_existing: bool = False,
     ) -> None:
@@ -192,7 +208,9 @@ class Cell(BaseModel):
                 parquet file already exists.
         """
         input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_inputs
+            folder_path,
+            input_filename,
+            filename_inputs,
         )
         importer = basecycler.BaseCycler(
             input_data_path=input_data_path,
@@ -200,7 +218,9 @@ class Cell(BaseModel):
             header_row_index=header_row_index,
         )
         output_data_path = self._get_data_paths(
-            folder_path, output_filename, filename_inputs
+            folder_path,
+            output_filename,
+            filename_inputs,
         )
         output_data_path = self._verify_parquet(output_data_path)
         self._convert_to_parquet(
@@ -280,7 +300,9 @@ class Cell(BaseModel):
         output_data_path = self._verify_parquet(output_data_path)
         base_dataframe = pl.scan_parquet(output_data_path)
         self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe, info=self.info, readme_dict={}
+            base_dataframe=base_dataframe,
+            info=self.info,
+            readme_dict={},
         )
 
     @staticmethod
@@ -327,7 +349,8 @@ class Cell(BaseModel):
         if isinstance(dataframe, pl.LazyFrame):
             dataframe = dataframe.collect()
         dataframe.write_parquet(
-            output_data_path, compression=compression_dict[compression]
+            output_data_path,
+            compression=compression_dict[compression],
         )
 
     @staticmethod
@@ -349,7 +372,7 @@ class Cell(BaseModel):
             str: The input name for the data file.
         """
         return filename_function(
-            *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs)))
+            *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs))),
         )
 
     def _get_data_paths(
@@ -450,14 +473,16 @@ class Cell(BaseModel):
 
         lazyframe_created = False
         for experiment_name, pybamm_solution in zip(
-            experiment_names, pybamm_solutions, strict=False
+            experiment_names,
+            pybamm_solutions,
+            strict=False,
         ):
             # get the data from the PyBaMM solution object
             pybamm_data = pybamm_solution.get_data_dict(import_variables)
             # convert the PyBaMM data to a polars dataframe and add the experiment name
             # as a column
             solution_data = pl.LazyFrame(pybamm_data).with_columns(
-                pl.lit(experiment_name).alias("Experiment")
+                pl.lit(experiment_name).alias("Experiment"),
             )
             if lazyframe_created is False:
                 all_solution_data = solution_data
@@ -466,12 +491,14 @@ class Cell(BaseModel):
                 # join the new solution data with the existing solution data, a right
                 # join is used to keep all the data
                 all_solution_data = all_solution_data.join(
-                    solution_data, on=import_variables + ["Step"], how="right"
+                    solution_data,
+                    on=import_variables + ["Step"],
+                    how="right",
                 )
                 # fill null values where the experiment has been extended with the newly
                 #  joined experiment name
                 all_solution_data = all_solution_data.with_columns(
-                    pl.col("Experiment").fill_null(pl.col("Experiment_right"))
+                    pl.col("Experiment").fill_null(pl.col("Experiment_right")),
                 )
         # get the maximum step number for each experiment
         max_steps = (
@@ -482,15 +509,17 @@ class Cell(BaseModel):
         )
         # add the maximum step number from the previous experiment to the step number
         all_solution_data = all_solution_data.join(
-            max_steps, on="Experiment", how="left"
+            max_steps,
+            on="Experiment",
+            how="left",
         ).with_columns(
-            (pl.col("Step") + pl.col("Max Step").fill_null(-1) + 1).alias("Step")
+            (pl.col("Step") + pl.col("Max Step").fill_null(-1) + 1).alias("Step"),
         )
         # get the range of step values for each experiment
         step_ranges = all_solution_data.group_by("Experiment").agg(
             pl.arange(pl.col("Step").min(), pl.col("Step").max() + 1).alias(
-                "Step Range"
-            )
+                "Step Range",
+            ),
         )
 
         # create a dictionary of the experiment names and the step ranges
@@ -518,11 +547,13 @@ class Cell(BaseModel):
                     .cum_sum()
                     .alias("Event")
                 ),
-            ]
+            ],
         )
         # create the procedure object
         self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe, info=self.info, readme_dict=experiment_dict
+            base_dataframe=base_dataframe,
+            info=self.info,
+            readme_dict=experiment_dict,
         )
 
         # write the data to a parquet file if a path is provided
@@ -598,12 +629,13 @@ def load_archive(path: str) -> Cell:
             f"The PyProBE version used to archive the cell was "
             f"{metadata['PyProBE Version']}, the current version is "
             f"{__version__}. There may be compatibility"
-            f" issues."
+            f" issues.",
         )
     metadata.pop("PyProBE Version")
     for procedure in metadata["procedure"].values():
         procedure["base_dataframe"] = os.path.join(
-            archive_path, procedure["base_dataframe"]
+            archive_path,
+            procedure["base_dataframe"],
         )
     cell = Cell(**metadata)
 

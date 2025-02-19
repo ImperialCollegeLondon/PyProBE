@@ -150,7 +150,8 @@ class _Dashboard:
                 .experiment_names
             )
             selected_experiment = st.sidebar.multiselect(
-                "Select an experiment", experiment_names
+                "Select an experiment",
+                experiment_names,
             )
             return tuple(selected_experiment)
         else:
@@ -211,7 +212,8 @@ class _Dashboard:
             name=f"{data.info[self.cell_identifier]}",
             yaxis="y2",
             line=dict(
-                color=color, dash="dash"
+                color=color,
+                dash="dash",
             ),  # Use the same color as the primary trace
             showlegend=False,
         )
@@ -227,7 +229,7 @@ class _Dashboard:
                 line=dict(color="black", dash="dash"),
                 name=self.secondary_y_axis,
                 showlegend=True,
-            )
+            ),
         )
 
     def style_fig(self) -> None:
@@ -264,23 +266,29 @@ class _Dashboard:
         st.sidebar.title("Select data to plot")
         self.selected_indices = self.select_cell_indices()
         self.selected_procedure = st.sidebar.selectbox(
-            "Select a procedure", self.get_common_procedures()
+            "Select a procedure",
+            self.get_common_procedures(),
         )
         self.selected_experiments = self.select_experiment()
         self.cycle_step_input = st.sidebar.text_input(
-            'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")'
+            'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")',
         )
         col1, col2, col3, col4, col5 = st.columns(5)
         self.filter_stage = col1.selectbox(
-            "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
+            "Filter stage",
+            ["", "Experiment", "Cycle", "Step"],
+            index=0,
         )
         self.x_axis = col2.selectbox("x axis", self.x_options, index=0)
         self.y_axis = col3.selectbox("y axis", self.y_options, index=1)
         self.secondary_y_axis = col4.selectbox(
-            "Secondary y axis", ["None"] + self.y_options, index=0
+            "Secondary y axis",
+            ["None"] + self.y_options,
+            index=0,
         )
         self.cell_identifier = col5.selectbox(
-            "Legend label", self.info.collect_schema().names()
+            "Legend label",
+            self.info.collect_schema().names(),
         )
         selected_names = [
             self.cell_list[i].info[self.cell_identifier] for i in self.selected_indices

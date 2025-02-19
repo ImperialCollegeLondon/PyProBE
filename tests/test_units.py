@@ -55,41 +55,45 @@ def test_UnitsExpr_to_default():
     """Test the to_default method."""
     df = pl.DataFrame({"Current [mA]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        (pl.col("Current [mA]").cast(pl.Float64) * 1e-3).alias("Current [A]")
+        (pl.col("Current [mA]").cast(pl.Float64) * 1e-3).alias("Current [A]"),
     )
     assert_frame_equal(
-        df.with_columns(pl.col("Current [mA]").units.to_default()), expected_df
+        df.with_columns(pl.col("Current [mA]").units.to_default()),
+        expected_df,
     )
 
     df = pl.DataFrame({"Capacity 1 [mAh]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        (pl.col("Capacity 1 [mAh]").cast(pl.Float64) * 1e-3).alias("Capacity 1 [Ah]")
+        (pl.col("Capacity 1 [mAh]").cast(pl.Float64) * 1e-3).alias("Capacity 1 [Ah]"),
     )
     assert_frame_equal(
-        df.with_columns(pl.col("Capacity 1 [mAh]").units.to_default()), expected_df
+        df.with_columns(pl.col("Capacity 1 [mAh]").units.to_default()),
+        expected_df,
     )
 
     df = pl.DataFrame({"Time [hr]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        (pl.col("Time [hr]").cast(pl.Float64) * 3600).alias("Time [s]")
+        (pl.col("Time [hr]").cast(pl.Float64) * 3600).alias("Time [s]"),
     )
     assert_frame_equal(
-        df.with_columns(pl.col("Time [hr]").units.to_default()), expected_df
+        df.with_columns(pl.col("Time [hr]").units.to_default()),
+        expected_df,
     )
 
     df = pl.DataFrame({"Time [ms]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        (pl.col("Time [ms]").cast(pl.Float64) * 1e-3).alias("Time [s]")
+        (pl.col("Time [ms]").cast(pl.Float64) * 1e-3).alias("Time [s]"),
     )
     assert_frame_equal(
-        df.with_columns(pl.col("Time [ms]").units.to_default()), expected_df
+        df.with_columns(pl.col("Time [ms]").units.to_default()),
+        expected_df,
     )
 
     df = pl.DataFrame({"Current/voltage [mA/V]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
         (pl.col("Current/voltage [mA/V]").cast(pl.Float64) * 1e-3).alias(
-            "Current/voltage [A/V]"
-        )
+            "Current/voltage [A/V]",
+        ),
     )
     assert_frame_equal(
         df.with_columns(pl.col("Current/voltage [mA/V]").units.to_default()),
@@ -98,11 +102,11 @@ def test_UnitsExpr_to_default():
 
     df = pl.DataFrame({"Current/voltage/V": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        (pl.col("Current/voltage/V").cast(pl.Float64) * 1).alias("Current/voltage [V]")
+        (pl.col("Current/voltage/V").cast(pl.Float64) * 1).alias("Current/voltage [V]"),
     )
     assert_frame_equal(
         df.with_columns(
-            pl.col("Current/voltage/V").units.to_default(r"^(.+)/([^/]+)$")
+            pl.col("Current/voltage/V").units.to_default(r"^(.+)/([^/]+)$"),
         ),
         expected_df,
     )
@@ -110,8 +114,8 @@ def test_UnitsExpr_to_default():
     df = pl.DataFrame({"Current/voltage/mV": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
         (pl.col("Current/voltage/mV").cast(pl.Float64) * 1e-3).alias(
-            "Current/voltage [V]"
-        )
+            "Current/voltage [V]",
+        ),
     )
 
 
@@ -120,7 +124,8 @@ def test_UnitsExpr_to_si():
     df = pl.DataFrame({"Current [mA]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(pl.col("Current [mA]").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
-        df.with_columns(pl.col("Current [mA]").units.to_si("mA")), expected_df
+        df.with_columns(pl.col("Current [mA]").units.to_si("mA")),
+        expected_df,
     )
 
     with pytest.raises(ValueError):
@@ -132,24 +137,27 @@ def test_UnitsExpr_to_si():
     df = pl.DataFrame({"Capacity 1 [mAh]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(pl.col("Capacity 1 [mAh]").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
-        df.with_columns(pl.col("Capacity 1 [mAh]").units.to_si("mAh")), expected_df
+        df.with_columns(pl.col("Capacity 1 [mAh]").units.to_si("mAh")),
+        expected_df,
     )
 
     df = pl.DataFrame({"Time [hr]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(pl.col("Time [hr]").cast(pl.Float64) * 3600)
     assert_frame_equal(
-        df.with_columns(pl.col("Time [hr]").units.to_si("hr")), expected_df
+        df.with_columns(pl.col("Time [hr]").units.to_si("hr")),
+        expected_df,
     )
 
     df = pl.DataFrame({"Time [ms]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(pl.col("Time [ms]").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
-        df.with_columns(pl.col("Time [ms]").units.to_si("ms")), expected_df
+        df.with_columns(pl.col("Time [ms]").units.to_si("ms")),
+        expected_df,
     )
 
     df = pl.DataFrame({"Current/voltage [mA/V]": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(
-        pl.col("Current/voltage [mA/V]").cast(pl.Float64) * 1e-3
+        pl.col("Current/voltage [mA/V]").cast(pl.Float64) * 1e-3,
     )
     assert_frame_equal(
         df.with_columns(pl.col("Current/voltage [mA/V]").units.to_si("mA/V")),
@@ -159,13 +167,15 @@ def test_UnitsExpr_to_si():
     df = pl.DataFrame({"Current/voltage/V": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(pl.col("Current/voltage/V").cast(pl.Float64) * 1)
     assert_frame_equal(
-        df.with_columns(pl.col("Current/voltage/V").units.to_si("V")), expected_df
+        df.with_columns(pl.col("Current/voltage/V").units.to_si("V")),
+        expected_df,
     )
 
     df = pl.DataFrame({"Current/voltage/mV": [1.0, 2.0, 3.0]})
     expected_df = df.with_columns(pl.col("Current/voltage/mV").cast(pl.Float64) * 1e-3)
     assert_frame_equal(
-        df.with_columns(pl.col("Current/voltage/mV").units.to_si("mV")), expected_df
+        df.with_columns(pl.col("Current/voltage/mV").units.to_si("mV")),
+        expected_df,
     )
 
 

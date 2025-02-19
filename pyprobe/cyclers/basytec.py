@@ -22,7 +22,8 @@ class Basytec(bc.BaseCycler):
 
     @staticmethod
     def read_file(
-        filepath: str, header_row_index: int = 0
+        filepath: str,
+        header_row_index: int = 0,
     ) -> pl.DataFrame | pl.LazyFrame:
         """Read a battery cycler file into a DataFrame.
 
@@ -45,7 +46,10 @@ class Basytec(bc.BaseCycler):
         start_time = datetime.strptime(value.strip(), "%d.%m.%Y %H:%M:%S")
 
         dataframe = pl.scan_csv(
-            filepath, skip_rows=n_header_lines - 1, separator="\t", infer_schema=False
+            filepath,
+            skip_rows=n_header_lines - 1,
+            separator="\t",
+            infer_schema=False,
         )
 
         dataframe = dataframe.with_columns(
@@ -54,6 +58,6 @@ class Basytec(bc.BaseCycler):
                 + pl.lit(start_time)
             )
             .cast(str)
-            .alias("Date")
+            .alias("Date"),
         )
         return dataframe
