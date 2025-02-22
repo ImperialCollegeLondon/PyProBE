@@ -3,11 +3,19 @@
 import glob
 import logging
 import os
+import time
 from abc import ABC, abstractmethod
-from typing import Any
+from pathlib import Path
+from typing import Any, Literal
 
 import polars as pl
-from pydantic import BaseModel, GetCoreSchemaHandler, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    GetCoreSchemaHandler,
+    field_validator,
+    model_validator,
+)
 from pydantic_core import CoreSchema, core_schema
 
 from pyprobe.units import valid_units
@@ -336,41 +344,112 @@ class CapacityFromCurrentSign(ColumnMap):
 class BaseCycler(BaseModel):
     """A class to load and process battery cycler data."""
 
-    input_data_path: str
-    """The path to the input data."""
-    header_row_index: int = 0
-    """The index of the header row in the data file."""
-
+    input_data_path: str = Field(
+        description="Path to input data file(s). Supports glob patterns."
+    )
+    output_data_path: str | None = Field(
+        default=None,
+        description="Path for output parquet file. Defaults to the input path with a"
+        " .parquet suffix.",
+    )
+    compression: Literal["performance", "file size", "uncompressed"] = Field(
+        default="performance", description="Compression algorithm for output file"
+    )
+    overwrite_existing: bool = Field(
+        default=False, description="Whether to overwrite existing output file"
+    )
+    header_row_index: int = Field(
+        default=0, description="Index of header row in input file"
+    )
     column_importers: list[ColumnMap]
-    """A list of :class:`ColumnMap` objects to map cycler columns to PyProBE columns."""
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-    @field_validator("input_data_path")
+    @field_validator("input_data_path", mode="after")
     @classmethod
-    def _check_input_data_path(cls, value: str) -> str:
-        """Check if the input data path is valid.
+    def validate_input_path(cls, v: str) -> str:
+        """Validate that the input path exists."""
+        if "*" in v:
+            files = glob.glob(v)
+            if not files:
+                raise ValueError(f"No files found matching pattern: {v}")
+            return v
+        path = Path(v)
+        if not path.exists():
+            raise ValueError(f"Input file not found: {path}")
+        return str(path)
+
+    @field_validator("output_data_path", mode="after")
+    @classmethod
+    def validate_output_path(cls, v: str | None) -> str:
+        """Validate the output path."""
+        if v is not None:
+            path = Path(v)
+            if path.suffix != ".parquet":
+                if path.suffix:
+                    logger.warning(
+                        f"Output file extension {path.suffix} will be replaced with"
+                        " .parquet"
+                    )
+                else:
+                    logger.info("Output file has no extension, will be given .parquet")
+                v = str(path.with_suffix(".parquet"))
+            if not path.parent.exists():
+                raise ValueError(f"Output directory does not exist: {path.parent}")
+        return str(v)
+
+    @model_validator(mode="after")
+    def set_default_output_path(self) -> "BaseCycler":
+        """Set the default output path if not provided."""
+        if self.output_data_path is None:
+            input_path = Path(self.input_data_path)
+            self.output_data_path = str(input_path.with_suffix(".parquet"))
+            logger.info(
+                f"Output path not provided, defaulting to: {self.output_data_path}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def import_and_validate_data(self) -> "BaseCycler":
+        """Import the data and validate the column mapping."""
+        dataframe_list = self._get_dataframe_list()
+        self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
+        for column_importer in self.column_importers:
+            column_importer.validate(self._imported_dataframe.collect_schema().names())
+        return self
+
+    def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
+        """Return a list of all the imported dataframes.
 
         Args:
-            value (str): The input data path.
+            input_data_path (str): The path to the input data.
 
         Returns:
-            str: The input data path.
+            List[DataFrame]: A list of DataFrames.
         """
-        if "*" in value:
-            files = glob.glob(value)
-            if len(files) == 0:
-                error_msg = f"No files found with the pattern {value}."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-        elif not os.path.exists(value):
-            error_msg = f"File not found: path {value} does not exist."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        return value
+        files = glob.glob(self.input_data_path)
+        files.sort()
+        df_list = [self.read_file(file, self.header_row_index) for file in files]
+        all_columns = {col for df in df_list for col in df.collect_schema().names()}
+        for i in range(len(df_list)):
+            if len(df_list[i].collect_schema().names()) < len(all_columns):
+                logger.warning(
+                    f"File {os.path.basename(files[i])} has missing columns, "
+                    "these have been filled with null values.",
+                )
+        return df_list
+
+    def get_imported_dataframe(
+        self,
+        dataframe_list: list[pl.DataFrame],
+    ) -> pl.DataFrame:
+        """Return a single DataFrame from a list of DataFrames.
+
+        Args:
+            dataframe_list: A list of DataFrames.
+
+        Returns:
+            DataFrame: A single DataFrame.
+        """
+        return pl.concat(dataframe_list, how="diagonal", rechunk=True)
 
     @staticmethod
     def read_file(
@@ -408,50 +487,6 @@ class BaseCycler(BaseModel):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
-    def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
-        """Return a list of all the imported dataframes.
-
-        Args:
-            input_data_path (str): The path to the input data.
-
-        Returns:
-            List[DataFrame]: A list of DataFrames.
-        """
-        files = glob.glob(self.input_data_path)
-        files.sort()
-        df_list = [self.read_file(file, self.header_row_index) for file in files]
-        all_columns = {col for df in df_list for col in df.collect_schema().names()}
-        for i in range(len(df_list)):
-            if len(df_list[i].collect_schema().names()) < len(all_columns):
-                logger.warning(
-                    f"File {os.path.basename(files[i])} has missing columns, "
-                    "these have been filled with null values.",
-                )
-        return df_list
-
-    def get_imported_dataframe(
-        self,
-        dataframe_list: list[pl.DataFrame],
-    ) -> pl.DataFrame:
-        """Return a single DataFrame from a list of DataFrames.
-
-        Args:
-            dataframe_list: A list of DataFrames.
-
-        Returns:
-            DataFrame: A single DataFrame.
-        """
-        return pl.concat(dataframe_list, how="diagonal", rechunk=True)
-
-    @model_validator(mode="after")
-    def import_and_validate_data(self) -> "BaseCycler":
-        """Import the data and validate the column mapping."""
-        dataframe_list = self._get_dataframe_list()
-        self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
-        for column_importer in self.column_importers:
-            column_importer.validate(self._imported_dataframe.collect_schema().names())
-        return self
-
     def get_pyprobe_dataframe(self) -> pl.DataFrame:
         """Return the PyProBE DataFrame."""
         imported_columns = set()
@@ -475,3 +510,20 @@ class BaseCycler(BaseModel):
             .with_columns(event_expr)
             .collect()
         )
+
+    def process(self) -> None:
+        """Process the battery cycler data."""
+        compression_dict = {
+            "uncompressed": "uncompressed",
+            "performance": "lz4",
+            "file size": "zstd",
+        }
+        if not os.path.exists(str(self.output_data_path)) or self.overwrite_existing:
+            t1 = time.time()
+            pyprobe_dataframe = self.get_pyprobe_dataframe()
+            pyprobe_dataframe.write_parquet(
+                self.output_data_path, compression=compression_dict[self.compression]
+            )
+            logger.info(f"parquet written in{time.time() - t1: .2f} seconds.")
+        else:
+            logger.info(f"File {self.output_data_path} already exists. Skipping.")

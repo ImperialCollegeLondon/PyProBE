@@ -4,14 +4,14 @@ import json
 import logging
 import os
 import shutil
-import time
 import warnings
 import zipfile
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, Literal
 
 import polars as pl
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel, Field, ValidationError, validate_call
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
@@ -38,48 +38,6 @@ class Cell(BaseModel):
 
         arbitrary_types_allowed = True
 
-    @classmethod
-    def _convert_to_parquet(
-        cls,
-        importer: basecycler.BaseCycler,
-        output_data_path: str,
-        compression_priority: Literal[
-            "performance",
-            "file size",
-            "uncompressed",
-        ] = "performance",
-        overwrite_existing: bool = False,
-    ) -> None:
-        """Convert a file into PyProBE format.
-
-        Args:
-            importer:
-                The cycler object to import the data.
-            output_data_path:
-                The path to write the parquet file.
-            compression_priority:
-                The priority of the compression algorithm to use on the resulting
-                parquet file. Available options are:
-                - 'performance': Use the 'lz4' compression algorithm (default).
-                - 'file size': Use the 'zstd' compression algorithm.
-                - 'uncompressed': Do not use compression.
-            overwrite_existing:
-                If True, any existing parquet file with the output_filename will be
-                overwritten. If False, the function will skip the conversion if the
-                parquet file already exists.
-        """
-        if not os.path.exists(output_data_path) or overwrite_existing:
-            t1 = time.time()
-            cls._write_parquet(
-                importer,
-                output_data_path,
-                compression=compression_priority,
-            )
-            logger.info(f"\tparquet written in {time.time() - t1: .2f} seconds.")
-        else:
-            logger.info(f"File {output_data_path} already exists. Skipping.")
-
-    @validate_call
     def process_cycler_file(
         self,
         cycler: Literal[
@@ -142,22 +100,22 @@ class Cell(BaseModel):
             input_filename,
             filename_inputs,
         )
-        importer = cycler_dict[cycler](input_data_path=input_data_path)
-
         output_data_path = self._get_data_paths(
             folder_path,
             output_filename,
             filename_inputs,
         )
-        output_data_path = self._verify_parquet(output_data_path)
-        self._convert_to_parquet(
-            importer,
-            output_data_path,
-            compression_priority,
-            overwrite_existing,
-        )
+        try:
+            importer = cycler_dict[cycler](
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                compression=compression_priority,
+                overwrite_existing=overwrite_existing,
+            )
+            importer.process()
+        except ValidationError as e:
+            logger.error(e)
 
-    @validate_call
     def process_generic_file(
         self,
         folder_path: str,
@@ -212,6 +170,11 @@ class Cell(BaseModel):
             input_filename,
             filename_inputs,
         )
+        output_data_path = self._get_data_paths(
+            folder_path,
+            output_filename,
+            filename_inputs,
+        )
         importer = basecycler.BaseCycler(
             input_data_path=input_data_path,
             column_importers=column_importers,
@@ -222,13 +185,17 @@ class Cell(BaseModel):
             output_filename,
             filename_inputs,
         )
-        output_data_path = self._verify_parquet(output_data_path)
-        self._convert_to_parquet(
-            importer,
-            output_data_path,
-            compression_priority,
-            overwrite_existing,
-        )
+        try:
+            importer = basecycler.BaseCycler(
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                column_importers=column_importers,
+                compression=compression_priority,
+                overwrite_existing=overwrite_existing,
+            )
+            importer.process()
+        except ValidationError as e:
+            logger.error(e)
 
     @validate_call
     def add_procedure(
@@ -258,7 +225,7 @@ class Cell(BaseModel):
                 that the readme file is in the same folder as the data file.
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self._verify_parquet(output_data_path)
+        self._check_parquet(output_data_path)
         base_dataframe = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
         readme_path = os.path.join(data_folder, readme_name)
@@ -297,7 +264,7 @@ class Cell(BaseModel):
                 info.
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self._verify_parquet(output_data_path)
+        self._check_parquet(output_data_path)
         base_dataframe = pl.scan_parquet(output_data_path)
         self.procedure[procedure_name] = Procedure(
             base_dataframe=base_dataframe,
@@ -306,52 +273,17 @@ class Cell(BaseModel):
         )
 
     @staticmethod
-    def _verify_parquet(filename: str) -> str:
-        """Function to verify the filename is in the correct parquet format.
-
-        Args:
-            filename (str): The filename to verify.
-
-        Returns:
-            str: The filename.
-        """
-        # Get the file extension of output_filename
-        _, ext = os.path.splitext(filename)
-
-        # If the file extension is not .parquet, replace it with .parquet
-        if ext != ".parquet":
-            filename = os.path.splitext(filename)[0] + ".parquet"
-        if "*" in filename:
-            error_msg = "* characters are not allowed for output filename."
+    def _check_parquet(output_data_path: str) -> None:
+        """Function to check if a parquet file exists."""
+        path = Path(output_data_path)
+        if not path.exists():
+            error_msg = f"File {output_data_path} does not exist."
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+        if path.suffix != ".parquet":
+            error_msg = f"Files must be in parquet format. {path.name} is not."
             logger.error(error_msg)
             raise ValueError(error_msg)
-        return filename
-
-    @staticmethod
-    def _write_parquet(
-        importer: basecycler.BaseCycler,
-        output_data_path: str,
-        compression: Literal["uncompressed", "performance", "file size"],
-    ) -> None:
-        """Import data from a cycler file and write to a PyProBE parquet file.
-
-        Args:
-            importer (BaseCycler): The cycler object to import the data.
-            output_data_path (str): The path to write the parquet file.
-            compression (str): The compression algorithm to use.
-        """
-        compression_dict = {
-            "uncompressed": "uncompressed",
-            "performance": "lz4",
-            "file size": "zstd",
-        }
-        dataframe = importer.get_pyprobe_dataframe()
-        if isinstance(dataframe, pl.LazyFrame):
-            dataframe = dataframe.collect()
-        dataframe.write_parquet(
-            output_data_path,
-            compression=compression_dict[compression],
-        )
 
     @staticmethod
     def _get_filename(

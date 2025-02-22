@@ -1,7 +1,9 @@
 """Test the basecycler module."""
 
 import datetime
+import logging
 import os
+import re
 
 import polars as pl
 import pytest
@@ -213,26 +215,6 @@ def test_TimeFromDate():
     assert_frame_equal(df.select(column_map.expr), expected_df)
 
 
-def test_input_data_path_validator():
-    """Test the input data path validator."""
-    # test with invalid path
-    path = "invalid_path"
-    with pytest.raises(ValueError, match=f"File not found: path {path} does not exist"):
-        BaseCycler._check_input_data_path(path)
-
-    path = "invalid_path*"
-    with pytest.raises(ValueError, match=f"No files found with the pattern {path}."):
-        BaseCycler._check_input_data_path(path)
-
-    # test with valid path
-    assert (
-        BaseCycler._check_input_data_path(
-            "tests/sample_data/neware/sample_data_neware.csv",
-        )
-        == "tests/sample_data/neware/sample_data_neware.csv"
-    )
-
-
 @pytest.fixture
 def sample_dataframe():
     """A sample dataframe."""
@@ -289,6 +271,126 @@ def column_importer_fixture():
         DateTime("DateTime", "%Y-%m-%d %H:%M:%S%.f"),
         ConvertUnits("Time [s]", "T [*]"),
     ]
+
+
+def test_basecycler_init(caplog):
+    """Test input validation in the BaseCycler class."""
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+        output_data_path="tests/sample_data/sample_data1.parquet",
+        column_importers=[],
+    )
+    assert cycler.input_data_path == "tests/sample_data/neware/sample_data_neware.csv"
+    assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
+    assert cycler.column_importers == []
+    assert cycler.compression == "performance"
+    assert not cycler.overwrite_existing
+    assert cycler.header_row_index == 0
+
+    # Test with invalid input_data_path
+    with pytest.raises(ValueError, match="Input file not found: invalid_path"):
+        BaseCycler(
+            input_data_path="invalid_path",
+            output_data_path="tests/sample_data/sample_data1.parquet",
+            column_importers=[],
+        )
+    with pytest.raises(
+        ValueError, match="No files found matching pattern: invalid_path*"
+    ):
+        BaseCycler(
+            input_data_path="invalid_path*",
+            output_data_path="tests/sample_data/sample_data1.parquet",
+            column_importers=[],
+        )
+
+    # Test with invalid output_data_path
+    with pytest.raises(
+        ValueError, match="Output directory does not exist: invalid_path"
+    ):
+        BaseCycler(
+            input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+            output_data_path="invalid_path/sample_data1.parquet",
+            column_importers=[],
+        )
+
+    # Test with missing output_data_path
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+        column_importers=[],
+    )
+    assert (
+        cycler.output_data_path == "tests/sample_data/neware/sample_data_neware.parquet"
+    )
+
+    # Test with missing parquet extension
+    with caplog.at_level(logging.INFO):
+        cycler = BaseCycler(
+            input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+            output_data_path="tests/sample_data/sample_data1",
+            column_importers=[],
+        )
+        assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
+        assert (
+            caplog.messages[-1]
+            == "Output file has no extension, will be given .parquet"
+        )
+
+    # Test with incorrect extension
+    with caplog.at_level(logging.WARNING):
+        cycler = BaseCycler(
+            input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+            output_data_path="tests/sample_data/sample_data1.txt",
+            column_importers=[],
+        )
+        assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
+        assert (
+            caplog.messages[-1]
+            == "Output file extension .txt will be replaced with .parquet"
+        )
+
+
+def test_process(mocker, caplog):
+    """Test the process method."""
+    cycler_instance = BaseCycler(
+        input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+        output_data_path="tests/sample_data/sample_data.parquet",
+        column_importers=[],
+    )
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [4, 5, 6],
+        }
+    )
+    mocker.patch(
+        "pyprobe.cyclers.basecycler.BaseCycler.get_pyprobe_dataframe", return_value=df
+    )
+    with caplog.at_level(logging.INFO):
+        cycler_instance.process()
+        message = caplog.messages[-1]
+        assert re.match(r"parquet written in \d+(\.\d+)? seconds\.", message)
+        assert_frame_equal(pl.read_parquet("tests/sample_data/sample_data.parquet"), df)
+        cycler_instance.process()
+        assert (
+            caplog.messages[-1]
+            == "File tests/sample_data/sample_data.parquet already exists. Skipping."
+        )
+    os.remove("tests/sample_data/sample_data.parquet")
+
+    cycler_instance = BaseCycler(
+        input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+        output_data_path="tests/sample_data/sample_data.parquet",
+        column_importers=[],
+        overwrite_existing=True,
+    )
+    with caplog.at_level(logging.INFO):
+        cycler_instance.process()
+        message = caplog.messages[-1]
+        assert re.match(r"parquet written in \d+(\.\d+)? seconds\.", message)
+        assert_frame_equal(pl.read_parquet("tests/sample_data/sample_data.parquet"), df)
+        cycler_instance.process()
+        assert re.match(r"parquet written in \d+(\.\d+)? seconds\.", message)
+    os.remove("tests/sample_data/sample_data.parquet")
 
 
 def test_get_pyprobe_dataframe(

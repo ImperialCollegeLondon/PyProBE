@@ -8,7 +8,6 @@ import os
 import shutil
 
 import polars as pl
-import polars.testing as pl_testing
 import pytest
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
@@ -69,22 +68,6 @@ def test_get_filename(info_fixture):
     assert file == "Cell_named_Test_Cell.xlsx"
 
 
-def test_verify_filename():
-    """Test the _verify_parquet method."""
-    file = "path/to/sample_data_neware"
-    assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
-
-    file = "path/to/sample_data_neware.parquet"
-    assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
-
-    file = "path/to/sample_data_neware.csv"
-    assert Cell._verify_parquet(file) == "path/to/sample_data_neware.parquet"
-
-    file = "path/to/sample_data_neware*.parquet"
-    with pytest.raises(ValueError):
-        Cell._verify_parquet(file)
-
-
 @pytest.fixture
 def caplog_fixture(caplog):
     """A fixture to capture log messages."""
@@ -92,35 +75,23 @@ def caplog_fixture(caplog):
     return caplog
 
 
-def test_write_parquet(mocker):
-    """Test the _write_parquet method."""
-    data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-
-    importer = mocker.Mock()
-    importer.get_pyprobe_dataframe.return_value = data
-    for compression in ["uncompressed", "performance", "file size"]:
-        Cell._write_parquet(
-            importer=importer,
-            output_data_path=compression + ".parquet",
-            compression=compression,
-        )
-        written_data = pl.read_parquet(compression + ".parquet")
-        pl_testing.assert_frame_equal(written_data, data)
-        os.remove(compression + ".parquet")
-
-
-def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture, mocker):
+def test_process_cycler_file(cell_instance, mocker):
     """Test the process_cycler_file method."""
-    folder_path = "tests/sample_data/biologic/"
-    file_name = "sample_data_biologic.mpt"
-    output_name = "sample_data_biologic.parquet"
-    mocker.patch("pyprobe.cell.Cell._get_data_paths")
-    mocker.patch("pyprobe.cell.Cell._convert_to_parquet")
+    output_name = "test.parquet"
 
-    cyclers = ["neware", "maccor", "biologic", "basytec"]
+    cyclers = ["neware", "maccor", "biologic", "basytec", "arbin"]
+    file_paths = [
+        "tests/sample_data/neware/sample_data_neware.xlsx",
+        "tests/sample_data/maccor/sample_data_maccor.csv",
+        "tests/sample_data/biologic/sample_data_biologic_CA1.txt",
+        "tests/sample_data/basytec/sample_data_basytec.txt",
+        "tests/sample_data/arbin/sample_data_arbin.csv",
+    ]
 
-    for cycler in cyclers:
-        mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}")
+    for cycler, file in zip(cyclers, file_paths):
+        mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process")
+        folder_path = os.path.dirname(file)
+        file_name = os.path.basename(file)
         cell_instance.process_cycler_file(
             cycler,
             folder_path,
@@ -129,26 +100,9 @@ def test_process_cycler_file(cell_instance, lazyframe_fixture, caplog_fixture, m
             compression_priority="file size",
             overwrite_existing=True,
         )
-        eval(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.assert_called_once()")
-
-
-def test_convert_to_parquet(mocker):
-    """Test the _convert_to_parquet method."""
-    mocker.patch("pyprobe.cell.Cell._write_parquet")
-    importer = mocker.Mock()
-    Cell._convert_to_parquet(
-        importer=importer,
-        output_data_path="tests/sample_data/neware/sample_data_neware.parquet",
-        overwrite_existing=False,
-    )
-    pyprobe.cell.Cell._write_parquet.assert_not_called()
-
-    Cell._convert_to_parquet(
-        importer=importer,
-        output_data_path="tests/sample_data/neware/sample_data_neware.parquet",
-        overwrite_existing=True,
-    )
-    pyprobe.cell.Cell._write_parquet.assert_called_once()
+        eval(
+            f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process.assert_called_once()"
+        )
 
 
 def test_process_generic_file(cell_instance):
@@ -533,3 +487,20 @@ def test_get_data_paths(cell_instance):
         f"cell_{cell_instance.info['Name']}_{cell_instance.info['Chemistry']}.csv",
     )
     assert result == expected
+
+
+def test_check_parquet_exists():
+    """Test the _check_parquet_exists method."""
+    Cell._check_parquet("tests/sample_data/neware/sample_data_neware.parquet")
+
+    with pytest.raises(
+        FileNotFoundError,
+        match="File tests/sample_data/sample_data_3.parquet does not exist.",
+    ):
+        Cell._check_parquet("tests/sample_data/sample_data_3.parquet")
+
+    with pytest.raises(
+        ValueError,
+        match="Files must be in parquet format. sample_data_neware.csv is not.",
+    ):
+        Cell._check_parquet("tests/sample_data/neware/sample_data_neware.csv")
