@@ -44,7 +44,6 @@ seaborn = [
     "seaborn>=0.13.2",
 ]
 dev = [
-    "mypy>=1.14.1",
     "pre-commit>=4.0.1",
     "python-semantic-release>=9.15.2",
     "nbmake>=1.5.5",
@@ -52,11 +51,7 @@ dev = [
     "pytest-benchmark>=5.1.0",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
-    "types-deprecated>=1.2.15.20241117",
-    "types-pyyaml>=6.0.12.20241230",
-    "types-toml>=0.10.8.20240310",
     "xlsxwriter>=3.2.0",
-    "ruff>=0.9.1",
     "pytest-xdist>=3.6.1",
 ]
 docs = [
