@@ -13,9 +13,9 @@ PyProBE documentation
    user_guide/user_guide
    examples/examples
    developer_guide/developer_guide
-   api/modules
+   API Documentation <pyprobe>
 
-.. grid:: 2
+.. grid:: 3
 
    .. grid-item-card::
       
@@ -51,22 +51,6 @@ PyProBE documentation
 
    .. grid-item-card::
 
-      API Documentation
-      ^^^^^^^^^^^^^^^^^
-
-      Explore the modules and classes that make up PyProBE.
-
-      +++
-
-      .. button-ref:: api/modules
-         :expand:
-         :color: secondary
-         :click-parent:
-
-         To the API documentation
-
-   .. grid-item-card::
-
       Developer's Guide
       ^^^^^^^^^^^^^^^^^^^
 
@@ -80,5 +64,15 @@ PyProBE documentation
          :click-parent:
 
          To the developer's guide
+
+API Documentation
+^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+    :toctree: _autosummary
+    :recursive:
+    :caption: API Documentation
+    
+    pyprobe
 
 .. footbibliography::

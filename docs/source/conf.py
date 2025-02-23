@@ -24,7 +24,7 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "nbsphinx",
-    "sphinxcontrib.autodoc_pydantic",
+    "sphinx.ext.autosummary",
 ]
 
 # -- Options for HTML output -------------------------------------------------
@@ -37,6 +37,7 @@ html_theme_options = {"collapse_navigation": True, "show_nav_level": 4}
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 autodoc_typehints = "description"
 autodoc_default_options = {
+    "members": True,
     "exclude-members": "model_post_init, Config",
     "show-inheritance": True,
     "member-order": "bysource",
@@ -55,9 +56,5 @@ autosummary_generate = True
 nbsphinx_execute = "always"  # Always execute notebooks
 nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
 
-# -- sphinxcontrib-autodoc_pydantic configuration ----------------------------
-autodoc_pydantic_model_show_json = False
-autodoc_pydantic_model_show_config_summary = False
-autodoc_pydantic_model_member_order = "bysource"
-autodoc_pydantic_model_show_field_summary = False
-autodoc_pydantic_model_hide_paramlist = False
+
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
