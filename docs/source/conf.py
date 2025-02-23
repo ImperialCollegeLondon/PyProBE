@@ -41,6 +41,7 @@ autodoc_default_options = {
     "exclude-members": "model_post_init, Config",
     "show-inheritance": True,
     "member-order": "bysource",
+    "show-deprecated": True,
 }
 add_module_names = False
 

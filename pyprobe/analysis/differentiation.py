@@ -2,13 +2,13 @@
 
 import numpy as np
 import polars as pl
-from deprecated import deprecated
 from pydantic import validate_call
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
+from pyprobe.utils import deprecated
 
 
 @validate_call

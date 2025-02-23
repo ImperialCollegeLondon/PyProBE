@@ -52,7 +52,9 @@ def test_process_dataframe(mocker):
         "pyprobe.cyclers.neware.Neware.get_imported_dataframe",
         return_value=mock_dataframe,
     )
-    neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
+    neware_cycler = Neware(
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+    )
 
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
 
@@ -85,7 +87,9 @@ def test_process_dataframe(mocker):
         "pyprobe.cyclers.neware.Neware.get_imported_dataframe",
         return_value=mock_dataframe,
     )
-    neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
+    neware_cycler = Neware(
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+    )
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
     pyprobe_dataframe = pyprobe_dataframe.select(
         [
@@ -105,7 +109,9 @@ def test_process_dataframe(mocker):
         "pyprobe.cyclers.neware.Neware.get_imported_dataframe",
         return_value=mock_dataframe,
     )
-    neware_cycler = Neware(input_data_path="tests/sample_data/mock_dataframe.xlsx")
+    neware_cycler = Neware(
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+    )
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
     pyprobe_dataframe = pyprobe_dataframe.select(
         [

@@ -9,13 +9,13 @@ from typing import Any, Literal, Union
 import numpy as np
 import pandas as pd
 import polars as pl
-from deprecated import deprecated
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
+from pyprobe.utils import deprecated
 
 logger = logging.getLogger(__name__)
 

@@ -377,12 +377,11 @@ class BaseCycler(BaseModel):
             raise ValueError(f"Input file not found: {path}")
         return str(path)
 
-    @field_validator("output_data_path", mode="after")
-    @classmethod
-    def validate_output_path(cls, v: str | None) -> str:
-        """Validate the output path."""
-        if v is not None:
-            path = Path(v)
+    @model_validator(mode="after")
+    def validate_output_path(self) -> "BaseCycler":
+        """Set the default output path if not provided."""
+        if self.output_data_path is not None:
+            path = Path(self.output_data_path)
             if path.suffix != ".parquet":
                 if path.suffix:
                     logger.warning(
@@ -391,15 +390,10 @@ class BaseCycler(BaseModel):
                     )
                 else:
                     logger.info("Output file has no extension, will be given .parquet")
-                v = str(path.with_suffix(".parquet"))
+                self.output_data_path = str(path.with_suffix(".parquet"))
             if not path.parent.exists():
                 raise ValueError(f"Output directory does not exist: {path.parent}")
-        return str(v)
-
-    @model_validator(mode="after")
-    def set_default_output_path(self) -> "BaseCycler":
-        """Set the default output path if not provided."""
-        if self.output_data_path is None:
+        else:
             input_path = Path(self.input_data_path)
             self.output_data_path = str(input_path.with_suffix(".parquet"))
             logger.info(

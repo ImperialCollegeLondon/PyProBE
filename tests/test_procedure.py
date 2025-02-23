@@ -53,7 +53,7 @@ def test_experiment_no_description():
     cell.add_procedure(
         "sample",
         "tests/sample_data/neware/",
-        "sample_data_neware.xlsx",
+        "sample_data_neware.parquet",
         readme_name="README_total_steps.yaml",
     )
     assert np.all(np.isnan(cell.procedure["sample"].step_descriptions["Description"]))

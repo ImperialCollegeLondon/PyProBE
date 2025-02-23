@@ -4,11 +4,11 @@ import logging
 from typing import Optional
 
 import polars as pl
-from deprecated import deprecated
 from pydantic import Field, field_validator
 
 from pyprobe.result import Result
 from pyprobe.units import split_quantity_unit
+from pyprobe.utils import deprecated
 
 logger = logging.getLogger(__name__)
 

@@ -17,7 +17,7 @@ from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
-from pyprobe.utils import PyBaMMSolution
+from pyprobe.utils import PyBaMMSolution, deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,11 @@ class Cell(BaseModel):
 
         arbitrary_types_allowed = True
 
+    @deprecated(
+        reason="Use :func:`~pyprobe.preprocess.process_cycler_data` instead.",
+        plain_reason="Use pyprobe.process_cycler_data instead.",
+        version="2.0.1",
+    )
     def process_cycler_file(
         self,
         cycler: Literal[
@@ -116,6 +121,11 @@ class Cell(BaseModel):
         except ValidationError as e:
             logger.error(e)
 
+    @deprecated(
+        reason="Use :func:`~pyprobe.preprocess.process_cycler_data` instead.",
+        plain_reason="Use :func:`~pyprobe.process_cycler_data` instead.",
+        version="2.0.1",
+    )
     def process_generic_file(
         self,
         folder_path: str,

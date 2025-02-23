@@ -11,7 +11,6 @@ import polars as pl
 import pytest
 from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
-from pydantic import ValidationError
 
 import pyprobe
 from pyprobe._version import __version__
@@ -146,13 +145,6 @@ def test_process_generic_file(cell_instance):
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
-
-    with pytest.raises(ValidationError):
-        cell_instance.process_generic_file(
-            folder_path=folder_path,
-            input_filename="test_generic_file.csv",
-            output_filename="test_generic_file.parquet",
-        )
 
     os.remove(f"{folder_path}/test_generic_file.csv")
     os.remove(f"{folder_path}/test_generic_file.parquet")
