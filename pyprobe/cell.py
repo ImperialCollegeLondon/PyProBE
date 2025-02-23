@@ -17,9 +17,74 @@ from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
-from pyprobe.utils import PyBaMMSolution, deprecated
+from pyprobe.utils import PyBaMMSolution, catch_pydantic_validation, deprecated
 
 logger = logging.getLogger(__name__)
+
+
+@catch_pydantic_validation
+def process_cycler_data(
+    cycler_type: Literal[
+        "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
+    ],
+    input_data_path: str,
+    output_data_path: str | None = None,
+    column_importers: list[basecycler.ColumnMap] = [],
+    compression_priority: Literal[
+        "performance", "file size", "uncompressed"
+    ] = "performance",
+    overwrite_existing: bool = False,
+) -> None:
+    """Process battery cycler data into PyProBE format.
+
+    Args:
+        cycler_type: Type of battery cycler used.
+        input_data_path: Path to input data file(s). Supports glob patterns.
+        output_data_path: Path for output parquet file. If None, the output file will
+            have the same name as the input file with a .parquet extension.
+        column_importers:
+            List of column importers to apply to the input data. Required for generic
+            cycler type. Overrides default column importers for other cycler types.
+        compression_priority: Compression method for output file.
+        overwrite_existing: Whether to overwrite existing output file.
+    """
+    cycler_map = {
+        "neware": neware.Neware,
+        "biologic": biologic.Biologic,
+        "biologic_MB": biologic.BiologicMB,
+        "arbin": arbin.Arbin,
+        "basytec": basytec.Basytec,
+        "maccor": maccor.Maccor,
+        "generic": basecycler.BaseCycler,
+    }
+
+    cycler_class = cycler_map.get(cycler_type)
+    if not cycler_class:
+        msg = f"Unsupported cycler type: {cycler_type}"
+        logger.error(msg)
+        raise ValueError(msg)
+
+    if cycler_type == "generic" and column_importers == []:
+        msg = "Column importers must be provided for generic cycler type."
+        logger.error(msg)
+        raise ValueError(msg)
+
+    if column_importers != []:
+        processor = cycler_class(
+            input_data_path=input_data_path,
+            output_data_path=output_data_path,
+            compression=compression_priority,
+            overwrite_existing=overwrite_existing,
+            column_importers=column_importers,
+        )
+    else:
+        processor = cycler_class(
+            input_data_path=input_data_path,
+            output_data_path=output_data_path,
+            compression=compression_priority,
+            overwrite_existing=overwrite_existing,
+        )
+    processor.process()
 
 
 class Cell(BaseModel):
@@ -206,6 +271,119 @@ class Cell(BaseModel):
             importer.process()
         except ValidationError as e:
             logger.error(e)
+
+    @catch_pydantic_validation
+    def import_data(
+        self,
+        procedure_name: str,
+        data_path: str,
+        readme_path: str | None = None,
+    ) -> None:
+        """Import a procedure from a PyProBE-format parquet file.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            data_path (str):
+                The path to the parquet file.
+            readme_path (str, optional):
+                The path to the readme file. If None, the function will look for a
+                file named README.yaml in the same folder as the data file. If none
+                is found, the data will be imported without a readme file, which
+                will limit the ability to filter the data by experiment. Defaults to
+                None.
+        """
+        input_path = Path(data_path)
+        readme_path = os.path.join(input_path.parent, "README.yaml")
+        if not os.path.exists(readme_path):
+            readme_path = None
+        if readme_path is not None:
+            readme_dict = process_readme(readme_path).experiment_dict
+        else:
+            readme_dict = {}
+
+        self.procedure[procedure_name] = Procedure(
+            readme_dict=readme_dict,
+            base_dataframe=pl.scan_parquet(data_path),
+            info=self.info,
+        )
+
+    def import_from_cycler(
+        self,
+        procedure_name: str,
+        cycler: Literal[
+            "neware",
+            "biologic",
+            "biologic_MB",
+            "arbin",
+            "basytec",
+            "maccor",
+            "generic",
+        ],
+        input_data_path: str,
+        output_data_path: str | None = None,
+        readme_path: str | None = None,
+        compression_priority: Literal[
+            "performance",
+            "file size",
+            "uncompressed",
+        ] = "performance",
+        column_importers: list[basecycler.ColumnMap] = [],
+        overwrite_existing: bool = False,
+    ) -> None:
+        """Import a procedure into the cell object.
+
+        This method converts a cycler file into PyProBE format, writes the data to a
+        parquet file and adds the procedure to the cell object.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            cycler:
+                The cycler used to produce the data.
+            input_data_path (str):
+                The path to the cycler data file.
+            output_data_path (str, optional):
+                The path to write the parquet file. When None, the data is written to
+                a file with the same name as the input file but with a .parquet
+                extension. Defaults to None.
+            readme_path (str, optional):
+                The path to the readme file. If None, the function will look for a
+                file named README.yaml in the same folder as the input data file.
+                If none is found, the data will be imported without a readme file,
+                which will limit the ability to filter the data by experiment. Defaults
+                to None.
+            compression_priority:
+                The priority of the compression algorithm to use on the resulting
+                parquet file. Available options are:
+                - 'performance': Use the 'lz4' compression algorithm (default).
+                - 'file size': Use the 'zstd' compression algorithm.
+                - 'uncompressed': Do not use compression.
+            column_importers:
+                A list of column importers to apply to the input data. Required for
+                generic cycler type. Overrides default column importers for other cycler
+                types.
+            overwrite_existing:
+                If True, any existing parquet file with the output_filename will be
+                overwritten. If False, the function will skip the conversion if the
+                parquet file already exists.
+        """
+        process_cycler_data(
+            cycler,
+            input_data_path,
+            output_data_path,
+            column_importers=column_importers,
+            compression_priority=compression_priority,
+            overwrite_existing=overwrite_existing,
+        )
+        if readme_path is None:
+            input_path = Path(input_data_path)
+            readme_path = os.path.join(input_path.parent, "README.yaml")
+            if not os.path.exists(readme_path):
+                readme_path = None
+        self.import_data(procedure_name, output_data_path, readme_path)
 
     @validate_call
     def add_procedure(

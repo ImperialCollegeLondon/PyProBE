@@ -16,6 +16,7 @@ import pyprobe
 from pyprobe._version import __version__
 from pyprobe.cell import Cell
 from pyprobe.cyclers import basecycler
+from pyprobe.readme_processor import process_readme
 
 
 @pytest.fixture
@@ -496,3 +497,165 @@ def test_check_parquet_exists():
         match="Files must be in parquet format. sample_data_neware.csv is not.",
     ):
         Cell._check_parquet("tests/sample_data/neware/sample_data_neware.csv")
+
+
+def test_import_data(cell_instance, mocker):
+    """Test the import_data method."""
+    procedure_name = "test_procedure"
+    data_path = "tests/sample_data/neware/sample_data_neware.parquet"
+    readme_path = "tests/sample_data/neware/README.yaml"
+
+    sample_df = pl.LazyFrame(
+        {
+            "Time [s]": [1, 2, 3],
+            "Voltage [V]": [4, 5, 6],
+            "Current [A]": [7, 8, 9],
+            "Capacity [Ah]": [10, 11, 12],
+            "Step": [1, 2, 3],
+            "Event": [0, 1, 2],
+        },
+    )
+    mocker.patch("polars.scan_parquet", return_value=sample_df)
+
+    cell_instance.import_data(procedure_name, data_path, readme_path)
+
+    assert procedure_name in cell_instance.procedure
+    assert (
+        cell_instance.procedure[procedure_name].readme_dict
+        == process_readme(readme_path).experiment_dict
+    )
+    assert_frame_equal(
+        cell_instance.procedure[procedure_name].base_dataframe,
+        sample_df,
+    )
+
+    # test with no readme
+    procedure_name = "test_procedure_no_readme"
+    cell_instance.import_data(procedure_name, data_path)
+    assert procedure_name in cell_instance.procedure
+    assert (
+        cell_instance.procedure[procedure_name].readme_dict
+        == process_readme(readme_path).experiment_dict
+    )
+
+    # test with no readme in the folder
+    procedure_name = "test_procedure_no_readme"
+    mocker.patch("os.path.exists", return_value=False)
+    cell_instance.import_data(procedure_name, data_path)
+    assert cell_instance.procedure[procedure_name].readme_dict == {}
+
+
+def test_import_from_cycler(cell_instance, mocker):
+    """Test the import_from_cycler method."""
+    procedure_name = "test_procedure"
+    cycler = "neware"
+    input_data_path = "tests/sample_data/neware/sample_data_neware.xlsx"
+    output_data_path = "tests/sample_data/neware/sample_data_neware.parquet"
+    readme_path = "tests/sample_data/neware/README.yaml"
+
+    sample_df = pl.LazyFrame(
+        {
+            "Time [s]": [1, 2, 3],
+            "Voltage [V]": [4, 5, 6],
+            "Current [A]": [7, 8, 9],
+            "Capacity [Ah]": [10, 11, 12],
+            "Step": [1, 2, 3],
+            "Event": [0, 1, 2],
+        },
+    )
+
+    process_cycler_data = mocker.patch("pyprobe.cell.process_cycler_data")
+    mocker.patch("pyprobe.readme_processor.process_readme")
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("polars.scan_parquet", return_value=sample_df)
+
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+        readme_path,
+    )
+
+    process_cycler_data.assert_called_once_with(
+        cycler,
+        input_data_path,
+        output_data_path,
+        column_importers=[],
+        compression_priority="performance",
+        overwrite_existing=False,
+    )
+    assert procedure_name in cell_instance.procedure
+    assert (
+        cell_instance.procedure[procedure_name].readme_dict
+        == process_readme(readme_path).experiment_dict
+    )
+    assert_frame_equal(
+        cell_instance.procedure[procedure_name].base_dataframe,
+        sample_df,
+    )
+
+    # Test with no readme_path provided
+    mocker.patch("os.path.exists", return_value=False)
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+    )
+    assert cell_instance.procedure[procedure_name].readme_dict == {}
+
+    # Test with different compression priority
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+        readme_path,
+        compression_priority="file size",
+    )
+    process_cycler_data.assert_called_with(
+        cycler,
+        input_data_path,
+        output_data_path,
+        column_importers=[],
+        compression_priority="file size",
+        overwrite_existing=False,
+    )
+
+    # Test with overwrite_existing set to True
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+        readme_path,
+        overwrite_existing=True,
+    )
+    process_cycler_data.assert_called_with(
+        cycler,
+        input_data_path,
+        output_data_path,
+        column_importers=[],
+        compression_priority="performance",
+        overwrite_existing=True,
+    )
+
+    # Test with column_importers provided
+    column_importers = [basecycler.ConvertUnits("Time [s]", "T [*]")]
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+        readme_path,
+        column_importers=column_importers,
+    )
+    process_cycler_data.assert_called_with(
+        cycler,
+        input_data_path,
+        output_data_path,
+        column_importers=column_importers,
+        compression_priority="performance",
+        overwrite_existing=False,
+    )
