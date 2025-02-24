@@ -45,13 +45,13 @@ jobs:
           uv pip install pybamm
 
       - name: Run tests
-        run: uv run pytest --cov-report=xml
+        run: uv run pytest --cov-report=xml -n auto
 
       - name: Test notebooks
         if: github.event_name == 'pull_request'
         run: |
           shopt -s extglob
-          uv run pytest --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
+          uv run pytest --nbmake -n auto docs/source/examples/!(comparing-pyprobe-performance).ipynb
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
