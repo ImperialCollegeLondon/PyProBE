@@ -53,7 +53,8 @@ def test_process_dataframe(mocker):
         return_value=mock_dataframe,
     )
     neware_cycler = Neware(
-        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx",
+        overwrite_existing=True,
     )
 
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
@@ -88,7 +89,8 @@ def test_process_dataframe(mocker):
         return_value=mock_dataframe,
     )
     neware_cycler = Neware(
-        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx",
+        overwrite_existing=True,
     )
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
     pyprobe_dataframe = pyprobe_dataframe.select(
@@ -110,7 +112,8 @@ def test_process_dataframe(mocker):
         return_value=mock_dataframe,
     )
     neware_cycler = Neware(
-        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx"
+        input_data_path="tests/sample_data/neware/sample_data_neware.xlsx",
+        overwrite_existing=True,
     )
     pyprobe_dataframe = neware_cycler.get_pyprobe_dataframe()
     pyprobe_dataframe = pyprobe_dataframe.select(
@@ -140,6 +143,7 @@ def test_read_and_process_neware(benchmark):
     """Test the full process of reading and processing a file."""
     neware_cycler = Neware(
         input_data_path="tests/sample_data/neware/sample_data_neware.xlsx",
+        overwrite_existing=True,
     )
     last_row = pl.DataFrame(
         {

@@ -404,10 +404,13 @@ class BaseCycler(BaseModel):
     @model_validator(mode="after")
     def import_and_validate_data(self) -> "BaseCycler":
         """Import the data and validate the column mapping."""
-        dataframe_list = self._get_dataframe_list()
-        self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
-        for column_importer in self.column_importers:
-            column_importer.validate(self._imported_dataframe.collect_schema().names())
+        if not os.path.exists(str(self.output_data_path)) or self.overwrite_existing:
+            dataframe_list = self._get_dataframe_list()
+            self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
+            for column_importer in self.column_importers:
+                column_importer.validate(
+                    self._imported_dataframe.collect_schema().names()
+                )
         return self
 
     def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:
