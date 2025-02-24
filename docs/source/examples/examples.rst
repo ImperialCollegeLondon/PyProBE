@@ -11,8 +11,8 @@ Examples
    working-with-pybamm-models
    analysing-GITT-data
    differentiating-voltage-data
-   ocv-fitting
    comparing-pyprobe-performance
+   ocv-fitting
    providing-valid-inputs
 
 .. footbibliography::

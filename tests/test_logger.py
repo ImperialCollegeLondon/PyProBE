@@ -24,7 +24,7 @@ def test_configure_logging_custom_level():
 def test_configure_logging_custom_format():
     """Test logging configuration with a custom format."""
     custom_format = "%(levelname)s - %(message)s"
-    configure_logging(format=custom_format)
+    configure_logging(str_format=custom_format)
     root_logger = logging.getLogger()
     assert isinstance(root_logger.handlers[0].formatter, logging.Formatter)
     assert root_logger.handlers[0].formatter._fmt == custom_format

@@ -1,9 +1,15 @@
 """A collection of utility functions for PyProBE."""
 
-from typing import Any, Dict, List, Optional, Protocol
+import functools
+import logging
+from typing import Any, Protocol
+
+from pydantic import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
-def flatten_list(lst: int | List[Any]) -> List[int]:
+def flatten_list(lst: int | list[Any]) -> list[int]:
     """Flatten a list of lists into a single list.
 
     Args:
@@ -23,8 +29,60 @@ class PyBaMMSolution(Protocol):
 
     def get_data_dict(
         self,
-        variables: Optional[List[str]] = None,
-        short_names: Optional[Dict[str, str]] = None,
+        variables: list[str] | None = None,
+        short_names: dict[str, str] | None = None,
         cycles_and_steps: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get solution data as dictionary."""
+
+
+class PyProBEValidationError(Exception):
+    """Custom exception for PyProBE validation errors."""
+
+    pass
+
+
+def catch_pydantic_validation(func: Any) -> Any:
+    """A decorator that wraps pydantic ValidationError to raise a custom exception."""
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return func(*args, **kwargs)
+        except ValidationError as e:
+            error_message = (
+                f"Validation error, invalid input provided to "
+                f"{func.__module__}.{func.__name__}\n"
+            )
+            for error in e.errors():
+                loc_str = ".".join(str(loc) for loc in error["loc"])
+                error_message += f"\n{loc_str}: {error['msg']}"
+            raise PyProBEValidationError(error_message) from None
+
+    return wrapper
+
+
+def deprecated(*, reason: str, version: str, plain_reason: str | None = None) -> Any:
+    """A decorator to mark a function as deprecated.
+
+    Args:
+        reason (str): The reason for deprecation, using RST formatting for docs.
+        version (str): The version in which the function was deprecated.
+        plain_reason (str, optional):
+            The plain text reason for deprecation. Defaults to None.
+    """
+
+    def decorator(func: Any) -> Any:
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            logger.warning(
+                "Deprecation Warning: " + (plain_reason if plain_reason else reason),
+            )
+            return func(*args, **kwargs)
+
+        # Prepend a Sphinx deprecation note to the original docstring.
+        deprecation_note = f".. deprecated:: {version} {reason}\n\n"
+        wrapper.__doc__ = deprecation_note
+        return wrapper
+
+    return decorator

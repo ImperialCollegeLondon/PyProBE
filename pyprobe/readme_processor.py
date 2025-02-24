@@ -1,7 +1,7 @@
 """Module for processing PyPrBE README files."""
 
 import logging
-from typing import Any, Dict, List, Tuple, Union, cast
+from typing import Any, cast
 
 import yaml
 
@@ -13,17 +13,18 @@ logger = logging.getLogger(__name__)
 class ReadmeModel:
     """A class for processing the README.yaml file."""
 
-    def __init__(self, readme_dict: Dict[str, Any]) -> None:
+    def __init__(self, readme_dict: dict[str, Any]) -> None:
         """Initialize the ReadmeModel class."""
         self.readme_dict = readme_dict
         experiment_names = self.readme_dict.keys()
 
-        self.experiment_dict: Dict[
-            str, Dict[str, List[str | int | Tuple[int, int, int]]]
+        self.experiment_dict: dict[
+            str,
+            dict[str, list[str | int | tuple[int, int, int]]],
         ] = {name: {} for name in experiment_names}
         self.step_details = None
         for experiment_name in experiment_names:
-            if "Steps" in self.readme_dict[experiment_name].keys():
+            if "Steps" in self.readme_dict[experiment_name]:
                 if isinstance(self.readme_dict[experiment_name]["Steps"], dict):
                     self._process_explicit_experiment(experiment_name)
                 elif isinstance(self.readme_dict[experiment_name]["Steps"], list):
@@ -32,7 +33,7 @@ class ReadmeModel:
                     error_msg = "Invalid format for steps in README file"
                     logger.error(error_msg)
                     raise ValueError(error_msg)
-            elif "Total Steps" in self.readme_dict[experiment_name].keys():
+            elif "Total Steps" in self.readme_dict[experiment_name]:
                 self._process_total_steps_experiment(experiment_name)
             else:
                 error_msg = "Each experiment must have a 'Steps' or 'Total Steps' key."
@@ -50,7 +51,7 @@ class ReadmeModel:
         cycle_keys = [
             key for key in self.readme_dict[experiment_name] if "cycle" in key.lower()
         ]
-        exp_cycles: List[str | int | Tuple[int, int, int]] = []
+        exp_cycles: list[str | int | tuple[int, int, int]] = []
         for cycle in cycle_keys:
             start = self.readme_dict[experiment_name][cycle]["Start"]
             end = self.readme_dict[experiment_name][cycle]["End"]
@@ -71,7 +72,8 @@ class ReadmeModel:
         step_numbers = list(range(max_step + 1, max_step + len(step_descriptions) + 1))
 
         self.experiment_dict[experiment_name]["Steps"] = cast(
-            List[Union[str, int, Tuple[int, int, int]]], step_numbers
+            list[str | int | tuple[int, int, int]],
+            step_numbers,
         )  # cast to satisfy mypy
         self.experiment_dict[experiment_name]["Step Descriptions"] = step_descriptions
         self.experiment_dict[experiment_name]["Cycles"] = []
@@ -86,7 +88,8 @@ class ReadmeModel:
         max_step = self._get_max_step()
         step_numbers = list(range(max_step + 1, max_step + total_steps + 1))
         self.experiment_dict[experiment_name]["Steps"] = cast(
-            List[Union[str, int, Tuple[int, int, int]]], step_numbers
+            list[str | int | tuple[int, int, int]],
+            step_numbers,
         )  # cast to satisfy mypy
         self.experiment_dict[experiment_name]["Step Descriptions"] = []
         self.experiment_dict[experiment_name]["Cycles"] = []
@@ -119,6 +122,6 @@ def process_readme(
             - List[List[int]]: The list of steps from the README.yaml file.
             - Optional[pybamm.Experiment]: The PyBaMM experiment object.
     """
-    with open(readme_path, "r") as file:
+    with open(readme_path) as file:
         readme_dict = yaml.safe_load(file)
     return ReadmeModel(readme_dict=readme_dict)

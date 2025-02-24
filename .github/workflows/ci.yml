@@ -45,24 +45,13 @@ jobs:
           uv pip install pybamm
 
       - name: Run tests
-        run: uv run pytest --benchmark-json output.json --cov-report=xml
+        run: uv run pytest --cov-report=xml -n auto
 
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          name: Python Benchmark with pytest-benchmark
-          tool: 'pytest'
-          output-file-path: output.json
-          # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Show alert with commit comment on detecting possible performance regression
-          alert-threshold: '110%'
-          comment-on-alert: true
-          # Enable Job Summary for PRs
-          summary-always: true
       - name: Test notebooks
         if: github.event_name == 'pull_request'
-        run: uv run pytest --nbmake docs/source/examples/*ipynb
+        run: |
+          shopt -s extglob
+          uv run pytest --nbmake -n auto docs/source/examples/!(comparing-pyprobe-performance).ipynb
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

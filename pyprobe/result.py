@@ -4,18 +4,18 @@ import logging
 import re
 from functools import wraps
 from pprint import pprint
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
+from typing import Any, Literal, Union
 
 import numpy as np
 import pandas as pd
 import polars as pl
-from deprecated import deprecated
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
-from pyprobe.units import split_quantity_unit, unit_from_regexp
+from pyprobe.units import get_unit_scaling, split_quantity_unit
+from pyprobe.utils import deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class PolarsColumnCache:
 
     def __init__(self, base_dataframe: pl.LazyFrame | pl.DataFrame) -> None:
         """Initialize the PolarsColumnCache object."""
-        self.cache: Dict[str, pl.Series] = {}
+        self.cache: dict[str, pl.Series] = {}
         self._cached_dataframe = None
         self._base_dataframe = base_dataframe
         if isinstance(base_dataframe, pl.DataFrame):
@@ -57,7 +57,7 @@ class PolarsColumnCache:
         self._base_dataframe = value
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         """The columns in the data.
 
         Returns:
@@ -66,7 +66,7 @@ class PolarsColumnCache:
         return self.base_dataframe.collect_schema().names()
 
     @property
-    def quantities(self) -> Set[str]:
+    def quantities(self) -> set[str]:
         """The quantities of the data, with unit information removed.
 
         Returns:
@@ -102,9 +102,13 @@ class PolarsColumnCache:
                 # convert the missing columns to the requested units and add to the
                 # lazyframe
                 for col in missing_from_data:
-                    converter_object = unit_from_regexp(col)
-                    instruction = converter_object.from_default_unit()
-                    self.base_dataframe = self.base_dataframe.with_columns(instruction)
+                    quantity, unit = split_quantity_unit(col)
+                    if unit == "":
+                        continue
+                    _, base_unit = get_unit_scaling(unit)
+                    self.base_dataframe = self.base_dataframe.with_columns(
+                        (pl.col(f"{quantity} [{base_unit}]").units.to_unit(unit)),
+                    )
             # collect any missing columns and add to the cache
             if isinstance(self.base_dataframe, pl.LazyFrame):
                 dataframe = self.base_dataframe.select(missing_from_cache).collect()
@@ -121,9 +125,13 @@ class PolarsColumnCache:
     @property
     def cached_dataframe(self) -> pl.DataFrame:
         """Return the cached dataframe as a Polars DataFrame."""
-        if self._cached_dataframe is None:
+        if self._cached_dataframe is None or set(
+            self._cached_dataframe.collect_schema().names()
+        ) != set(
+            self.cache.keys(),
+        ):
             self._cached_dataframe = pl.DataFrame(self.cache)
-        return pl.DataFrame(self.cache)
+        return self._cached_dataframe
 
     @cached_dataframe.setter
     def cached_dataframe(self, value: pl.DataFrame) -> None:
@@ -132,7 +140,7 @@ class PolarsColumnCache:
         self._cached_dataframe = value
 
     @staticmethod
-    def get_quantities(column_list: List[str]) -> Set[str]:
+    def get_quantities(column_list: list[str]) -> set[str]:
         """The quantities of the data, with unit information removed.
 
         Args:
@@ -141,7 +149,7 @@ class PolarsColumnCache:
         Returns:
             Set[str]: The quantities of the data.
         """
-        _quantities: List[str] = []
+        _quantities: list[str] = []
         for _, column in enumerate(column_list):
             try:
                 quantity, _ = split_quantity_unit(column)
@@ -173,11 +181,11 @@ class Result(BaseModel):
 
         arbitrary_types_allowed = True
 
-    base_dataframe: Union[pl.LazyFrame, pl.DataFrame]
+    base_dataframe: pl.LazyFrame | pl.DataFrame
     """The data as a polars DataFrame or LazyFrame."""
-    info: dict[str, Optional[Any]]
+    info: dict[str, Any | None]
     """Dictionary containing information about the cell."""
-    column_definitions: Dict[str, str] = Field(default_factory=dict)
+    column_definitions: dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
 
     def model_post_init(self, __context: Any) -> None:
@@ -201,6 +209,19 @@ class Result(BaseModel):
     def live_dataframe(self, value: pl.DataFrame) -> None:
         """Set the data as a polars DataFrame."""
         self._polars_cache.base_dataframe = value
+
+    def cache_columns(self, *columns: str) -> None:
+        """Collect columns from the base dataframe and add to the cache.
+
+        If no columns are provided, all columns will be cached.
+
+        Args:
+            *columns (str): The columns to cache.
+        """
+        if columns:
+            self._polars_cache.collect_columns(*columns)
+        else:
+            self._polars_cache.collect_columns(*self.column_list)
 
     @property
     def data(self) -> pl.DataFrame:
@@ -247,7 +268,7 @@ class Result(BaseModel):
             raise ImportError(
                 "Optional dependency hvplot is not installed. Please install it via "
                 "'pip install hvplot' or by installing PyProBE with hvplot as an "
-                "optional dependency: pip install 'PyProBE-Data[hvplot]'."
+                "optional dependency: pip install 'PyProBE-Data[hvplot]'.",
             )
 
     hvplot.__doc__ = (
@@ -261,11 +282,11 @@ class Result(BaseModel):
         ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
     )
 
-    def _get_data_subset(self, *column_names: str) -> pl.DataFrame:
+    def data_with_columns(self, *column_names: str) -> pl.DataFrame:
         """Return a subset of the data with the specified columns.
 
         Args:
-            *column_names: The columns to include in the new result object.
+            *column_names: The columns to include in the returned dataframe.
 
         Returns:
             A subset of the data with the specified columns.
@@ -283,12 +304,14 @@ class Result(BaseModel):
             Result: A new result object with the specified columns.
         """
         return Result(
-            base_dataframe=self._get_data_subset(*column_names), info=self.info
+            base_dataframe=self.data_with_columns(*column_names),
+            info=self.info,
         )
 
     def get(
-        self, *column_names: str
-    ) -> Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+        self,
+        *column_names: str,
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         """Return one or more columns of the data as separate 1D numpy arrays.
 
         Args:
@@ -302,7 +325,7 @@ class Result(BaseModel):
             ValueError: If no column names are provided.
             ValueError: If a column name is not in the data.
         """
-        array = self._get_data_subset(*column_names).to_numpy()
+        array = self.data_with_columns(*column_names).to_numpy()
         if len(column_names) == 0:
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)
@@ -346,7 +369,7 @@ class Result(BaseModel):
         return column
 
     @property
-    def quantities(self) -> Set[str]:
+    def quantities(self) -> set[str]:
         """The quantities of the data, with unit information removed.
 
         Returns:
@@ -355,7 +378,7 @@ class Result(BaseModel):
         return self._polars_cache.quantities
 
     @property
-    def column_list(self) -> List[str]:
+    def column_list(self) -> list[str]:
         """The columns in the data.
 
         Returns:
@@ -374,19 +397,19 @@ class Result(BaseModel):
 
     def print_definitions(self) -> None:
         """Print the definitions of the columns stored in this result object."""
-        pprint(self.column_definitions)
+        pprint(self.column_definitions)  # noqa: T203
 
     def clean_copy(
         self,
-        dataframe: Optional[Union[pl.DataFrame, pl.LazyFrame]] = None,
-        column_definitions: Optional[Dict[str, str]] = None,
+        dataframe: pl.DataFrame | pl.LazyFrame | None = None,
+        column_definitions: dict[str, str] | None = None,
     ) -> "Result":
         """Create a copy of the result object with info dictionary but without data.
 
         Args:
             dataframe (Optional[Union[pl.DataFrame, pl.LazyFrame]):
                 The data to include in the new Result object.
-            column_definitions (Optional[Dict[str, str]]):
+            column_definitions (Optional[dict[str, str]]):
                 The definitions of the columns in the new result object.
 
         Returns:
@@ -404,12 +427,10 @@ class Result(BaseModel):
 
     @staticmethod
     def _verify_compatible_frames(
-        base_frame: Union[pl.DataFrame, pl.LazyFrame],
-        frames: List[Union[pl.DataFrame, pl.LazyFrame]],
+        base_frame: pl.DataFrame | pl.LazyFrame,
+        frames: list[pl.DataFrame | pl.LazyFrame],
         mode: Literal["match 1", "collect all"] = "collect all",
-    ) -> Tuple[
-        Union[pl.DataFrame, pl.LazyFrame], List[Union[pl.DataFrame, pl.LazyFrame]]
-    ]:
+    ) -> tuple[pl.DataFrame | pl.LazyFrame, list[pl.DataFrame | pl.LazyFrame]]:
         """Verify that frames are compatible and return them as DataFrames.
 
         Args:
@@ -432,7 +453,8 @@ class Result(BaseModel):
                 elif mode == "collect all":
                     base_frame = base_frame.collect()
             elif isinstance(base_frame, pl.DataFrame) and isinstance(
-                frame, pl.LazyFrame
+                frame,
+                pl.LazyFrame,
             ):
                 frame = frame.collect()
             verified_frames.append(frame)
@@ -440,7 +462,9 @@ class Result(BaseModel):
         return base_frame, verified_frames
 
     def add_new_data_columns(
-        self, new_data: pl.DataFrame | pl.LazyFrame, date_column_name: str
+        self,
+        new_data: pl.DataFrame | pl.LazyFrame,
+        date_column_name: str,
     ) -> None:
         """Add new data columns to the result object.
 
@@ -466,7 +490,9 @@ class Result(BaseModel):
         new_data_cols.remove(date_column_name)
         # check if the new data is lazyframe or not
         _, new_data = self._verify_compatible_frames(
-            self.live_dataframe, [new_data], mode="match 1"
+            self.live_dataframe,
+            [new_data],
+            mode="match 1",
         )
         new_data = new_data[0]
         if (
@@ -477,10 +503,10 @@ class Result(BaseModel):
 
         # Ensure both DataFrames have DateTime columns in the same unit
         new_data = new_data.with_columns(
-            pl.col(date_column_name).dt.cast_time_unit("us")
+            pl.col(date_column_name).dt.cast_time_unit("us"),
         )
         self.live_dataframe = self.live_dataframe.with_columns(
-            pl.col("Date").dt.cast_time_unit("us")
+            pl.col("Date").dt.cast_time_unit("us"),
         )
 
         all_data = self.live_dataframe.clone().join(
@@ -491,16 +517,19 @@ class Result(BaseModel):
             coalesce=True,
         )
         interpolated = all_data.with_columns(
-            pl.col(new_data_cols).interpolate_by("Date")
+            pl.col(new_data_cols).interpolate_by("Date"),
         ).select(pl.col(["Date"] + new_data_cols))
         self.live_dataframe = self.live_dataframe.join(
-            interpolated, on="Date", how="left", coalesce=True
+            interpolated,
+            on="Date",
+            how="left",
+            coalesce=True,
         )
 
     def join(
         self,
         other: "Result",
-        on: Union[str, List[str]],
+        on: str | list[str],
         how: str = "inner",
         coalesce: bool = True,
     ) -> None:
@@ -517,12 +546,17 @@ class Result(BaseModel):
             coalesce (bool): Whether to coalesce the columns. Default is True.
         """
         _, other_frame = self._verify_compatible_frames(
-            self.live_dataframe, [other.live_dataframe], mode="match 1"
+            self.live_dataframe,
+            [other.live_dataframe],
+            mode="match 1",
         )
         if isinstance(on, str):
             on = [on]
         self.live_dataframe = self.live_dataframe.join(
-            other_frame[0], on=on, how=how, coalesce=coalesce
+            other_frame[0],
+            on=on,
+            how=how,
+            coalesce=coalesce,
         )
         self.column_definitions = {
             **other.column_definitions,
@@ -530,7 +564,9 @@ class Result(BaseModel):
         }
 
     def extend(
-        self, other: "Result" | List["Result"], concat_method: str = "diagonal"
+        self,
+        other: Union["Result", list["Result"]],  # noqa: UP007
+        concat_method: str = "diagonal",
     ) -> None:
         """Extend the data in this Result object with the data in another Result object.
 
@@ -550,10 +586,13 @@ class Result(BaseModel):
             other = [other]
         other_frame_list = [other_result.live_dataframe for other_result in other]
         self.live_dataframe, other_frame_list = self._verify_compatible_frames(
-            self.live_dataframe, other_frame_list, mode="collect all"
+            self.live_dataframe,
+            other_frame_list,
+            mode="collect all",
         )
         self.live_dataframe = pl.concat(
-            [self.live_dataframe] + other_frame_list, how=concat_method
+            [self.live_dataframe] + other_frame_list,
+            how=concat_method,
         )
         original_column_definitions = self.column_definitions.copy()
         for other_result in other:
@@ -563,26 +602,26 @@ class Result(BaseModel):
     @classmethod
     def build(
         cls,
-        data_list: List[
+        data_list: list[
             pl.LazyFrame
             | pl.DataFrame
-            | Dict[str, NDArray[np.float64] | List[float]]
-            | List[
+            | dict[str, NDArray[np.float64] | list[float]]
+            | list[
                 pl.LazyFrame
                 | pl.DataFrame
-                | Dict[str, NDArray[np.float64] | List[float]]
+                | dict[str, NDArray[np.float64] | list[float]]
             ]
         ],
-        info: Dict[str, Optional[Any]],
+        info: dict[str, Any | None],
     ) -> "Result":
         """Build a Result object from a list of dataframes.
 
         Args:
-            data_list (List[List[pl.LazyFrame | pl.DataFrame | Dict]]):
+            data_list (List[List[pl.LazyFrame | pl.DataFrame | dict]]):
                 The data to include in the new result object.
                 The first index indicates the cycle and the second index indicates the
                 step.
-            info (Dict[str, Optional[str | int | float]]): A dict containing test info.
+            info (dict[str, Optional[str | int | float]]): A dict containing test info.
 
         Returns:
             Result: A new result object with the specified data.
@@ -596,7 +635,8 @@ class Result(BaseModel):
                 if isinstance(step_data, dict):
                     step_data = pl.DataFrame(step_data)
                 step_data = step_data.with_columns(
-                    pl.lit(cycle).alias("Cycle"), pl.lit(step).alias("Step")
+                    pl.lit(cycle).alias("Cycle"),
+                    pl.lit(step).alias("Step"),
                 )
                 data.append(step_data)
         data = pl.concat(data)
@@ -613,12 +653,14 @@ class Result(BaseModel):
         Args:
             filename: The name of the file to export to.
         """
-        # Replace any non-alphanumeric character with an underscore in the DataFrame columns
+        # Replace any non-alphanumeric character with an underscore in the DataFrame
+        # columns
         renamed_data = self.data.rename(
-            {col: re.sub(r"\W", "_", col) for col in self.data.columns}
+            {col: re.sub(r"\W", "_", col) for col in self.data.columns},
         )
 
-        # Replace any non-alphanumeric character with an underscore in the info dictionary keys
+        # Replace any non-alphanumeric character with an underscore in the info
+        # dictionary keys
         renamed_info = {
             re.sub(r"\W", "_", key): value for key, value in self.info.items()
         }
@@ -631,7 +673,7 @@ class Result(BaseModel):
 
 
 def combine_results(
-    results: List[Result],
+    results: list[Result],
     concat_method: str = "diagonal",
 ) -> Result:
     """Combine multiple Result objects into a single Result object.
@@ -650,9 +692,7 @@ def combine_results(
         Result: A new result object with the combined data.
     """
     for result in results:
-        instructions = [
-            pl.lit(result.info[key]).alias(key) for key in result.info.keys()
-        ]
+        instructions = [pl.lit(result.info[key]).alias(key) for key in result.info]
         result.live_dataframe = result.live_dataframe.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]

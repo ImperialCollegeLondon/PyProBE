@@ -5,7 +5,7 @@ import os
 import pickle
 import platform
 import subprocess
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import distinctipy
 import plotly.graph_objects as go
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pyprobe.result import Result
 
 
-def launch_dashboard(cell_list: List[Cell]) -> None:
+def launch_dashboard(cell_list: list[Cell]) -> None:
     """Function to launch the dashboard for the preprocessed data.
 
     Args:
@@ -59,7 +59,7 @@ def launch_dashboard(cell_list: List[Cell]) -> None:
 class _Dashboard:
     """Class to create a Streamlit dashboard for PyProBE."""
 
-    def __init__(self, cell_list: List[Cell]) -> None:
+    def __init__(self, cell_list: list[Cell]) -> None:
         """Initialize the dashboard with the cell list."""
         self.cell_list = cell_list
         self.info = self.get_info(self.cell_list)
@@ -81,7 +81,7 @@ class _Dashboard:
     ]
 
     @staticmethod
-    def get_info(cell_list: List[Cell]) -> pl.DataFrame:
+    def get_info(cell_list: list[Cell]) -> pl.DataFrame:
         """Get the cell information from the cell list.
 
         Args:
@@ -96,7 +96,7 @@ class _Dashboard:
         return pl.DataFrame(info_list)
 
     @staticmethod
-    def dataframe_with_selections(df: pl.DataFrame) -> List[int]:
+    def dataframe_with_selections(df: pl.DataFrame) -> list[int]:
         """Create a dataframe with a selection column for user input.
 
         Args:
@@ -110,7 +110,7 @@ class _Dashboard:
         df_with_selections.insert(0, "Select", False)
         return df_with_selections
 
-    def select_cell_indices(self) -> List[int]:
+    def select_cell_indices(self) -> list[int]:
         """Get dataframe row selections."""
         edited_df = st.sidebar.data_editor(
             self.dataframe_with_selections(self.info),
@@ -126,7 +126,7 @@ class _Dashboard:
         )  # Get the indices of the selected rows
         return selected_indices
 
-    def get_common_procedures(self) -> List[str]:
+    def get_common_procedures(self) -> list[str]:
         """Get the common procedure names from the selected cells."""
         procedure_names_sets = [
             list(self.cell_list[i].procedure.keys()) for i in self.selected_indices
@@ -134,7 +134,7 @@ class _Dashboard:
 
         # Find the common procedure names
         if len(procedure_names_sets) == 0:
-            procedure_names: List[str] = []
+            procedure_names: list[str] = []
         else:
             procedure_names = list(procedure_names_sets[0])
             for s in procedure_names_sets[1:]:
@@ -150,18 +150,19 @@ class _Dashboard:
                 .experiment_names
             )
             selected_experiment = st.sidebar.multiselect(
-                "Select an experiment", experiment_names
+                "Select an experiment",
+                experiment_names,
             )
             return tuple(selected_experiment)
         else:
             return ()
 
-    def get_data(self) -> List["Result"]:
+    def get_data(self) -> list["Result"]:
         """Get the data from the selected cells."""
         selected_data = []
         for i in range(len(self.selected_indices)):
             selected_index = self.selected_indices[i]
-            experiment_data: "Result"
+            experiment_data: Result
             if len(self.selected_experiments) == 0:
                 experiment_data = self.cell_list[selected_index].procedure[
                     self.selected_procedure
@@ -193,7 +194,7 @@ class _Dashboard:
             y=data.get(self.y_axis),
             mode="lines",
             name=f"{data.info[self.cell_identifier]}",
-            line=dict(color=color),
+            line={"color": color},
         )
         self.fig.add_trace(primary_trace)
 
@@ -210,9 +211,10 @@ class _Dashboard:
             mode="lines",
             name=f"{data.info[self.cell_identifier]}",
             yaxis="y2",
-            line=dict(
-                color=color, dash="dash"
-            ),  # Use the same color as the primary trace
+            line={
+                "color": color,
+                "dash": "dash",
+            },  # Use the same color as the primary trace
             showlegend=False,
         )
         self.fig.add_trace(secondary_trace)
@@ -224,10 +226,10 @@ class _Dashboard:
                 x=[None],
                 y=[None],
                 mode="lines",
-                line=dict(color="black", dash="dash"),
+                line={"color": "black", "dash": "dash"},
                 name=self.secondary_y_axis,
                 showlegend=True,
-            )
+            ),
         )
 
     def style_fig(self) -> None:
@@ -237,24 +239,24 @@ class _Dashboard:
         default_layout = go.Layout(
             template="simple_white",
             title=None,
-            xaxis_title_font=dict(size=title_font_size),
-            yaxis_title_font=dict(size=title_font_size),
-            xaxis_tickfont=dict(size=axis_font_size),
-            yaxis_tickfont=dict(size=axis_font_size),
-            legend_font=dict(size=axis_font_size),
-            legend=dict(x=1.2),
+            xaxis_title_font={"size": title_font_size},
+            yaxis_title_font={"size": title_font_size},
+            xaxis_tickfont={"size": axis_font_size},
+            yaxis_tickfont={"size": axis_font_size},
+            legend_font={"size": axis_font_size},
+            legend={"x": 1.2},
             width=800,
             height=600,
         )
         # Update layout for dual-axis
         self.fig.update_layout(
-            yaxis=dict(
-                title=self.y_axis,
-            ),
-            yaxis2=dict(title=self.secondary_y_axis, overlaying="y", side="right"),
-            xaxis=dict(
-                title=self.x_axis,
-            ),
+            yaxis={
+                "title": self.y_axis,
+            },
+            yaxis2={"title": self.secondary_y_axis, "overlaying": "y", "side": "right"},
+            xaxis={
+                "title": self.x_axis,
+            },
         )
         self.fig.update_layout(default_layout)
 
@@ -264,23 +266,29 @@ class _Dashboard:
         st.sidebar.title("Select data to plot")
         self.selected_indices = self.select_cell_indices()
         self.selected_procedure = st.sidebar.selectbox(
-            "Select a procedure", self.get_common_procedures()
+            "Select a procedure",
+            self.get_common_procedures(),
         )
         self.selected_experiments = self.select_experiment()
         self.cycle_step_input = st.sidebar.text_input(
-            'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")'
+            'Enter the cycle and step numbers (e.g., "cycle(1).step(2)")',
         )
         col1, col2, col3, col4, col5 = st.columns(5)
         self.filter_stage = col1.selectbox(
-            "Filter stage", ["", "Experiment", "Cycle", "Step"], index=0
+            "Filter stage",
+            ["", "Experiment", "Cycle", "Step"],
+            index=0,
         )
         self.x_axis = col2.selectbox("x axis", self.x_options, index=0)
         self.y_axis = col3.selectbox("y axis", self.y_options, index=1)
         self.secondary_y_axis = col4.selectbox(
-            "Secondary y axis", ["None"] + self.y_options, index=0
+            "Secondary y axis",
+            ["None"] + self.y_options,
+            index=0,
         )
         self.cell_identifier = col5.selectbox(
-            "Legend label", self.info.collect_schema().names()
+            "Legend label",
+            self.info.collect_schema().names(),
         )
         selected_names = [
             self.cell_list[i].info[self.cell_identifier] for i in self.selected_indices

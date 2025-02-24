@@ -1,16 +1,10 @@
 """A module to contain plotting functions for PyProBE."""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-import plotly.graph_objects as go
 import polars as pl
-from deprecated import deprecated
-from numpy.typing import NDArray
-from plotly.express.colors import sample_colorscale
-from plotly.subplots import make_subplots
-from sklearn.preprocessing import minmax_scale
 
 if TYPE_CHECKING:
     from pyprobe.result import Result
@@ -19,7 +13,9 @@ from pyprobe.units import split_quantity_unit
 
 
 def _retrieve_relevant_columns(
-    result_obj: "Result", args: Tuple[Any, ...], kwargs: Dict[Any, Any]
+    result_obj: "Result",
+    args: tuple[Any, ...],
+    kwargs: dict[Any, Any],
 ) -> pl.DataFrame:
     """Retrieve relevant columns from a Result object for plotting.
 
@@ -46,14 +42,13 @@ def _retrieve_relevant_columns(
 
         except ValueError:
             continue
-        if quantity in result_obj._polars_cache.quantities:
+        if quantity in result_obj.quantities:
             relevant_columns.append(arg)
     if len(relevant_columns) == 0:
         raise ValueError(
-            f"None of the columns in {all_args} are present in the Result object."
+            f"None of the columns in {all_args} are present in the Result object.",
         )
-    result_obj._polars_cache.collect_columns(*relevant_columns)
-    return result_obj._get_data_subset(*relevant_columns)
+    return result_obj.data_with_columns(*relevant_columns)
 
 
 try:
@@ -72,7 +67,7 @@ def _create_seaborn_wrapper() -> Any:
                 raise ImportError(
                     "Optional dependency 'seaborn' is not installed. Please install by "
                     "running 'pip install seaborn' or installing PyProBE with seaborn "
-                    "as an optional dependency: `pip install 'PyProBE-Data[seaborn]'."
+                    "as an optional dependency: `pip install 'PyProBE-Data[seaborn]'.",
                 )
 
         return SeabornWrapper()
@@ -102,11 +97,12 @@ def _create_seaborn_wrapper() -> Any:
             """
             if "data" in kwargs:
                 kwargs["data"] = _retrieve_relevant_columns(
-                    kwargs["data"], args, kwargs
+                    kwargs["data"],
+                    args,
+                    kwargs,
                 ).to_pandas()
-            if func.__name__ == "lineplot":
-                if "estimator" not in kwargs:
-                    kwargs["estimator"] = None
+            if func.__name__ == "lineplot" and "estimator" not in kwargs:
+                kwargs["estimator"] = None
             return func(*args, **kwargs)
 
         return wrapper

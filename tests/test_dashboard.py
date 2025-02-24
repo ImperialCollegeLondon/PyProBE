@@ -8,7 +8,6 @@ import pandas as pd
 import polars as pl
 import polars.testing as pl_testing
 import pytest
-import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from pyprobe.dashboard import (
@@ -49,55 +48,59 @@ def test_pickle_dump(cell_list, mocker):
 
 def test_windows_launch(cell_list):
     """Test Windows subprocess launch."""
-    with patch("platform.system", return_value="Windows"):
-        with patch("subprocess.Popen") as mock_popen:
-            with patch("builtins.open"):
-                with patch("pickle.dump"):
-                    launch_dashboard(cell_list)
-
-                    mock_popen.assert_called_once()
-                    args = mock_popen.call_args[0][0]
-
-                    assert args[0:5] == ["cmd", "/c", "start", "/B", "streamlit"]
-                    assert "dashboard.py" in args[6]
-                    assert args[-3:] == [">", "nul", "2>&1"]
-                    assert mock_popen.call_args[1]["shell"] is True
+    with (
+        patch("platform.system", return_value="Windows"),
+        patch("subprocess.Popen") as mock_popen,
+        patch("builtins.open"),
+        patch("pickle.dump"),
+    ):
+        launch_dashboard(cell_list)
+        mock_popen.assert_called_once()
+        args = mock_popen.call_args[0][0]
+        assert args[0:5] == ["cmd", "/c", "start", "/B", "streamlit"]
+        assert "dashboard.py" in args[6]
+        assert args[-3:] == [">", "nul", "2>&1"]
+        assert mock_popen.call_args[1]["shell"] is True
 
 
 def test_darwin_launch(cell_list):
     """Test Darwin/MacOS subprocess launch."""
-    with patch("platform.system", return_value="Darwin"):
-        with patch("subprocess.Popen") as mock_popen:
-            with patch("builtins.open"):
-                with patch("pickle.dump"):
-                    launch_dashboard(cell_list)
-
-                    mock_popen.assert_called_once()
-                    args = mock_popen.call_args[0][0]
-
-                    assert args[0:3] == ["nohup", "streamlit", "run"]
-                    assert "dashboard.py" in args[3]
-                    assert mock_popen.call_args[1]["stdout"] is subprocess.DEVNULL
-                    assert mock_popen.call_args[1]["stderr"] is subprocess.STDOUT
+    with (
+        patch("platform.system", return_value="Darwin"),
+        patch("subprocess.Popen") as mock_popen,
+        patch("builtins.open"),
+        patch("pickle.dump"),
+    ):
+        launch_dashboard(cell_list)
+        mock_popen.assert_called_once()
+        args = mock_popen.call_args[0][0]
+        assert args[0:3] == ["nohup", "streamlit", "run"]
+        assert "dashboard.py" in args[3]
+        assert mock_popen.call_args[1]["stdout"] is subprocess.DEVNULL
+        assert mock_popen.call_args[1]["stderr"] is subprocess.STDOUT
 
 
 def test_other_platform(cell_list):
     """Test that no subprocess is launched on unsupported platforms."""
-    with patch("platform.system", return_value="Linux"):
-        with patch("subprocess.Popen") as mock_popen:
-            with patch("builtins.open"):
-                with patch("pickle.dump"):
-                    launch_dashboard(cell_list)
-                    mock_popen.assert_not_called()
+    with (
+        patch("platform.system", return_value="Linux"),
+        patch("subprocess.Popen") as mock_popen,
+        patch("builtins.open"),
+        patch("pickle.dump"),
+    ):
+        launch_dashboard(cell_list)
+        mock_popen.assert_not_called()
 
 
 def test_empty_cell_list():
     """Test handling of empty cell list."""
-    with patch("builtins.open"):
-        with patch("pickle.dump") as mock_dump:
-            with patch("subprocess.Popen"):
-                launch_dashboard([])
-                mock_dump.assert_called_once_with([], mock_dump.call_args[0][1])
+    with (
+        patch("builtins.open"),
+        patch("pickle.dump") as mock_dump,
+        patch("subprocess.Popen"),
+    ):
+        launch_dashboard([])
+        mock_dump.assert_called_once_with([], mock_dump.call_args[0][1])
 
 
 def test_dashboard_init(mock_cell):
@@ -115,7 +118,7 @@ def test_dashboard_get_info(mock_cell):
 
     dashboard = _Dashboard([mock_cell, mock_cell2])
     expected_df = pl.DataFrame(
-        [{"id": "test1", "value": 10}, {"id": "test2", "value": 20}]
+        [{"id": "test1", "value": 10}, {"id": "test2", "value": 20}],
     )
     pl_testing.assert_frame_equal(
         dashboard.get_info([mock_cell, mock_cell2]),
@@ -129,7 +132,7 @@ def testdataframe_with_selections():
     data = pl.DataFrame({"id": ["test1", "test2"], "value": [10, 20]})
     df_with_selections = _Dashboard.dataframe_with_selections(data)
     assert "Select" in df_with_selections.columns
-    assert (df_with_selections["Select"].to_numpy() == False).all()
+    assert not df_with_selections["Select"].to_numpy().all()
 
 
 def test_select_cell_indices(mock_cell):
@@ -141,7 +144,7 @@ def test_select_cell_indices(mock_cell):
 
     with patch("streamlit.sidebar.data_editor") as mock_select:
         mock_select.return_value = pd.DataFrame(
-            {"id": ["test1", "test2"], "value": [10, 20], "Select": [True, False]}
+            {"id": ["test1", "test2"], "value": [10, 20], "Select": [True, False]},
         )
         result = dashboard.select_cell_indices()
         assert result == [0]
@@ -199,7 +202,7 @@ def test_dashboard_select_experiment():
     def select_exp_mini_app():
         from unittest.mock import MagicMock
 
-        import streamlit as st
+        import streamlit as st  # noqa: F811
 
         from pyprobe.dashboard import _Dashboard
 
@@ -237,7 +240,7 @@ def test_get_data(cell_fixture):
         check_column_order=False,
     )
 
-    dashboard.selected_experiments = tuple(["Break-in Cycles"])
+    dashboard.selected_experiments = ("Break-in Cycles",)
     pl_testing.assert_frame_equal(
         dashboard.get_data()[0].data,
         cell_fixture.procedure["Sample"].experiment("Break-in Cycles").data,
@@ -262,7 +265,7 @@ def test_dashboard_run(cell_fixture):
     def run_mini_app():
         from unittest.mock import patch
 
-        import streamlit as st
+        import streamlit as st  # noqa: F811
 
         from pyprobe import Cell
         from pyprobe.dashboard import _Dashboard
@@ -271,13 +274,17 @@ def test_dashboard_run(cell_fixture):
             info={
                 "name": "test",
                 "temperature": 25,
-            }
+            },
         )
         cell.add_procedure(
-            "Sample", "tests/sample_data/neware/", "sample_data_neware.parquet"
+            "Sample",
+            "tests/sample_data/neware/",
+            "sample_data_neware.parquet",
         )
         cell.add_procedure(
-            "Sample 2", "tests/sample_data/neware/", "sample_data_neware.parquet"
+            "Sample 2",
+            "tests/sample_data/neware/",
+            "sample_data_neware.parquet",
         )
 
         dashboard = _Dashboard([cell])
@@ -317,10 +324,12 @@ def test_dashboard_run(cell_fixture):
     assert fig["layout"]["xaxis"]["title"]["text"] == "Time [s]"
     assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
     np.testing.assert_array_equal(
-        fig["data"][0]["x"], cell_fixture.procedure["Sample"].get("Time [s]")
+        fig["data"][0]["x"],
+        cell_fixture.procedure["Sample"].get("Time [s]"),
     )
     np.testing.assert_array_equal(
-        fig["data"][0]["y"], cell_fixture.procedure["Sample"].get("Voltage [V]")
+        fig["data"][0]["y"],
+        cell_fixture.procedure["Sample"].get("Voltage [V]"),
     )
 
     # Check plot with multiple y axes
@@ -331,10 +340,12 @@ def test_dashboard_run(cell_fixture):
     assert fig["layout"]["yaxis"]["title"]["text"] == "Voltage [V]"
     assert fig["layout"]["yaxis2"]["title"]["text"] == "Current [A]"
     np.testing.assert_array_equal(
-        fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]")
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"].get("Time [s]"),
     )
     np.testing.assert_array_equal(
-        fig["data"][1]["y"], cell_fixture.procedure["Sample"].get("Current [A]")
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"].get("Current [A]"),
     )
     assert fig["data"][2]["name"] == "Current [A]"
     assert fig["data"][2]["line"]["color"] == "black"
@@ -348,10 +359,12 @@ def test_dashboard_run(cell_fixture):
     at.run(timeout=30)
     fig = at.session_state.figure
     np.testing.assert_allclose(
-        fig["data"][1]["x"], cell_fixture.procedure["Sample"].get("Time [s]") / 3600
+        fig["data"][1]["x"],
+        cell_fixture.procedure["Sample"].get("Time [s]") / 3600,
     )
     np.testing.assert_allclose(
-        fig["data"][1]["y"], cell_fixture.procedure["Sample"].get("Current [A]") * 1000
+        fig["data"][1]["y"],
+        cell_fixture.procedure["Sample"].get("Current [A]") * 1000,
     )
 
     # Check filtering by experiment
@@ -459,7 +472,6 @@ def test_dashboard_run(cell_fixture):
         .get("Current [mA]"),
     )
 
-    # printed_data = at.dataframe[0].value
     expected_df = (
         cell_fixture.procedure["Sample"]
         .experiment("Break-in Cycles")
@@ -472,7 +484,7 @@ def test_dashboard_run(cell_fixture):
                 "Current [A]",
                 "Voltage [V]",
                 "Capacity [Ah]",
-            ]
+            ],
         )
         .to_pandas()
     )

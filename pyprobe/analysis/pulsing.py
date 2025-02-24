@@ -1,9 +1,6 @@
 """A module for the Pulsing class."""
 
-from typing import List
-
 import polars as pl
-from deprecated import deprecated
 from pydantic import BaseModel, validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
@@ -24,7 +21,7 @@ def _get_pulse_number(data: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame | pl.La
     return data.with_columns(
         ((pl.col("Current [A]").shift() == 0) & (pl.col("Current [A]") != 0))
         .cum_sum()
-        .alias("Pulse Number")
+        .alias("Pulse Number"),
     )
 
 
@@ -68,13 +65,15 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
     all_data_df = input_data.live_dataframe
     ocv_df = _get_end_of_rest_points(all_data_df).drop("Pulse Number")
     return input_data.clean_copy(
-        ocv_df, column_definitions=input_data.column_definitions
+        ocv_df,
+        column_definitions=input_data.column_definitions,
     )
 
 
 @validate_call
 def get_resistances(
-    input_data: PyProBEDataType, r_times: List[float | int] = []
+    input_data: PyProBEDataType,
+    r_times: list[float | int] = [],
 ) -> Result:
     """Returns a result object summarising the pulsing experiment.
 
@@ -137,7 +136,7 @@ def get_resistances(
     pulse_df = (
         all_data_df.filter(
             (pl.col("Current [A]").abs() > 0.99 * pl.col("Pulse Current").abs())
-            & (pl.col("Current [A]").abs() < 1.01 * pl.col("Pulse Current").abs())
+            & (pl.col("Current [A]").abs() < 1.01 * pl.col("Pulse Current").abs()),
         )
         .group_by("Pulse Number")
         .first()
@@ -145,10 +144,10 @@ def get_resistances(
     )
 
     # calculate the resistance at the start of the pulse
-    R0 = ((pl.col("Voltage [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")).alias(
-        "R0 [Ohms]"
+    r0 = ((pl.col("Voltage [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")).alias(
+        "R0 [Ohms]",
     )
-    pulse_df = pulse_df.with_columns(R0)
+    pulse_df = pulse_df.with_columns(r0)
 
     t_col_names = [f"t_{time}s [s]" for time in r_times]
     r_t_col_names = [f"R_{time}s [Ohms]" for time in r_times]
@@ -158,17 +157,20 @@ def get_resistances(
             [
                 (pl.col("Start Time [s]") + time).alias(t_col_names[idx])
                 for idx, time in enumerate(r_times)
-            ]
+            ],
         )
 
         # reformat df into two rows, r_time and the corresponding timestamp
         t_after_pulse_df = pulse_df.unpivot(t_col_names).rename(
-            {"variable": "r_time", "value": "Time [s]"}
+            {"variable": "r_time", "value": "Time [s]"},
         )
 
         # merge this dataframe into the full dataframe and sort
         t_after_pulse_df = all_data_df.join(
-            t_after_pulse_df, on="Time [s]", how="full", coalesce=True
+            t_after_pulse_df,
+            on="Time [s]",
+            how="full",
+            coalesce=True,
         ).sort("Time [s]")
 
         # after merging, where the requested time doesn't match with an existing
@@ -178,11 +180,11 @@ def get_resistances(
         t_after_pulse_df = t_after_pulse_df.with_columns(
             [
                 pl.col("Voltage [V]").interpolate(),
-            ]
+            ],
         )
         # filter the array to return only the inserted rows
         t_after_pulse_df = t_after_pulse_df.filter(
-            pl.col("r_time").is_not_null()
+            pl.col("r_time").is_not_null(),
         ).select("Voltage [V]", "Time [s]")
 
         for time in r_times:
@@ -193,7 +195,7 @@ def get_resistances(
                 how="left",
             ).rename({"Voltage [V]_right": f"V_{time}s [V]"})
             pulse_df = pulse_df.with_columns(
-                (pl.col(f"V_{time}s [V]") - pl.col("OCV [V]")) / pl.col("Current [A]")
+                (pl.col(f"V_{time}s [V]") - pl.col("OCV [V]")) / pl.col("Current [A]"),
             ).rename({f"V_{time}s [V]": f"R_{time}s [Ohms]"})
 
         # filter the dataframe to the final selection
@@ -205,7 +207,7 @@ def get_resistances(
                 "OCV [V]",
                 "R0 [Ohms]",
             ]
-            + r_t_col_names
+            + r_t_col_names,
         )
     else:
         pulse_df = pulse_df.select(
@@ -215,15 +217,14 @@ def get_resistances(
                 "SOC",
                 "OCV [V]",
                 "R0 [Ohms]",
-            ]
+            ],
         )
 
     column_definitions = {
         "Pulse Number": "An index for each pulse.",
         "Capacity": input_data.column_definitions["Capacity"],
         "SOC": input_data.column_definitions["SOC"],
-        "OCV": "The voltage value at the final data point in the rest before a "
-        "pulse.",
+        "OCV": "The voltage value at the final data point in the rest before a pulse.",
         "R0": "The instantaneous resistance measured between the final rest "
         "point and the first data point in the pulse.",
     }

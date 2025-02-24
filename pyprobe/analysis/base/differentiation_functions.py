@@ -1,20 +1,18 @@
 """Module containing functions for differentiating experimental data."""
 
-from typing import List, Tuple
-
 import numpy as np
 import scipy.interpolate as interp
 from numpy.typing import NDArray
 
 
-def get_x_sections(x: NDArray[np.float64]) -> List[slice]:
+def get_x_sections(x: NDArray[np.float64]) -> list[slice]:
     """Split the x data into uniformly sampled sections.
 
     Args:
         x (NDArray[np.float64]): The x values.
 
     Returns:
-        List[slice]: A list of slices representing the uniformly sampled sections.
+        List[slice]: a list of slices representing the uniformly sampled sections.
     """
     dx = np.diff(x)
     ddx = np.diff(dx)
@@ -58,8 +56,9 @@ def get_dx(x: NDArray[np.float64]) -> float:
 
 
 def get_dy_and_counts(
-    y: NDArray[np.float64], dy: float
-) -> Tuple[float, NDArray[np.float64], NDArray[np.float64]]:
+    y: NDArray[np.float64],
+    dy: float,
+) -> tuple[float, NDArray[np.float64], NDArray[np.float64]]:
     """Get the y sampling interval, bin midpoints and counts.
 
     Args:
@@ -73,13 +72,10 @@ def get_dy_and_counts(
     y_range = y.max() - y.min()
     y_bins = np.linspace(y.min(), y.max(), int(np.ceil(y_range / dy)))
     # ensure sign of dy matches direction of input data
-    if y[0] < y[-1]:
-        dy = y_bins[1] - y_bins[0]
-    else:
-        dy = -y_bins[1] + y_bins[0]
-    N, _ = np.histogram(y, bins=y_bins)
+    dy = y_bins[1] - y_bins[0] if y[0] < y[-1] else -y_bins[1] + y_bins[0]
+    n, _ = np.histogram(y, bins=y_bins)
     y_midpoints = y_bins[:-1] + np.diff(y_bins) / 2
-    return dy, y_midpoints, N
+    return dy, y_midpoints, n
 
 
 def y_sampling_interval(y: NDArray[np.float64]) -> float:
@@ -97,9 +93,12 @@ def y_sampling_interval(y: NDArray[np.float64]) -> float:
     return np.min(y_diff)
 
 
-def calc_gradient_with_LEAN(
-    x: NDArray[np.float64], y: NDArray[np.float64], k: int, gradient: str
-) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+def calc_gradient_with_lean(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int,
+    gradient: str,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     r"""Calculate the gradient of the data, assuming x is uniformly spaced.
 
     Args:
@@ -116,20 +115,18 @@ def calc_gradient_with_LEAN(
     """
     dx = get_dx(x)
     dy = k * y_sampling_interval(y)
-    dy, y_midpoints, N = get_dy_and_counts(y, dy)
-    dxdy = N * dx / dy
+    dy, y_midpoints, n = get_dy_and_counts(y, dy)
+    dxdy = n * dx / dy
 
-    if gradient == "dydx":
-        grad = np.divide(1, dxdy, where=dxdy != 0)
-    else:
-        grad = dxdy
+    grad = np.divide(1, dxdy, where=dxdy != 0) if gradient == "dydx" else dxdy
     f = interp.interp1d(y, x, assume_sorted=False)
     x_pts = f(y_midpoints)
     return x_pts, y_midpoints, grad
 
 
 def smooth_gradient(
-    gradient: NDArray[np.float64], alpha: List[float]
+    gradient: NDArray[np.float64],
+    alpha: list[float],
 ) -> NDArray[np.float64]:
     """Smooth the calculated gradient.
 
@@ -140,11 +137,11 @@ def smooth_gradient(
     Returns:
         NDArray[np.float64]: The smoothed gradient vector.
     """
-    A = np.zeros((len(gradient), len(gradient)))
+    a = np.zeros((len(gradient), len(gradient)))
     w = np.floor(len(alpha) / 2)
     for n in range(len(alpha)):
         k = n - w
         vector = np.ones(int(len(gradient) - abs(k)))
         diag = np.diag(vector, int(k))
-        A += alpha[n] * diag
-    return A @ gradient
+        a += alpha[n] * diag
+    return a @ gradient

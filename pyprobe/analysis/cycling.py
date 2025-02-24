@@ -1,11 +1,10 @@
 """A module for the Cycling class."""
 
 import polars as pl
-from deprecated import deprecated
-from pydantic import BaseModel, validate_call
+from pydantic import validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.filters import Experiment, get_cycle_column
+from pyprobe.filters import get_cycle_column
 from pyprobe.pyprobe_types import FilterToCycleType
 from pyprobe.result import Result
 
@@ -29,8 +28,8 @@ def _create_capacity_throughput(
                 .fill_null(strategy="zero")
                 .abs()
                 .cum_sum()
-            ).alias("Capacity Throughput [Ah]")
-        ]
+            ).alias("Capacity Throughput [Ah]"),
+        ],
     )
 
 
@@ -47,16 +46,18 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         Result: A result object for the capacity SOH of the cell.
     """
     AnalysisValidator(
-        input_data=input_data, required_columns=["Capacity [Ah]", "Time [s]"]
+        input_data=input_data,
+        required_columns=["Capacity [Ah]", "Time [s]"],
     )
     input_data.live_dataframe = get_cycle_column(input_data)
 
     input_data.live_dataframe = _create_capacity_throughput(input_data.live_dataframe)
     lf_capacity_throughput = input_data.live_dataframe.group_by(
-        "Cycle", maintain_order=True
+        "Cycle",
+        maintain_order=True,
     ).agg(pl.col("Capacity Throughput [Ah]").first())
     lf_time = input_data.live_dataframe.group_by("Cycle", maintain_order=True).agg(
-        pl.col("Time [s]").first()
+        pl.col("Time [s]").first(),
     )
 
     lf_charge = (
@@ -80,15 +81,15 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
 
     lf = lf.with_columns(
         (pl.col("Charge Capacity [Ah]") / pl.first("Charge Capacity [Ah]") * 100).alias(
-            "SOH Charge [%]"
-        )
+            "SOH Charge [%]",
+        ),
     )
     lf = lf.with_columns(
         (
             pl.col("Discharge Capacity [Ah]")
             / pl.first("Discharge Capacity [Ah]")
             * 100
-        ).alias("SOH Discharge [%]")
+        ).alias("SOH Discharge [%]"),
     )
 
     if dchg_before_chg:
@@ -96,7 +97,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
             (
                 pl.col("Discharge Capacity [Ah]")
                 / pl.col("Charge Capacity [Ah]").shift()
-            ).alias("Coulombic Efficiency")
+            ).alias("Coulombic Efficiency"),
         )
     else:
         (

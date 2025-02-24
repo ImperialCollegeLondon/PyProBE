@@ -1,7 +1,5 @@
 """A module containing functions for degradation mode analysis."""
 
-from typing import Tuple
-
 import numpy as np
 import scipy.interpolate as interp
 import scipy.optimize as opt
@@ -63,7 +61,8 @@ def ocv_curve_fit(
         fitting_result = opt.minimize(cost_function, x_guess, bounds=[(0, 1)] * 4)
     elif optimizer == "differential_evolution":
         fitting_result = opt.differential_evolution(
-            cost_function, bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)]
+            cost_function,
+            bounds=[(0.75, 0.95), (0.2, 0.3), (0, 0.05), (0.85, 0.95)],
         )
 
     return fitting_result.x
@@ -75,7 +74,7 @@ def calc_electrode_capacities(
     x_ne_lo: float,
     x_ne_hi: float,
     cell_capacity: float,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Calculate the electrode capacities.
 
     Args:
@@ -128,7 +127,9 @@ def calc_full_cell_OCV(
     # make vectors between stoichiometry limits during charge
     z_ne = np.linspace(x_ne_lo, x_ne_hi, n_points)
     z_pe = np.linspace(
-        x_pe_lo, x_pe_hi, n_points
+        x_pe_lo,
+        x_pe_hi,
+        n_points,
     )  # flip the cathode limits to match charge direction
 
     # make an SOC vector with the same number of points
@@ -137,7 +138,6 @@ def calc_full_cell_OCV(
     # interpolate the real electrode OCP data with the created stoichiometry vectors
     OCP_ne = np.interp(z_ne, x_ne, ocp_ne)
     OCP_pe = np.interp(z_pe, x_pe, ocp_pe)
-    # OCP_pe = np.flip(OCP_pe) # flip the cathode OCP to match charge direction
 
     # interpolate the final OCV curve with the original SOC vector
     OCV = np.interp(SOC, SOC_sampling, OCP_pe - OCP_ne)
@@ -213,13 +213,15 @@ def calc_full_cell_OCV_composite(
     z_pe = np.linspace(z_pe_lo, z_pe_hi, n_points)
     z_ne = np.linspace(z_ne_lo, z_ne_hi, n_points)
     z_ne_clipped = np.clip(
-        z_ne, x_composite.min(), x_composite.max()
+        z_ne,
+        x_composite.min(),
+        x_composite.max(),
     )  # Measured NE cap. is within the composite cap. range
 
     # Interpolate the OCP data
     OCP_pe = interp1d(x_pe, ocp_pe, fill_value="extrapolate")(z_pe)
     OCP_ne = interp1d(x_composite, ocp_composite, fill_value="extrapolate")(
-        z_ne_clipped
+        z_ne_clipped,
     )
 
     # Calculate the full cell OCV
@@ -227,7 +229,10 @@ def calc_full_cell_OCV_composite(
 
     # Interpolate the final OCV with the original SOC vector
     cell_ocv = interp1d(
-        np.linspace(0, 1, n_points), OCV, bounds_error=False, fill_value="extrapolate"
+        np.linspace(0, 1, n_points),
+        OCV,
+        bounds_error=False,
+        fill_value="extrapolate",
     )(SOC)
 
     return SOC, cell_ocv
@@ -238,7 +243,7 @@ def calculate_dma_parameters(
     pe_capacity: NDArray[np.float64],
     ne_capacity: NDArray[np.float64],
     li_inventory: NDArray[np.float64],
-) -> Tuple[
+) -> tuple[
     NDArray[np.float64],
     NDArray[np.float64],
     NDArray[np.float64],
@@ -269,7 +274,7 @@ def average_OCV_curves(
     discharge_SOC: NDArray[np.float64],
     discharge_OCV: NDArray[np.float64],
     discharge_current: NDArray[np.float64],
-) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Average the charge and discharge OCV curves.
 
     Args:
@@ -286,7 +291,9 @@ def average_OCV_curves(
     """
     f_discharge_OCV = interp.interp1d(discharge_SOC, discharge_OCV, kind="linear")
     f_discharge_current = interp.interp1d(
-        discharge_SOC, discharge_current, kind="linear"
+        discharge_SOC,
+        discharge_current,
+        kind="linear",
     )
     discharge_OCV = f_discharge_OCV(charge_SOC)
     discharge_current = f_discharge_current(charge_SOC)

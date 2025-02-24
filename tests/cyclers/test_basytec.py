@@ -12,7 +12,7 @@ from .test_basecycler import helper_read_and_process
 def test_read_file_basytec():
     """Test reading a Basytec file."""
     dataframe = Basytec.read_file(
-        "tests/sample_data/basytec/sample_data_basytec.txt"
+        "tests/sample_data/basytec/sample_data_basytec.txt",
     ).collect()
     assert "Date" in dataframe.columns
     assert dataframe["Date"][0] == "2023-06-19 17:56:53.000000"
@@ -22,7 +22,7 @@ def test_read_file_basytec():
 def test_read_and_process_basytec(benchmark):
     """Test the full process of reading and processing a file."""
     basytec_cycler = Basytec(
-        input_data_path="tests/sample_data/basytec/sample_data_basytec.txt"
+        input_data_path="tests/sample_data/basytec/sample_data_basytec.txt",
     )
     last_row = pl.DataFrame(
         {
@@ -34,11 +34,11 @@ def test_read_and_process_basytec(benchmark):
             "Voltage [V]": [3.53285],
             "Capacity [Ah]": [0.001248916998009],
             "Temperature [C]": [25.47953],
-        }
+        },
     )
     helper_read_and_process(
         benchmark,
         basytec_cycler,
         expected_final_row=last_row,
-        expected_events=set([0, 1]),
+        expected_events={0, 1},
     )

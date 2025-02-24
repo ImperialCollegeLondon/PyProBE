@@ -56,15 +56,15 @@ def test_capacity(BreakinCycles_fixture):
 
 
 def test_set_SOC(BreakinCycles_fixture):
-    """Test the set_SOC method."""
+    """Test the set_soc method."""
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)
-    with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
+    with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
     assert isinstance(with_charge_specified.live_dataframe, pl.LazyFrame)
     assert "Capacity [Ah]_right" not in with_charge_specified.data.columns
     with_charge_specified = with_charge_specified.data["SOC"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
-    without_charge_specified.set_SOC(0.04)
+    without_charge_specified.set_soc(0.04)
     assert isinstance(without_charge_specified.live_dataframe, pl.LazyFrame)
     without_charge_specified = without_charge_specified.data["SOC"]
 
@@ -74,22 +74,29 @@ def test_set_SOC(BreakinCycles_fixture):
 
 
 def test_SOC_ref_as_dataframe(BreakinCycles_fixture):
-    """Test the set_SOC method with the reference charge collected into a dataframe."""
+    """Test the set_soc method with the reference charge collected into a dataframe."""
     with_charge_specified = BreakinCycles_fixture
     assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
     BreakinCycles_fixture.cycle(-1).charge(-1).data
-    with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
+    with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
     assert isinstance(with_charge_specified.live_dataframe, pl.LazyFrame)
 
 
 def test_SOC_with_base_as_dataframe(BreakinCycles_fixture):
-    """Test the set_SOC method with the base dataframe collected into a dataframe."""
+    """Test the set_soc method with the base dataframe collected into a dataframe."""
     with_charge_specified = BreakinCycles_fixture
     with_charge_specified.data
     assert isinstance(with_charge_specified.live_dataframe, pl.DataFrame)
-    with_charge_specified.set_SOC(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
+    with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
     assert isinstance(with_charge_specified.live_dataframe, pl.DataFrame)
     assert "SOC" in with_charge_specified._polars_cache.columns
+
+
+def test_deprecated_set_SOC(BreakinCycles_fixture, mocker):
+    """Test the deprecated set_SOC method."""
+    mocker.patch("pyprobe.rawdata.RawData.set_soc")
+    BreakinCycles_fixture.set_SOC(0.04)
+    BreakinCycles_fixture.set_soc.assert_called_once_with(0.04, None)
 
 
 def test_set_reference_capacity(BreakinCycles_fixture):
@@ -132,19 +139,17 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
         step_descriptions=step_descriptions_fixture,
     )
     definition_keys = list(rawdata.column_definitions.keys())
-    assert set(definition_keys) == set(
-        [
-            "Time",
-            "Current",
-            "Voltage",
-            "Capacity",
-            "Cycle",
-            "Step",
-            "Event",
-            "Date",
-            "Temperature",
-        ]
-    )
+    assert set(definition_keys) == {
+        "Time",
+        "Current",
+        "Voltage",
+        "Capacity",
+        "Cycle",
+        "Step",
+        "Event",
+        "Date",
+        "Temperature",
+    }
 
 
 def test_pybamm_experiment():
@@ -158,7 +163,7 @@ def test_pybamm_experiment():
             "Current [A]": [0.1, 0.2, 0.3],
             "Voltage [V]": [3.0, 3.1, 3.2],
             "Capacity [Ah]": [0.1, 0.2, 0.3],
-        }
+        },
     )
 
     step_descriptions = {
@@ -167,7 +172,9 @@ def test_pybamm_experiment():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+        base_dataframe=test_data,
+        info={},
+        step_descriptions=step_descriptions,
     )
 
     result = raw_data.pybamm_experiment
@@ -187,7 +194,7 @@ def test_pybamm_experiment_missing_descriptions():
             "Current [A]": [0.1, 0.2, 0.3],
             "Voltage [V]": [3.0, 3.1, 3.2],
             "Capacity [Ah]": [0.1, 0.2, 0.3],
-        }
+        },
     )
 
     step_descriptions = {
@@ -196,7 +203,9 @@ def test_pybamm_experiment_missing_descriptions():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+        base_dataframe=test_data,
+        info={},
+        step_descriptions=step_descriptions,
     )
 
     with pytest.raises(ValueError, match="Descriptions for steps.*are missing"):
@@ -213,7 +222,7 @@ def test_pybamm_experiment_multiple_conditions():
             "Current [A]": [0.1, 0.2],
             "Voltage [V]": [3.0, 3.1],
             "Capacity [Ah]": [0.1, 0.2],
-        }
+        },
     )
 
     step_descriptions = {
@@ -225,7 +234,9 @@ def test_pybamm_experiment_multiple_conditions():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data, info={}, step_descriptions=step_descriptions
+        base_dataframe=test_data,
+        info={},
+        step_descriptions=step_descriptions,
     )
 
     result = raw_data.pybamm_experiment
@@ -246,7 +257,7 @@ def test_pybamm_experiment_with_loops():
             "Current [A]": [0.1] * 9,
             "Capacity [Ah]": [0.1] * 9,
             "Event": [1, 1, 1, 2, 2, 3, 3, 4, 4],
-        }
+        },
     )
 
     step_descriptions = {

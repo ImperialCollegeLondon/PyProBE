@@ -1,7 +1,7 @@
 """Module for utilities for analysis classes."""
 
 import logging
-from typing import Any, List, Tuple
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,7 +13,7 @@ from pyprobe.result import Result
 logger = logging.getLogger(__name__)
 
 
-def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
+def assemble_array(input_data: list[Result], name: str) -> NDArray[Any]:
     """Assemble an array from a list of results.
 
     Args:
@@ -23,7 +23,7 @@ def assemble_array(input_data: List[Result], name: str) -> NDArray[Any]:
     Returns:
         NDArray: The assembled array.
     """
-    return np.vstack([input.get(name) for input in input_data])
+    return np.vstack([input_item.get(name) for input_item in input_data])
 
 
 class AnalysisValidator(BaseModel):
@@ -36,7 +36,7 @@ class AnalysisValidator(BaseModel):
 
     input_data: PyProBEDataType
     """The input data to an analysis class."""
-    required_columns: List[str]
+    required_columns: list[str]
     """The columns required to conduct the analysis."""
 
     @model_validator(mode="after")
@@ -49,11 +49,11 @@ class AnalysisValidator(BaseModel):
         Raises:
             ValueError: If any of the required columns are missing.
         """
-        self.input_data._polars_cache.collect_columns(*self.required_columns)
+        self.input_data.cache_columns(*self.required_columns)
         return self
 
     @property
-    def variables(self) -> Tuple[NDArray[np.float64], ...]:
+    def variables(self) -> tuple[NDArray[np.float64], ...]:
         """Return the required columns in the input data as NDArrays.
 
         Returns:

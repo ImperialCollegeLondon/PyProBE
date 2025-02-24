@@ -4,389 +4,238 @@ import json
 import logging
 import os
 import shutil
-import time
 import warnings
 import zipfile
-from typing import Any, Callable, Dict, List, Literal, Optional
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any, Literal
 
 import polars as pl
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel, Field, ValidationError, validate_call
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
-from pyprobe.utils import PyBaMMSolution
+from pyprobe.utils import PyBaMMSolution, catch_pydantic_validation, deprecated
 
 logger = logging.getLogger(__name__)
+
+
+@catch_pydantic_validation
+def process_cycler_data(
+    cycler_type: Literal[
+        "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
+    ],
+    input_data_path: str,
+    output_data_path: str | None = None,
+    column_importers: list[basecycler.ColumnMap] = [],
+    compression_priority: Literal[
+        "performance", "file size", "uncompressed"
+    ] = "performance",
+    overwrite_existing: bool = False,
+) -> str:
+    """Process battery cycler data into PyProBE format.
+
+    Args:
+        cycler_type: Type of battery cycler used.
+        input_data_path: Path to input data file(s). Supports glob patterns.
+        output_data_path: Path for output parquet file. If None, the output file will
+            have the same name as the input file with a .parquet extension.
+        column_importers:
+            List of column importers to apply to the input data. Required for generic
+            cycler type. Overrides default column importers for other cycler types.
+        compression_priority: Compression method for output file.
+        overwrite_existing: Whether to overwrite existing output file.
+
+    Returns:
+        The path to the output parquet file.
+    """
+    cycler_map = {
+        "neware": neware.Neware,
+        "biologic": biologic.Biologic,
+        "biologic_MB": biologic.BiologicMB,
+        "arbin": arbin.Arbin,
+        "basytec": basytec.Basytec,
+        "maccor": maccor.Maccor,
+        "generic": basecycler.BaseCycler,
+    }
+
+    cycler_class = cycler_map.get(cycler_type)
+    if not cycler_class:
+        msg = f"Unsupported cycler type: {cycler_type}"
+        logger.error(msg)
+        raise ValueError(msg)
+
+    if cycler_type == "generic" and column_importers == []:
+        msg = "Column importers must be provided for generic cycler type."
+        logger.error(msg)
+        raise ValueError(msg)
+
+    if column_importers != []:
+        processor = cycler_class(
+            input_data_path=input_data_path,
+            output_data_path=output_data_path,
+            compression=compression_priority,
+            overwrite_existing=overwrite_existing,
+            column_importers=column_importers,
+        )
+    else:
+        processor = cycler_class(
+            input_data_path=input_data_path,
+            output_data_path=output_data_path,
+            compression=compression_priority,
+            overwrite_existing=overwrite_existing,
+        )
+    processor.process()
+    return processor.output_data_path
 
 
 class Cell(BaseModel):
     """A class for a cell in a battery experiment."""
 
-    info: dict[str, Optional[Any]]
+    info: dict[str, Any | None]
     """Dictionary containing information about the cell.
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
     """
-    procedure: Dict[str, Procedure] = Field(default_factory=dict)
+    procedure: dict[str, Procedure] = Field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
 
-    def _convert_to_parquet(
-        self,
-        importer: basecycler.BaseCycler,
-        folder_path: str,
-        output_filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
-        compression_priority: Literal[
-            "performance", "file size", "uncompressed"
-        ] = "performance",
-        overwrite_existing: bool = False,
-    ) -> None:
-        """Convert a file into PyProBE format.
+    class Config:
+        """Pydantic configuration."""
 
-        Args:
-            importer:
-                The cycler object to import the data.
-            folder_path:
-                The path to the folder containing the data file.
-            output_filename:
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            filename_inputs:
-                The list of inputs to input_filename and output_filename, if they are
-                functions. These must be keys of the cell info.
-            compression_priority:
-                The priority of the compression algorithm to use on the resulting
-                parquet file. Available options are:
-                - 'performance': Use the 'lz4' compression algorithm (default).
-                - 'file size': Use the 'zstd' compression algorithm.
-                - 'uncompressed': Do not use compression.
-            overwrite_existing:
-                If True, any existing parquet file with the output_filename will be
-                overwritten. If False, the function will skip the conversion if the
-                parquet file already exists.
-        """
-        output_data_path = self._get_data_paths(
-            folder_path, output_filename, filename_inputs
-        )
-        output_data_path = self._verify_parquet(output_data_path)
+        arbitrary_types_allowed = True
 
-        if not os.path.exists(output_data_path) or overwrite_existing:
-            t1 = time.time()
-            compression_dict = {
-                "uncompressed": "uncompressed",
-                "performance": "lz4",
-                "file size": "zstd",
-            }
-            self._write_parquet(
-                importer,
-                output_data_path,
-                compression=compression_dict[compression_priority],
-            )
-            logger.info(f"\tparquet written in {time.time()-t1: .2f} seconds.")
-        else:
-            logger.info(f"File {output_data_path} already exists. Skipping.")
-
-    @validate_call
-    def process_cycler_file(
-        self,
-        cycler: Literal[
-            "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
-        ],
-        folder_path: str,
-        input_filename: str | Callable[[str], str],
-        output_filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
-        compression_priority: Literal[
-            "performance", "file size", "uncompressed"
-        ] = "performance",
-        overwrite_existing: bool = False,
-    ) -> None:
-        """Convert a file into PyProBE format.
-
-        Args:
-            cycler:
-                The cycler used to produce the data.
-            folder_path:
-                The path to the folder containing the data file.
-            input_filename:
-                A filename string or a function to generate the file name for cycler
-                data.
-            output_filename:
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            filename_inputs:
-                The list of inputs to input_filename and output_filename, if they are
-                functions. These must be keys of the cell info.
-            compression_priority:
-                The priority of the compression algorithm to use on the resulting
-                parquet file. Available options are:
-                - 'performance': Use the 'lz4' compression algorithm (default).
-                - 'file size': Use the 'zstd' compression algorithm.
-                - 'uncompressed': Do not use compression.
-            overwrite_existing:
-                If True, any existing parquet file with the output_filename will be
-                overwritten. If False, the function will skip the conversion if the
-                parquet file already exists.
-        """
-        cycler_dict = {
-            "neware": neware.Neware,
-            "biologic": biologic.Biologic,
-            "biologic_MB": biologic.BiologicMB,
-            "arbin": arbin.Arbin,
-            "basytec": basytec.Basytec,
-            "maccor": maccor.Maccor,
-        }
-        input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_inputs
-        )
-        importer = cycler_dict[cycler](input_data_path=input_data_path)
-        self._convert_to_parquet(
-            importer,
-            folder_path,
-            output_filename,
-            filename_inputs,
-            compression_priority,
-            overwrite_existing,
-        )
-
-    @validate_call
-    def process_generic_file(
-        self,
-        folder_path: str,
-        input_filename: str | Callable[[str], str],
-        output_filename: str | Callable[[str], str],
-        column_dict: Dict[str, str],
-        header_row_index: int = 0,
-        date_column_format: Optional[str] = None,
-        filename_inputs: Optional[List[str]] = None,
-        compression_priority: Literal[
-            "performance", "file size", "uncompressed"
-        ] = "performance",
-    ) -> None:
-        """Convert generic file into PyProBE format.
-
-        Args:
-            folder_path (str):
-                The path to the folder containing the data file.
-            input_filename (str | function):
-                A filename string or a function to generate the file name for the
-                generic data.
-            output_filename (str | function):
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            column_dict (dict):
-                A dictionary mapping the column names in the generic file to the PyProBE
-                column names. The keys of the dictionary are the cycler column names and
-                the values are the PyProBE column names. You must use asterisks to
-                indicate the units of the columns.
-                E.g. :code:`{"V (*)": "Voltage [*]"}`.
-            header_row_index (int, optional):
-                The index of the header row in the file. Defaults to 0.
-            date_column_format (str, optional):
-                The format of the date column in the generic file. Defaults to None.
-            filename_inputs (list):
-                The list of inputs to input_filename and output_filename.
-                These must be keys of the cell info.
-            compression_priority:
-                The priority of the compression algorithm to use on the resulting
-                parquet file. Available options are:
-                - 'performance': Use the 'lz4' compression algorithm (default).
-                - 'file size': Use the 'zstd' compression algorithm.
-                - 'uncompressed': Do not use compression.
-        """
-        input_data_path = self._get_data_paths(
-            folder_path, input_filename, filename_inputs
-        )
-        importer = basecycler.BaseCycler(
-            input_data_path=input_data_path,
-            column_dict=column_dict,
-            header_row_index=header_row_index,
-            datetime_format=date_column_format,
-        )
-        self._convert_to_parquet(
-            importer,
-            folder_path,
-            output_filename,
-            filename_inputs,
-            compression_priority,
-        )
-
-    @validate_call
-    def add_procedure(
+    @catch_pydantic_validation
+    def import_data(
         self,
         procedure_name: str,
-        folder_path: str,
-        filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
-        readme_name: str = "README.yaml",
+        data_path: str,
+        readme_path: str | None = None,
     ) -> None:
-        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+        """Import a procedure from a PyProBE-format parquet file.
 
         Args:
             procedure_name (str):
                 A name to give the procedure. This will be used when calling
                 :code:`cell.procedure[procedure_name]`.
-            folder_path (str):
-                The path to the folder containing the data file.
-            filename (str | function):
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            filename_inputs (Optional[list]):
-                The list of inputs to filename_function. These must be keys of the cell
-                info.
-            readme_name (str, optional):
-                The name of the readme file. Defaults to "README.yaml". It is assumed
-                that the readme file is in the same folder as the data file.
+            data_path (str):
+                The path to the parquet file.
+            readme_path (str, optional):
+                The path to the readme file. If None, the function will look for a
+                file named README.yaml in the same folder as the data file. If none
+                is found, the data will be imported without a readme file, which
+                will limit the ability to filter the data by experiment. Defaults to
+                None.
         """
-        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self._verify_parquet(output_data_path)
-        base_dataframe = pl.scan_parquet(output_data_path)
-        data_folder = os.path.dirname(output_data_path)
-        readme_path = os.path.join(data_folder, readme_name)
-        readme = process_readme(readme_path)
+        input_path = Path(data_path)
+        if readme_path is None:
+            auto_readme_path = os.path.join(input_path.parent, "README.yaml")
+            if not os.path.exists(auto_readme_path):
+                logger.warning(
+                    f"No README file found for {procedure_name}. "
+                    f"Proceeding without README.",
+                )
+                readme_dict = {}
+            else:
+                readme_dict = process_readme(auto_readme_path).experiment_dict
+        else:
+            if not os.path.exists(readme_path):
+                raise ValueError(f"README file {readme_path} does not exist.")
+            else:
+                readme_dict = process_readme(readme_path).experiment_dict
 
         self.procedure[procedure_name] = Procedure(
-            readme_dict=readme.experiment_dict,
-            base_dataframe=base_dataframe,
+            readme_dict=readme_dict,
+            base_dataframe=pl.scan_parquet(data_path),
             info=self.info,
         )
 
-    @validate_call
-    def quick_add_procedure(
+    def import_from_cycler(
         self,
         procedure_name: str,
-        folder_path: str,
-        filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
+        cycler: Literal[
+            "neware",
+            "biologic",
+            "biologic_MB",
+            "arbin",
+            "basytec",
+            "maccor",
+            "generic",
+        ],
+        input_data_path: str,
+        output_data_path: str | None = None,
+        readme_path: str | None = None,
+        compression_priority: Literal[
+            "performance",
+            "file size",
+            "uncompressed",
+        ] = "performance",
+        column_importers: list[basecycler.ColumnMap] = [],
+        overwrite_existing: bool = False,
     ) -> None:
-        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+        """Import a procedure into the cell object.
 
-        This method does not require a README file. It is useful for quickly adding data
-        but filtering by experiment on the resulting object will not be possible.
+        This method converts a cycler file into PyProBE format, writes the data to a
+        parquet file and adds the procedure to the cell object.
 
         Args:
             procedure_name (str):
                 A name to give the procedure. This will be used when calling
                 :code:`cell.procedure[procedure_name]`.
-            folder_path (str):
-                The path to the folder containing the data file.
-            filename (str | function):
-                A filename string or a function to generate the file name for PyProBE
-                data.
-            filename_inputs (Optional[list]):
-                The list of inputs to filename_function. These must be keys of the cell
-                info.
+            cycler:
+                The cycler used to produce the data.
+            input_data_path (str):
+                The path to the cycler data file.
+            output_data_path (str, optional):
+                The path to write the parquet file. When None, the data is written to
+                a file with the same name as the input file but with a .parquet
+                extension. Defaults to None.
+            readme_path (str, optional):
+                The path to the readme file. If None, the function will look for a
+                file named README.yaml in the same folder as the input data file.
+                If none is found, the data will be imported without a readme file,
+                which will limit the ability to filter the data by experiment. Defaults
+                to None.
+            compression_priority:
+                The priority of the compression algorithm to use on the resulting
+                parquet file. Available options are:
+                - 'performance': Use the 'lz4' compression algorithm (default).
+                - 'file size': Use the 'zstd' compression algorithm.
+                - 'uncompressed': Do not use compression.
+            column_importers:
+                A list of column importers to apply to the input data. Required for
+                generic cycler type. Overrides default column importers for other cycler
+                types.
+            overwrite_existing:
+                If True, any existing parquet file with the output_filename will be
+                overwritten. If False, the function will skip the conversion if the
+                parquet file already exists.
         """
-        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
-        output_data_path = self._verify_parquet(output_data_path)
-        base_dataframe = pl.scan_parquet(output_data_path)
-        self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe, info=self.info, readme_dict={}
+        output_data_path = process_cycler_data(
+            cycler,
+            input_data_path,
+            output_data_path,
+            column_importers=column_importers,
+            compression_priority=compression_priority,
+            overwrite_existing=overwrite_existing,
         )
+        if readme_path is None:
+            input_path = Path(input_data_path)
+            readme_path = os.path.join(input_path.parent, "README.yaml")
+            if not os.path.exists(readme_path):
+                readme_path = None
+        self.import_data(procedure_name, output_data_path, readme_path)
 
-    @staticmethod
-    def _verify_parquet(filename: str) -> str:
-        """Function to verify the filename is in the correct parquet format.
-
-        Args:
-            filename (str): The filename to verify.
-
-        Returns:
-            str: The filename.
-        """
-        # Get the file extension of output_filename
-        _, ext = os.path.splitext(filename)
-
-        # If the file extension is not .parquet, replace it with .parquet
-        if ext != ".parquet":
-            filename = os.path.splitext(filename)[0] + ".parquet"
-        if "*" in filename:
-            error_msg = "* characters are not allowed for output filename."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        return filename
-
-    def _write_parquet(
-        self,
-        importer: basecycler.BaseCycler,
-        output_data_path: str,
-        compression: str,
-    ) -> None:
-        """Import data from a cycler file and write to a PyProBE parquet file.
-
-        Args:
-            importer (BaseCycler): The cycler object to import the data.
-            output_data_path (str): The path to write the parquet file.
-            compression (str): The compression algorithm to use.
-        """
-        dataframe = importer.pyprobe_dataframe
-        if isinstance(dataframe, pl.LazyFrame):
-            dataframe = dataframe.collect()
-        dataframe.write_parquet(output_data_path, compression=compression)
-
-    @staticmethod
-    def _get_filename(
-        info: Dict[str, Optional[Any]],
-        filename_function: Callable[[str], str],
-        filename_inputs: List[str],
-    ) -> str:
-        """Function to generate the filename for the data, if provided as a function.
-
-        Args:
-            info (dict): The info entry for the data file.
-            filename_function (function): The function to generate the input name.
-            filename_inputs (list):
-                The list of inputs to filename_function. These must be keys of the cell
-                info.
-
-        Returns:
-            str: The input name for the data file.
-        """
-        return filename_function(
-            *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs)))
-        )
-
-    def _get_data_paths(
-        self,
-        folder_path: str,
-        filename: str | Callable[[str], str],
-        filename_inputs: Optional[List[str]] = None,
-    ) -> str:
-        """Function to generate the input and output paths for the data file.
-
-        Args:
-            folder_path (str): The path to the folder containing the data file.
-            filename (str | function): A filename string or a function to generate
-                the file name.
-            filename_inputs (Optional[list]): The list of inputs to filename_function.
-                These must be keys of the cell info.
-
-        Returns:
-            str: The full path for the data file.
-        """
-        if isinstance(filename, str):
-            filename_str = filename
-        else:
-            if filename_inputs is None:
-                error_msg = (
-                    "filename_inputs must be provided when filename is a function."
-                )
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-            filename_str = self._get_filename(self.info, filename, filename_inputs)
-
-        data_path = os.path.join(folder_path, filename_str)
-        return data_path
-
+    @catch_pydantic_validation
     def import_pybamm_solution(
         self,
         procedure_name: str,
         experiment_names: list[str] | str,
         pybamm_solutions: list[PyBaMMSolution] | PyBaMMSolution,
-        output_data_path: Optional[str] = None,
-        optional_variables: Optional[list[str]] = None,
+        output_data_path: str | None = None,
+        optional_variables: list[str] | None = None,
     ) -> None:
         """Import a PyBaMM solution object into a procedure of the cell.
 
@@ -445,13 +294,17 @@ class Cell(BaseModel):
             raise ValueError(error_msg)
 
         lazyframe_created = False
-        for experiment_name, pybamm_solution in zip(experiment_names, pybamm_solutions):
+        for experiment_name, pybamm_solution in zip(
+            experiment_names,
+            pybamm_solutions,
+            strict=False,
+        ):
             # get the data from the PyBaMM solution object
             pybamm_data = pybamm_solution.get_data_dict(import_variables)
             # convert the PyBaMM data to a polars dataframe and add the experiment name
             # as a column
             solution_data = pl.LazyFrame(pybamm_data).with_columns(
-                pl.lit(experiment_name).alias("Experiment")
+                pl.lit(experiment_name).alias("Experiment"),
             )
             if lazyframe_created is False:
                 all_solution_data = solution_data
@@ -460,12 +313,14 @@ class Cell(BaseModel):
                 # join the new solution data with the existing solution data, a right
                 # join is used to keep all the data
                 all_solution_data = all_solution_data.join(
-                    solution_data, on=import_variables + ["Step"], how="right"
+                    solution_data,
+                    on=import_variables + ["Step"],
+                    how="right",
                 )
                 # fill null values where the experiment has been extended with the newly
                 #  joined experiment name
                 all_solution_data = all_solution_data.with_columns(
-                    pl.col("Experiment").fill_null(pl.col("Experiment_right"))
+                    pl.col("Experiment").fill_null(pl.col("Experiment_right")),
                 )
         # get the maximum step number for each experiment
         max_steps = (
@@ -476,15 +331,17 @@ class Cell(BaseModel):
         )
         # add the maximum step number from the previous experiment to the step number
         all_solution_data = all_solution_data.join(
-            max_steps, on="Experiment", how="left"
+            max_steps,
+            on="Experiment",
+            how="left",
         ).with_columns(
-            (pl.col("Step") + pl.col("Max Step").fill_null(-1) + 1).alias("Step")
+            (pl.col("Step") + pl.col("Max Step").fill_null(-1) + 1).alias("Step"),
         )
         # get the range of step values for each experiment
         step_ranges = all_solution_data.group_by("Experiment").agg(
             pl.arange(pl.col("Step").min(), pl.col("Step").max() + 1).alias(
-                "Step Range"
-            )
+                "Step Range",
+            ),
         )
 
         # create a dictionary of the experiment names and the step ranges
@@ -512,11 +369,13 @@ class Cell(BaseModel):
                     .cum_sum()
                     .alias("Event")
                 ),
-            ]
+            ],
         )
         # create the procedure object
         self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe, info=self.info, readme_dict=experiment_dict
+            base_dataframe=base_dataframe,
+            info=self.info,
+            readme_dict=experiment_dict,
         )
 
         # write the data to a parquet file if a path is provided
@@ -532,10 +391,10 @@ class Cell(BaseModel):
             path (str): The path to the archive directory or zip file.
         """
         if path.endswith(".zip"):
-            zip = True
+            zip_file = True
             path = path[:-4]
         else:
-            zip = False
+            zip_file = False
         if not os.path.exists(path):
             os.makedirs(path)
         metadata = self.dict()
@@ -554,7 +413,7 @@ class Cell(BaseModel):
         with open(os.path.join(path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
 
-        if zip:
+        if zip_file:
             with zipfile.ZipFile(path + ".zip", "w") as zipf:
                 for root, _, files in os.walk(path):
                     for file in files:
@@ -564,7 +423,347 @@ class Cell(BaseModel):
             # Delete the original directory
             shutil.rmtree(path)
 
+    @deprecated(
+        reason="For integrated cycler file processing and data import, use the "
+        ":func:`~Cell.import_from_cycler` method. To only process cycler files into the"
+        " PyProBE format, use the :func:`process_cycler_data` function.",
+        plain_reason="For integrated cycler file processing and data import, use the "
+        "import_from_cycler method. To only process cycler files into the "
+        "PyProBE format, use the pyprobe.process_cycler_data function.",
+        version="2.0.1",
+    )
+    def process_cycler_file(
+        self,
+        cycler: Literal[
+            "neware",
+            "biologic",
+            "biologic_MB",
+            "arbin",
+            "basytec",
+            "maccor",
+            "generic",
+        ],
+        folder_path: str,
+        input_filename: str | Callable[[str], str],
+        output_filename: str | Callable[[str], str],
+        filename_inputs: list[str] | None = None,
+        compression_priority: Literal[
+            "performance",
+            "file size",
+            "uncompressed",
+        ] = "performance",
+        overwrite_existing: bool = False,
+    ) -> None:
+        """Convert a file into PyProBE format.
 
+        Args:
+            cycler:
+                The cycler used to produce the data.
+            folder_path:
+                The path to the folder containing the data file.
+            input_filename:
+                A filename string or a function to generate the file name for cycler
+                data.
+            output_filename:
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_inputs:
+                The list of inputs to input_filename and output_filename, if they are
+                functions. These must be keys of the cell info.
+            compression_priority:
+                The priority of the compression algorithm to use on the resulting
+                parquet file. Available options are:
+                - 'performance': Use the 'lz4' compression algorithm (default).
+                - 'file size': Use the 'zstd' compression algorithm.
+                - 'uncompressed': Do not use compression.
+            overwrite_existing:
+                If True, any existing parquet file with the output_filename will be
+                overwritten. If False, the function will skip the conversion if the
+                parquet file already exists.
+        """
+        cycler_dict = {
+            "neware": neware.Neware,
+            "biologic": biologic.Biologic,
+            "biologic_MB": biologic.BiologicMB,
+            "arbin": arbin.Arbin,
+            "basytec": basytec.Basytec,
+            "maccor": maccor.Maccor,
+        }
+        input_data_path = self._get_data_paths(
+            folder_path,
+            input_filename,
+            filename_inputs,
+        )
+        output_data_path = self._get_data_paths(
+            folder_path,
+            output_filename,
+            filename_inputs,
+        )
+        try:
+            importer = cycler_dict[cycler](
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                compression=compression_priority,
+                overwrite_existing=overwrite_existing,
+            )
+            importer.process()
+        except ValidationError as e:
+            logger.error(e)
+
+    @deprecated(
+        reason="For integrated cycler file processing and data import, use the "
+        ":func:`~Cell.import_from_cycler` method using the 'generic' cycler. "
+        "To only process cycler files into the "
+        "PyProBE format, use the :func:`process_cycler_data` function.",
+        plain_reason="For integrated cycler file processing and data import, use the "
+        "import_from_cycler method using the 'generic' cycler. "
+        "To only process cycler files into the "
+        "PyProBE format, use the pyprobe.process_cycler_data function.",
+        version="2.0.1",
+    )
+    def process_generic_file(
+        self,
+        folder_path: str,
+        input_filename: str | Callable[[str], str],
+        output_filename: str | Callable[[str], str],
+        column_importers: list[basecycler.ColumnMap],
+        header_row_index: int = 0,
+        filename_inputs: list[str] | None = None,
+        compression_priority: Literal[
+            "performance",
+            "file size",
+            "uncompressed",
+        ] = "performance",
+        overwrite_existing: bool = False,
+    ) -> None:
+        """Convert generic file into PyProBE format.
+
+        Args:
+            folder_path (str):
+                The path to the folder containing the data file.
+            input_filename (str | function):
+                A filename string or a function to generate the file name for the
+                generic data.
+            output_filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            column_importers (list):
+                A list of :class:`~pyprobe.cyclers.basecycler.ColumnMap` objects to map
+                the columns in the generic file to the PyProBE format. The
+                :mod:`~pyprobe.cyclers.basecycler` module contains a list of predefined
+                column importers, that can be used as a starting point.
+            header_row_index (int, optional):
+                The index of the header row in the file. Defaults to 0.
+            date_column_format (str, optional):
+                The format of the date column in the generic file. Defaults to None.
+            filename_inputs (list):
+                The list of inputs to input_filename and output_filename.
+                These must be keys of the cell info.
+            compression_priority:
+                The priority of the compression algorithm to use on the resulting
+                parquet file. Available options are:
+                - 'performance': Use the 'lz4' compression algorithm (default).
+                - 'file size': Use the 'zstd' compression algorithm.
+                - 'uncompressed': Do not use compression.
+            overwrite_existing:
+                If True, any existing parquet file with the output_filename will be
+                overwritten. If False, the function will skip the conversion if the
+                parquet file already exists.
+        """
+        input_data_path = self._get_data_paths(
+            folder_path,
+            input_filename,
+            filename_inputs,
+        )
+        output_data_path = self._get_data_paths(
+            folder_path,
+            output_filename,
+            filename_inputs,
+        )
+        importer = basecycler.BaseCycler(
+            input_data_path=input_data_path,
+            column_importers=column_importers,
+            header_row_index=header_row_index,
+        )
+        output_data_path = self._get_data_paths(
+            folder_path,
+            output_filename,
+            filename_inputs,
+        )
+        try:
+            importer = basecycler.BaseCycler(
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                column_importers=column_importers,
+                compression=compression_priority,
+                overwrite_existing=overwrite_existing,
+            )
+            importer.process()
+        except ValidationError as e:
+            logger.error(e)
+
+    @deprecated(
+        reason="For integrated cycler file processing and data import, use the "
+        ":func:`~Cell.import_from_cycler` method. To only process cycler files into the"
+        " PyProBE format, use the :func:`import_data` function.",
+        plain_reason="For integrated cycler file processing and data import, use the "
+        "import_from_cycler method. To only process cycler files into the "
+        "PyProBE format, use the import_data method.",
+        version="2.0.1",
+    )
+    @validate_call
+    def add_procedure(
+        self,
+        procedure_name: str,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: list[str] | None = None,
+        readme_name: str = "README.yaml",
+    ) -> None:
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+            readme_name (str, optional):
+                The name of the readme file. Defaults to "README.yaml". It is assumed
+                that the readme file is in the same folder as the data file.
+        """
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        self._check_parquet(output_data_path)
+        base_dataframe = pl.scan_parquet(output_data_path)
+        data_folder = os.path.dirname(output_data_path)
+        readme_path = os.path.join(data_folder, readme_name)
+        readme = process_readme(readme_path)
+
+        self.procedure[procedure_name] = Procedure(
+            readme_dict=readme.experiment_dict,
+            base_dataframe=base_dataframe,
+            info=self.info,
+        )
+
+    @deprecated(
+        reason="For integrated cycler file processing and data import, use the "
+        ":func:`~Cell.import_from_cycler` method. To only process cycler files into the"
+        " PyProBE format, use the :func:`~Cell.import_data` function.",
+        plain_reason="For integrated cycler file processing and data import, use the "
+        "import_from_cycler method. To only process cycler files into the "
+        "PyProBE format, use the import_data method.",
+        version="2.0.1",
+    )
+    @validate_call
+    def quick_add_procedure(
+        self,
+        procedure_name: str,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: list[str] | None = None,
+    ) -> None:
+        """Add data in a PyProBE-format parquet file to the procedure dict of the cell.
+
+        This method does not require a README file. It is useful for quickly adding data
+        but filtering by experiment on the resulting object will not be possible.
+
+        Args:
+            procedure_name (str):
+                A name to give the procedure. This will be used when calling
+                :code:`cell.procedure[procedure_name]`.
+            folder_path (str):
+                The path to the folder containing the data file.
+            filename (str | function):
+                A filename string or a function to generate the file name for PyProBE
+                data.
+            filename_inputs (Optional[list]):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+        """
+        output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
+        self._check_parquet(output_data_path)
+        base_dataframe = pl.scan_parquet(output_data_path)
+        self.procedure[procedure_name] = Procedure(
+            base_dataframe=base_dataframe,
+            info=self.info,
+            readme_dict={},
+        )
+
+    @staticmethod
+    def _check_parquet(output_data_path: str) -> None:
+        """Function to check if a parquet file exists."""
+        path = Path(output_data_path)
+        if not path.exists():
+            error_msg = f"File {output_data_path} does not exist."
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+        if path.suffix != ".parquet":
+            error_msg = f"Files must be in parquet format. {path.name} is not."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    @staticmethod
+    def _get_filename(
+        info: dict[str, Any | None],
+        filename_function: Callable[[str], str],
+        filename_inputs: list[str],
+    ) -> str:
+        """Function to generate the filename for the data, if provided as a function.
+
+        Args:
+            info (dict): The info entry for the data file.
+            filename_function (function): The function to generate the input name.
+            filename_inputs (list):
+                The list of inputs to filename_function. These must be keys of the cell
+                info.
+
+        Returns:
+            str: The input name for the data file.
+        """
+        return filename_function(
+            *(str(info[filename_inputs[i]]) for i in range(len(filename_inputs))),
+        )
+
+    def _get_data_paths(
+        self,
+        folder_path: str,
+        filename: str | Callable[[str], str],
+        filename_inputs: list[str] | None = None,
+    ) -> str:
+        """Function to generate the input and output paths for the data file.
+
+        Args:
+            folder_path (str): The path to the folder containing the data file.
+            filename (str | function): A filename string or a function to generate
+                the file name.
+            filename_inputs (Optional[list]): The list of inputs to filename_function.
+                These must be keys of the cell info.
+
+        Returns:
+            str: The full path for the data file.
+        """
+        if isinstance(filename, str):
+            filename_str = filename
+        else:
+            if filename_inputs is None:
+                error_msg = (
+                    "filename_inputs must be provided when filename is a function."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            filename_str = self._get_filename(self.info, filename, filename_inputs)
+
+        data_path = os.path.join(folder_path, filename_str)
+        return data_path
+
+
+@catch_pydantic_validation
 def load_archive(path: str) -> Cell:
     """Load a cell object from an archive.
 
@@ -585,30 +784,32 @@ def load_archive(path: str) -> Cell:
     else:
         archive_path = path
 
-    with open(os.path.join(archive_path, "metadata.json"), "r") as f:
+    with open(os.path.join(archive_path, "metadata.json")) as f:
         metadata = json.load(f)
     if metadata["PyProBE Version"] != __version__:
         warnings.warn(
             f"The PyProBE version used to archive the cell was "
             f"{metadata['PyProBE Version']}, the current version is "
             f"{__version__}. There may be compatibility"
-            f" issues."
+            f" issues.",
         )
     metadata.pop("PyProBE Version")
     for procedure in metadata["procedure"].values():
         procedure["base_dataframe"] = os.path.join(
-            archive_path, procedure["base_dataframe"]
+            archive_path,
+            procedure["base_dataframe"],
         )
     cell = Cell(**metadata)
 
     return cell
 
 
+@catch_pydantic_validation
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
     header_row: int = 0,
-) -> List[Cell]:
+) -> list[Cell]:
     """Function to make a list of cell objects from a record of tests in Excel format.
 
     Args:
