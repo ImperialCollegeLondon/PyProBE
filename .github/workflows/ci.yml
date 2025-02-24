@@ -49,7 +49,9 @@ jobs:
 
       - name: Test notebooks
         if: github.event_name == 'pull_request'
-        run: uv run pytest --nbmake docs/source/examples/*ipynb
+        run: |
+          shopt -s extglob
+          uv run pytest --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
