@@ -45,7 +45,7 @@ jobs:
           uv pip install pybamm
 
       - name: Run tests
-        run: uv run pytest --benchmark-json output.json --cov-report=xml
+        run: uv run pytest --benchmark-enable --benchmark-json output.json --cov-report=xml
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
