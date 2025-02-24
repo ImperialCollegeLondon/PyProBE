@@ -89,7 +89,9 @@ def test_process_cycler_file(cell_instance, mocker):
     ]
 
     for cycler, file in zip(cyclers, file_paths):
-        mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process")
+        process_mock = mocker.patch(
+            f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process"
+        )
         folder_path = os.path.dirname(file)
         file_name = os.path.basename(file)
         cell_instance.process_cycler_file(
@@ -100,9 +102,7 @@ def test_process_cycler_file(cell_instance, mocker):
             compression_priority="file size",
             overwrite_existing=True,
         )
-        eval(
-            f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process.assert_called_once()"
-        )
+        process_mock.assert_called_once()
 
 
 def test_process_generic_file(cell_instance):
