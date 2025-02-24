@@ -34,7 +34,7 @@ def process_cycler_data(
         "performance", "file size", "uncompressed"
     ] = "performance",
     overwrite_existing: bool = False,
-) -> None:
+) -> str:
     """Process battery cycler data into PyProBE format.
 
     Args:
@@ -47,6 +47,9 @@ def process_cycler_data(
             cycler type. Overrides default column importers for other cycler types.
         compression_priority: Compression method for output file.
         overwrite_existing: Whether to overwrite existing output file.
+
+    Returns:
+        The path to the output parquet file.
     """
     cycler_map = {
         "neware": neware.Neware,
@@ -85,6 +88,7 @@ def process_cycler_data(
             overwrite_existing=overwrite_existing,
         )
     processor.process()
+    return processor.output_data_path
 
 
 class Cell(BaseModel):
@@ -126,13 +130,21 @@ class Cell(BaseModel):
                 None.
         """
         input_path = Path(data_path)
-        readme_path = os.path.join(input_path.parent, "README.yaml")
-        if not os.path.exists(readme_path):
-            readme_path = None
-        if readme_path is not None:
-            readme_dict = process_readme(readme_path).experiment_dict
+        if readme_path is None:
+            auto_readme_path = os.path.join(input_path.parent, "README.yaml")
+            if not os.path.exists(auto_readme_path):
+                logger.warning(
+                    f"No README file found for {procedure_name}. "
+                    f"Proceeding without README.",
+                )
+                readme_dict = {}
+            else:
+                readme_dict = process_readme(auto_readme_path).experiment_dict
         else:
-            readme_dict = {}
+            if not os.path.exists(readme_path):
+                raise ValueError(f"README file {readme_path} does not exist.")
+            else:
+                readme_dict = process_readme(readme_path).experiment_dict
 
         self.procedure[procedure_name] = Procedure(
             readme_dict=readme_dict,
@@ -201,7 +213,7 @@ class Cell(BaseModel):
                 overwritten. If False, the function will skip the conversion if the
                 parquet file already exists.
         """
-        process_cycler_data(
+        output_data_path = process_cycler_data(
             cycler,
             input_data_path,
             output_data_path,
@@ -216,6 +228,7 @@ class Cell(BaseModel):
                 readme_path = None
         self.import_data(procedure_name, output_data_path, readme_path)
 
+    @catch_pydantic_validation
     def import_pybamm_solution(
         self,
         procedure_name: str,
@@ -750,6 +763,7 @@ class Cell(BaseModel):
         return data_path
 
 
+@catch_pydantic_validation
 def load_archive(path: str) -> Cell:
     """Load a cell object from an archive.
 
@@ -790,6 +804,7 @@ def load_archive(path: str) -> Cell:
     return cell
 
 
+@catch_pydantic_validation
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,

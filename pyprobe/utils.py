@@ -48,10 +48,13 @@ def catch_pydantic_validation(func: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except ValidationError as e:
-            error_message = "Validation error, invalid input provided to"
-            " {func.__module__}.{func.__name__}\n"
+            error_message = (
+                f"Validation error, invalid input provided to "
+                f"{func.__module__}.{func.__name__}\n"
+            )
             for error in e.errors():
-                error_message += f"\n{error['loc'][0]}: {error['msg']}"
+                loc_str = ".".join(str(loc) for loc in error["loc"])
+                error_message += f"\n{loc_str}: {error['msg']}"
             raise PyProBEValidationError(error_message) from None
 
     return wrapper

@@ -13,8 +13,8 @@ from numpy.testing import assert_array_equal
 from polars.testing import assert_frame_equal
 
 import pyprobe
+from pyprobe import cell
 from pyprobe._version import __version__
-from pyprobe.cell import Cell
 from pyprobe.cyclers import basecycler
 from pyprobe.readme_processor import process_readme
 
@@ -22,7 +22,7 @@ from pyprobe.readme_processor import process_readme
 @pytest.fixture
 def cell_instance(info_fixture):
     """Return a Cell instance."""
-    return Cell(info=info_fixture)
+    return cell.Cell(info=info_fixture)
 
 
 def test_init(cell_instance, info_fixture):
@@ -64,7 +64,7 @@ def test_get_filename(info_fixture):
     def filename(name):
         return f"Cell_named_{name}.xlsx"
 
-    file = Cell._get_filename(info_fixture, filename, filename_inputs)
+    file = cell.Cell._get_filename(info_fixture, filename, filename_inputs)
     assert file == "Cell_named_Test_Cell.xlsx"
 
 
@@ -220,7 +220,7 @@ def test_import_pybamm_solution(benchmark):
         parameter_values=parameter_values,
     )
     sol = sim.solve()
-    cell_instance = Cell(info={})
+    cell_instance = cell.Cell(info={})
     cell_instance.import_pybamm_solution(
         procedure_name="PyBaMM",
         pybamm_solutions=sol,
@@ -455,7 +455,7 @@ def test_get_data_paths(cell_instance):
     assert result == os.path.join("/absolute/path", "test.csv")
 
     """Test _get_data_paths with relative folder path."""
-    cell_instance = Cell(
+    cell_instance = cell.Cell(
         info={
             "Name": "Test_Cell",
             "Chemistry": "NMC622",
@@ -484,22 +484,22 @@ def test_get_data_paths(cell_instance):
 
 def test_check_parquet_exists():
     """Test the _check_parquet_exists method."""
-    Cell._check_parquet("tests/sample_data/neware/sample_data_neware.parquet")
+    cell.Cell._check_parquet("tests/sample_data/neware/sample_data_neware.parquet")
 
     with pytest.raises(
         FileNotFoundError,
         match="File tests/sample_data/sample_data_3.parquet does not exist.",
     ):
-        Cell._check_parquet("tests/sample_data/sample_data_3.parquet")
+        cell.Cell._check_parquet("tests/sample_data/sample_data_3.parquet")
 
     with pytest.raises(
         ValueError,
         match="Files must be in parquet format. sample_data_neware.csv is not.",
     ):
-        Cell._check_parquet("tests/sample_data/neware/sample_data_neware.csv")
+        cell.Cell._check_parquet("tests/sample_data/neware/sample_data_neware.csv")
 
 
-def test_import_data(cell_instance, mocker):
+def test_import_data(cell_instance, mocker, caplog):
     """Test the import_data method."""
     procedure_name = "test_procedure"
     data_path = "tests/sample_data/neware/sample_data_neware.parquet"
@@ -539,10 +539,23 @@ def test_import_data(cell_instance, mocker):
     )
 
     # test with no readme in the folder
-    procedure_name = "test_procedure_no_readme"
-    mocker.patch("os.path.exists", return_value=False)
-    cell_instance.import_data(procedure_name, data_path)
-    assert cell_instance.procedure[procedure_name].readme_dict == {}
+    with caplog.at_level(logging.WARNING):
+        procedure_name = "test_procedure_no_readme"
+        mocker.patch("os.path.exists", return_value=False)
+        cell_instance.import_data(procedure_name, data_path)
+        assert cell_instance.procedure[procedure_name].readme_dict == {}
+        assert caplog.messages[0] == (
+            "No README file found for test_procedure_no_readme. Proceeding without"
+            " README."
+        )
+
+    # Test with invalid readme path
+    with pytest.raises(
+        ValueError, match="README file tests/sample_data/README.yaml does not exist."
+    ):
+        cell_instance.import_data(
+            procedure_name, data_path, "tests/sample_data/README.yaml"
+        )
 
 
 def test_import_from_cycler(cell_instance, mocker):
@@ -565,8 +578,6 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
     process_cycler_data = mocker.patch("pyprobe.cell.process_cycler_data")
-    mocker.patch("pyprobe.readme_processor.process_readme")
-    mocker.patch("os.path.exists", return_value=True)
     mocker.patch("polars.scan_parquet", return_value=sample_df)
 
     cell_instance.import_from_cycler(
@@ -596,14 +607,31 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
     # Test with no readme_path provided
-    mocker.patch("os.path.exists", return_value=False)
     cell_instance.import_from_cycler(
         procedure_name,
         cycler,
         input_data_path,
         output_data_path,
     )
-    assert cell_instance.procedure[procedure_name].readme_dict == {}
+    assert (
+        cell_instance.procedure[procedure_name].readme_dict
+        == process_readme(readme_path).experiment_dict
+    )
+
+    # Test with no output_data_path provided
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+    )
+    process_cycler_data.assert_called_with(
+        cycler,
+        input_data_path,
+        None,
+        column_importers=[],
+        compression_priority="performance",
+        overwrite_existing=False,
+    )
 
     # Test with different compression priority
     cell_instance.import_from_cycler(
@@ -659,3 +687,79 @@ def test_import_from_cycler(cell_instance, mocker):
         compression_priority="performance",
         overwrite_existing=False,
     )
+
+
+def test_process_cycler_data(mocker):
+    """Test the process_cycler_file method."""
+    output_name = "test.parquet"
+
+    cyclers = ["neware", "maccor", "biologic", "basytec", "arbin"]
+    file_paths = [
+        "tests/sample_data/neware/sample_data_neware.xlsx",
+        "tests/sample_data/maccor/sample_data_maccor.csv",
+        "tests/sample_data/biologic/sample_data_biologic_CA1.txt",
+        "tests/sample_data/basytec/sample_data_basytec.txt",
+        "tests/sample_data/arbin/sample_data_arbin.csv",
+    ]
+
+    for cycler, file in zip(cyclers, file_paths):
+        process_patch = mocker.patch(
+            f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process"
+        )
+        cell.process_cycler_data(
+            cycler,
+            file,
+            output_name,
+        )
+        process_patch.assert_called_once()
+
+
+def test_process_cycler_data_generic():
+    """Test the process_generic_file method."""
+    data_path = "tests/sample_data/test_generic_file.csv"
+    df = pl.DataFrame(
+        {
+            "T [s]": [1.0, 2.0, 3.0],
+            "V [V]": [4.0, 5.0, 6.0],
+            "I [A]": [7.0, 8.0, 9.0],
+            "Q [Ah]": [10.0, 11.0, 12.0],
+            "Count": [1, 2, 3],
+        },
+    )
+
+    column_importers = [
+        basecycler.ConvertUnits("Time [s]", "T [*]"),
+        basecycler.ConvertUnits("Voltage [V]", "V [*]"),
+        basecycler.ConvertUnits("Current [A]", "I [*]"),
+        basecycler.ConvertUnits("Capacity [Ah]", "Q [*]"),
+        basecycler.CastAndRename("Step", "Count", pl.Int64),
+    ]
+
+    df.write_csv(data_path)
+
+    cell.process_cycler_data(
+        cycler_type="generic",
+        input_data_path=data_path,
+        column_importers=column_importers,
+    )
+    expected_df = pl.DataFrame(
+        {
+            "Time [s]": [1.0, 2.0, 3.0],
+            "Step": [1, 2, 3],
+            "Event": [0, 1, 2],
+            "Current [A]": [7.0, 8.0, 9.0],
+            "Voltage [V]": [4.0, 5.0, 6.0],
+            "Capacity [Ah]": [10.0, 11.0, 12.0],
+        },
+    )
+    saved_df = pl.read_parquet(data_path.replace(".csv", ".parquet"))
+    assert_frame_equal(expected_df, saved_df, check_column_order=False)
+
+    with pytest.raises(ValueError):
+        cell.process_cycler_data(
+            cycler_type="generic",
+            input_data_path=data_path,
+        )
+
+    os.remove(data_path)
+    os.remove(data_path.replace(".csv", ".parquet"))
