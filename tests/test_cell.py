@@ -83,7 +83,7 @@ def test_process_cycler_file(cell_instance, mocker):
     file_paths = [
         "tests/sample_data/neware/sample_data_neware.xlsx",
         "tests/sample_data/maccor/sample_data_maccor.csv",
-        "tests/sample_data/biologic/sample_data_biologic_CA1.txt",
+        "tests/sample_data/biologic/Sample_data_biologic_CA1.txt",
         "tests/sample_data/basytec/sample_data_basytec.txt",
         "tests/sample_data/arbin/sample_data_arbin.csv",
     ]
@@ -697,7 +697,7 @@ def test_process_cycler_data(mocker):
     file_paths = [
         "tests/sample_data/neware/sample_data_neware.xlsx",
         "tests/sample_data/maccor/sample_data_maccor.csv",
-        "tests/sample_data/biologic/sample_data_biologic_CA1.txt",
+        "tests/sample_data/biologic/Sample_data_biologic_01_MB_CA1.txt",
         "tests/sample_data/basytec/sample_data_basytec.txt",
         "tests/sample_data/arbin/sample_data_arbin.csv",
     ]
@@ -710,6 +710,7 @@ def test_process_cycler_data(mocker):
             cycler,
             file,
             output_name,
+            overwrite_existing=True,
         )
         process_patch.assert_called_once()
 
