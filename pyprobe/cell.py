@@ -428,7 +428,7 @@ class Cell(BaseModel):
         ":func:`~Cell.import_from_cycler` method. To only process cycler files into the"
         " PyProBE format, use the :func:`process_cycler_data` function.",
         plain_reason="For integrated cycler file processing and data import, use the "
-        "import_from_cycler method`.To only process cycler files into the "
+        "import_from_cycler method. To only process cycler files into the "
         "PyProBE format, use the pyprobe.process_cycler_data function.",
         version="2.0.1",
     )
@@ -516,7 +516,7 @@ class Cell(BaseModel):
         "To only process cycler files into the "
         "PyProBE format, use the :func:`process_cycler_data` function.",
         plain_reason="For integrated cycler file processing and data import, use the "
-        "import_from_cycler method` using the 'generic' cycler. "
+        "import_from_cycler method using the 'generic' cycler. "
         "To only process cycler files into the "
         "PyProBE format, use the pyprobe.process_cycler_data function.",
         version="2.0.1",

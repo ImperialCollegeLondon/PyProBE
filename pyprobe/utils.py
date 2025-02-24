@@ -1,10 +1,12 @@
 """A collection of utility functions for PyProBE."""
 
 import functools
-import warnings
+import logging
 from typing import Any, Protocol
 
 from pydantic import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def flatten_list(lst: int | list[Any]) -> list[int]:
@@ -73,10 +75,8 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
     def decorator(func: Any) -> Any:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            warnings.warn(
-                plain_reason if plain_reason else reason,
-                DeprecationWarning,
-                stacklevel=2,
+            logger.warning(
+                "Deprecation Warning: " + plain_reason if plain_reason else reason,
             )
             return func(*args, **kwargs)
 
