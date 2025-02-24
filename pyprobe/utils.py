@@ -76,7 +76,7 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             logger.warning(
-                "Deprecation Warning: " + plain_reason if plain_reason else reason,
+                "Deprecation Warning: " + (plain_reason if plain_reason else reason),
             )
             return func(*args, **kwargs)
 
