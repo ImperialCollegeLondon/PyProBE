@@ -9,6 +9,7 @@ from typing import Any, Literal, Union
 import numpy as np
 import pandas as pd
 import polars as pl
+from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
@@ -20,9 +21,11 @@ from pyprobe.utils import deprecated
 logger = logging.getLogger(__name__)
 
 try:
-    import hvplot.polars
+    import hvplot.polars  # noqa: F401
+
+    hvplot_exists = True
 except ImportError:
-    hvplot = None
+    hvplot_exists = False
 
 
 class PolarsColumnCache:
@@ -242,7 +245,7 @@ class Result(BaseModel):
         return complete_dataframe
 
     @wraps(pd.DataFrame.plot)
-    def plot(self, *args: Any, **kwargs: Any) -> None:
+    def plot(self, *args: Any, **kwargs: Any) -> Axes | NDArray[Axes]:
         """Wrapper for plotting using the pandas library."""
         data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
         return data_to_plot.to_pandas().plot(*args, **kwargs)
@@ -253,17 +256,16 @@ class Result(BaseModel):
         "when called on a DataFrame.\n\n" + (plot.__doc__ or "")
     )
 
-    if hvplot is not None:
+    if hvplot_exists is True:
 
-        @wraps(hvplot.hvPlot)
-        def hvplot(self, *args: Any, **kwargs: Any) -> None:
+        def hvplot(self, *args: Any, **kwargs: Any) -> Any:
             """Wrapper for plotting using the hvplot library."""
             data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
             return data_to_plot.hvplot(*args, **kwargs)
 
     else:
 
-        def hvplot(self, *args: Any, **kwargs: Any) -> None:
+        def hvplot(self, *args: Any, **kwargs: Any) -> Any:
             """Wrapper for plotting using the hvplot library."""
             raise ImportError(
                 "Optional dependency hvplot is not installed. Please install it via "
