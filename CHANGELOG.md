@@ -1,6 +1,197 @@
 # CHANGELOG
 
 
+## v2.1.0 (2025-02-28)
+
+### Bug Fixes
+
+- Differentiation deprecation warnings
+  ([`6784590`](https://github.com/ImperialCollegeLondon/PyProBE/commit/678459089f2db822578ecb902889042dde642cc6))
+
+### Chores
+
+- Add ERA ruff rules for commented out code
+  ([`0493b64`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0493b641eb63699b4c1187096ec7cfb63ce830e5))
+
+- Add ipywidgets to readthedocs installation
+  ([`620bdeb`](https://github.com/ImperialCollegeLondon/PyProBE/commit/620bdebd6914a27d596d0c20632a77487b89506c))
+
+- Add matplotlib dependency
+  ([`cb176fd`](https://github.com/ImperialCollegeLondon/PyProBE/commit/cb176fd051b365cd39012d320a6669fa3e127dd1))
+
+- Add numpy checks to ruff
+  ([`38d76ce`](https://github.com/ImperialCollegeLondon/PyProBE/commit/38d76cef8fc5318a3dc8cc49281a1ee9b9c96ea8))
+
+- Add pandas dependency
+  ([`2389168`](https://github.com/ImperialCollegeLondon/PyProBE/commit/238916857bb9d039baa9eba3b08d8f1d37475c54))
+
+- Add print definitions rules to ruff
+  ([`81a04c4`](https://github.com/ImperialCollegeLondon/PyProBE/commit/81a04c4ff4831fffe9c333e727281b9c80f9630a))
+
+- Add pycodestyle error rules to ruff
+  ([`d53727b`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d53727bbf60682639ddaea229737eaced61465e6))
+
+- Add pycodestyle warnings and implicit string contatenation to ruff
+  ([`d228428`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d228428876037effd607fe7c5cc752776d98ce71))
+
+- Add pyflakes rules to ruff
+  ([`9f206bd`](https://github.com/ImperialCollegeLondon/PyProBE/commit/9f206bd9d45bbbbe5ce5ee58579ed65d6ae73079))
+
+- Add readthedocs config
+  ([`3881e79`](https://github.com/ImperialCollegeLondon/PyProBE/commit/3881e790dc2e930ccd662bde2da5e1c420627abc))
+
+- Add ruff checks for python builtins, code A
+  ([`f89dfd9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f89dfd93042a8d8327c4d66a764d45274da48f8d))
+
+- Add ruff checks for type annotations
+  ([`d2317cc`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d2317cccd8c0ed47acc3862df471798a745c7bad))
+
+- Add workflow to automatically create release when release candidate is merged
+  ([`6320b23`](https://github.com/ImperialCollegeLondon/PyProBE/commit/6320b23bf13197ee181693a085616844ef6d6b93))
+
+- Change numpy version dependency to align with pybamm
+  ([`2cd44d0`](https://github.com/ImperialCollegeLondon/PyProBE/commit/2cd44d0dcb0bd089fecf90fdc68335be2fb16e0a))
+
+- Correct readthedocs config
+  ([`4ab590b`](https://github.com/ImperialCollegeLondon/PyProBE/commit/4ab590b406bb0515e5ac00a67888af7de1d3fb53))
+
+- Don't run benchmarks in ci
+  ([`af93863`](https://github.com/ImperialCollegeLondon/PyProBE/commit/af93863316f67bf509681247ed36e10ab53b9a81))
+
+- Exclude performance example from tests
+  ([`7b6eba9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7b6eba965e2109cd3d2dd7c930d5b59f54a46693))
+
+- Fix deprecation warnings
+  ([`6b1bf1f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/6b1bf1fb23cfe04c7b7de434103656e33f0e1001))
+
+- Fix release workflows to checkout main
+  ([`65d2886`](https://github.com/ImperialCollegeLondon/PyProBE/commit/65d2886617426884868ce099eebf1d9a976c3311))
+
+- Install pybamm in readthedocs build
+  ([`33cc8d3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/33cc8d3035ba3c8976509fada9f6eb3cdf85ccae))
+
+- Remove sphinx workflow
+  ([`f981b3d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f981b3d8079010aefb249fab99abb7b12d94400b))
+
+- Remove tools from pyproject.toml
+  ([`960bc22`](https://github.com/ImperialCollegeLondon/PyProBE/commit/960bc22ceef158ee7837caa913cec4284d3e7fd0))
+
+- Run CI tests in parallel
+  ([`aa77c66`](https://github.com/ImperialCollegeLondon/PyProBE/commit/aa77c66fa2045f2ff4f251ca0799dbdb3c72c740))
+
+- Run notebooks sequentially instead of in parallel in CI
+  ([`13e34d9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/13e34d9760f207886ea630d7547c1b74561b38bc))
+
+- Update ci workflow
+  ([`e990613`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e9906130adffe9b4a94cb39d3abcc212697abfea))
+
+- Update uv version in workflows
+  ([`8308045`](https://github.com/ImperialCollegeLondon/PyProBE/commit/8308045bf9e10af52d7b5658c206cd18cfbb66fa))
+
+- **dependencies**: Add pytest-xdist as dev dependency
+  ([`41ffbaf`](https://github.com/ImperialCollegeLondon/PyProBE/commit/41ffbafb294f758d904a0c05205a715e2d69fd86))
+
+- **pytest**: Remove pytest-mypy and disable benchmarks by default
+  ([`e9b5b91`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e9b5b91a1ea0cd276050aa424703c19cc814b5a3))
+
+### Code Style
+
+- Add flake8-commas ruff check
+  ([`ebe8ee8`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ebe8ee85b7c0d0c2a3ee2e9e7f9df3e2197a020b))
+
+- Add pyupgrade rules to ruff
+  ([`0d559aa`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0d559aa67e5ccc7c226b2ed0d486fd5a47895693))
+
+- Add ruff enforcement of PEP8 naming conventions
+  ([`b1d4b95`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b1d4b95b3309ee2b6d7407b996d6b06e662dda75))
+
+- Fix mypy errors for wrapped plotting functions
+  ([`213aeb0`](https://github.com/ImperialCollegeLondon/PyProBE/commit/213aeb092421e8b4f6fa7bc8834a61a9a8535566))
+
+### Documentation
+
+- Reorganise cell method order and deprecation labels
+  ([`1bfb3a1`](https://github.com/ImperialCollegeLondon/PyProBE/commit/1bfb3a1852394e1cf52d748be57e36ca15eef527))
+
+- Switch from sphinx-apidoc to sphinx-autosummary
+  ([`a764c02`](https://github.com/ImperialCollegeLondon/PyProBE/commit/a764c02940949108a6b8fe861c1dccf70e491dcd))
+
+- Update examples with import api updates
+  ([`b645868`](https://github.com/ImperialCollegeLondon/PyProBE/commit/b64586873ae2dea7042506030d95a82074b5a6f7))
+
+Don't build performance example in docs
+
+- **contributing**: Add ruff and mypy guidance
+  ([`367e41d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/367e41d550169dc88cbe5eded731d91382b8ea5a))
+
+- **examples/working-with-pybamm-models**: Remove dynamic plot from pybamm example
+  ([`9af2209`](https://github.com/ImperialCollegeLondon/PyProBE/commit/9af2209ac1389ee4c90357d790eb66c012e4a997))
+
+- **README**: Update documentation links
+  ([`288778e`](https://github.com/ImperialCollegeLondon/PyProBE/commit/288778e29e00154ded1270fade7f841f4b6a48fd))
+
+- **User Guide/Importing Data**: Update to new function names
+  ([`5f1bb20`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5f1bb20303dbe40a234f1fc1af43cc0903d49117))
+
+### Features
+
+- New unified import_from_cycler method for importing data straight into procedure
+  ([`e99bb82`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e99bb823ce489a1856541bff0e43973b3f5de933))
+
+- Unified cycler processing
+  ([`f28a7ed`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f28a7edb7e5bc6fd2199d3bea7d84de775b5725a))
+
+- New preprocess module to contain cycler processing method - Replaced deprecated import with custom
+  decorator - Created a decorator for catching and re-raising pydantic validation errors
+
+- **result**: Add cache_columns and data_with_columns method to result
+  ([`dc7e73d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/dc7e73d9838d50219f96eb274ebd81bbd016b9ae))
+
+- cache_columns allows the user to specify columns to put in the cache - data_with_columns returns a
+  dataframe filtered only to the specified columns This commit also adds ruff private member access
+  checks
+
+### Performance Improvements
+
+- Only load data into basecycler if required
+  ([`0f8f444`](https://github.com/ImperialCollegeLondon/PyProBE/commit/0f8f4442c55ec3ddb382cfdd36a736c98d2d31f6))
+
+### Refactoring
+
+- Add a polars expression namespace for unit conversions
+  ([`925c16c`](https://github.com/ImperialCollegeLondon/PyProBE/commit/925c16c59e243833c0cabd42b850db4e4f4a8d28))
+
+- Add flake8-simplify checks to ruff
+  ([`59d4fb3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/59d4fb317402f3cc44681670c5566f59d176f2c9))
+
+- Add ruff check for flake8-comprehensions
+  ([`7dc6316`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7dc6316695f8d8208ea2f3b9dfa41d5c058108ef))
+
+- Move all file handling into cycler base class
+  ([`efb6a96`](https://github.com/ImperialCollegeLondon/PyProBE/commit/efb6a9685bebd4d3d4249bfd6332ce422a3a64e5))
+
+- Replace Units class with polars units namespace
+  ([`360f505`](https://github.com/ImperialCollegeLondon/PyProBE/commit/360f50528f3e14b488a2523b9a5c2655a9fa7572))
+
+- **basecycler**: New class-based structure for importing columns
+  ([`c89f273`](https://github.com/ImperialCollegeLondon/PyProBE/commit/c89f273850c83b6d92e2ef8333ebb92de16325e9))
+
+- **cell**: Refactor cell to work with new basecycler class
+  ([`55c35a9`](https://github.com/ImperialCollegeLondon/PyProBE/commit/55c35a9a406aff651aca088caa579244ec4061e3))
+
+- **cyclers**: Update arbin, basytec and biologic modules
+  ([`a1a7129`](https://github.com/ImperialCollegeLondon/PyProBE/commit/a1a71296683227b4ecb42ec69a5c2c079edf9b28))
+
+- **cyclers.neware**: Update neware for new basecycler class
+  ([`2a78538`](https://github.com/ImperialCollegeLondon/PyProBE/commit/2a785381328d38646895d8d2de6082742bd42b33))
+
+- **maccor**: Update maccor for new basecycler structure
+  ([`f9e31af`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f9e31af5b78eb731c711fbe36e54b2f6c2fff4d8))
+
+- **tests.cell**: Replace process cycler file test with checks on class calls
+  ([`5c3b09e`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5c3b09e8b6f9911bf224db15349c54cb5e4d5609))
+
+
 ## v2.0.1 (2025-02-10)
 
 ### Bug Fixes
@@ -12,6 +203,9 @@
 
 - Add CITATION.cff file
   ([`06d1b9a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/06d1b9ab2aafb85d852e750e392597f3ac9b8e30))
+
+- Release candidate 2.0.1
+  ([`5f6d2a3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5f6d2a3f65f910c336dc531ef42d01ea35f1dedc))
 
 - **workflows**: Fix path filters to search recursively into folders
   ([`5eaa122`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5eaa122db78a5c061fced9aa50447de41205458e))
