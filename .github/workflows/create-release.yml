@@ -1,0 +1,51 @@
+name: "Create Release"
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  create-release:
+    # Only run when merge commit is from a release candidate branch
+    if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'release-candidates/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history
+
+      - name: Extract version
+        id: extract-version
+        run: |
+          # Extract version from _version.py file
+          VERSION=$(grep -o '".*"' pyprobe/_version.py | sed 's/"//g')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install uv & dependencies
+        uses: astral-sh/setup-uv@v5
+        with:
+          # Install a specific version of uv.
+          version: "0.6.3"
+
+      - name: Build distribution packages
+        run: |
+            uv sync --all-extras
+            uv build
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.extract-version.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: |
+            dist/*.tar.gz
+            dist/*.whl
+          token: ${{ secrets.GITHUB_TOKEN }}
