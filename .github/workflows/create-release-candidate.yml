@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history
           fetch-tags: true  # Fetch all tags
-          ref: ${{ github.head_ref || github.ref_name }}  # Correct branch reference
+          ref: main  # Correct branch reference
 
       - name: Install uv & dependencies
         uses: astral-sh/setup-uv@v5
