@@ -1655,7 +1655,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "nbmake", marker = "extra == 'dev'", specifier = ">=1.5.5" },
     { name = "nbsphinx", marker = "extra == 'docs'", specifier = ">=0.9.6" },
-    { name = "numpy", specifier = ">=2.2.1" },
+    { name = "numpy", specifier = ">=1.26.4" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=5.24.1" },
     { name = "polars", specifier = ">=1.18.0" },
