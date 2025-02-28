@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
     
     steps:
       - uses: actions/checkout@v4
@@ -27,22 +28,34 @@ jobs:
           VERSION=$(grep -o '".*"' pyprobe/_version.py | sed 's/"//g')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Install uv & dependencies
+      - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          # Install a specific version of uv.
-          version: "0.6.3"
+            # Install a specific version of uv.
+            version: "0.6.3"
+  
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+            python-version-file: "pyproject.toml"
 
       - name: Build distribution packages
         run: |
-            uv sync --all-extras
+            uv sync --all-extras --frozen
             uv build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: dist
+            path: dist/
+            retention-days: 5  # Keep artifacts for 5 days
           
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.extract-version.outputs.version }}
-          body_path: CHANGELOG.md
+          generate_release_notes: true
           draft: false
           prerelease: false
           make_latest: true
@@ -50,3 +63,6 @@ jobs:
             dist/*.tar.gz
             dist/*.whl
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish
+        run: uv publish --trusted-publishing always
