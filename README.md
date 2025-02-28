@@ -1,7 +1,7 @@
 # PyProBE
 ![CI](https://github.com/ImperialCollegeLondon/PyProBE/actions/workflows/ci.yml/badge.svg)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/ImperialCollegeLondon/PyProBE/main.svg)](https://results.pre-commit.ci/latest/github/ImperialCollegeLondon/PyProBE/main)
-![Docs](https://github.com/ImperialCollegeLondon/PyProBE/actions/workflows/sphinx.yml/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/pyprobe/badge/?version=latest)](https://pyprobe.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/PyProBE/graph/badge.svg?token=Y5H9C8MA0A)](https://codecov.io/gh/ImperialCollegeLondon/PyProBE)
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
@@ -13,7 +13,7 @@
 PyProBE (Python Processing for Battery Experiments) is a Python package designed to simplify and accelerate the process of analysing data from 
 battery cyclers.
 
-PyProBE is documented [here](https://imperialcollegelondon.github.io/PyProBE/). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://imperialcollegelondon.github.io/PyProBE/examples/examples.html).
+PyProBE is documented [here](https://pyprobe.readthedocs.io). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://imperialcollegelondon.github.io/PyProBE/examples/examples.html).
 
 ## Installing PyProBE
 Install PyProBE with pip:

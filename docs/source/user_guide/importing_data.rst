@@ -29,28 +29,68 @@ A cell object can be created by providing an info dictionary as a keyword argume
 The ``info`` dictionary can contain any number of key-value pairs that provide 
 metadata to identify the cell and the conditions it was tested under.
 
-Converting data to PyProBE Format
----------------------------------
+.. _adding_data_to_cell:
+
+Importing data from a cycler
+----------------------------
 PyProBE defines a Procedure as a dataset collected from a single run of an experimental
 protocol created on a battery cycler. Throughout its life, a cell will likely undergo
 multiple procedures, such as beginning-of-life testing, degradation cycles, reference 
 performance tests (RPTs) etc. 
 
-Before adding data to a cell object, it must be converted into the PyProBE standard 
-format. This is done with the :func:`~pyprobe.cell.Cell.process_cycler_file` method:
+Data can be imported into PyProBE from a range of cyclers. You import data from a cycler
+using the :func:`~pyprobe.cell.Cell.import_from_cycler` method:
 
 .. code-block:: python
 
    # From the previously created cell instance
-   cell.process_cycler_file(cycler = 'neware',
-                            folder_path = 'path/to/root_folder/experiment_folder',
-                            input_filename = 'cycler_file.csv',
-                            output_filename = 'processed_cycler_file.parquet')
+   cell.import_from_cycler(
+      procedure_name="Sample",
+      cycler="neware",
+      input_data_path="path/to/cycler_file.csv")
 
-Your parquet file will be saved in the same directory (:code:`folder_path`) as the input
-file. Once converted into this format, PyProBE is agnostic to cycler manufacturer
-and model. For more details on the PyProBE standard format, and an up-to-date list of
-supported cyclers, see the :ref:`input_data_guidance` section. 
+This will do two things:
+1. Convert the data in the cycler file into the PyProBE standard format, saved to a 
+'.parquet' file. By default, the file will be saved to the same path with only the
+file extension changed, however this can be controlled by passing a filepath to the
+:code:`output_data_path` argument of this function.
+2. Import the data into a the cell's :code:`procedure` dictionary with the given name as
+the dictionary key.
+
+These steps can be separated. You can perform step 1 with the :func:`pyprobe.cell.process_cycler_data`
+method, and step 2 with the :func:`pyprobe.cell.Cell.import_data` method.
+
+The first time this method is called will take longer than subsequent calls as the data
+conversion is executed. Once the '.parquet' file is written future executions will be
+much faster.
+
+Any number of procedures can be added to a cell, for example:
+
+.. code-block:: python
+
+   # Add the first procedure
+   cell.import_from_cycler(
+      procedure_name="Cycling",
+      cycler="neware",
+      input_data_path="path/to/cycler_file_cycling.csv")
+   
+   # Add the second procedure
+   cell.import_from_cycler(
+      procedure_name="RPT",
+      cycler="neware",
+      input_data_path="path/to/cycler_file_RPT.csv")
+
+   print(cell.procedure)
+   # Returns: dict({'Cycling': <pyprobe.procedure.Procedure object…, 'RPT': <pyprobe.procedure.Procedure object…})
+
+When the data is imported, PyProBE will look for a README file in the directory of the
+cycler file and/or the PyProBE format '.parquet' file. You can also specify a custom
+path for it in the :code:`readme_path` argument. The README file contains details of the 
+experimental procedure that generated the data. See the :ref:`writing_a_readme_file`
+section for guidance.
+
+Without a README file, the data will still be imported, but will not be filterable
+by 'experiment' or by complex cycle patterns.
 
 Working with multiple input files
 ---------------------------------
@@ -62,10 +102,10 @@ of the files and process them into a single parquet file. This is done by provid
 .. code-block:: python
 
    # From the previously created cell instance
-   cell.process_cycler_file(cycler = 'neware',
-                            folder_path = 'path/to/root_folder/experiment_folder',
-                            input_filename = 'cycler_file*.csv',
-                            output_filename = 'processed_cycler_file.parquet')
+   cell.import_from_cycler(
+      procedure_name="Sample",
+      cycler="neware",
+      input_data_path="path/to/cycler_file*.csv")
 
 This will process all files in the folder that match the pattern 
 :code:`cycler_file*.csv`, e.g. :code:`cycler_file_1.csv`, :code:`cycler_file_2.csv`, 
@@ -75,66 +115,22 @@ The Biologic Modulo Bat format has its own reader ``'biologic_MB'``:
 
 .. code-block:: python
 
-   cell.process_cycler_file(cycler = 'biologic_MB',
-                            folder_path = 'path/to/root_folder/experiment_folder',
-                            input_filename = 'cycler_file_*_MB.mpt',
-                            output_filename = 'processed_cycler_file.parquet')
+   cell.import_from_cycler(
+      procedure_name="biologic_MB",
+      cycler="neware",
+      input_data_path="path/to/cycler_file_*_MB.mpt")
 
-
-.. _adding_data_to_cell:
-
-Adding data to a cell object
-----------------------------
-For data to be imported into PyProBE, there should be a corresponding :code:`README.yaml`
-file in the same directory as the data file. This file contains details of the 
-experimental procedure that generated the data. See the :ref:`writing_a_readme_file`
-section for guidance.
-
-A data file in the standard PyProBE format can be added to a cell object using the
-:func:`~pyprobe.cell.Cell.add_procedure` method. A procedure must be given a name when 
-it is imported. Choose something descriptive, so it is easy to distinguish between 
-different procedures that have been run on the same cell.
-
-.. code-block:: python
-
-   # Add the processed data to the cell object
-   cell.add_procedure(procedure_name = 'Example procedure',
-                      folder_path = 'path/to/root_folder/experiment_folder',
-                      filename = 'processed_cycler_file.parquet')
-
-Any number of procedures can be added to a cell, for example:
-
-.. code-block:: python
-
-   # Add the first procedure
-   cell.add_procedure(procedure_name = 'Cycling',
-                      folder_path = 'path/to/root_folder/experiment_folder',
-                      filename = 'processed_cycler_file_cycling.parquet')
-   
-   # Add the second procedure
-   cell.add_procedure(procedure_name = 'RPT',
-                      folder_path = 'path/to/root_folder/experiment_folder',
-                      filename = 'processed_cycler_file_RPT.parquet')
-
-   print(cell.procedure)
-   # Returns: dict({'Cycling': <pyprobe.procedure.Procedure object…, 'RPT': <pyprobe.procedure.Procedure object…})
-
-If you want to load data quickly, for simple analysis or viewing, the :func:`~pyprobe.cell.Cell.quick_add_procedure`
-method allows for importing without a :code:`README.yaml` file.
 
 Batch preprocessing
 -------------------
-If you have multiple cells undergoing the same experimental procedures, you can use the
-built-in batch processing functionality in PyProBE to speed up your workflow. You must
-first create a list of :attr:`~pyprobe.cell.Cell` objects.
+If you have multiple cells undergoing the same experimental procedures, you can create 
+a list of :attr:`~pyprobe.cell.Cell` objects together with the 
+:func:`~pyprobe.cell.make_cell_list` function.
 
-The fastest way to do this is to store an Experiment Record alongside your data. This is
+This requires an Experiment Record alongside your data. This is
 an Excel file that contains important experimental information about your cells and the
 procedures they have undergone. See the :ref:`writing_an_experiment_record` section for 
 guidance.
-
-Once you have an Experiment Record, you can create a list of cells using the 
-:func:`~pyprobe.cell.make_cell_list` function:
 
 .. code-block:: python
 
@@ -142,42 +138,10 @@ Once you have an Experiment Record, you can create a list of cells using the
                                       worksheet_name = 'Sample experiment')
 
 This function creates a list of cells, where the :attr:`~pyprobe.cell.Cell.info` 
-dictionary is populated with the information from the Experiment Record.
-
-You can then add procedures to each cell in the list. 
-:func:`~pyprobe.cell.Cell.add_procedure` includes the functionality to do this 
-parametrically. The steps are as follows:
-
-1. Define a function that generates the filename for each cell.
-2. Assign the filename generator function to the :code:`filename` argument in 
-   :func:`~pyprobe.cell.Cell.add_procedure`.
-3. Provide the inputs to the filename generator function in the 
-   :code:`filename_inputs` argument. The order of the inputs must match the order of the
-   arguments in the filename generator function. These inputs must be keys of the 
-   :attr:`~pyprobe.cell.Cell.info` dictionary. This means that they are likely to be 
-   column names in the Experiment Record Excel file.
-
-.. code-block:: python
-
-   # Define functions that generates the filename for each cell
-   def input_name_generator(cycler, channel):
-       return f'cycler_file_{cycler}_{channel}.csv'
-
-   def output_name_generator(cycler, channel):
-       return f'processed_cycler_file_{cycler}_{channel}.parquet'
-
-   # Convert the data to PyProBE format and add the procedure to each cell in the list
-   for cell in cell_list:
-       cell.process_cycler_file(cycler = 'neware',
-                                folder_path = 'path/to/root_folder/experiment_folder',
-                                input_filename = input_name_generator,
-                                output_filename = output_name_generator,
-                                filename_inputs = ["Cycler", "Channel"])
-                                
-       cell.add_procedure(procedure_name = 'Cycling',
-                          folder_path = 'path/to/root_folder/experiment_folder',
-                          filename = output_name_generator,
-                          filename_inputs = ["Cycler", "Channel"])
+dictionary is populated with the information from the Experiment Record. You can then
+loop through these cells, adding data to procedures. It is often helpful to include
+parameters of your data file names in the experiment record, so that these can be generated
+automatically within your loop.
 
 Adding data not from a cycler
 -----------------------------

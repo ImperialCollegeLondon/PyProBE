@@ -39,6 +39,22 @@ code for PyProBE includes:
 1. DataFrame operations should only be done using polars expressions. Data should be kept by default in polars LazyFrame format and only converted to DataFrame if needed for a particular operation.
 2. Analysis classes should be written in the format described in the [documentation](https://imperialcollegelondon.github.io/PyProBE/developer_guide/contributing_to_the_analysis_module.html).
 
+## Linting and Style Guidelines
+PyProBE uses [Ruff](https://docs.astral.sh/ruff/) to check and format code against Python standards and good practise.
+It is able to automatically restyle your code and can make many automatic fixes for you. It 
+runs as a pre-commit hook, meaning it should pass before you commit to PyProBE. To reduce 
+the burden of making a large amount of fixes, be sure to make regular commits. You can also run:
+```bash
+uvx ruff check --fix
+```
+from the command line at any point. This will load the latest version of Ruff and run its checks, 
+making automatic fixes where possible.
+
+PyProBE also uses [mypy](https://mypy.readthedocs.io/en/stable/index.html) to check that
+all functions are correctly type hinted. Again, this runs as a pre-commit hook. It is
+likely that your code will use types already commonly used in PyProBE, so you may refer
+to existing code for how to type hint your functions.
+
 ## Viewing the API documentation
 
 API documentation is built in html format, and stored locally in docs/build/html/. This can be viewed in your browser at docs/build/html/index.html.
