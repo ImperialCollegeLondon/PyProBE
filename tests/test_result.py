@@ -9,21 +9,21 @@ import polars.testing as pl_testing
 import pytest
 from scipy.io import loadmat
 
-from pyprobe.result import PolarsColumnCache, Result, combine_results
+from pyprobe.result import Result, _PolarsColumnCache, combine_results
 
 
-def test_PolarsColumnCache_lazyframe():
-    """Test the PolarsColumnCache class."""
+def test__PolarsColumnCache_lazyframe():
+    """Test the _PolarsColumnCache class."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     assert cache.cache == {}
     pl_testing.assert_frame_equal(cache.base_dataframe, lf)
 
 
-def test_PolarsColumnCache_dataframe():
-    """Test the PolarsColumnCache class with a DataFrame."""
+def test__PolarsColumnCache_dataframe():
+    """Test the _PolarsColumnCache class with a DataFrame."""
     df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(df)
+    cache = _PolarsColumnCache(df)
     pl_testing.assert_frame_equal(cache.cached_dataframe, df)
     expected_a = df.select("a")["a"]
     expected_b = df.select("b")["b"]
@@ -36,7 +36,7 @@ def test_PolarsColumnCache_dataframe():
 def test_collect_columns():
     """Test the collect_columns method."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
 
     # Test single column collection
     cache.collect_columns("a")
@@ -49,7 +49,7 @@ def test_collect_columns():
     pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
 
     # Test multiple column collection
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     cache.collect_columns("a", "b")
     expected_a = lf.select("a").collect()["a"]
     expected_b = lf.select("b").collect()["b"]
@@ -69,7 +69,7 @@ def test_collect_columns():
             "Date": [5, 6, 7],
         },
     )
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     cache.collect_columns("Current [mA]")
     expected_current = pl.Series("Current [mA]", [1000, 2000, 3000])
     assert cache.cache["Current [mA]"].to_list() == expected_current.to_list()
@@ -78,7 +78,7 @@ def test_collect_columns():
 def test_cached_dataframe():
     """Test the cached_dataframe property."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     assert cache._cached_dataframe is None
     assert cache.cached_dataframe.is_empty()
 
