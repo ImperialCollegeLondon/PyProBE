@@ -28,7 +28,7 @@ except ImportError:
     hvplot_exists = False
 
 
-class PolarsColumnCache:
+class _PolarsColumnCache:
     """A class to cache columns from a Polars DataFrame.
 
     Args:
@@ -37,7 +37,7 @@ class PolarsColumnCache:
     """
 
     def __init__(self, base_dataframe: pl.LazyFrame | pl.DataFrame) -> None:
-        """Initialize the PolarsColumnCache object."""
+        """Initialize the _PolarsColumnCache object."""
         self.cache: dict[str, pl.Series] = {}
         self._cached_dataframe = None
         self._base_dataframe = base_dataframe
@@ -193,7 +193,7 @@ class Result(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization method for the Pydantic model."""
-        self._polars_cache = PolarsColumnCache(self.base_dataframe)
+        self._polars_cache = _PolarsColumnCache(self.base_dataframe)
 
     @model_validator(mode="before")
     @classmethod
