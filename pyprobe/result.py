@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
 from typing import Any, Literal, Union
@@ -694,6 +695,34 @@ class Result(BaseModel):
             "info": renamed_info,
         }
         savemat(filename, variable_dict, oned_as="column")
+
+    @staticmethod
+    def from_polars_io(
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str],
+        polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
+        *args: Any,
+        **kwargs: Any,
+    ) -> "Result":
+        """Create a new Result object with data from a Polars IO function.
+
+        Args:
+            info (dict[str, Any | None]): The info dictionary for the new Result object.
+            column_definitions (dict[str, str]):
+                The column definitions for the new Result object. Can be empty.
+            polars_io_func (Callable[..., pl.DataFrame | pl.LazyFrame]):
+                The Polars IO function to use to create the data.
+            *args: The arguments to pass to the Polars IO function.
+            **kwargs: The keyword arguments to pass to the Polars IO function.
+
+        Returns:
+            Result: A new Result object with the specified data and info.
+        """
+        return Result(
+            base_dataframe=polars_io_func(*args, **kwargs),
+            info=info,
+            column_definitions=column_definitions,
+        )
 
 
 def combine_results(
