@@ -2,18 +2,19 @@
 
 import polars as pl
 
-from pyprobe.cyclers import basecycler as bc
+from pyprobe.cyclers import column_importers as ci
+from pyprobe.cyclers.basecycler import BaseCycler
 
 
-class Arbin(bc.BaseCycler):
+class Arbin(BaseCycler):
     """A class to load and process Neware battery cycler data."""
 
-    column_importers: list[bc.ColumnMap] = [
-        bc.DateTime("Date Time", "%m/%d/%Y %H:%M:%S%.f"),
-        bc.CastAndRename("Step", "Step Index", pl.Int64),
-        bc.ConvertUnits("Time [s]", "Test Time (*)"),
-        bc.ConvertUnits("Current [A]", "Current (*)"),
-        bc.ConvertUnits("Voltage [V]", "Voltage (*)"),
-        bc.CapacityFromChDch("Charge Capacity (*)", "Discharge Capacity (*)"),
-        bc.ConvertTemperature("Aux_Temperature_1 (*)"),
+    column_importers: list[ci.ColumnMap] = [
+        ci.DateTime("Date Time", "%m/%d/%Y %H:%M:%S%.f"),
+        ci.CastAndRename("Step", "Step Index", pl.Int64),
+        ci.ConvertUnits("Time [s]", "Test Time (*)"),
+        ci.ConvertUnits("Current [A]", "Current (*)"),
+        ci.ConvertUnits("Voltage [V]", "Voltage (*)"),
+        ci.CapacityFromChDch("Charge Capacity (*)", "Discharge Capacity (*)"),
+        ci.ConvertTemperature("Aux_Temperature_1 (*)"),
     ]

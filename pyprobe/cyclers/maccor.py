@@ -2,10 +2,11 @@
 
 import polars as pl
 
-from pyprobe.cyclers import basecycler as bc
+from pyprobe.cyclers import column_importers as ci
+from pyprobe.cyclers.basecycler import BaseCycler
 
 
-class MaccorCapacityFromCurrentSign(bc.CapacityFromCurrentSign):
+class MaccorCapacityFromCurrentSign(ci.CapacityFromCurrentSign):
     """A class to calculate capacity from current and sign columns.
 
     Specific for maccor data where columns have no units.
@@ -21,7 +22,7 @@ class MaccorCapacityFromCurrentSign(bc.CapacityFromCurrentSign):
         return self.get(self.capacity_col).cast(pl.Float64)
 
 
-class MaccorDateTime(bc.ColumnMap):
+class MaccorDateTime(ci.ColumnMap):
     """A class to convert a date and time column into a single datetime column.
 
     Specific for maccor data where the date column is not sampled at the same rate as
@@ -54,17 +55,17 @@ class MaccorDateTime(bc.ColumnMap):
         ).alias(self.pyprobe_name)
 
 
-class Maccor(bc.BaseCycler):
+class Maccor(BaseCycler):
     """A class to load and process Neware battery cycler data."""
 
-    column_importers: list[bc.ColumnMap] = [
+    column_importers: list[ci.ColumnMap] = [
         MaccorDateTime("DPT Time", "Test Time (sec)", "%d-%b-%y %I:%M:%S %p"),
-        bc.CastAndRename("Time [s]", "Test Time (sec)", pl.Float64),
-        bc.CastAndRename("Step", "Step", pl.Int64),
-        bc.CastAndRename("Current [A]", "Current", pl.Float64),
-        bc.CastAndRename("Voltage [V]", "Voltage", pl.Float64),
+        ci.CastAndRename("Time [s]", "Test Time (sec)", pl.Float64),
+        ci.CastAndRename("Step", "Step", pl.Int64),
+        ci.CastAndRename("Current [A]", "Current", pl.Float64),
+        ci.CastAndRename("Voltage [V]", "Voltage", pl.Float64),
         MaccorCapacityFromCurrentSign("Capacity", "Current"),
-        bc.CastAndRename("Temperature [C]", "Temp 1", pl.Float64),
+        ci.CastAndRename("Temperature [C]", "Temp 1", pl.Float64),
     ]
 
     @staticmethod
