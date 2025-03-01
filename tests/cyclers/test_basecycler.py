@@ -283,7 +283,7 @@ def test_basecycler_init(caplog):
     assert cycler.input_data_path == "tests/sample_data/neware/sample_data_neware.csv"
     assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
     assert cycler.column_importers == []
-    assert cycler.compression == "performance"
+    assert cycler.compression_priority == "performance"
     assert not cycler.overwrite_existing
     assert cycler.header_row_index == 0
 
@@ -347,6 +347,17 @@ def test_basecycler_init(caplog):
             caplog.messages[-1]
             == "Output file extension .txt will be replaced with .parquet"
         )
+
+
+def test_extra_column_importers():
+    """Test the extra_column_importers method."""
+    cycler_instance = BaseCycler(
+        input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+        output_data_path="tests/sample_data/sample_data.parquet",
+        column_importers=[CastAndRename("Step", "Step", pl.Int64)],
+        extra_column_importers=[CastAndRename("Cycle", "Cycle", pl.Int64)],
+    )
+    assert "Cycle" in cycler_instance.get_pyprobe_dataframe().columns
 
 
 def test_process(mocker, caplog):

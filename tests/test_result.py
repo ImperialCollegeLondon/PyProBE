@@ -663,10 +663,49 @@ def test_from_polars_io_different_formats(io_function, expected_type, tmp_path):
     info = {"source": io_function.__name__}
 
     # Create result using the function
-    result = Result.from_polars_io(info, {}, io_function, test_file)
+    result = Result.from_polars_io(
+        polars_io_func=io_function, source=test_file, info=info, column_definitions={}
+    )
 
     # Check the result
     assert isinstance(result, Result)
     assert isinstance(result.base_dataframe, expected_type)
+    assert result.info == info
+    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+
+def test_from_polars_io_python_object():
+    """Test from_polars_io with a Python object."""
+    # Create a test DataFrame
+    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    # Mock info for testing
+    info = {"source": "python_object"}
+
+    # Create result using the function
+    result = Result.from_polars_io(
+        polars_io_func=pl.from_pandas,
+        data=test_df.to_pandas(),
+        info=info,
+        column_definitions={},
+    )
+
+    # Check the result
+    assert isinstance(result, Result)
+    assert isinstance(result.base_dataframe, pl.DataFrame)
+    assert result.info == info
+    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+    result = Result.from_polars_io(
+        polars_io_func=pl.from_numpy,
+        schema=["a", "b"],
+        data=test_df.to_numpy(),
+        info=info,
+        column_definitions={},
+    )
+
+    # Check the result
+    assert isinstance(result, Result)
+    assert isinstance(result.base_dataframe, pl.DataFrame)
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)

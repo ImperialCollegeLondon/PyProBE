@@ -352,7 +352,7 @@ class BaseCycler(BaseModel):
         description="Path for output parquet file. Defaults to the input path with a"
         " .parquet suffix.",
     )
-    compression: Literal["performance", "file size", "uncompressed"] = Field(
+    compression_priority: Literal["performance", "file size", "uncompressed"] = Field(
         default="performance", description="Compression algorithm for output file"
     )
     overwrite_existing: bool = Field(
@@ -362,6 +362,11 @@ class BaseCycler(BaseModel):
         default=0, description="Index of header row in input file"
     )
     column_importers: list[ColumnMap]
+
+    extra_column_importers: list[ColumnMap] = Field(
+        default_factory=list,
+        description="Additional column importers to be added to the cycler",
+    )
 
     @field_validator("input_data_path", mode="after")
     @classmethod
@@ -407,6 +412,8 @@ class BaseCycler(BaseModel):
         if not os.path.exists(str(self.output_data_path)) or self.overwrite_existing:
             dataframe_list = self._get_dataframe_list()
             self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
+            if len(self.extra_column_importers) > 0:
+                self.column_importers += self.extra_column_importers
             for column_importer in self.column_importers:
                 column_importer.validate(
                     self._imported_dataframe.collect_schema().names()
@@ -519,7 +526,8 @@ class BaseCycler(BaseModel):
             t1 = time.time()
             pyprobe_dataframe = self.get_pyprobe_dataframe()
             pyprobe_dataframe.write_parquet(
-                self.output_data_path, compression=compression_dict[self.compression]
+                self.output_data_path,
+                compression=compression_dict[self.compression_priority],
             )
             logger.info(f"parquet written in{time.time() - t1: .2f} seconds.")
         else:

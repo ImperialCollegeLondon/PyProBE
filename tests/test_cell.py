@@ -593,6 +593,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=False,
     )
@@ -629,6 +630,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         None,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=False,
     )
@@ -647,6 +649,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="file size",
         overwrite_existing=False,
     )
@@ -665,6 +668,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=True,
     )
@@ -684,8 +688,29 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=column_importers,
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=False,
+    )
+
+    # Test with extra cycler columns provided
+    extra_cycler_columns = [basecycler.ConvertUnits("Time [s]", "T [*]")]
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+        readme_path,
+        extra_column_importers=extra_cycler_columns,
+    )
+    process_cycler_data.assert_called_with(
+        cycler,
+        input_data_path,
+        output_data_path,
+        column_importers=[],
+        compression_priority="performance",
+        overwrite_existing=False,
+        extra_column_importers=extra_cycler_columns,
     )
 
 
@@ -714,6 +739,26 @@ def test_process_cycler_data(mocker):
         )
         process_patch.assert_called_once()
 
+    for cycler in cyclers:
+        mock_cycler = mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}")
+        cell.process_cycler_data(
+            cycler=cycler,
+            input_data_path="tests/sample_data/test_generic_file.csv",
+            output_data_path="tests/sample_data/test_generic_file.parquet",
+            column_importers=["a", "b", "c"],
+            extra_column_importers=["d", "e", "f"],
+            compression_priority="fast",
+            overwrite_existing=True,
+        )
+        mock_cycler.assert_called_once_with(
+            input_data_path="tests/sample_data/test_generic_file.csv",
+            output_data_path="tests/sample_data/test_generic_file.parquet",
+            column_importers=["a", "b", "c"],
+            extra_column_importers=["d", "e", "f"],
+            compression_priority="fast",
+            overwrite_existing=True,
+        )
+
 
 def test_process_cycler_data_generic():
     """Test the process_generic_file method."""
@@ -739,7 +784,7 @@ def test_process_cycler_data_generic():
     df.write_csv(data_path)
 
     cell.process_cycler_data(
-        cycler_type="generic",
+        cycler="generic",
         input_data_path=data_path,
         column_importers=column_importers,
     )
@@ -758,7 +803,7 @@ def test_process_cycler_data_generic():
 
     with pytest.raises(ValueError):
         cell.process_cycler_data(
-            cycler_type="generic",
+            cycler="generic",
             input_data_path=data_path,
         )
 

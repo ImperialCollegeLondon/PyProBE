@@ -17,7 +17,7 @@ from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
-from pyprobe.utils import deprecated
+from pyprobe.utils import catch_pydantic_validation, deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -696,30 +696,73 @@ class Result(BaseModel):
         }
         savemat(filename, variable_dict, oned_as="column")
 
+    @catch_pydantic_validation
     @staticmethod
     def from_polars_io(
-        info: dict[str, Any | None],
-        column_definitions: dict[str, str],
         polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
-        *args: Any,
+        info: dict[str, Any | None] = {},
+        column_definitions: dict[str, str] = {},
         **kwargs: Any,
     ) -> "Result":
         """Create a new Result object with data from a Polars IO function.
 
+        Refer to the Polars documentation for a list of available IO functions:
+
+        - `External file import functions \
+            <https://docs.pola.rs/api/python/stable/reference/io.html>`_
+        - `Python object conversion functions \
+            <https://docs.pola.rs/api/python/stable/reference/functions.html>`_
+
         Args:
-            info (dict[str, Any | None]): The info dictionary for the new Result object.
-            column_definitions (dict[str, str]):
-                The column definitions for the new Result object. Can be empty.
             polars_io_func (Callable[..., pl.DataFrame | pl.LazyFrame]):
                 The Polars IO function to use to create the data.
-            *args: The arguments to pass to the Polars IO function.
+            info (dict[str, Any | None]):
+                The info dictionary for the new Result object. Empty by default.
+            column_definitions (dict[str, str]):
+                The column definitions for the new Result object. Empty by default.
             **kwargs: The keyword arguments to pass to the Polars IO function.
 
         Returns:
             Result: A new Result object with the specified data and info.
+
+        Example:
+            From a saved .csv file:
+
+            .. code-block:: python
+
+            result = Result.from_polars_io(
+                pl.scan_csv,
+                info={"test": "test"},
+                column_definitions={},
+                source="data.csv",
+            )
+
+            From a pandas DataFrame:
+
+            .. code-block:: python
+
+            result = Result.from_polars_io(
+                pl.from_pandas,
+                info={"test": "test"},
+                column_definitions={},
+                data=pd.DataFrame({"a": [1, 2, 3]}),
+            )
+
+            From a numpy array:
+
+            .. code-block:: python
+
+            result = Result.from_polars_io(
+                pl.from_numpy,
+                info={"test": "test"},
+                column_definitions={},
+                data=np.array([[1, 2, 3], [4, 5, 6]]),
+                schema=["a", "b"]
+            )
+
         """
         return Result(
-            base_dataframe=polars_io_func(*args, **kwargs),
+            base_dataframe=polars_io_func(**kwargs),
             info=info,
             column_definitions=column_definitions,
         )
