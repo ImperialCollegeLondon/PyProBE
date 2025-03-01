@@ -588,3 +588,85 @@ def test_export_to_mat(Result_fixture):
     actual_columns = set(saved_data["data"].dtype.names)
     assert actual_columns == expected_columns
     os.remove("./test_mat.mat")
+
+
+def test_from_polars_io():
+    """Test the from_polars_io method."""
+    # Test with read_csv function
+    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    test_df.write_csv("test_data.csv")
+
+    try:
+        # Test with basic parameters
+        result = Result.from_polars_io(
+            info={"test": "info"},
+            column_definitions={"a": "Column A"},
+            polars_io_func=pl.read_csv,
+            source="test_data.csv",
+        )
+        assert isinstance(result, Result)
+        assert result.info == {"test": "info"}
+        assert result.column_definitions == {"a": "Column A"}
+        pl_testing.assert_frame_equal(result.data, test_df)
+
+        # Test with LazyFrame function
+        result_lazy = Result.from_polars_io(
+            info={"test": "lazy"},
+            column_definitions={},
+            polars_io_func=pl.scan_csv,
+            source="test_data.csv",
+        )
+        assert isinstance(result_lazy, Result)
+        assert isinstance(result_lazy.base_dataframe, pl.LazyFrame)
+
+        # Test with keyword arguments
+        result_with_kwargs = Result.from_polars_io(
+            info={"test": "kwargs"},
+            column_definitions={"a": "Column A with kwargs"},
+            polars_io_func=pl.read_csv,
+            source="test_data.csv",
+            has_header=True,
+            skip_rows=0,
+        )
+        assert isinstance(result_with_kwargs, Result)
+        pl_testing.assert_frame_equal(result_with_kwargs.data, test_df)
+
+    finally:
+        # Clean up test file
+        if os.path.exists("test_data.csv"):
+            os.remove("test_data.csv")
+
+
+@pytest.mark.parametrize(
+    "io_function,expected_type",
+    [
+        (pl.read_csv, pl.DataFrame),
+        (pl.scan_csv, pl.LazyFrame),
+        (pl.read_parquet, pl.DataFrame),
+        (pl.scan_parquet, pl.LazyFrame),
+    ],
+)
+def test_from_polars_io_different_formats(io_function, expected_type, tmp_path):
+    """Test from_polars_io with different polars I/O functions."""
+    # Create test data
+    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    # Create appropriate test file based on function
+    if "csv" in io_function.__name__:
+        test_file = tmp_path / "test.csv"
+        test_df.write_csv(test_file)
+    else:  # parquet
+        test_file = tmp_path / "test.parquet"
+        test_df.write_parquet(test_file)
+
+    # Mock info for testing
+    info = {"source": io_function.__name__}
+
+    # Create result using the function
+    result = Result.from_polars_io(info, {}, io_function, test_file)
+
+    # Check the result
+    assert isinstance(result, Result)
+    assert isinstance(result.base_dataframe, expected_type)
+    assert result.info == info
+    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
