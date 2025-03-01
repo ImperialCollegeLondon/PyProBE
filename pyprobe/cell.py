@@ -24,12 +24,13 @@ logger = logging.getLogger(__name__)
 
 @catch_pydantic_validation
 def process_cycler_data(
-    cycler_type: Literal[
+    cycler: Literal[
         "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
     ],
     input_data_path: str,
     output_data_path: str | None = None,
     column_importers: list[basecycler.ColumnMap] = [],
+    extra_column_importers: list[basecycler.ColumnMap] = [],
     compression_priority: Literal[
         "performance", "file size", "uncompressed"
     ] = "performance",
@@ -38,13 +39,16 @@ def process_cycler_data(
     """Process battery cycler data into PyProBE format.
 
     Args:
-        cycler_type: Type of battery cycler used.
+        cycler: Type of battery cycler used.
         input_data_path: Path to input data file(s). Supports glob patterns.
         output_data_path: Path for output parquet file. If None, the output file will
             have the same name as the input file with a .parquet extension.
         column_importers:
             List of column importers to apply to the input data. Required for generic
             cycler type. Overrides default column importers for other cycler types.
+        extra_column_importers:
+            List of additional column importers to apply to the input data. These
+            column importers will be applied after the default column importers.
         compression_priority: Compression method for output file.
         overwrite_existing: Whether to overwrite existing output file.
 
@@ -61,13 +65,13 @@ def process_cycler_data(
         "generic": basecycler.BaseCycler,
     }
 
-    cycler_class = cycler_map.get(cycler_type)
+    cycler_class = cycler_map.get(cycler)
     if not cycler_class:
-        msg = f"Unsupported cycler type: {cycler_type}"
+        msg = f"Unsupported cycler type: {cycler}"
         logger.error(msg)
         raise ValueError(msg)
 
-    if cycler_type == "generic" and column_importers == []:
+    if cycler == "generic" and column_importers == []:
         msg = "Column importers must be provided for generic cycler type."
         logger.error(msg)
         raise ValueError(msg)
@@ -76,16 +80,18 @@ def process_cycler_data(
         processor = cycler_class(
             input_data_path=input_data_path,
             output_data_path=output_data_path,
-            compression=compression_priority,
+            compression_priority=compression_priority,
             overwrite_existing=overwrite_existing,
             column_importers=column_importers,
+            extra_column_importers=extra_column_importers,
         )
     else:
         processor = cycler_class(
             input_data_path=input_data_path,
             output_data_path=output_data_path,
-            compression=compression_priority,
+            compression_priority=compression_priority,
             overwrite_existing=overwrite_existing,
+            extra_column_importers=extra_column_importers,
         )
     processor.process()
     return processor.output_data_path
@@ -173,6 +179,7 @@ class Cell(BaseModel):
             "uncompressed",
         ] = "performance",
         column_importers: list[basecycler.ColumnMap] = [],
+        extra_column_importers: list[basecycler.ColumnMap] = [],
         overwrite_existing: bool = False,
     ) -> None:
         """Import a procedure into the cell object.
@@ -208,6 +215,9 @@ class Cell(BaseModel):
                 A list of column importers to apply to the input data. Required for
                 generic cycler type. Overrides default column importers for other cycler
                 types.
+            extra_column_importers:
+                A list of additional column importers to apply to the input data. These
+                column importers will be applied after the default column importers.
             overwrite_existing:
                 If True, any existing parquet file with the output_filename will be
                 overwritten. If False, the function will skip the conversion if the
@@ -220,6 +230,7 @@ class Cell(BaseModel):
             column_importers=column_importers,
             compression_priority=compression_priority,
             overwrite_existing=overwrite_existing,
+            extra_column_importers=extra_column_importers,
         )
         if readme_path is None:
             input_path = Path(input_data_path)
@@ -503,7 +514,7 @@ class Cell(BaseModel):
             importer = cycler_dict[cycler](
                 input_data_path=input_data_path,
                 output_data_path=output_data_path,
-                compression=compression_priority,
+                compression_priority=compression_priority,
                 overwrite_existing=overwrite_existing,
             )
             importer.process()
@@ -595,7 +606,7 @@ class Cell(BaseModel):
                 input_data_path=input_data_path,
                 output_data_path=output_data_path,
                 column_importers=column_importers,
-                compression=compression_priority,
+                compression_priority=compression_priority,
                 overwrite_existing=overwrite_existing,
             )
             importer.process()
