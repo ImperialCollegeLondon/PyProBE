@@ -63,6 +63,9 @@ docs = [
     "sphinx-tabs>=3.4.7",
     "sphinxcontrib-bibtex>=2.6.3",
 ]
+pybamm = [
+    "pybamm>=25.1.1",
+]
 
 [build-system]
 requires = ["hatchling>=1.18.0"]
