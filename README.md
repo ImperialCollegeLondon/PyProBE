@@ -5,6 +5,7 @@
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/PyProBE/graph/badge.svg?token=Y5H9C8MA0A)](https://codecov.io/gh/ImperialCollegeLondon/PyProBE)
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2FPyProBE%2Fmain%2Fpyproject.toml)
 [![PyPI - Version](https://img.shields.io/pypi/v/PyProBE-Data?label=pip%20install%20PyProBE-Data)](https://pypi.org/project/PyProBE-Data)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14635070.svg)](https://doi.org/10.5281/zenodo.14635070)
 [![status](https://joss.theoj.org/papers/0657708fc7e6ac46fd1f4160aabe6da8/status.svg)](https://joss.theoj.org/papers/0657708fc7e6ac46fd1f4160aabe6da8)
