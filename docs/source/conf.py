@@ -23,9 +23,11 @@ extensions = [
     "sphinx_tabs.tabs",
     "sphinxcontrib.bibtex",
     "sphinx_design",
-    "nbsphinx",
+    "myst_nb",
     "sphinx.ext.autosummary",
 ]
+
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -51,11 +53,3 @@ bibtex_style = "unsrt"
 bibtex_footbibliography_header = """.. rubric:: References"""
 bibtex_reference_style = "author_year"
 bibtex_tooltips = True
-
-# -- nbsphinx configuration --------------------------------------------------
-autosummary_generate = True
-nbsphinx_execute = "always"  # Always execute notebooks
-nbsphinx_allow_errors = True  # Raise exceptions when notebooks raise errors
-
-
-autosummary_generate = True  # Turn on sphinx.ext.autosummary
