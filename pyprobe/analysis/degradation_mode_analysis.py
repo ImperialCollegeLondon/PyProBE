@@ -534,7 +534,7 @@ def run_ocv_curve_fit(
         optimizer_options:
             The options for the optimization algorithm. Defaults to
             {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
             Where x0 is the initial guess for the fit and bounds are the
             limits for the fit. The fitting parameters are ordered [x_pe_lo,
             x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
@@ -798,7 +798,7 @@ def run_batch_dma_parallel(
         optimizer_options:
             The options for the optimization algorithm. Defaults to
             {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
             Where x0 is the initial guess for the fit and bounds are the
             limits for the fit. The fitting parameters are ordered [x_pe_lo,
             x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
@@ -862,27 +862,31 @@ def run_batch_dma_sequential(
         optimizer:
             A list of optimization algorithms to use. The length of the list determines
             how the optimizers will be applied:
-                - Length = 1, the same optimizer will be used for all provided input
-                data.
-                - Length = 2, the first optimizer will be used for the first item in the
-                input_data_list and the second optimizer will be used for the remaining
-                items.
-                - Length = n, the ith optimizer will be used for the ith item in the
-                input_data_list. The length of the optimizer list must match the length
-                of the input_data_list.
+
+            - Length = 1: The same optimizer will be used for all provided input data.
+            - Length = 2: The first optimizer will be used for the first item in the
+              input_data_list and the second optimizer will be used for the remaining
+              items.
+            - Length = n: The ith optimizer will be used for the ith item in the
+              input_data_list. The length of the optimizer list must match the length
+              of the input_data_list.
+
             Defaults to ["minimize"].
+
         optimizer_options:
             A list of dictionaries containing the options for the optimization
             algorithm. The length of the list determines how the options will be
             applied in the same manner as the optimizer argument. Defaults to
             [{"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}].
-        link_results: Whether to link the fitted stoichiometry limits from the previous
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}].
+
+        link_results:
+            Whether to link the fitted stoichiometry limits from the previous
             input data list item to the next input data list item. Defaults to False.
 
     Returns:
         - Result: The stoichiometry limits, electrode capacities and
-        degradation modes.
+          degradation modes.
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
     # Initialize the results list

@@ -13,7 +13,6 @@ PyProBE documentation
    user_guide/user_guide
    examples/examples
    developer_guide/developer_guide
-   API Documentation <pyprobe>
 
 .. grid:: 3
 
