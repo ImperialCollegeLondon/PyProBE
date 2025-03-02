@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests with frozen dependencies
-        run: uv run --all-extras --frozen --isolated pytest --cov-report=xml -n auto
+        run: uv run --all-extras --frozen --isolated pytest --cov --cov-report=xml -n auto
 
       - name: Upload coverage reports to Codecov
         if: matrix.python-version == '3.12'
