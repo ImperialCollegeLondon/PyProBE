@@ -64,7 +64,7 @@ docs = [
     "sphinxcontrib-bibtex>=2.6.3",
 ]
 pybamm = [
-    "pybamm>=25.1.1",
+    "pybamm[cite]>=25.1.1",
 ]
 
 [build-system]

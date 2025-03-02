@@ -1525,6 +1525,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2e/d2/d01342bbee3bda73b48dc3b1ebb956c78be3549f78aac6461962f720fd1a/pybamm-25.1.1-py3-none-any.whl", hash = "sha256:f018153330920a59582ca241b322c64d22f56d9baea07eaeb859f19c26a3d6b4", size = 766009 },
 ]
 
+[package.optional-dependencies]
+cite = [
+    { name = "pybtex" },
+    { name = "setuptools" },
+]
+
 [[package]]
 name = "pybammsolvers"
 version = "0.1.0"
@@ -1727,7 +1733,7 @@ hvplot = [
     { name = "hvplot" },
 ]
 pybamm = [
-    { name = "pybamm" },
+    { name = "pybamm", extra = ["cite"] },
 ]
 seaborn = [
     { name = "seaborn" },
@@ -1748,7 +1754,7 @@ requires-dist = [
     { name = "plotly", specifier = ">=5.24.1" },
     { name = "polars", specifier = ">=1.18.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
-    { name = "pybamm", marker = "extra == 'pybamm'", specifier = ">=25.1.1" },
+    { name = "pybamm", extras = ["cite"], marker = "extra == 'pybamm'", specifier = ">=25.1.1" },
     { name = "pydantic", specifier = ">=2.10.4" },
     { name = "pydata-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.16.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
