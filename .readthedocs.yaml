@@ -10,11 +10,7 @@ build:
          - asdf install uv latest
          - asdf global uv latest
          - uv venv
-      install:
-         - uv sync --all-extras
-         - uv pip install pybamm
-         - uv pip install ipywidgets
       build:
          html:
-            - uv run sphinx-build -T -b html docs/source $READTHEDOCS_OUTPUT/html
+            - uv run --all-extras sphinx-build -T -b html docs/source $READTHEDOCS_OUTPUT/html
             
