@@ -250,14 +250,23 @@ class Result(BaseModel):
         data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
         return data_to_plot.to_pandas().plot(*args, **kwargs)
 
-    plot.__doc__ = (
-        "This is a wrapper around the pandas plot method. It will perform"
-        "exactly as you would expect the pandas plot method to perform"
-        "when called on a DataFrame.\n\n" + (plot.__doc__ or "")
-    )
+    plot.__doc__ = """Plot the data using the pandas plot method.
+
+    Call this method on a Result object in the same way you would call the pandas plot
+    method on a DataFrame. For example:
+
+    .. code-block:: python
+
+        result.plot(x="Time [s]", y="Current [A]")
+
+    Refer to the `pandas documentation \
+    <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html>`_
+    for detailed information and examples.
+    """
 
     if hvplot_exists is True:
 
+        @wraps(hvplot.hvPlot)
         def hvplot(self, *args: Any, **kwargs: Any) -> Any:
             """Wrapper for plotting using the hvplot library."""
             data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
@@ -265,7 +274,7 @@ class Result(BaseModel):
 
     else:
 
-        def hvplot(self, *args: Any, **kwargs: Any) -> Any:
+        def hvplot(self, *args: Any, **kwargs: Any) -> Any:  # type: ignore
             """Wrapper for plotting using the hvplot library."""
             raise ImportError(
                 "Optional dependency hvplot is not installed. Please install it via "
@@ -273,16 +282,29 @@ class Result(BaseModel):
                 "optional dependency: pip install 'PyProBE-Data[hvplot]'.",
             )
 
-    hvplot.__doc__ = (
-        "HvPlot is a library for creating fast and interactive plots.\n\n"
-        "This method requires the hvplot library to be installed as an optional "
-        "dependency. You can install it with PyProBE by running "
-        ":code:`pip install 'PyProBE-Data[hvplot]'`, or install it seperately with "
-        ":code:`pip install hvplot`.\n\n"
-        "The default backend is bokeh, which can be changed by setting the backend "
-        "with :code:`hvplot.extension('matplotlib')` or "
-        ":code:`hvplot.extension('plotly')`.\n\n" + (hvplot.__doc__ or "")
-    )
+    hvplot.__doc__ = """HvPlot is a library for creating fast and interactive plots.
+        This method requires the hvplot library to be installed as an optional
+        dependency. You can install it with PyProBE by running
+        :code:`pip install 'PyProBE-Data[hvplot]'`, or install it seperately with
+        :code:`pip install hvplot`.
+
+        The default backend is bokeh, which can be changed by setting the backend
+        with :code:`hvplot.extension('matplotlib')` or
+        :code:`hvplot.extension('plotly')`.
+
+        Example usage:
+
+        .. code-block:: python
+
+            result.hvplot(x="Time [s]", y="Current [A]", kind="scatter")
+
+        This method is not compatible with the inline syntax for hvplot:
+        :code:`result.hvplot.scatter(...)`.
+
+        See the `hvplot documentation
+        <https://hvplot.holoviz.org/user_guide/Plotting.html>`_ for information
+        and examples.
+        """
 
     def data_with_columns(self, *column_names: str) -> pl.DataFrame:
         """Return a subset of the data with the specified columns.
