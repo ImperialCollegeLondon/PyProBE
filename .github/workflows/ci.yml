@@ -23,37 +23,37 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-      - name: Install uv
+
+      - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
-          # Install a specific version of uv.
           version: "0.6.3"
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Run tests with frozen dependencies
+        run: uv run --all-extras --frozen --isolated pytest --cov-report=xml -n auto
+
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v5
         with:
-          python-version-file: "pyproject.toml"
-      
-      - name: Install the project
-        run: | # install the project with pybamm for the import pybamm solution test
-          uv venv --seed
-          uv sync --all-extras --frozen
-          source .venv/bin/activate
-          uv pip install pybamm
-
-      - name: Run tests
-        run: uv run pytest --cov-report=xml -n auto
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Test notebooks
         if: github.event_name == 'pull_request'
         run: |
           shopt -s extglob
-          uv run pytest --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
+          uv run --all-extras --frozen --isolated pytest -n auto --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
 
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Test upgraded dependencies
+        run: uv run --extra dev --upgrade --isolated pytest -n auto
+
+      
+
+      
