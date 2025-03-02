@@ -5,10 +5,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, Literal, cast
 
+import joblib
 import numpy as np
 import polars as pl
-import ray
 import sympy as sp
+from joblib import Parallel, delayed
 from numpy.typing import NDArray
 from pydantic import ConfigDict, validate_call
 from scipy import optimize
@@ -772,28 +773,6 @@ def quantify_degradation_modes(
     return dma_result
 
 
-@ray.remote
-def _run_ocv_curve_fit_with_index(
-    index: int,
-    input_data: PyProBEDataType,
-    ocp_pe: OCP | CompositeOCP,
-    ocp_ne: OCP | CompositeOCP,
-    fitting_target: Literal["OCV", "dQdV", "dVdQ"],
-    optimizer: Literal["minimize", "differential_evolution"],
-    optimizer_options: dict[str, Any],
-) -> tuple[int, tuple[Result, Result]]:
-    """Wrapper function for running the OCV curve fitting with an index."""
-    result = run_ocv_curve_fit(
-        input_data=input_data,
-        ocp_pe=ocp_pe,
-        ocp_ne=ocp_ne,
-        fitting_target=fitting_target,
-        optimizer=optimizer,
-        optimizer_options=optimizer_options,
-    )
-    return index, result
-
-
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_parallel(
     input_data_list: list[PyProBEDataType],
@@ -831,34 +810,21 @@ def run_batch_dma_parallel(
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
     # Run the OCV curve fitting in parallel
-    # Initialize Ray (only needs to happen once)
-    try:
-        if not ray.is_initialized():
-            ray.init()
-        logger.info(f"Ray using {ray.cluster_resources()['CPU']} CPUs")
-        # Submit tasks to Ray
-        futures = [
-            _run_ocv_curve_fit_with_index.remote(
-                index,
-                input_data,
-                ocp_pe,
-                ocp_ne,
-                fitting_target=fitting_target,
-                optimizer=optimizer,
-                optimizer_options=optimizer_options,
-            )
-            for index, input_data in enumerate(input_data_list)
-        ]
-        logger.info(f"Submitted {len(futures)} parallel tasks")
-        # Get results and sort by index
-        fit_results = ray.get(futures)
-    finally:
-        if ray.is_initialized():
-            ray.shutdown()
-    fit_results = [result for _, result in sorted(fit_results)]
+    logger.info(f"Using {joblib.cpu_count()} CPUs")
+    fit_results = Parallel(n_jobs=-1)(
+        delayed(run_ocv_curve_fit)(
+            input_data,
+            ocp_pe,
+            ocp_ne,
+            fitting_target=fitting_target,
+            optimizer=optimizer,
+            optimizer_options=optimizer_options,
+        )
+        for input_data in input_data_list
+    )
     # Extract the results
     stoichiometry_limit_list = [result[0] for result in fit_results]
-    fitted_OCVs = [result[1] for result in fit_results]
+    fitted_ocvs = [result[1] for result in fit_results]
 
     for index, sto_limit in enumerate(stoichiometry_limit_list):
         sto_limit.live_dataframe = sto_limit.live_dataframe.with_columns(
@@ -866,7 +832,7 @@ def run_batch_dma_parallel(
         )
 
     dma_results = quantify_degradation_modes(stoichiometry_limit_list)
-    return dma_results, fitted_OCVs
+    return dma_results, fitted_ocvs
 
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
