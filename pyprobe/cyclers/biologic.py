@@ -28,7 +28,7 @@ class Biologic(BaseCycler):
 
     column_importers: list[ci.ColumnMap] = [
         ci.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        ci.CastAndRename("Step", "Ns", pl.Int64),
+        ci.CastAndRename("Step", "Ns", pl.UInt64),
         ci.ConvertUnits("Time [s]", "time/*"),
         ci.ConvertUnits("Current [A]", "I/*"),
         ci.ConvertUnits("Current [A]", "<I>/*"),
@@ -154,7 +154,7 @@ class BiologicMB(Biologic):
         """
         # get the max step number for each MB file and add 1
         max_steps = df.group_by("MB File").agg(
-            (pl.col("Ns").cast(pl.Int64).max() + 1).alias("Max_Step"),
+            (pl.col("Ns").cast(pl.UInt64).max() + 1).alias("Max_Step"),
         )
         # sort the max steps by MB file
         max_steps = max_steps.sort("MB File")
@@ -166,5 +166,5 @@ class BiologicMB(Biologic):
         df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
         # add the max step number to the step number
         return df_with_max_step.with_columns(
-            pl.col("Ns").cast(pl.Int64) + pl.col("Max_Step"),
+            pl.col("Ns").cast(pl.UInt64) + pl.col("Max_Step"),
         )

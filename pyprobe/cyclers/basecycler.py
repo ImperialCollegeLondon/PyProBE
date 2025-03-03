@@ -170,6 +170,19 @@ class BaseCycler(BaseModel):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
+    @staticmethod
+    def event_expr() -> pl.Expr:
+        """Return the event expression."""
+        return (
+            pl.col("Step")
+            .diff()
+            .fill_null(0)
+            .ne(0)
+            .cum_sum()
+            .cast(pl.UInt64)
+            .alias("Event")
+        )
+
     def get_pyprobe_dataframe(self) -> pl.DataFrame:
         """Return the PyProBE DataFrame."""
         imported_columns = set()
@@ -181,16 +194,9 @@ class BaseCycler(BaseModel):
             ):
                 importers.append(importer.expr)
                 imported_columns.add(importer.pyprobe_name)
-        event_expr = (
-            (pl.col("Step").cast(pl.Int64) - pl.col("Step").cast(pl.Int64).shift() != 0)
-            .fill_null(strategy="zero")
-            .cum_sum()
-            .alias("Event")
-            .cast(pl.Int64)
-        )
         return (
             self._imported_dataframe.select(importers)
-            .with_columns(event_expr)
+            .with_columns(self.event_expr())
             .collect()
         )
 

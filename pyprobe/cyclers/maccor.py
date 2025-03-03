@@ -61,7 +61,7 @@ class Maccor(BaseCycler):
     column_importers: list[ci.ColumnMap] = [
         MaccorDateTime("DPT Time", "Test Time (sec)", "%d-%b-%y %I:%M:%S %p"),
         ci.CastAndRename("Time [s]", "Test Time (sec)", pl.Float64),
-        ci.CastAndRename("Step", "Step", pl.Int64),
+        ci.CastAndRename("Step", "Step", pl.UInt64),
         ci.CastAndRename("Current [A]", "Current", pl.Float64),
         ci.CastAndRename("Voltage [V]", "Voltage", pl.Float64),
         MaccorCapacityFromCurrentSign("Capacity", "Current"),

@@ -13,7 +13,7 @@ class Basytec(BaseCycler):
 
     column_importers: list[ci.ColumnMap] = [
         ci.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        ci.CastAndRename("Step", "Line", pl.Int64),
+        ci.CastAndRename("Step", "Line", pl.UInt64),
         ci.ConvertUnits("Time [s]", "~Time[*]"),
         ci.ConvertUnits("Current [A]", "I[*]"),
         ci.ConvertUnits("Voltage [V]", "U[*]"),

@@ -78,6 +78,14 @@ def test_process_dataframe(mocker):
             "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
         },
+        schema={
+            "Time [s]": pl.Float64,
+            "Step": pl.UInt64,
+            "Current [A]": pl.Float64,
+            "Voltage [V]": pl.Float64,
+            "Capacity [Ah]": pl.Float64,
+            "Temperature [C]": pl.Float64,
+        },
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
@@ -134,6 +142,14 @@ def test_process_dataframe(mocker):
             "Voltage [V]": [4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
             "Capacity [Ah]": [20.0e-3, 40.0e-3, 30.0e-3, 20.0e-3, 20.0e-3, 20.0e-3],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
+        },
+        schema={
+            "Time [s]": pl.Float64,
+            "Step": pl.UInt64,
+            "Current [A]": pl.Float64,
+            "Voltage [V]": pl.Float64,
+            "Capacity [Ah]": pl.Float64,
+            "Temperature [C]": pl.Float64,
         },
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)

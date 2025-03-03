@@ -123,7 +123,7 @@ def test_process_generic_file(cell_instance):
         ci.ConvertUnits("Voltage [V]", "V [*]"),
         ci.ConvertUnits("Current [A]", "I [*]"),
         ci.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        ci.CastAndRename("Step", "Count", pl.Int64),
+        ci.CastAndRename("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(f"{folder_path}/test_generic_file.csv")
@@ -778,7 +778,7 @@ def test_process_cycler_data_generic():
         ci.ConvertUnits("Voltage [V]", "V [*]"),
         ci.ConvertUnits("Current [A]", "I [*]"),
         ci.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        ci.CastAndRename("Step", "Count", pl.Int64),
+        ci.CastAndRename("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(data_path)
