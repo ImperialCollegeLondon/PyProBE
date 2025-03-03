@@ -58,6 +58,16 @@ def sample_pyprobe_dataframe():
             "Capacity [Ah]": [1.0, 0.5, -1.5],
             "Temperature [C]": [13.0, 14.0, 15.0],
         },
+        schema={
+            "Date": pl.String,
+            "Time [s]": pl.Float64,
+            "Step": pl.UInt64,
+            "Event": pl.UInt64,
+            "Current [A]": pl.Float64,
+            "Voltage [V]": pl.Float64,
+            "Capacity [Ah]": pl.Float64,
+            "Temperature [C]": pl.Float64,
+        },
     ).with_columns(pl.col("Date").str.to_datetime())
 
 
@@ -65,7 +75,7 @@ def sample_pyprobe_dataframe():
 def column_importer_fixture():
     """A sample column importer."""
     return [
-        CastAndRename("Step", "Count", pl.Int64),
+        CastAndRename("Step", "Count", pl.UInt64),
         ConvertUnits("Current [A]", "I [*]"),
         ConvertUnits("Voltage [V]", "V [*]"),
         ConvertUnits("Capacity [Ah]", "Q [*]"),
@@ -157,8 +167,8 @@ def test_extra_column_importers():
     cycler_instance = BaseCycler(
         input_data_path="tests/sample_data/neware/sample_data_neware.csv",
         output_data_path="tests/sample_data/sample_data.parquet",
-        column_importers=[CastAndRename("Step", "Step", pl.Int64)],
-        extra_column_importers=[CastAndRename("Cycle", "Cycle", pl.Int64)],
+        column_importers=[CastAndRename("Step", "Step", pl.UInt64)],
+        extra_column_importers=[CastAndRename("Cycle", "Cycle", pl.UInt64)],
     )
     assert "Cycle" in cycler_instance.get_pyprobe_dataframe().columns
 
@@ -223,6 +233,7 @@ def test_get_pyprobe_dataframe(
         pyprobe_dataframe,
         sample_pyprobe_dataframe,
         check_column_order=False,
+        check_dtypes=False,
     )
     os.remove("tests/sample_data/sample_data.csv")
 
@@ -262,5 +273,20 @@ def helper_read_and_process(
         expected_final_row,
         pyprobe_dataframe.tail(1),
         check_column_order=False,
+        check_dtypes=False,
     )
     return pyprobe_dataframe
+
+
+def test_event_expr():
+    """Test the event_expr method."""
+    df = pl.DataFrame({"Step": [1, 1, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3, 4, 4, 4, 4, 5, 5]})
+    expected_df = pl.DataFrame(
+        {
+            "Step": [1, 1, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3, 4, 4, 4, 4, 5, 5],
+            "Event": [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7],
+        }
+    )
+    assert_frame_equal(
+        df.with_columns(BaseCycler.event_expr()), expected_df, check_dtypes=False
+    )

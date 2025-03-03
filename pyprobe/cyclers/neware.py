@@ -17,7 +17,7 @@ class Neware(BaseCycler):
     column_importers: list[ci.ColumnMap] = [
         ci.DateTime("Date", "%Y-%m-%d  %H:%M:%S%.f"),
         ci.TimeFromDate("Date", "%Y-%m-%d  %H:%M:%S%.f"),
-        ci.CastAndRename("Step", "Step Index", pl.Int64),
+        ci.CastAndRename("Step", "Step Index", pl.UInt64),
         ci.ConvertUnits("Current [A]", "Current(*)"),
         ci.ConvertUnits("Voltage [V]", "Voltage(*)"),
         ci.CapacityFromChDch("Chg. Cap.(*)", "DChg. Cap.(*)"),
