@@ -5,10 +5,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, Literal, cast
 
+import joblib
 import numpy as np
 import polars as pl
-import ray
 import sympy as sp
+from joblib import Parallel, delayed
 from numpy.typing import NDArray
 from pydantic import ConfigDict, validate_call
 from scipy import optimize
@@ -533,7 +534,7 @@ def run_ocv_curve_fit(
         optimizer_options:
             The options for the optimization algorithm. Defaults to
             {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
             Where x0 is the initial guess for the fit and bounds are the
             limits for the fit. The fitting parameters are ordered [x_pe_lo,
             x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
@@ -772,28 +773,6 @@ def quantify_degradation_modes(
     return dma_result
 
 
-@ray.remote
-def _run_ocv_curve_fit_with_index(
-    index: int,
-    input_data: PyProBEDataType,
-    ocp_pe: OCP | CompositeOCP,
-    ocp_ne: OCP | CompositeOCP,
-    fitting_target: Literal["OCV", "dQdV", "dVdQ"],
-    optimizer: Literal["minimize", "differential_evolution"],
-    optimizer_options: dict[str, Any],
-) -> tuple[int, tuple[Result, Result]]:
-    """Wrapper function for running the OCV curve fitting with an index."""
-    result = run_ocv_curve_fit(
-        input_data=input_data,
-        ocp_pe=ocp_pe,
-        ocp_ne=ocp_ne,
-        fitting_target=fitting_target,
-        optimizer=optimizer,
-        optimizer_options=optimizer_options,
-    )
-    return index, result
-
-
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_parallel(
     input_data_list: list[PyProBEDataType],
@@ -819,7 +798,7 @@ def run_batch_dma_parallel(
         optimizer_options:
             The options for the optimization algorithm. Defaults to
             {"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}.
             Where x0 is the initial guess for the fit and bounds are the
             limits for the fit. The fitting parameters are ordered [x_pe_lo,
             x_pe_hi, x_ne_lo, x_ne_hi], where lo and hi indicate the stoichiometry
@@ -831,34 +810,21 @@ def run_batch_dma_parallel(
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
     # Run the OCV curve fitting in parallel
-    # Initialize Ray (only needs to happen once)
-    try:
-        if not ray.is_initialized():
-            ray.init()
-        logger.info(f"Ray using {ray.cluster_resources()['CPU']} CPUs")
-        # Submit tasks to Ray
-        futures = [
-            _run_ocv_curve_fit_with_index.remote(
-                index,
-                input_data,
-                ocp_pe,
-                ocp_ne,
-                fitting_target=fitting_target,
-                optimizer=optimizer,
-                optimizer_options=optimizer_options,
-            )
-            for index, input_data in enumerate(input_data_list)
-        ]
-        logger.info(f"Submitted {len(futures)} parallel tasks")
-        # Get results and sort by index
-        fit_results = ray.get(futures)
-    finally:
-        if ray.is_initialized():
-            ray.shutdown()
-    fit_results = [result for _, result in sorted(fit_results)]
+    logger.info(f"Using {joblib.cpu_count()} CPUs")
+    fit_results = Parallel(n_jobs=-1)(
+        delayed(run_ocv_curve_fit)(
+            input_data,
+            ocp_pe,
+            ocp_ne,
+            fitting_target=fitting_target,
+            optimizer=optimizer,
+            optimizer_options=optimizer_options,
+        )
+        for input_data in input_data_list
+    )
     # Extract the results
     stoichiometry_limit_list = [result[0] for result in fit_results]
-    fitted_OCVs = [result[1] for result in fit_results]
+    fitted_ocvs = [result[1] for result in fit_results]
 
     for index, sto_limit in enumerate(stoichiometry_limit_list):
         sto_limit.live_dataframe = sto_limit.live_dataframe.with_columns(
@@ -866,7 +832,7 @@ def run_batch_dma_parallel(
         )
 
     dma_results = quantify_degradation_modes(stoichiometry_limit_list)
-    return dma_results, fitted_OCVs
+    return dma_results, fitted_ocvs
 
 
 @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
@@ -896,27 +862,31 @@ def run_batch_dma_sequential(
         optimizer:
             A list of optimization algorithms to use. The length of the list determines
             how the optimizers will be applied:
-                - Length = 1, the same optimizer will be used for all provided input
-                data.
-                - Length = 2, the first optimizer will be used for the first item in the
-                input_data_list and the second optimizer will be used for the remaining
-                items.
-                - Length = n, the ith optimizer will be used for the ith item in the
-                input_data_list. The length of the optimizer list must match the length
-                of the input_data_list.
+
+            - Length = 1: The same optimizer will be used for all provided input data.
+            - Length = 2: The first optimizer will be used for the first item in the
+              input_data_list and the second optimizer will be used for the remaining
+              items.
+            - Length = n: The ith optimizer will be used for the ith item in the
+              input_data_list. The length of the optimizer list must match the length
+              of the input_data_list.
+
             Defaults to ["minimize"].
+
         optimizer_options:
             A list of dictionaries containing the options for the optimization
             algorithm. The length of the list determines how the options will be
             applied in the same manner as the optimizer argument. Defaults to
             [{"x0": np.array([0.9, 0.1, 0.1, 0.9]),
-                "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}].
-        link_results: Whether to link the fitted stoichiometry limits from the previous
+            "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)]}].
+
+        link_results:
+            Whether to link the fitted stoichiometry limits from the previous
             input data list item to the next input data list item. Defaults to False.
 
     Returns:
         - Result: The stoichiometry limits, electrode capacities and
-        degradation modes.
+          degradation modes.
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
     # Initialize the results list
