@@ -328,3 +328,37 @@ class CapacityFromCurrentSign(ColumnMap):
             (diff_charge_capacity - diff_discharge_capacity).cum_sum()
             + charge_capacity.max()
         ).alias(self.pyprobe_name)
+
+
+class StepFromCategorical(ColumnMap):
+    """A template mapping for calculating step from categorical columns.
+
+    An example of a categorical column is one that describes the type of step, e.g.
+    "CC-CV", "CV", "OCV", etc. This method will fill the step column with an
+    incrementing count each time the categorical column changes.
+
+    Args:
+        categorical_col: The name of the categorical column.
+    """
+
+    def __init__(self, categorical_col: str) -> None:
+        """Initialize the StepFromCategorical class."""
+        pyprobe_name = "Step"
+        super().__init__(pyprobe_name, [categorical_col])
+        self.categorical_col = categorical_col
+
+    @property
+    def expr(self) -> pl.Expr:
+        """Get the polars expression for the column mapping."""
+        return (
+            # Compare current value with previous value
+            self.get(self.cycler_col)
+            .ne(self.get(self.cycler_col).shift(1))
+            # First value is always a new step (no previous value)
+            .fill_null(False)
+            # Convert boolean to integer (1 when changed, 0 when unchanged)
+            .cast(pl.UInt32)
+            # Create cumulative step counter
+            .cum_sum()
+            .alias(self.pyprobe_name)
+        )

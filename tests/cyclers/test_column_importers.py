@@ -13,6 +13,7 @@ from pyprobe.cyclers.column_importers import (
     ConvertTemperature,
     ConvertUnits,
     DateTime,
+    StepFromCategorical,
     TimeFromDate,
 )
 
@@ -207,4 +208,15 @@ def test_TimeFromDate():
         },
     )
     expected_df = pl.DataFrame({"Time [s]": [0.0, 1.0, 2.0]})
+    assert_frame_equal(df.select(column_map.expr), expected_df)
+
+
+def test_StepFromCategorical():
+    """Test the StepFromCategorical class."""
+    column_map = StepFromCategorical("Step Type")
+    column_map.validate(["Step Type"])
+    df = pl.DataFrame(
+        {"Step Type": ["Charge", "Charge", "Discharge", "Discharge", "Charge"]}
+    )
+    expected_df = pl.DataFrame({"Step": [0, 0, 1, 1, 2]}, schema={"Step": pl.UInt32})
     assert_frame_equal(df.select(column_map.expr), expected_df)
