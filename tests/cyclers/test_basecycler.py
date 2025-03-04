@@ -161,6 +161,26 @@ def test_basecycler_init(caplog):
             == "Output file extension .txt will be replaced with .parquet"
         )
 
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [4, 5, 6],
+        }
+    )
+    df.write_csv("tests/sample_data/sample_basecyclerinit_data1.csv")
+    df.write_csv("tests/sample_data/sample_basecyclerinit_data2.csv")
+    # Test with wildcards in input_data_path
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_basecyclerinit_data*.csv",
+        column_importers=[],
+    )
+    assert (
+        cycler.output_data_path
+        == "tests/sample_data/sample_basecyclerinit_datax.parquet"
+    )
+    os.remove("tests/sample_data/sample_basecyclerinit_data1.csv")
+    os.remove("tests/sample_data/sample_basecyclerinit_data2.csv")
+
 
 def test_extra_column_importers():
     """Test the extra_column_importers method."""
