@@ -75,11 +75,15 @@ class BaseCycler(BaseModel):
                 else:
                     logger.info("Output file has no extension, will be given .parquet")
                 self.output_data_path = str(path.with_suffix(".parquet"))
+            if "*" in self.output_data_path:
+                raise ValueError("Output path cannot contain wildcards.")
             if not path.parent.exists():
                 raise ValueError(f"Output directory does not exist: {path.parent}")
         else:
             input_path = Path(self.input_data_path)
-            self.output_data_path = str(input_path.with_suffix(".parquet"))
+            self.output_data_path = str(input_path.with_suffix(".parquet")).replace(
+                "*", "x"
+            )
             logger.info(
                 f"Output path not provided, defaulting to: {self.output_data_path}"
             )
