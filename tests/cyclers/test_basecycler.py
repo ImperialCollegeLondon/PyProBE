@@ -310,3 +310,164 @@ def test_event_expr():
     assert_frame_equal(
         df.with_columns(BaseCycler.event_expr()), expected_df, check_dtypes=False
     )
+
+
+def test_get_dataframe_list(caplog):
+    """Test the get_dataframe_list method."""
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [4, 5, 6],
+        }
+    )
+    df2 = pl.DataFrame(
+        {
+            "a": [7, 8, 9],
+            "b": [10, 11, 12],
+        }
+    )
+    df.write_csv("tests/sample_data/sample_dataframelist_data1.csv")
+    df2.write_csv("tests/sample_data/sample_dataframelist_data2.csv")
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_dataframelist_data1.csv",
+        column_importers=[],
+    )
+    assert len(cycler._get_dataframe_list()) == 1
+    assert_frame_equal(
+        cycler._get_dataframe_list()[0],
+        df.lazy().with_columns(pl.all().cast(pl.String)),
+    )
+
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_dataframelist_data*.csv",
+        column_importers=[],
+    )
+    assert len(cycler._get_dataframe_list()) == 2
+    assert_frame_equal(
+        cycler._get_dataframe_list()[0],
+        df.lazy().with_columns(pl.all().cast(pl.String)),
+    )
+    assert_frame_equal(
+        cycler._get_dataframe_list()[1],
+        df2.lazy().with_columns(pl.all().cast(pl.String)),
+    )
+
+    df3 = pl.DataFrame(
+        {
+            "a": [13, 14, 15],
+        }
+    )
+    df3.write_csv("tests/sample_data/sample_dataframelist_data3.csv")
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_dataframelist_data*.csv",
+        column_importers=[],
+    )
+
+    with caplog.at_level(logging.WARNING):
+        cycler._get_dataframe_list()
+        assert (
+            caplog.messages[-1]
+            == "File sample_dataframelist_data3.csv has missing columns, "
+            "these have been filled with null values."
+        )
+    os.remove("tests/sample_data/sample_dataframelist_data1.csv")
+    os.remove("tests/sample_data/sample_dataframelist_data2.csv")
+    os.remove("tests/sample_data/sample_dataframelist_data3.csv")
+
+
+def test_read_file_csv(tmp_path):
+    """Test reading a CSV file."""
+    df = pl.DataFrame(
+        {
+            "header1": ["1", "4"],
+            "header2": ["2", "5"],
+            "header3": ["3", "6"],
+        }
+    )
+    df.write_csv(tmp_path / "test.csv")
+    result = BaseCycler.read_file(str(tmp_path / "test.csv"))
+    assert_frame_equal(result, df.lazy().with_columns(pl.all().cast(pl.String)))
+
+
+def test_read_file_csv_with_header_row(tmp_path):
+    """Test reading a CSV file with a custom header row index."""
+    # Create a temporary CSV file with a header on the second row
+    csv_path = tmp_path / "test_header.csv"
+    test_data = "ignore this row\nheader1,header2,header3\n1,2,3\n4,5,6"
+    with open(csv_path, "w") as f:
+        f.write(test_data)
+
+    # Test reading the file with header_row_index=1
+    result = BaseCycler.read_file(str(csv_path), header_row_index=1)
+    result = result.collect()
+
+    # Verify the result
+    assert result.shape == (2, 3)
+    assert result.columns == ["header1", "header2", "header3"]
+    assert result["header1"].to_list() == ["1", "4"]
+
+
+@pytest.mark.parametrize("file_ext", [".txt", ".dat", ".json", ".pdf"])
+def test_read_file_unsupported_extension(tmp_path, file_ext):
+    """Test reading a file with an unsupported extension."""
+    # Create a temporary file with unsupported extension
+    test_file = tmp_path / f"test{file_ext}"
+    test_file.write_text("some content")
+
+    # Test that reading the file raises a ValueError
+    with pytest.raises(ValueError, match=f"Unsupported file extension: {file_ext}"):
+        BaseCycler.read_file(str(test_file))
+
+
+def test_read_file_excel(tmp_path, mocker):
+    """Test reading an Excel file."""
+    # Mock the polars.read_excel function since creating actual Excel files is complex
+    mock_excel = mocker.patch("polars.read_excel")
+    mock_df = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+    mock_excel.return_value = mock_df
+
+    # Create a simple .xlsx file (content doesn't matter as we're mocking the read)
+    excel_path = tmp_path / "test.xlsx"
+    with open(excel_path, "wb") as f:
+        f.write(b"dummy content")
+
+    # Test reading the Excel file
+    result = BaseCycler.read_file(str(excel_path))
+
+    # Verify that read_excel was called with the correct arguments
+    mock_excel.assert_called_once_with(
+        str(excel_path),
+        engine="calamine",
+        infer_schema_length=0,
+        read_options={"header_row": 0},
+    )
+
+    # Verify the result
+    assert result is mock_df
+
+
+def test_read_file_excel_with_header_row(tmp_path, mocker):
+    """Test reading an Excel file with a custom header row index."""
+    # Mock the polars.read_excel function
+    mock_excel = mocker.patch("polars.read_excel")
+    mock_df = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+    mock_excel.return_value = mock_df
+
+    # Create a simple .xlsx file
+    excel_path = tmp_path / "test_header.xlsx"
+    with open(excel_path, "wb") as f:
+        f.write(b"dummy content")
+
+    # Test reading the Excel file with header_row_index=2
+    result = BaseCycler.read_file(str(excel_path), header_row_index=2)
+
+    # Verify that read_excel was called with the correct header_row argument
+    mock_excel.assert_called_once_with(
+        str(excel_path),
+        engine="calamine",
+        infer_schema_length=0,
+        read_options={"header_row": 2},
+    )
+
+    # Verify the result
+    assert result is mock_df
