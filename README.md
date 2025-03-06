@@ -139,20 +139,23 @@ PyProBE is fully open source. For more information about its license, see [LICEN
 ## Contributors
 <!-- readme: contributors -start -->
 <table>
-<tr>
-    <td align="center">
-        <a href="https://github.com/tomjholland">
-            <img src="https://avatars.githubusercontent.com/u/137503955?v=4" width="100;" alt="tomjholland"/>
-            <br />
-            <sub><b>Tom Holland</b></sub>
-        </a>
-    </td>
-    <td align="center">
-        <a href="https://github.com/mohammedasher">
-            <img src="https://avatars.githubusercontent.com/u/168521559?v=4" width="100;" alt="mohammedasher"/>
-            <br />
-            <sub><b>Mohammed Asheruddin (Asher)</b></sub>
-        </a>
-    </td></tr>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/tomjholland">
+                    <img src="https://avatars.githubusercontent.com/u/137503955?v=4" width="100;" alt="tomjholland"/>
+                    <br />
+                    <sub><b>Tom Holland</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/mohammedasher">
+                    <img src="https://avatars.githubusercontent.com/u/168521559?v=4" width="100;" alt="mohammedasher"/>
+                    <br />
+                    <sub><b>Mohammed Asheruddin (Asher)</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
 </table>
 <!-- readme: contributors -end -->
