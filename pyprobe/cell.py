@@ -1,7 +1,6 @@
 """Module for the Cell class."""
 
 import json
-import logging
 import os
 import shutil
 import warnings
@@ -11,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import polars as pl
+from loguru import logger
 from pydantic import BaseModel, Field, ValidationError, validate_call
 
 from pyprobe._version import __version__
@@ -18,8 +18,6 @@ from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
 from pyprobe.utils import PyBaMMSolution, catch_pydantic_validation, deprecated
-
-logger = logging.getLogger(__name__)
 
 
 @catch_pydantic_validation

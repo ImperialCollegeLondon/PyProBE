@@ -1,12 +1,11 @@
 """A collection of utility functions for PyProBE."""
 
 import functools
-import logging
-from typing import Any, Protocol
+import sys
+from typing import Any, Literal, Protocol
 
+from loguru import logger
 from pydantic import ValidationError
-
-logger = logging.getLogger(__name__)
 
 
 def flatten_list(lst: int | list[Any]) -> list[int]:
@@ -86,3 +85,38 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
         return wrapper
 
     return decorator
+
+
+def set_log_level(
+    level: Literal[
+        "TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"
+    ] = "ERROR",
+) -> None:
+    """Set PyProBE's logging level to send to stderr.
+
+    Args:
+        level:
+            The logging level to display. Options are:
+            - TRACE: Show all messages, including trace messages.
+            - DEBUG: Show all debugging information.
+            - INFO: Show detailed information.
+            - SUCCESS: Show success messages.
+            - WARNING: Show warning messages.
+            - ERROR: Show error messages (default).
+            - CRITICAL: Show critical error messages only.
+
+    Example:
+
+    .. code-block:: python
+
+        import pyprobe
+        pyprobe.set_log_level("INFO")  # Show more detailed logs
+        pyprobe.set_log_level("DEBUG") # Show all debugging information
+        pyprobe.set_log_level("ERROR") # Default - show only errors
+    """
+    logger.remove()  # Remove all handlers
+    fmt = (
+        "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | "
+        "<cyan>{name}:{function}:{line}</cyan> - <level>{message}</level>"
+    )
+    logger.add(sys.stderr, level=level.upper(), format=fmt, colorize=True)

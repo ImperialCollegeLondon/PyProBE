@@ -65,3 +65,79 @@ def test_catch_pydantic_validation_preserves_signature():
     assert sig.return_annotation is str
     assert sample_func.__name__ == "sample_func"
     assert sample_func.__doc__ == "Test docstring."
+
+
+def test_set_log_level_default(mocker):
+    """Test that set_log_level uses ERROR as default."""
+    # Arrange
+    mock_remove = mocker.patch("pyprobe.utils.logger.remove")
+    mock_add = mocker.patch("pyprobe.utils.logger.add")
+
+    # Act
+    utils.set_log_level()
+
+    # Assert
+    mock_remove.assert_called_once()
+    mock_add.assert_called_once()
+    # Check the level parameter is "ERROR"
+    _, kwargs = mock_add.call_args
+    assert kwargs["level"] == "ERROR"
+
+
+def test_set_log_level_specific_levels(mocker):
+    """Test set_log_level with different valid log levels."""
+    # Arrange
+    mock_remove = mocker.patch("pyprobe.utils.logger.remove")
+    mock_add = mocker.patch("pyprobe.utils.logger.add")
+    valid_levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+
+    # Act & Assert
+    for level in valid_levels:
+        mock_remove.reset_mock()
+        mock_add.reset_mock()
+
+        utils.set_log_level(level)
+
+        mock_remove.assert_called_once()
+        mock_add.assert_called_once()
+        _, kwargs = mock_add.call_args
+        assert kwargs["level"] == level
+
+
+def test_set_log_level_case_insensitive(mocker):
+    """Test set_log_level handles lowercase input correctly."""
+    # Arrange
+    mock_remove = mocker.patch("pyprobe.utils.logger.remove")
+    mock_add = mocker.patch("pyprobe.utils.logger.add")
+
+    # Act
+    utils.set_log_level("debug")
+
+    # Assert
+    mock_remove.assert_called_once()
+    mock_add.assert_called_once()
+    # Check the level parameter is correctly uppercased
+    _, kwargs = mock_add.call_args
+    assert kwargs["level"] == "DEBUG"
+
+
+def test_set_log_level_format(mocker):
+    """Test set_log_level uses correct format string."""
+    # Arrange
+    mock_remove = mocker.patch("pyprobe.utils.logger.remove")
+    mock_add = mocker.patch("pyprobe.utils.logger.add")
+    expected_format = (
+        "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | "
+        "<cyan>{name}:{function}:{line}</cyan> - <level>{message}</level>"
+    )
+
+    # Act
+    utils.set_log_level("INFO")
+
+    # Assert
+    mock_remove.assert_called_once()
+    mock_add.assert_called_once()
+    # Verify format and colorize parameters
+    _, kwargs = mock_add.call_args
+    assert kwargs["format"] == expected_format
+    assert kwargs["colorize"] is True

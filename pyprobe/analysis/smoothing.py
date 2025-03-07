@@ -1,12 +1,12 @@
 """Module containing methods for smoothing noisy experimental data."""
 
 import copy
-import logging
 from collections.abc import Callable
 from typing import Any, Literal
 
 import numpy as np
 import polars as pl
+from loguru import logger
 from numpy.typing import NDArray
 from pydantic import validate_call
 from scipy import interpolate
@@ -16,8 +16,6 @@ from scipy.signal import savgol_filter
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
-
-logger = logging.getLogger(__name__)
 
 
 @validate_call

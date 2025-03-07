@@ -1,12 +1,10 @@
 """A module for unit conversion of PyProBE data."""
 
 import itertools
-import logging
 import re
 
 import polars as pl
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 unit_dict: dict[str, str] = {
     "A": "Current",

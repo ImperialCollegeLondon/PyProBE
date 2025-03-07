@@ -1,14 +1,12 @@
 """A module to load and process Neware battery cycler data."""
 
-import logging
 import os
 
 import polars as pl
+from loguru import logger
 
 from pyprobe.cyclers import column_importers as ci
 from pyprobe.cyclers.basecycler import BaseCycler
-
-logger = logging.getLogger(__name__)
 
 
 class Neware(BaseCycler):

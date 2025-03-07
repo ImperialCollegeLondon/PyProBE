@@ -1,6 +1,5 @@
 """Module for degradation mode analysis methods."""
 
-import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, Literal, cast
@@ -9,6 +8,7 @@ import joblib
 import numpy as np
 import polars as pl
 import sympy as sp
+from loguru import logger
 from joblib import Parallel, delayed
 from numpy.typing import NDArray
 from pydantic import ConfigDict, validate_call
@@ -20,8 +20,6 @@ from pyprobe.analysis import smoothing, utils
 from pyprobe.analysis.utils import AnalysisValidator
 from pyprobe.pyprobe_types import FilterToCycleType, PyProBEDataType
 from pyprobe.result import Result
-
-logger = logging.getLogger(__name__)
 
 
 def _get_gradient(

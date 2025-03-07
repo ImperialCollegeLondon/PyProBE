@@ -1,13 +1,13 @@
 """A module to load and process battery cycler data."""
 
 import glob
-import logging
 import os
 import time
 from pathlib import Path
 from typing import Literal
 
 import polars as pl
+from loguru import logger
 from pydantic import (
     BaseModel,
     Field,
@@ -16,8 +16,6 @@ from pydantic import (
 )
 
 from pyprobe.cyclers.column_importers import ColumnMap
-
-logger = logging.getLogger(__name__)
 
 
 class BaseCycler(BaseModel):

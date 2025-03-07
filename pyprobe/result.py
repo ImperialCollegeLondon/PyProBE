@@ -1,6 +1,5 @@
 """A module for the Result class."""
 
-import logging
 import re
 from collections.abc import Callable
 from functools import wraps
@@ -10,6 +9,7 @@ from typing import Any, Literal, Union
 import numpy as np
 import pandas as pd
 import polars as pl
+from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
@@ -18,8 +18,6 @@ from scipy.io import savemat
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
 from pyprobe.utils import catch_pydantic_validation, deprecated
-
-logger = logging.getLogger(__name__)
 
 try:
     import hvplot.polars  # noqa: F401
