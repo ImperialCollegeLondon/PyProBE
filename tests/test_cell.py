@@ -143,6 +143,14 @@ def test_process_generic_file(cell_instance):
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [10.0, 11.0, 12.0],
         },
+        schema=[
+            ("Time [s]", pl.Float64),
+            ("Step", pl.UInt64),
+            ("Event", pl.UInt64),
+            ("Current [A]", pl.Float64),
+            ("Voltage [V]", pl.Float64),
+            ("Capacity [Ah]", pl.Float64),
+        ],
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
@@ -797,6 +805,14 @@ def test_process_cycler_data_generic():
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [10.0, 11.0, 12.0],
         },
+        schema=[
+            ("Time [s]", pl.Float64),
+            ("Step", pl.UInt64),
+            ("Event", pl.UInt64),
+            ("Current [A]", pl.Float64),
+            ("Voltage [V]", pl.Float64),
+            ("Capacity [Ah]", pl.Float64),
+        ],
     )
     saved_df = pl.read_parquet(data_path.replace(".csv", ".parquet"))
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
