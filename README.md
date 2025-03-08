@@ -14,7 +14,7 @@
 PyProBE (Python Processing for Battery Experiments) is a Python package designed to simplify and accelerate the process of analysing data from 
 battery cyclers.
 
-PyProBE is documented [here](https://pyprobe.readthedocs.io). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://imperialcollegelondon.github.io/PyProBE/examples/examples.html).
+PyProBE is documented [here](https://pyprobe.readthedocs.io). Examples are stored in ```docs/source/examples``` and are integrated into the documentation [here](https://pyprobe.readthedocs.io/en/latest/examples/examples.html).
 
 ## Installing PyProBE
 Install PyProBE with pip:
@@ -23,11 +23,11 @@ Install PyProBE with pip:
 pip install PyProBE-Data
 ```
 
-For more detail see the [user installation guide](https://imperialcollegelondon.github.io/PyProBE/user_guide/installation.html).
+For more detail see the [user installation guide](https://pyprobe.readthedocs.io/en/latest/user_guide/installation.html).
 
-To install from source see the [developer installation guide](https://imperialcollegelondon.github.io/PyProBE/developer_guide/installation.html).
+To install from source see the [developer installation guide](https://pyprobe.readthedocs.io/en/latest/developer_guide/developer_installation.html).
 
-## PyProBE Objectives
+## PyProBE Objectives 
 <details open>
 <summary><strong style="font-size: 1.2em;">1. Ease of use</strong></summary>
         
@@ -50,14 +50,14 @@ cell.procedure['Reference Test'].step(1)
 cell.procedure['Reference Test'].experiment('Discharge Pulses').cycle(3).discharge(0)
 ```
 
-This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://imperialcollegelondon.github.io/PyProBE/examples/filtering-data.html) example to see this in action.
+This makes it easy to quickly access the data you need for analysis. See the [filtering data](https://pyprobe.readthedocs.io/en/latest/examples/filtering-data.html) example to see this in action.
 
-See the [documentation](https://imperialcollegelondon.github.io/PyProBE/) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
-- [Importing data](https://imperialcollegelondon.github.io/PyProBE/user_guide/importing_data.html)
-- [Accessing data](https://imperialcollegelondon.github.io/PyProBE/user_guide/accessing_data.html)
-- [Plotting](https://imperialcollegelondon.github.io/PyProBE/user_guide/plotting.html)
+See the [documentation](https://pyprobe.readthedocs.io/en/latest/) for a detailed user guide. Start with the following pages to get PyProBE set up with your data:
+- [Importing data](https://pyprobe.readthedocs.io/en/latest/user_guide/importing_data.html)
+- [Accessing data](https://pyprobe.readthedocs.io/en/latest/user_guide/accessing_data.html)
+- [Plotting](https://pyprobe.readthedocs.io/en/latest/user_guide/plotting.html)
 
-PyProBE works with numerous cyclers. For guidance on how to export your data to work with PyProBE see the [Input Data Guidance](https://imperialcollegelondon.github.io/PyProBE/user_guide/input_data_guidance.html).
+PyProBE works with numerous cyclers. For guidance on how to export your data to work with PyProBE see the [Input Data Guidance](https://pyprobe.readthedocs.io/en/latest/user_guide/input_data_guidance.html).
 </details>
 
 <details>
@@ -89,14 +89,14 @@ makes the setup process fast and intuitive for new data.
 
 ![README file](./docs/source/user_guide/images/Readme.jpg)
 
-See the [guidance](https://imperialcollegelondon.github.io/PyProBE/user_guide/writing_a_readme_file.html) for writing README files for your
+See the [guidance](https://pyprobe.readthedocs.io/en/latest/user_guide/writing_a_readme_file.html) for writing README files for your
 experiments.
 </details>
 
 <details>
 <summary>4. <strong style="font-size: 1.2em;">Host a library of analysis methods</strong></summary>
 
-PyProBE's [analysis](https://imperialcollegelondon.github.io/PyProBE/api/pyprobe.analysis.html) module contains classes and methods to
+PyProBE's [analysis](https://pyprobe.readthedocs.io/en/latest/_autosummary/pyprobe.analysis.html) module contains classes and methods to
 perform further analysis of battery data. It is designed to maintain compatibility 
 with the PyProBE data format and plotting tools while ensuring functions are simply 
 defined, portable and tested.
@@ -116,7 +116,7 @@ The currently implemented analysis methods includes:
     - Curve fitting to pseudo-OCV, Incremental Capacity Analysis (ICA) or Differential Voltage Analysis (DVA) curves
     - Charge/discharge pseudo-OCV curve averaging for resistance compensation
 
-It is easy to contribute to the analysis module. See the [developer guide](https://imperialcollegelondon.github.io/PyProBE/developer_guide/contributing_to_the_analysis_module.html)
+It is easy to contribute to the analysis module. See the [developer guide](https://pyprobe.readthedocs.io/en/latest/developer_guide/contributing_to_the_analysis_module.html)
 and [contributing guidelines](CONTRIBUTING.md).
 </details>
 
