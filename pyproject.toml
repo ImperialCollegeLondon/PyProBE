@@ -37,7 +37,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/ImperialCollegeLondon/PyProBE"
-Documentation = "https://imperialcollegelondon.github.io/PyProBE/"
+Documentation = "https://https://pyprobe.readthedocs.io/PyProBE/"
 Repository = "https://github.com/ImperialCollegeLondon/PyProBE"
 Releases = "https://github.com/ImperialCollegeLondon/PyProBE/releases"
 Changelog = "https://github.com/ImperialCollegeLondon/PyProBE/blob/main/CHANGELOG.md"
