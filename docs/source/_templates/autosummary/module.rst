@@ -1,5 +1,24 @@
 {{ fullname | escape | underline}}
 
+{% if fullname == "pyprobe" %}
+.. admonition:: Top-Level Imports
+   :class: note
+
+   The following items can be imported directly from the ``pyprobe`` package:
+
+   **Classes:**
+   
+   * :py:class:`pyprobe.Cell <pyprobe.cell.Cell>`
+   * :py:class:`pyprobe.Result <pyprobe.result.Result>`
+   
+   **Functions:**
+   
+   * :py:func:`pyprobe.load_archive <pyprobe.cell.load_archive>`
+   * :py:func:`pyprobe.make_cell_list <pyprobe.cell.make_cell_list>`
+   * :py:func:`pyprobe.process_cycler_data <pyprobe.cell.process_cycler_data>`
+   * :py:func:`pyprobe.launch_dashboard <pyprobe.dashboard.launch_dashboard>`
+{% endif %}
+
 .. automodule:: {{ fullname }}
 
    {% block attributes %}
