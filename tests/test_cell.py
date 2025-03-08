@@ -15,7 +15,7 @@ from polars.testing import assert_frame_equal
 import pyprobe
 from pyprobe import cell
 from pyprobe._version import __version__
-from pyprobe.cyclers import column_importers as ci
+from pyprobe.cyclers import column_maps
 from pyprobe.readme_processor import process_readme
 
 
@@ -119,11 +119,11 @@ def test_process_generic_file(cell_instance):
     )
 
     column_importers = [
-        ci.ConvertUnits("Time [s]", "T [*]"),
-        ci.ConvertUnits("Voltage [V]", "V [*]"),
-        ci.ConvertUnits("Current [A]", "I [*]"),
-        ci.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        ci.CastAndRename("Step", "Count", pl.UInt64),
+        column_maps.ConvertUnits("Time [s]", "T [*]"),
+        column_maps.ConvertUnits("Voltage [V]", "V [*]"),
+        column_maps.ConvertUnits("Current [A]", "I [*]"),
+        column_maps.ConvertUnits("Capacity [Ah]", "Q [*]"),
+        column_maps.CastAndRename("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(f"{folder_path}/test_generic_file.csv")
@@ -682,7 +682,7 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
     # Test with column_importers provided
-    column_importers = [ci.ConvertUnits("Time [s]", "T [*]")]
+    column_importers = [column_maps.ConvertUnits("Time [s]", "T [*]")]
     cell_instance.import_from_cycler(
         procedure_name,
         cycler,
@@ -702,7 +702,7 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
     # Test with extra cycler columns provided
-    extra_cycler_columns = [ci.ConvertUnits("Time [s]", "T [*]")]
+    extra_cycler_columns = [column_maps.ConvertUnits("Time [s]", "T [*]")]
     cell_instance.import_from_cycler(
         procedure_name,
         cycler,
@@ -782,11 +782,11 @@ def test_process_cycler_data_generic():
     )
 
     column_importers = [
-        ci.ConvertUnits("Time [s]", "T [*]"),
-        ci.ConvertUnits("Voltage [V]", "V [*]"),
-        ci.ConvertUnits("Current [A]", "I [*]"),
-        ci.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        ci.CastAndRename("Step", "Count", pl.UInt64),
+        column_maps.ConvertUnits("Time [s]", "T [*]"),
+        column_maps.ConvertUnits("Voltage [V]", "V [*]"),
+        column_maps.ConvertUnits("Current [A]", "I [*]"),
+        column_maps.ConvertUnits("Capacity [Ah]", "Q [*]"),
+        column_maps.CastAndRename("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(data_path)

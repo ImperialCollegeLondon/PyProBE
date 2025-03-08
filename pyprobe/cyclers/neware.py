@@ -5,23 +5,23 @@ import os
 import polars as pl
 from loguru import logger
 
-from pyprobe.cyclers import column_importers as ci
+from pyprobe.cyclers import column_maps
 from pyprobe.cyclers.basecycler import BaseCycler
 
 
 class Neware(BaseCycler):
     """A class to load and process Neware battery cycler data."""
 
-    column_importers: list[ci.ColumnMap] = [
-        ci.DateTime("Date", "%Y-%m-%d  %H:%M:%S%.f"),
-        ci.TimeFromDate("Date", "%Y-%m-%d  %H:%M:%S%.f"),
-        ci.CastAndRename("Step", "Step Index", pl.UInt64),
-        ci.ConvertUnits("Current [A]", "Current(*)"),
-        ci.ConvertUnits("Voltage [V]", "Voltage(*)"),
-        ci.CapacityFromChDch("Chg. Cap.(*)", "DChg. Cap.(*)"),
-        ci.ConvertTemperature("T1(*)"),
-        ci.TimeFromDate("Total Time", "%Y-%m-%d  %H:%M:%S%.f"),
-        ci.CapacityFromCurrentSign("Capacity(*)", "Current(*)"),
+    column_importers: list[column_maps.ColumnMap] = [
+        column_maps.DateTime("Date", "%Y-%m-%d  %H:%M:%S%.f"),
+        column_maps.TimeFromDate("Date", "%Y-%m-%d  %H:%M:%S%.f"),
+        column_maps.CastAndRename("Step", "Step Index", pl.UInt64),
+        column_maps.ConvertUnits("Current [A]", "Current(*)"),
+        column_maps.ConvertUnits("Voltage [V]", "Voltage(*)"),
+        column_maps.CapacityFromChDch("Chg. Cap.(*)", "DChg. Cap.(*)"),
+        column_maps.ConvertTemperature("T1(*)"),
+        column_maps.TimeFromDate("Total Time", "%Y-%m-%d  %H:%M:%S%.f"),
+        column_maps.CapacityFromCurrentSign("Capacity(*)", "Current(*)"),
     ]
 
     @staticmethod

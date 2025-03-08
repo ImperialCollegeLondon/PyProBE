@@ -5,7 +5,7 @@ from datetime import datetime
 
 import polars as pl
 
-from pyprobe.cyclers import column_importers as ci
+from pyprobe.cyclers import column_maps
 from pyprobe.cyclers.basecycler import BaseCycler
 
 
@@ -26,16 +26,16 @@ class Biologic(BaseCycler):
         "Ewe/*": "Voltage [*]",
     }
 
-    column_importers: list[ci.ColumnMap] = [
-        ci.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        ci.CastAndRename("Step", "Ns", pl.UInt64),
-        ci.ConvertUnits("Time [s]", "time/*"),
-        ci.ConvertUnits("Current [A]", "I/*"),
-        ci.ConvertUnits("Current [A]", "<I>/*"),
-        ci.ConvertUnits("Voltage [V]", "Ecell/*"),
-        ci.CapacityFromChDch("Q charge/*", "Q discharge/*"),
-        ci.ConvertTemperature("Temperature/*"),
-        ci.ConvertUnits("Voltage [V]", "Ewe/*"),
+    column_importers: list[column_maps.ColumnMap] = [
+        column_maps.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        column_maps.CastAndRename("Step", "Ns", pl.UInt64),
+        column_maps.ConvertUnits("Time [s]", "time/*"),
+        column_maps.ConvertUnits("Current [A]", "I/*"),
+        column_maps.ConvertUnits("Current [A]", "<I>/*"),
+        column_maps.ConvertUnits("Voltage [V]", "Ecell/*"),
+        column_maps.CapacityFromChDch("Q charge/*", "Q discharge/*"),
+        column_maps.ConvertTemperature("Temperature/*"),
+        column_maps.ConvertUnits("Voltage [V]", "Ewe/*"),
     ]
 
     @staticmethod

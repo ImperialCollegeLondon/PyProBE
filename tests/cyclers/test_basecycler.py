@@ -9,7 +9,7 @@ import pytest
 from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.basecycler import BaseCycler
-from pyprobe.cyclers.column_importers import (
+from pyprobe.cyclers.column_maps import (
     CapacityFromChDch,
     CastAndRename,
     ConvertTemperature,

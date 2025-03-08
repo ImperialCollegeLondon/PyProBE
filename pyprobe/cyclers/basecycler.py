@@ -15,7 +15,7 @@ from pydantic import (
     model_validator,
 )
 
-from pyprobe.cyclers.column_importers import ColumnMap
+from pyprobe.cyclers.column_maps import ColumnMap
 
 
 class BaseCycler(BaseModel):
