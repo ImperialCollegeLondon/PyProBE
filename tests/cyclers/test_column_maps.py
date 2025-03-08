@@ -79,38 +79,73 @@ def test_match_columns():
     }
 
 
-def test_ColumnMap_validate():
+def test_ColumnMap_validate(caplog):
     """Test the ColumnMap class."""
+    # Test case 1: All columns are found
     column_map = TestColumnMap("Date", ["DateTime"])
-    column_map.validate(["DateTime"])
-    assert column_map.pyprobe_name == "Date"
-    assert column_map.column_map == {
-        "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
-    }
-    assert column_map.columns_validated
+    with caplog.at_level("INFO"):
+        column_map.validate(["DateTime"])
+        expected_name = "Date"
+        expected_map = {
+            "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
+        }
+        assert column_map.pyprobe_name == expected_name
+        assert column_map.column_map == expected_map
+        assert column_map.columns_validated
+        assert caplog.messages[-1] == (
+            "Column mapping validated: Date -> {'DateTime': {'Cycler name': "
+            "'DateTime', 'Cycler unit': ''}}"
+        )
 
+    # Test case 2: Multiple columns, all found
     column_map = TestColumnMap("Date", ["DateTime", "Current [*]"])
-    column_map.validate(["DateTime", "Current [mA]", "Voltage [V]"])
-    assert column_map.pyprobe_name == "Date"
-    assert column_map.column_map == {
-        "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-    }
-    assert column_map.columns_validated
+    with caplog.at_level("INFO"):
+        caplog.clear()
+        column_map.validate(["DateTime", "Current [mA]", "Voltage [V]"])
+        expected_name = "Date"
+        expected_map = {
+            "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
+            "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
+        }
+        assert column_map.pyprobe_name == expected_name
+        assert column_map.column_map == expected_map
+        assert column_map.columns_validated
+        assert caplog.messages[-1] == (
+            "Column mapping validated: Date -> {'DateTime': {'Cycler name': "
+            "'DateTime', 'Cycler unit': ''}, 'Current [*]': {'Cycler name': "
+            "'Current [mA]', 'Cycler unit': 'mA'}}"
+        )
 
+    # Test case 3: No columns found
     column_map = TestColumnMap("Date", ["DateTime"])
-    column_map.validate(["Date"])
-    assert column_map.pyprobe_name == "Date"
-    assert not column_map.columns_validated
-    assert column_map.column_map == {}
+    with caplog.at_level("INFO"):
+        caplog.clear()
+        column_map.validate(["Date"])
+        expected_name = "Date"
+        expected_map = {}
+        assert column_map.pyprobe_name == expected_name
+        assert column_map.column_map == expected_map
+        assert not column_map.columns_validated
+        assert (
+            caplog.messages[-1]
+            == "Failed to find required columns for Date. Missing: {'DateTime'}"
+        )
 
+    # Test case 4: Some columns found, others missing
     column_map = TestColumnMap("Date", ["DateTime", "Current [*]"])
-    column_map.validate(["Date", "Current [mA]", "Voltage [V]"])
-    assert column_map.pyprobe_name == "Date"
-    assert column_map.column_map == {
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-    }
-    assert not column_map.columns_validated
+    with caplog.at_level("INFO"):
+        column_map.validate(["Date", "Current [mA]", "Voltage [V]"])
+        expected_name = "Date"
+        expected_map = {
+            "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
+        }
+        assert column_map.pyprobe_name == expected_name
+        assert column_map.column_map == expected_map
+        assert not column_map.columns_validated
+        assert (
+            caplog.messages[-1]
+            == "Failed to find required columns for Date. Missing: {'DateTime'}"
+        )
 
 
 def test_ColumnMap_get():

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import polars as pl
+from loguru import logger
 from pydantic import (
     GetCoreSchemaHandler,
 )
@@ -114,6 +115,18 @@ class ColumnMap(ABC):
         """
         self.column_map = self.match_columns(column_list, self.required_cycler_cols)
         self.columns_validated = len(self.column_map) == len(self.required_cycler_cols)
+        if self.columns_validated:
+            logger.info(
+                f"Column mapping validated: {self.pyprobe_name} -> {self.column_map}"
+            )
+        else:
+            missing_columns = set(self.required_cycler_cols) - set(
+                self.column_map.keys()
+            )
+            logger.info(
+                f"Failed to find required columns for {self.pyprobe_name}. "
+                f"Missing: {missing_columns}"
+            )
 
 
 class CastAndRename(ColumnMap):
