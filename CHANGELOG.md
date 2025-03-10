@@ -1,6 +1,94 @@
 # CHANGELOG
 
 
+## v2.1.1 (2025-03-10)
+
+### Bug Fixes
+
+- Replace pybamm optional dependency with pybamm[cite]
+  ([`295257a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/295257ab315b880b07a1fdc9fd4b5daa69b487a7))
+
+### Chores
+
+- Add --cov flag to pytest in ci workflow
+  ([`fe85c5d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/fe85c5defe9233d4439ff4636715089e3f792522))
+
+- Add beta uv dependabot support
+  ([`e812170`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e8121707f3f258f0f8a8a4e707800593c737b9ed))
+
+- Add github-actions as a package updated by dependabot
+  ([`5f0a5d7`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5f0a5d7bb316118fad07568f216cb286f7bbc154))
+
+- Add pybamm as an optional dependency
+  ([`d4f5d7a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/d4f5d7a01773d0440ac4daa906eeb261d635f83b))
+
+This will help ensure future compatibility between the packages
+
+- Include publish to pypi logic in create-release workflow
+  ([`4f03075`](https://github.com/ImperialCollegeLondon/PyProBE/commit/4f0307558fa72e7fa64a152d73b94c28215e4de5))
+
+- Update ci workflow
+  ([`c50a003`](https://github.com/ImperialCollegeLondon/PyProBE/commit/c50a003a4fad6448f73733ca25bc10b83fdb45c2))
+
+Add matrix strategy for testing python 3.11 and 3.12 and run pytest with --upgrade flag
+
+- Update readthedocs config to use pybamm optional dependency
+  ([`bacb659`](https://github.com/ImperialCollegeLondon/PyProBE/commit/bacb65992ae8f6d08a8b7eb9aacbe0c726767bb1))
+
+- **deps**: Bump akhilmhdh/contributors-readme-action
+  ([`7ded765`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7ded765291da6ed323b9bbdabb53f7383cf4a55c))
+
+Bumps
+  [akhilmhdh/contributors-readme-action](https://github.com/akhilmhdh/contributors-readme-action)
+  from 2.3.6 to 2.3.10. - [Release
+  notes](https://github.com/akhilmhdh/contributors-readme-action/releases) -
+  [Commits](https://github.com/akhilmhdh/contributors-readme-action/compare/v2.3.6...v2.3.10)
+
+--- updated-dependencies: - dependency-name: akhilmhdh/contributors-readme-action dependency-type:
+  direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+### Documentation
+
+- Add list of top-level imports to docs landing page
+  ([`ee4210a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ee4210a1b4100e939b00df0f9f6995e8e6ed6b73))
+
+- Add python version classifier and badge
+  ([`9bbd6e6`](https://github.com/ImperialCollegeLondon/PyProBE/commit/9bbd6e6437dba8b2b1e2f4b8ceae8628b31b0f72))
+
+- Append the footbibliograpy to autosummary generated docs
+  ([`937844f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/937844fa463fb97ee1ae06cf2cde515bc1e03c2f))
+
+- Fix sphinx errors
+  ([`4f627ed`](https://github.com/ImperialCollegeLondon/PyProBE/commit/4f627edda44ebbb4d989e9135cc76ead6d2c10df))
+
+- Make correction in getting started example
+  ([`36befcd`](https://github.com/ImperialCollegeLondon/PyProBE/commit/36befcdd694d0d107684daf675bc77d942a1f06a))
+
+- Remove profiling code from getting started example
+  ([`e5dfcde`](https://github.com/ImperialCollegeLondon/PyProBE/commit/e5dfcde926cb389d8e61f59cfce266e607e7a3ff))
+
+- Switch to myst-nb for notebook building in docs
+  ([`05e2e12`](https://github.com/ImperialCollegeLondon/PyProBE/commit/05e2e12d58d25aa44270000d3f297af5d9dd3bd9))
+
+- Update links to documentation
+  ([`f77724a`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f77724a88500c9ff095c9dccdc6cf50c17c44edc))
+
+- **contributor**: Contrib-readme-action has updated readme
+  ([`7a33539`](https://github.com/ImperialCollegeLondon/PyProBE/commit/7a33539c14aa46de5e67e5f5da7a83012cfb56ff))
+
+- **result**: Refer user to hvplot and pandas docs directly
+  ([`bead64f`](https://github.com/ImperialCollegeLondon/PyProBE/commit/bead64fa42375f06521ae5035c916257ad5d19b9))
+
+### Refactoring
+
+- Replace ray with joblib for parallel computing
+  ([`ed69063`](https://github.com/ImperialCollegeLondon/PyProBE/commit/ed69063f9b4f4f8f2e109610b03cf57c467349a8))
+
+
 ## v2.1.0 (2025-02-28)
 
 ### Bug Fixes
@@ -69,6 +157,9 @@
 
 - Install pybamm in readthedocs build
   ([`33cc8d3`](https://github.com/ImperialCollegeLondon/PyProBE/commit/33cc8d3035ba3c8976509fada9f6eb3cdf85ccae))
+
+- Release candidate 2.1.0
+  ([`5ee7c85`](https://github.com/ImperialCollegeLondon/PyProBE/commit/5ee7c857783733f3aeb8c2a23f875f5b3b41d794))
 
 - Remove sphinx workflow
   ([`f981b3d`](https://github.com/ImperialCollegeLondon/PyProBE/commit/f981b3d8079010aefb249fab99abb7b12d94400b))
