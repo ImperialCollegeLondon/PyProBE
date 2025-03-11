@@ -95,10 +95,13 @@ class BaseCycler(BaseModel):
             self._imported_dataframe = self.get_imported_dataframe(dataframe_list)
             if len(self.extra_column_importers) > 0:
                 self.column_importers += self.extra_column_importers
-            for column_importer in self.column_importers:
-                column_importer.validate(
-                    self._imported_dataframe.collect_schema().names()
-                )
+            with logger.contextualize(
+                input_data_path=self.input_data_path,
+            ):
+                for column_importer in self.column_importers:
+                    column_importer.validate(
+                        self._imported_dataframe.collect_schema().names()
+                    )
         return self
 
     def _get_dataframe_list(self) -> list[pl.DataFrame | pl.LazyFrame]:

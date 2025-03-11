@@ -129,6 +129,7 @@ def test_set_log_level_format(mocker):
     expected_format = (
         "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | "
         "<cyan>{name}:{function}:{line}</cyan> - <level>{message}</level>"
+        " | Context: {extra}"
     )
 
     # Act

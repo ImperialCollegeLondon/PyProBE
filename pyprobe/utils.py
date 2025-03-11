@@ -117,6 +117,7 @@ def set_log_level(
     logger.remove()  # Remove all handlers
     fmt = (
         "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | "
-        "<cyan>{name}:{function}:{line}</cyan> - <level>{message}</level>"
+        "<cyan>{name}:{function}:{line}</cyan> - <level>{message}</level> | "
+        "Context: {extra}"
     )
     logger.add(sys.stderr, level=level.upper(), format=fmt, colorize=True)
