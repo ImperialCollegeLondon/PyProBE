@@ -367,6 +367,12 @@ class StepFromCategorical(ColumnMap):
     @property
     def expr(self) -> pl.Expr:
         """Get the polars expression for the column mapping."""
+        logger.warning(
+            f"Step number is being inferred from the categorical column "
+            f"{self.categorical_col}. "
+            "A new step will be counted each time the column changes. This means that "
+            "it will not be possible to filter by cycle.",
+        )
         return (
             # Compare current value with previous value
             self.get(self.cycler_col)

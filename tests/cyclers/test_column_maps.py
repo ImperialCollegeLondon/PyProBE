@@ -246,7 +246,7 @@ def test_TimeFromDate():
     assert_frame_equal(df.select(column_map.expr), expected_df)
 
 
-def test_StepFromCategorical():
+def test_StepFromCategorical(caplog):
     """Test the StepFromCategorical class."""
     column_map = StepFromCategorical("Step Type")
     column_map.validate(["Step Type"])
@@ -254,4 +254,10 @@ def test_StepFromCategorical():
         {"Step Type": ["Charge", "Charge", "Discharge", "Discharge", "Charge"]}
     )
     expected_df = pl.DataFrame({"Step": [0, 0, 1, 1, 2]}, schema={"Step": pl.UInt32})
-    assert_frame_equal(df.select(column_map.expr), expected_df)
+    with caplog.at_level("WARNING"):
+        assert_frame_equal(df.select(column_map.expr), expected_df)
+    assert caplog.messages[-1] == (
+        "Step number is being inferred from the categorical column Step Type. "
+        "A new step will be counted each time the column changes. This means that "
+        "it will not be possible to filter by cycle."
+    )
