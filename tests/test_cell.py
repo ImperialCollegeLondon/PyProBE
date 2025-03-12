@@ -823,5 +823,7 @@ def test_process_cycler_data_generic():
             input_data_path=data_path,
         )
 
-    os.remove(data_path)
-    os.remove(data_path.replace(".csv", ".parquet"))
+    if os.path.exists(data_path):
+        os.remove(data_path)
+    if os.path.exists(data_path.replace(".csv", ".parquet")):
+        os.remove(data_path.replace(".csv", ".parquet"))
