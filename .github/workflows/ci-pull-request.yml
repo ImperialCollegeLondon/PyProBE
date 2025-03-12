@@ -1,4 +1,4 @@
-name: "Tests"
+name: "CI for Pull Requests"
 on:
   pull_request:
     branches:
@@ -10,50 +10,43 @@ on:
       - pyproject.toml
       - .github/workflows/ci.yml
       - uv.lock
-  push:
-    branches:
-      - main
-    paths:
-      - pyprobe/**
-      - tests/**
-      - pyproject.toml
-      - .github/workflows/ci.yml
-      - uv.lock
   workflow_dispatch:
+permissions:
+  contents: read
+  checks: write
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  # Matrix job for pull requests
+  test-matrix:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.6.3"
           enable-cache: true
           python-version: ${{ matrix.python-version }}
-
+          
       - name: Run tests with frozen dependencies
         run: uv run --all-extras --frozen --isolated pytest --cov --cov-report=xml -n auto
-
+      
       - name: Upload coverage reports to Codecov
-        if: matrix.python-version == '3.12'
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
+          
       - name: Test notebooks
-        if: github.event_name == 'pull_request'
+        shell: bash
         run: |
           shopt -s extglob
           uv run --all-extras --frozen --isolated pytest -n auto --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
-
+      
       - name: Test upgraded dependencies
         run: uv run --extra dev --upgrade --isolated pytest -n auto
-
-      
-
-      

@@ -93,8 +93,12 @@ def test_basecycler_init(caplog):
         output_data_path="tests/sample_data/sample_data1.parquet",
         column_importers=[],
     )
-    assert cycler.input_data_path == "tests/sample_data/neware/sample_data_neware.csv"
-    assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
+    assert os.path.normpath(cycler.input_data_path) == os.path.normpath(
+        "tests/sample_data/neware/sample_data_neware.csv"
+    )
+    assert os.path.normpath(cycler.output_data_path) == os.path.normpath(
+        "tests/sample_data/sample_data1.parquet"
+    )
     assert cycler.column_importers == []
     assert cycler.compression_priority == "performance"
     assert not cycler.overwrite_existing
@@ -131,8 +135,8 @@ def test_basecycler_init(caplog):
         input_data_path="tests/sample_data/neware/sample_data_neware.csv",
         column_importers=[],
     )
-    assert (
-        cycler.output_data_path == "tests/sample_data/neware/sample_data_neware.parquet"
+    assert os.path.normpath(cycler.output_data_path) == os.path.normpath(
+        "tests/sample_data/neware/sample_data_neware.parquet"
     )
 
     # Test with missing parquet extension
@@ -142,7 +146,9 @@ def test_basecycler_init(caplog):
             output_data_path="tests/sample_data/sample_data1",
             column_importers=[],
         )
-        assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
+        assert os.path.normpath(cycler.output_data_path) == os.path.normpath(
+            "tests/sample_data/sample_data1.parquet"
+        )
         assert (
             caplog.messages[-1]
             == "Output file has no extension, will be given .parquet"
@@ -155,7 +161,9 @@ def test_basecycler_init(caplog):
             output_data_path="tests/sample_data/sample_data1.txt",
             column_importers=[],
         )
-        assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
+        assert os.path.normpath(cycler.output_data_path) == os.path.normpath(
+            "tests/sample_data/sample_data1.parquet"
+        )
         assert (
             caplog.messages[-1]
             == "Output file extension .txt will be replaced with .parquet"
@@ -174,9 +182,8 @@ def test_basecycler_init(caplog):
         input_data_path="tests/sample_data/sample_basecyclerinit_data*.csv",
         column_importers=[],
     )
-    assert (
-        cycler.output_data_path
-        == "tests/sample_data/sample_basecyclerinit_datax.parquet"
+    assert os.path.normpath(cycler.output_data_path) == os.path.normpath(
+        "tests/sample_data/sample_basecyclerinit_datax.parquet"
     )
     os.remove("tests/sample_data/sample_basecyclerinit_data1.csv")
     os.remove("tests/sample_data/sample_basecyclerinit_data2.csv")
