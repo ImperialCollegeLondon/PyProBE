@@ -41,7 +41,7 @@ jobs:
         run: uv run --all-extras --frozen --isolated pytest --cov --cov-report=xml -n auto
 
       - name: Upload coverage reports to Codecov
-        if: matrix.python-version == '3.12'
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
