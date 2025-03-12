@@ -11,6 +11,9 @@ on:
       - .github/workflows/ci.yml
       - uv.lock
   workflow_dispatch:
+permissions:
+  contents: read
+  checks: write
 jobs:
   # Matrix job for pull requests
   test-matrix:
