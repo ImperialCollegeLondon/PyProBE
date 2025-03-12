@@ -1,5 +1,5 @@
 # PyProBE
-![CI](https://github.com/ImperialCollegeLondon/PyProBE/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/ImperialCollegeLondon/PyProBE/actions/workflows/ci-push.yml/badge.svg)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/ImperialCollegeLondon/PyProBE/main.svg)](https://results.pre-commit.ci/latest/github/ImperialCollegeLondon/PyProBE/main)
 [![Documentation Status](https://readthedocs.org/projects/pyprobe/badge/?version=latest)](https://pyprobe.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/ImperialCollegeLondon/PyProBE/graph/badge.svg?token=Y5H9C8MA0A)](https://codecov.io/gh/ImperialCollegeLondon/PyProBE)

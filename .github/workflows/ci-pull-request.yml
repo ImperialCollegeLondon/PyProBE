@@ -1,4 +1,4 @@
-name: "Tests"
+name: "CI for Pull Requests"
 on:
   pull_request:
     branches:
@@ -7,15 +7,6 @@ on:
       - pyprobe/**
       - tests/**
       - docs/source/examples/*ipynb
-      - pyproject.toml
-      - .github/workflows/ci.yml
-      - uv.lock
-  push:
-    branches:
-      - main
-    paths:
-      - pyprobe/**
-      - tests/**
       - pyproject.toml
       - .github/workflows/ci.yml
       - uv.lock
@@ -56,28 +47,3 @@ jobs:
       
       - name: Test upgraded dependencies
         run: uv run --extra dev --upgrade --isolated pytest -n auto
-
-  # Simplified job for push to main
-  test-minimal:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.6.3"
-          enable-cache: true
-          python-version: "3.12"
-          
-      - name: Run tests with frozen dependencies
-        run: uv run --all-extras --frozen --isolated pytest --cov --cov-report=xml -n auto
-      
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-
-
