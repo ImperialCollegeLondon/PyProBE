@@ -785,11 +785,9 @@ def load_archive(path: str) -> Cell:
     if path.endswith(".zip"):
         extract_path = path[:-4]
         with zipfile.ZipFile(path, "r") as zipf:
-            with zipfile.ZipFile(path, "r") as zipf:
-                zipf.extractall(extract_path)
-            # Delete the original zip file
-            os.remove(path)
-            archive_path = extract_path
+            zipf.extractall(extract_path)
+        os.remove(path)
+        archive_path = extract_path
     else:
         archive_path = path
 
