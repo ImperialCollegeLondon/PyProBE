@@ -119,11 +119,11 @@ def test_process_generic_file(cell_instance):
     )
 
     column_importers = [
-        column_maps.ConvertUnits("Time [s]", "T [*]"),
-        column_maps.ConvertUnits("Voltage [V]", "V [*]"),
-        column_maps.ConvertUnits("Current [A]", "I [*]"),
-        column_maps.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        column_maps.CastAndRename("Step", "Count", pl.UInt64),
+        column_maps.ConvertUnitsMap("Time [s]", "T [*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "V [*]"),
+        column_maps.ConvertUnitsMap("Current [A]", "I [*]"),
+        column_maps.ConvertUnitsMap("Capacity [Ah]", "Q [*]"),
+        column_maps.CastAndRenameMap("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(f"{folder_path}/test_generic_file.csv")
@@ -682,7 +682,7 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
     # Test with column_importers provided
-    column_importers = [column_maps.ConvertUnits("Time [s]", "T [*]")]
+    column_importers = [column_maps.ConvertUnitsMap("Time [s]", "T [*]")]
     cell_instance.import_from_cycler(
         procedure_name,
         cycler,
@@ -702,7 +702,7 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
     # Test with extra cycler columns provided
-    extra_cycler_columns = [column_maps.ConvertUnits("Time [s]", "T [*]")]
+    extra_cycler_columns = [column_maps.ConvertUnitsMap("Time [s]", "T [*]")]
     cell_instance.import_from_cycler(
         procedure_name,
         cycler,
@@ -782,11 +782,11 @@ def test_process_cycler_data_generic():
     )
 
     column_importers = [
-        column_maps.ConvertUnits("Time [s]", "T [*]"),
-        column_maps.ConvertUnits("Voltage [V]", "V [*]"),
-        column_maps.ConvertUnits("Current [A]", "I [*]"),
-        column_maps.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        column_maps.CastAndRename("Step", "Count", pl.UInt64),
+        column_maps.ConvertUnitsMap("Time [s]", "T [*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "V [*]"),
+        column_maps.ConvertUnitsMap("Current [A]", "I [*]"),
+        column_maps.ConvertUnitsMap("Capacity [Ah]", "Q [*]"),
+        column_maps.CastAndRenameMap("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(data_path)

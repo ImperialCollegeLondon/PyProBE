@@ -10,11 +10,11 @@ from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.basecycler import BaseCycler
 from pyprobe.cyclers.column_maps import (
-    CapacityFromChDch,
-    CastAndRename,
-    ConvertTemperature,
-    ConvertUnits,
-    DateTime,
+    CapacityFromChDchMap,
+    CastAndRenameMap,
+    ConvertTemperatureMap,
+    ConvertUnitsMap,
+    DateTimeMap,
 )
 
 
@@ -75,14 +75,14 @@ def sample_pyprobe_dataframe():
 def column_importer_fixture():
     """A sample column importer."""
     return [
-        CastAndRename("Step", "Count", pl.UInt64),
-        ConvertUnits("Current [A]", "I [*]"),
-        ConvertUnits("Voltage [V]", "V [*]"),
-        ConvertUnits("Capacity [Ah]", "Q [*]"),
-        CapacityFromChDch("Q_ch [*]", "Q_dis [*]"),
-        ConvertTemperature("Temp [*]"),
-        DateTime("DateTime", "%Y-%m-%d %H:%M:%S%.f"),
-        ConvertUnits("Time [s]", "T [*]"),
+        CastAndRenameMap("Step", "Count", pl.UInt64),
+        ConvertUnitsMap("Current [A]", "I [*]"),
+        ConvertUnitsMap("Voltage [V]", "V [*]"),
+        ConvertUnitsMap("Capacity [Ah]", "Q [*]"),
+        CapacityFromChDchMap("Q_ch [*]", "Q_dis [*]"),
+        ConvertTemperatureMap("Temp [*]"),
+        DateTimeMap("DateTime", "%Y-%m-%d %H:%M:%S%.f"),
+        ConvertUnitsMap("Time [s]", "T [*]"),
     ]
 
 
@@ -187,8 +187,8 @@ def test_extra_column_importers():
     cycler_instance = BaseCycler(
         input_data_path="tests/sample_data/neware/sample_data_neware.csv",
         output_data_path="tests/sample_data/sample_data.parquet",
-        column_importers=[CastAndRename("Step", "Step", pl.UInt64)],
-        extra_column_importers=[CastAndRename("Cycle", "Cycle", pl.UInt64)],
+        column_importers=[CastAndRenameMap("Step", "Step", pl.UInt64)],
+        extra_column_importers=[CastAndRenameMap("Cycle", "Cycle", pl.UInt64)],
     )
     assert "Cycle" in cycler_instance.get_pyprobe_dataframe().columns
 

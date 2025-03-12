@@ -6,15 +6,15 @@ import polars as pl
 from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.column_maps import (
-    CapacityFromChDch,
-    CapacityFromCurrentSign,
-    CastAndRename,
+    CapacityFromChDchMap,
+    CapacityFromCurrentSignMap,
+    CastAndRenameMap,
     ColumnMap,
-    ConvertTemperature,
-    ConvertUnits,
-    DateTime,
-    StepFromCategorical,
-    TimeFromDate,
+    ConvertTemperatureMap,
+    ConvertUnitsMap,
+    DateTimeMap,
+    StepFromCategoricalMap,
+    TimeFromDateMap,
 )
 
 
@@ -157,15 +157,15 @@ def test_ColumnMap_get():
 
 
 def test_CastAndRename():
-    """Test the CastAndRename class."""
-    column_map = CastAndRename("Date", "DateTime", pl.String)
+    """Test the CastAndRenameMap class."""
+    column_map = CastAndRenameMap("Date", "DateTime", pl.String)
     column_map.validate(["DateTime"])
     assert str(column_map.expr) == str(pl.col("DateTime").cast(pl.String).alias("Date"))
 
 
 def test_ConvertUnits():
-    """Test the ConvertUnits class."""
-    column_map = ConvertUnits("Current [A]", "I [*]")
+    """Test the ConvertUnitsMap class."""
+    column_map = ConvertUnitsMap("Current [A]", "I [*]")
     column_map.validate(["I [mA]"])
     df = pl.DataFrame({"I [mA]": [1.0, 2.0, 3.0]})
     assert_frame_equal(
@@ -175,8 +175,8 @@ def test_ConvertUnits():
 
 
 def test_ConvertTemperature():
-    """Test the ConvertTemperature class."""
-    column_map = ConvertTemperature("Temperature/*")
+    """Test the ConvertTemperatureMap class."""
+    column_map = ConvertTemperatureMap("Temperature/*")
     column_map.validate(["Temperature/K"])
     df = pl.DataFrame({"Temperature/K": [300, 305, 310]})
     expected_df = pl.DataFrame({"Temperature [C]": [26.85, 31.85, 36.85]})
@@ -184,8 +184,8 @@ def test_ConvertTemperature():
 
 
 def test_CapacityFromChDch():
-    """Test the CapacityFromChDch class."""
-    column_map = CapacityFromChDch("Q_ch [*]", "Q_dis [*]")
+    """Test the CapacityFromChDchMap class."""
+    column_map = CapacityFromChDchMap("Q_ch [*]", "Q_dis [*]")
     column_map.validate(["Q_ch [mAh]", "Q_dis [Ah]"])
     df = pl.DataFrame({"Q_ch [mAh]": [1.0, 0.0, 0.0], "Q_dis [Ah]": [0.0, 1, 2]})
     expected_df = pl.DataFrame({"Capacity [Ah]": [0.001, -0.999, -1.999]})
@@ -193,8 +193,8 @@ def test_CapacityFromChDch():
 
 
 def test_CapacityFromCurrentSign():
-    """Test the CapacityFromCurrentSign class."""
-    column_map = CapacityFromCurrentSign(
+    """Test the CapacityFromCurrentSignMap class."""
+    column_map = CapacityFromCurrentSignMap(
         "Q [*]",
         "I [*]",
     )
@@ -205,8 +205,8 @@ def test_CapacityFromCurrentSign():
 
 
 def test_DateTime():
-    """Test the DateTime class."""
-    column_map = DateTime("DateTime", "%Y-%m-%d %H:%M:%S%.f")
+    """Test the DateTimeMap class."""
+    column_map = DateTimeMap("DateTime", "%Y-%m-%d %H:%M:%S%.f")
     column_map.validate(["DateTime"])
     df = pl.DataFrame(
         {
@@ -230,8 +230,8 @@ def test_DateTime():
 
 
 def test_TimeFromDate():
-    """Test the TimeFromDate class."""
-    column_map = TimeFromDate("DateTime", "%Y-%m-%d %H:%M:%S%.f")
+    """Test the TimeFromDateMap class."""
+    column_map = TimeFromDateMap("DateTime", "%Y-%m-%d %H:%M:%S%.f")
     column_map.validate(["DateTime"])
     df = pl.DataFrame(
         {
@@ -247,8 +247,8 @@ def test_TimeFromDate():
 
 
 def test_StepFromCategorical(caplog):
-    """Test the StepFromCategorical class."""
-    column_map = StepFromCategorical("Step Type")
+    """Test the StepFromCategoricalMap class."""
+    column_map = StepFromCategoricalMap("Step Type")
     column_map.validate(["Step Type"])
     df = pl.DataFrame(
         {"Step Type": ["Charge", "Charge", "Discharge", "Discharge", "Charge"]}

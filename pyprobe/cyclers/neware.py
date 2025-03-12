@@ -13,15 +13,15 @@ class Neware(BaseCycler):
     """A class to load and process Neware battery cycler data."""
 
     column_importers: list[column_maps.ColumnMap] = [
-        column_maps.DateTime("Date", "%Y-%m-%d  %H:%M:%S%.f"),
-        column_maps.TimeFromDate("Date", "%Y-%m-%d  %H:%M:%S%.f"),
-        column_maps.CastAndRename("Step", "Step Index", pl.UInt64),
-        column_maps.ConvertUnits("Current [A]", "Current(*)"),
-        column_maps.ConvertUnits("Voltage [V]", "Voltage(*)"),
-        column_maps.CapacityFromChDch("Chg. Cap.(*)", "DChg. Cap.(*)"),
-        column_maps.ConvertTemperature("T1(*)"),
-        column_maps.TimeFromDate("Total Time", "%Y-%m-%d  %H:%M:%S%.f"),
-        column_maps.CapacityFromCurrentSign("Capacity(*)", "Current(*)"),
+        column_maps.DateTimeMap("Date", "%Y-%m-%d  %H:%M:%S%.f"),
+        column_maps.TimeFromDateMap("Date", "%Y-%m-%d  %H:%M:%S%.f"),
+        column_maps.CastAndRenameMap("Step", "Step Index", pl.UInt64),
+        column_maps.ConvertUnitsMap("Current [A]", "Current(*)"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "Voltage(*)"),
+        column_maps.CapacityFromChDchMap("Chg. Cap.(*)", "DChg. Cap.(*)"),
+        column_maps.ConvertTemperatureMap("T1(*)"),
+        column_maps.TimeFromDateMap("Total Time", "%Y-%m-%d  %H:%M:%S%.f"),
+        column_maps.CapacityFromCurrentSignMap("Capacity(*)", "Current(*)"),
     ]
 
     @staticmethod

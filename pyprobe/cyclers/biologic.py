@@ -27,15 +27,15 @@ class Biologic(BaseCycler):
     }
 
     column_importers: list[column_maps.ColumnMap] = [
-        column_maps.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        column_maps.CastAndRename("Step", "Ns", pl.UInt64),
-        column_maps.ConvertUnits("Time [s]", "time/*"),
-        column_maps.ConvertUnits("Current [A]", "I/*"),
-        column_maps.ConvertUnits("Current [A]", "<I>/*"),
-        column_maps.ConvertUnits("Voltage [V]", "Ecell/*"),
-        column_maps.CapacityFromChDch("Q charge/*", "Q discharge/*"),
-        column_maps.ConvertTemperature("Temperature/*"),
-        column_maps.ConvertUnits("Voltage [V]", "Ewe/*"),
+        column_maps.DateTimeMap("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        column_maps.CastAndRenameMap("Step", "Ns", pl.UInt64),
+        column_maps.ConvertUnitsMap("Time [s]", "time/*"),
+        column_maps.ConvertUnitsMap("Current [A]", "I/*"),
+        column_maps.ConvertUnitsMap("Current [A]", "<I>/*"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "Ecell/*"),
+        column_maps.CapacityFromChDchMap("Q charge/*", "Q discharge/*"),
+        column_maps.ConvertTemperatureMap("Temperature/*"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "Ewe/*"),
     ]
 
     @staticmethod

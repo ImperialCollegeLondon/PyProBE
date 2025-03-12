@@ -12,13 +12,13 @@ class Basytec(BaseCycler):
     """A class to load and process Basytec battery cycler data."""
 
     column_importers: list[column_maps.ColumnMap] = [
-        column_maps.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        column_maps.CastAndRename("Step", "Line", pl.UInt64),
-        column_maps.ConvertUnits("Time [s]", "~Time[*]"),
-        column_maps.ConvertUnits("Current [A]", "I[*]"),
-        column_maps.ConvertUnits("Voltage [V]", "U[*]"),
-        column_maps.ConvertUnits("Capacity [Ah]", "Ah[*]"),
-        column_maps.ConvertTemperature("T1[*]"),
+        column_maps.DateTimeMap("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        column_maps.CastAndRenameMap("Step", "Line", pl.UInt64),
+        column_maps.ConvertUnitsMap("Time [s]", "~Time[*]"),
+        column_maps.ConvertUnitsMap("Current [A]", "I[*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "U[*]"),
+        column_maps.ConvertUnitsMap("Capacity [Ah]", "Ah[*]"),
+        column_maps.ConvertTemperatureMap("T1[*]"),
     ]
 
     @staticmethod

@@ -133,7 +133,7 @@ class ColumnMap(ABC):
                 )
 
 
-class CastAndRename(ColumnMap):
+class CastAndRenameMap(ColumnMap):
     """A template mapping for simple column renaming.
 
     Args:
@@ -147,7 +147,7 @@ class CastAndRename(ColumnMap):
         required_cycler_col: str,
         data_type: pl.DataType,
     ) -> None:
-        """Initialize the CastAndRename class."""
+        """Initialize the CastAndRenameMap class."""
         super().__init__(pyprobe_name, [required_cycler_col])
         self.data_type = data_type
 
@@ -157,15 +157,16 @@ class CastAndRename(ColumnMap):
         return pl.col(self.cycler_col).cast(self.data_type).alias(self.pyprobe_name)
 
 
-class DateTime(ColumnMap):
+class DateTimeMap(ColumnMap):
     """A template mapping for datetime columns.
 
     Args:
         required_cycler_col: The name of the required cycler column.
+        datetime_format: The format of the datetime string.
     """
 
     def __init__(self, required_cycler_col: str, datetime_format: str) -> None:
-        """Initialize the DateTime class."""
+        """Initialize the DateTimeMap class."""
         pyprobe_name = "Date"
         super().__init__(pyprobe_name, [required_cycler_col])
         self.required_cycler_col = required_cycler_col
@@ -181,7 +182,7 @@ class DateTime(ColumnMap):
         ).alias(self.pyprobe_name)
 
 
-class TimeFromDate(ColumnMap):
+class TimeFromDateMap(ColumnMap):
     """A template mapping for extracting time from a date column.
 
     Args:
@@ -189,7 +190,7 @@ class TimeFromDate(ColumnMap):
     """
 
     def __init__(self, required_cycler_col: str, datetime_format: str) -> None:
-        """Initialize the TimeFromDate class."""
+        """Initialize the TimeFromDateMap class."""
         pyprobe_name = "Time [s]"
         self.datetime_format = datetime_format
         super().__init__(pyprobe_name, [required_cycler_col])
@@ -211,7 +212,7 @@ class TimeFromDate(ColumnMap):
         )
 
 
-class ConvertUnits(ColumnMap):
+class ConvertUnitsMap(ColumnMap):
     """A template mapping for converting units.
 
     Args:
@@ -220,7 +221,7 @@ class ConvertUnits(ColumnMap):
     """
 
     def __init__(self, pyprobe_name: str, required_cycler_col: str) -> None:
-        """Initialize the ConvertUnits class."""
+        """Initialize the ConvertUnitsMap class."""
         super().__init__(pyprobe_name, [required_cycler_col])
 
     @property
@@ -232,7 +233,7 @@ class ConvertUnits(ColumnMap):
         )
 
 
-class ConvertTemperature(ColumnMap):
+class ConvertTemperatureMap(ColumnMap):
     """A template mapping for converting temperature units.
 
     Args:
@@ -240,7 +241,7 @@ class ConvertTemperature(ColumnMap):
     """
 
     def __init__(self, required_cycler_col: str) -> None:
-        """Initialize the ConvertTemperature class."""
+        """Initialize the ConvertTemperatureMap class."""
         pyprobe_name = "Temperature [C]"
         super().__init__(pyprobe_name, [required_cycler_col])
 
@@ -258,7 +259,7 @@ class ConvertTemperature(ColumnMap):
             return self.get(self.cycler_col).cast(pl.Float64).alias(self.pyprobe_name)
 
 
-class CapacityFromChDch(ColumnMap):
+class CapacityFromChDchMap(ColumnMap):
     """A template mapping for calculating capacity from charge and discharge columns.
 
     Args:
@@ -267,7 +268,7 @@ class CapacityFromChDch(ColumnMap):
     """
 
     def __init__(self, charge_capacity_col: str, discharge_capacity_col: str) -> None:
-        """Initialize the CapacityFromChDch class."""
+        """Initialize the CapacityFromChDchMap class."""
         pyprobe_name = "Capacity [Ah]"
         self.charge_capacity_col = charge_capacity_col
         self.discharge_capacity_col = discharge_capacity_col
@@ -300,7 +301,7 @@ class CapacityFromChDch(ColumnMap):
         ).alias(self.pyprobe_name)
 
 
-class CapacityFromCurrentSign(ColumnMap):
+class CapacityFromCurrentSignMap(ColumnMap):
     """A template mapping for calculating capacity from current and time columns.
 
     Args:
@@ -309,7 +310,7 @@ class CapacityFromCurrentSign(ColumnMap):
     """
 
     def __init__(self, capacity_col: str, current_col: str) -> None:
-        """Initialize the CapacityFromCurrentSign class."""
+        """Initialize the CapacityFromCurrentSignMap class."""
         pyprobe_name = "Capacity [Ah]"
         self.current_col = current_col
         self.capacity_col = capacity_col
@@ -347,7 +348,7 @@ class CapacityFromCurrentSign(ColumnMap):
         ).alias(self.pyprobe_name)
 
 
-class StepFromCategorical(ColumnMap):
+class StepFromCategoricalMap(ColumnMap):
     """A template mapping for calculating step from categorical columns.
 
     An example of a categorical column is one that describes the type of step, e.g.
@@ -359,7 +360,7 @@ class StepFromCategorical(ColumnMap):
     """
 
     def __init__(self, categorical_col: str) -> None:
-        """Initialize the StepFromCategorical class."""
+        """Initialize the StepFromCategoricalMap class."""
         pyprobe_name = "Step"
         super().__init__(pyprobe_name, [categorical_col])
         self.categorical_col = categorical_col
