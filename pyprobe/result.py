@@ -1,7 +1,7 @@
 """A module for the Result class."""
 
-import logging
 import re
+from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
 from typing import Any, Literal, Union
@@ -9,6 +9,7 @@ from typing import Any, Literal, Union
 import numpy as np
 import pandas as pd
 import polars as pl
+from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
@@ -16,9 +17,7 @@ from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
-from pyprobe.utils import deprecated
-
-logger = logging.getLogger(__name__)
+from pyprobe.utils import catch_pydantic_validation, deprecated
 
 try:
     import hvplot.polars  # noqa: F401
@@ -28,7 +27,7 @@ except ImportError:
     hvplot_exists = False
 
 
-class PolarsColumnCache:
+class _PolarsColumnCache:
     """A class to cache columns from a Polars DataFrame.
 
     Args:
@@ -37,7 +36,7 @@ class PolarsColumnCache:
     """
 
     def __init__(self, base_dataframe: pl.LazyFrame | pl.DataFrame) -> None:
-        """Initialize the PolarsColumnCache object."""
+        """Initialize the _PolarsColumnCache object."""
         self.cache: dict[str, pl.Series] = {}
         self._cached_dataframe = None
         self._base_dataframe = base_dataframe
@@ -193,7 +192,7 @@ class Result(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization method for the Pydantic model."""
-        self._polars_cache = PolarsColumnCache(self.base_dataframe)
+        self._polars_cache = _PolarsColumnCache(self.base_dataframe)
 
     @model_validator(mode="before")
     @classmethod
@@ -694,6 +693,77 @@ class Result(BaseModel):
             "info": renamed_info,
         }
         savemat(filename, variable_dict, oned_as="column")
+
+    @catch_pydantic_validation
+    @staticmethod
+    def from_polars_io(
+        polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
+        info: dict[str, Any | None] = {},
+        column_definitions: dict[str, str] = {},
+        **kwargs: Any,
+    ) -> "Result":
+        """Create a new Result object with data from a Polars IO function.
+
+        Refer to the Polars documentation for a list of available IO functions:
+
+        - `External file import functions \
+            <https://docs.pola.rs/api/python/stable/reference/io.html>`_
+        - `Python object conversion functions \
+            <https://docs.pola.rs/api/python/stable/reference/functions.html>`_
+
+        Args:
+            polars_io_func (Callable[..., pl.DataFrame | pl.LazyFrame]):
+                The Polars IO function to use to create the data.
+            info (dict[str, Any | None]):
+                The info dictionary for the new Result object. Empty by default.
+            column_definitions (dict[str, str]):
+                The column definitions for the new Result object. Empty by default.
+            **kwargs: The keyword arguments to pass to the Polars IO function.
+
+        Returns:
+            Result: A new Result object with the specified data and info.
+
+        Example:
+            From a saved .csv file:
+
+            .. code-block:: python
+
+            result = Result.from_polars_io(
+                pl.scan_csv,
+                info={"test": "test"},
+                column_definitions={},
+                source="data.csv",
+            )
+
+            From a pandas DataFrame:
+
+            .. code-block:: python
+
+            result = Result.from_polars_io(
+                pl.from_pandas,
+                info={"test": "test"},
+                column_definitions={},
+                data=pd.DataFrame({"a": [1, 2, 3]}),
+            )
+
+            From a numpy array:
+
+            .. code-block:: python
+
+            result = Result.from_polars_io(
+                pl.from_numpy,
+                info={"test": "test"},
+                column_definitions={},
+                data=np.array([[1, 2, 3], [4, 5, 6]]),
+                schema=["a", "b"]
+            )
+
+        """
+        return Result(
+            base_dataframe=polars_io_func(**kwargs),
+            info=info,
+            column_definitions=column_definitions,
+        )
 
 
 def combine_results(

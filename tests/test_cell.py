@@ -15,7 +15,7 @@ from polars.testing import assert_frame_equal
 import pyprobe
 from pyprobe import cell
 from pyprobe._version import __version__
-from pyprobe.cyclers import basecycler
+from pyprobe.cyclers import column_maps
 from pyprobe.readme_processor import process_readme
 
 
@@ -119,11 +119,11 @@ def test_process_generic_file(cell_instance):
     )
 
     column_importers = [
-        basecycler.ConvertUnits("Time [s]", "T [*]"),
-        basecycler.ConvertUnits("Voltage [V]", "V [*]"),
-        basecycler.ConvertUnits("Current [A]", "I [*]"),
-        basecycler.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        basecycler.CastAndRename("Step", "Count", pl.Int64),
+        column_maps.ConvertUnitsMap("Time [s]", "T [*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "V [*]"),
+        column_maps.ConvertUnitsMap("Current [A]", "I [*]"),
+        column_maps.ConvertUnitsMap("Capacity [Ah]", "Q [*]"),
+        column_maps.CastAndRenameMap("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(f"{folder_path}/test_generic_file.csv")
@@ -143,6 +143,14 @@ def test_process_generic_file(cell_instance):
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [10.0, 11.0, 12.0],
         },
+        schema=[
+            ("Time [s]", pl.Float64),
+            ("Step", pl.UInt64),
+            ("Event", pl.UInt64),
+            ("Current [A]", pl.Float64),
+            ("Voltage [V]", pl.Float64),
+            ("Capacity [Ah]", pl.Float64),
+        ],
     )
     saved_df = pl.read_parquet(f"{folder_path}/test_generic_file.parquet")
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
@@ -593,6 +601,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=False,
     )
@@ -629,6 +638,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         None,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=False,
     )
@@ -647,6 +657,7 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="file size",
         overwrite_existing=False,
     )
@@ -665,12 +676,13 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=[],
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=True,
     )
 
     # Test with column_importers provided
-    column_importers = [basecycler.ConvertUnits("Time [s]", "T [*]")]
+    column_importers = [column_maps.ConvertUnitsMap("Time [s]", "T [*]")]
     cell_instance.import_from_cycler(
         procedure_name,
         cycler,
@@ -684,8 +696,29 @@ def test_import_from_cycler(cell_instance, mocker):
         input_data_path,
         output_data_path,
         column_importers=column_importers,
+        extra_column_importers=[],
         compression_priority="performance",
         overwrite_existing=False,
+    )
+
+    # Test with extra cycler columns provided
+    extra_cycler_columns = [column_maps.ConvertUnitsMap("Time [s]", "T [*]")]
+    cell_instance.import_from_cycler(
+        procedure_name,
+        cycler,
+        input_data_path,
+        output_data_path,
+        readme_path,
+        extra_column_importers=extra_cycler_columns,
+    )
+    process_cycler_data.assert_called_with(
+        cycler,
+        input_data_path,
+        output_data_path,
+        column_importers=[],
+        compression_priority="performance",
+        overwrite_existing=False,
+        extra_column_importers=extra_cycler_columns,
     )
 
 
@@ -714,6 +747,26 @@ def test_process_cycler_data(mocker):
         )
         process_patch.assert_called_once()
 
+    for cycler in cyclers:
+        mock_cycler = mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}")
+        cell.process_cycler_data(
+            cycler=cycler,
+            input_data_path="tests/sample_data/test_generic_file.csv",
+            output_data_path="tests/sample_data/test_generic_file.parquet",
+            column_importers=["a", "b", "c"],
+            extra_column_importers=["d", "e", "f"],
+            compression_priority="fast",
+            overwrite_existing=True,
+        )
+        mock_cycler.assert_called_once_with(
+            input_data_path="tests/sample_data/test_generic_file.csv",
+            output_data_path="tests/sample_data/test_generic_file.parquet",
+            column_importers=["a", "b", "c"],
+            extra_column_importers=["d", "e", "f"],
+            compression_priority="fast",
+            overwrite_existing=True,
+        )
+
 
 def test_process_cycler_data_generic():
     """Test the process_generic_file method."""
@@ -729,17 +782,17 @@ def test_process_cycler_data_generic():
     )
 
     column_importers = [
-        basecycler.ConvertUnits("Time [s]", "T [*]"),
-        basecycler.ConvertUnits("Voltage [V]", "V [*]"),
-        basecycler.ConvertUnits("Current [A]", "I [*]"),
-        basecycler.ConvertUnits("Capacity [Ah]", "Q [*]"),
-        basecycler.CastAndRename("Step", "Count", pl.Int64),
+        column_maps.ConvertUnitsMap("Time [s]", "T [*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "V [*]"),
+        column_maps.ConvertUnitsMap("Current [A]", "I [*]"),
+        column_maps.ConvertUnitsMap("Capacity [Ah]", "Q [*]"),
+        column_maps.CastAndRenameMap("Step", "Count", pl.UInt64),
     ]
 
     df.write_csv(data_path)
 
     cell.process_cycler_data(
-        cycler_type="generic",
+        cycler="generic",
         input_data_path=data_path,
         column_importers=column_importers,
     )
@@ -752,13 +805,21 @@ def test_process_cycler_data_generic():
             "Voltage [V]": [4.0, 5.0, 6.0],
             "Capacity [Ah]": [10.0, 11.0, 12.0],
         },
+        schema=[
+            ("Time [s]", pl.Float64),
+            ("Step", pl.UInt64),
+            ("Event", pl.UInt64),
+            ("Current [A]", pl.Float64),
+            ("Voltage [V]", pl.Float64),
+            ("Capacity [Ah]", pl.Float64),
+        ],
     )
     saved_df = pl.read_parquet(data_path.replace(".csv", ".parquet"))
     assert_frame_equal(expected_df, saved_df, check_column_order=False)
 
     with pytest.raises(ValueError):
         cell.process_cycler_data(
-            cycler_type="generic",
+            cycler="generic",
             input_data_path=data_path,
         )
 

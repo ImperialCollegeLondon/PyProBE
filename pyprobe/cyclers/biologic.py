@@ -5,10 +5,11 @@ from datetime import datetime
 
 import polars as pl
 
-from pyprobe.cyclers import basecycler as bc
+from pyprobe.cyclers import column_maps
+from pyprobe.cyclers.basecycler import BaseCycler
 
 
-class Biologic(bc.BaseCycler):
+class Biologic(BaseCycler):
     """A class to load and process Biologic battery cycler data."""
 
     input_data_path: str
@@ -25,16 +26,16 @@ class Biologic(bc.BaseCycler):
         "Ewe/*": "Voltage [*]",
     }
 
-    column_importers: list[bc.ColumnMap] = [
-        bc.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        bc.CastAndRename("Step", "Ns", pl.Int64),
-        bc.ConvertUnits("Time [s]", "time/*"),
-        bc.ConvertUnits("Current [A]", "I/*"),
-        bc.ConvertUnits("Current [A]", "<I>/*"),
-        bc.ConvertUnits("Voltage [V]", "Ecell/*"),
-        bc.CapacityFromChDch("Q charge/*", "Q discharge/*"),
-        bc.ConvertTemperature("Temperature/*"),
-        bc.ConvertUnits("Voltage [V]", "Ewe/*"),
+    column_importers: list[column_maps.ColumnMap] = [
+        column_maps.DateTimeMap("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        column_maps.CastAndRenameMap("Step", "Ns", pl.UInt64),
+        column_maps.ConvertUnitsMap("Time [s]", "time/*"),
+        column_maps.ConvertUnitsMap("Current [A]", "I/*"),
+        column_maps.ConvertUnitsMap("Current [A]", "<I>/*"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "Ecell/*"),
+        column_maps.CapacityFromChDchMap("Q charge/*", "Q discharge/*"),
+        column_maps.ConvertTemperatureMap("Temperature/*"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "Ewe/*"),
     ]
 
     @staticmethod
@@ -153,7 +154,7 @@ class BiologicMB(Biologic):
         """
         # get the max step number for each MB file and add 1
         max_steps = df.group_by("MB File").agg(
-            (pl.col("Ns").cast(pl.Int64).max() + 1).alias("Max_Step"),
+            (pl.col("Ns").cast(pl.UInt64).max() + 1).alias("Max_Step"),
         )
         # sort the max steps by MB file
         max_steps = max_steps.sort("MB File")
@@ -165,5 +166,5 @@ class BiologicMB(Biologic):
         df_with_max_step = df.join(max_steps, on="MB File", how="left").fill_null(0)
         # add the max step number to the step number
         return df_with_max_step.with_columns(
-            pl.col("Ns").cast(pl.Int64) + pl.col("Max_Step"),
+            pl.col("Ns").cast(pl.UInt64) + pl.col("Max_Step"),
         )

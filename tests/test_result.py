@@ -9,21 +9,21 @@ import polars.testing as pl_testing
 import pytest
 from scipy.io import loadmat
 
-from pyprobe.result import PolarsColumnCache, Result, combine_results
+from pyprobe.result import Result, _PolarsColumnCache, combine_results
 
 
-def test_PolarsColumnCache_lazyframe():
-    """Test the PolarsColumnCache class."""
+def test__PolarsColumnCache_lazyframe():
+    """Test the _PolarsColumnCache class."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     assert cache.cache == {}
     pl_testing.assert_frame_equal(cache.base_dataframe, lf)
 
 
-def test_PolarsColumnCache_dataframe():
-    """Test the PolarsColumnCache class with a DataFrame."""
+def test__PolarsColumnCache_dataframe():
+    """Test the _PolarsColumnCache class with a DataFrame."""
     df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(df)
+    cache = _PolarsColumnCache(df)
     pl_testing.assert_frame_equal(cache.cached_dataframe, df)
     expected_a = df.select("a")["a"]
     expected_b = df.select("b")["b"]
@@ -36,7 +36,7 @@ def test_PolarsColumnCache_dataframe():
 def test_collect_columns():
     """Test the collect_columns method."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
 
     # Test single column collection
     cache.collect_columns("a")
@@ -49,7 +49,7 @@ def test_collect_columns():
     pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
 
     # Test multiple column collection
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     cache.collect_columns("a", "b")
     expected_a = lf.select("a").collect()["a"]
     expected_b = lf.select("b").collect()["b"]
@@ -69,7 +69,7 @@ def test_collect_columns():
             "Date": [5, 6, 7],
         },
     )
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     cache.collect_columns("Current [mA]")
     expected_current = pl.Series("Current [mA]", [1000, 2000, 3000])
     assert cache.cache["Current [mA]"].to_list() == expected_current.to_list()
@@ -78,7 +78,7 @@ def test_collect_columns():
 def test_cached_dataframe():
     """Test the cached_dataframe property."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = PolarsColumnCache(lf)
+    cache = _PolarsColumnCache(lf)
     assert cache._cached_dataframe is None
     assert cache.cached_dataframe.is_empty()
 
@@ -588,3 +588,124 @@ def test_export_to_mat(Result_fixture):
     actual_columns = set(saved_data["data"].dtype.names)
     assert actual_columns == expected_columns
     os.remove("./test_mat.mat")
+
+
+def test_from_polars_io():
+    """Test the from_polars_io method."""
+    # Test with read_csv function
+    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+    test_df.write_csv("test_data.csv")
+
+    try:
+        # Test with basic parameters
+        result = Result.from_polars_io(
+            info={"test": "info"},
+            column_definitions={"a": "Column A"},
+            polars_io_func=pl.read_csv,
+            source="test_data.csv",
+        )
+        assert isinstance(result, Result)
+        assert result.info == {"test": "info"}
+        assert result.column_definitions == {"a": "Column A"}
+        pl_testing.assert_frame_equal(result.data, test_df)
+
+        # Test with LazyFrame function
+        result_lazy = Result.from_polars_io(
+            info={"test": "lazy"},
+            column_definitions={},
+            polars_io_func=pl.scan_csv,
+            source="test_data.csv",
+        )
+        assert isinstance(result_lazy, Result)
+        assert isinstance(result_lazy.base_dataframe, pl.LazyFrame)
+
+        # Test with keyword arguments
+        result_with_kwargs = Result.from_polars_io(
+            info={"test": "kwargs"},
+            column_definitions={"a": "Column A with kwargs"},
+            polars_io_func=pl.read_csv,
+            source="test_data.csv",
+            has_header=True,
+            skip_rows=0,
+        )
+        assert isinstance(result_with_kwargs, Result)
+        pl_testing.assert_frame_equal(result_with_kwargs.data, test_df)
+
+    finally:
+        # Clean up test file
+        if os.path.exists("test_data.csv"):
+            os.remove("test_data.csv")
+
+
+@pytest.mark.parametrize(
+    "io_function,expected_type",
+    [
+        (pl.read_csv, pl.DataFrame),
+        (pl.scan_csv, pl.LazyFrame),
+        (pl.read_parquet, pl.DataFrame),
+        (pl.scan_parquet, pl.LazyFrame),
+    ],
+)
+def test_from_polars_io_different_formats(io_function, expected_type, tmp_path):
+    """Test from_polars_io with different polars I/O functions."""
+    # Create test data
+    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    # Create appropriate test file based on function
+    if "csv" in io_function.__name__:
+        test_file = tmp_path / "test.csv"
+        test_df.write_csv(test_file)
+    else:  # parquet
+        test_file = tmp_path / "test.parquet"
+        test_df.write_parquet(test_file)
+
+    # Mock info for testing
+    info = {"source": io_function.__name__}
+
+    # Create result using the function
+    result = Result.from_polars_io(
+        polars_io_func=io_function, source=test_file, info=info, column_definitions={}
+    )
+
+    # Check the result
+    assert isinstance(result, Result)
+    assert isinstance(result.base_dataframe, expected_type)
+    assert result.info == info
+    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+
+def test_from_polars_io_python_object():
+    """Test from_polars_io with a Python object."""
+    # Create a test DataFrame
+    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    # Mock info for testing
+    info = {"source": "python_object"}
+
+    # Create result using the function
+    result = Result.from_polars_io(
+        polars_io_func=pl.from_pandas,
+        data=test_df.to_pandas(),
+        info=info,
+        column_definitions={},
+    )
+
+    # Check the result
+    assert isinstance(result, Result)
+    assert isinstance(result.base_dataframe, pl.DataFrame)
+    assert result.info == info
+    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+    result = Result.from_polars_io(
+        polars_io_func=pl.from_numpy,
+        schema=["a", "b"],
+        data=test_df.to_numpy(),
+        info=info,
+        column_definitions={},
+    )
+
+    # Check the result
+    assert isinstance(result, Result)
+    assert isinstance(result.base_dataframe, pl.DataFrame)
+    assert result.info == info
+    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)

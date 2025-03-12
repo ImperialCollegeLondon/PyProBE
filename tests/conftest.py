@@ -2,8 +2,24 @@
 
 import polars as pl
 import pytest
+from _pytest.logging import LogCaptureFixture
+from loguru import logger
 
 from pyprobe.cell import Cell
+
+
+@pytest.fixture
+def caplog(caplog: LogCaptureFixture):
+    """Pytest fixture for capturing log messages."""
+    handler_id = logger.add(
+        caplog.handler,
+        format="{message}",
+        level=0,
+        filter=lambda record: record["level"].no >= caplog.handler.level,
+        enqueue=False,  # Set to 'True' if your test is spawning child processes.
+    )
+    yield caplog
+    logger.remove(handler_id)
 
 
 @pytest.fixture

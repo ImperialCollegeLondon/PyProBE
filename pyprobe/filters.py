@@ -15,9 +15,8 @@ if TYPE_CHECKING:
         FilterToCycleType,
     )
 
-import logging
 
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 def _filter_numerical(

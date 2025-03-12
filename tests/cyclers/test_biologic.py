@@ -226,6 +226,14 @@ def test_process_dataframe():
             "Capacity [Ah]": [0.020, 0.040, 0.030, 0.020, 0.020, 0.020, 0.020],
             "Temperature [C]": [25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0],
         },
+        schema={
+            "Time [s]": pl.Float64,
+            "Step": pl.UInt64,
+            "Current [A]": pl.Float64,
+            "Voltage [V]": pl.Float64,
+            "Capacity [Ah]": pl.Float64,
+            "Temperature [C]": pl.Float64,
+        },
     )
     pl_testing.assert_frame_equal(pyprobe_dataframe, expected_dataframe)
 
@@ -324,6 +332,7 @@ def test_apply_step_correction():
                 13,
             ],
         },
+        schema={"Ns": pl.UInt64},
     )
 
     step_col = BiologicMB.apply_step_correction(df).select("Ns")

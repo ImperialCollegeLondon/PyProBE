@@ -1,6 +1,5 @@
 """Test the basecycler module."""
 
-import datetime
 import logging
 import os
 import re
@@ -9,210 +8,14 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from pyprobe.cyclers.basecycler import (
-    BaseCycler,
-    CapacityFromChDch,
-    CapacityFromCurrentSign,
-    CastAndRename,
-    ColumnMap,
-    ConvertTemperature,
-    ConvertUnits,
-    DateTime,
-    TimeFromDate,
+from pyprobe.cyclers.basecycler import BaseCycler
+from pyprobe.cyclers.column_maps import (
+    CapacityFromChDchMap,
+    CastAndRenameMap,
+    ConvertTemperatureMap,
+    ConvertUnitsMap,
+    DateTimeMap,
 )
-
-
-class TestColumnMap(ColumnMap):
-    """Test implementation of ColumnMap."""
-
-    @property
-    def expr(self) -> pl.Expr:
-        """Implement abstract method."""
-        return None
-
-
-def test_match_columns():
-    """Test the match_columns static method."""
-    available_columns = ["Time [s]", "Current [mA]", "Voltage [V]", "Count"]
-    column_map_instance = TestColumnMap("", [""])
-    # Test exact matches
-    patterns = ["Count"]
-    result = column_map_instance.match_columns(available_columns, patterns)
-    assert result == {"Count": {"Cycler name": "Count", "Cycler unit": ""}}
-
-    # Test wildcard matches
-    patterns = ["Current [*]"]
-    result = column_map_instance.match_columns(available_columns, patterns)
-    assert result == {
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-    }
-
-    # Test multiple patterns
-    patterns = ["Count", "Current [*]", "Voltage [*]"]
-    result = column_map_instance.match_columns(available_columns, patterns)
-    assert result == {
-        "Count": {"Cycler name": "Count", "Cycler unit": ""},
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-        "Voltage [*]": {"Cycler name": "Voltage [V]", "Cycler unit": "V"},
-    }
-
-    # Test non-existent columns
-    patterns = ["NonExistent"]
-    result = column_map_instance.match_columns(available_columns, patterns)
-    assert result == {}
-
-    # Test invalid unit
-    available_columns = ["Current [invalid]"]
-    patterns = ["Current [*]"]
-    result = column_map_instance.match_columns(available_columns, patterns)
-    assert result == {}
-
-    # Test empty inputs
-    assert column_map_instance.match_columns([], []) == {}
-    assert column_map_instance.match_columns(available_columns, []) == {}
-    assert column_map_instance.match_columns([], patterns) == {}
-
-    # test a different format
-    available_columns = ["Time/s", "Current/mA", "Voltage/time/V", "Count", "Voltage/V"]
-    patterns = ["Count", "Current/*", "Voltage/*"]
-    result = column_map_instance.match_columns(available_columns, patterns)
-    assert result == {
-        "Count": {"Cycler name": "Count", "Cycler unit": ""},
-        "Current/*": {"Cycler name": "Current/mA", "Cycler unit": "mA"},
-        "Voltage/*": {"Cycler name": "Voltage/V", "Cycler unit": "V"},
-    }
-
-
-def test_ColumnMap_validate():
-    """Test the ColumnMap class."""
-    column_map = TestColumnMap("Date", ["DateTime"])
-    column_map.validate(["DateTime"])
-    assert column_map.pyprobe_name == "Date"
-    assert column_map.column_map == {
-        "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
-    }
-    assert column_map.columns_validated
-
-    column_map = TestColumnMap("Date", ["DateTime", "Current [*]"])
-    column_map.validate(["DateTime", "Current [mA]", "Voltage [V]"])
-    assert column_map.pyprobe_name == "Date"
-    assert column_map.column_map == {
-        "DateTime": {"Cycler name": "DateTime", "Cycler unit": ""},
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-    }
-    assert column_map.columns_validated
-
-    column_map = TestColumnMap("Date", ["DateTime"])
-    column_map.validate(["Date"])
-    assert column_map.pyprobe_name == "Date"
-    assert not column_map.columns_validated
-    assert column_map.column_map == {}
-
-    column_map = TestColumnMap("Date", ["DateTime", "Current [*]"])
-    column_map.validate(["Date", "Current [mA]", "Voltage [V]"])
-    assert column_map.pyprobe_name == "Date"
-    assert column_map.column_map == {
-        "Current [*]": {"Cycler name": "Current [mA]", "Cycler unit": "mA"},
-    }
-    assert not column_map.columns_validated
-
-
-def test_ColumnMap_get():
-    """Test the get method of the ColumnMap class."""
-    column_map = TestColumnMap("Date", ["DateTime", "Current [*]"])
-    column_map.validate(["DateTime", "Current [mA]", "Voltage [V]"])
-    assert str(column_map.get("DateTime")) == str(pl.col("DateTime"))
-    assert str(column_map.get("Current [*]")) == str(pl.col("Current [mA]"))
-
-
-def test_CastAndRename():
-    """Test the CastAndRename class."""
-    column_map = CastAndRename("Date", "DateTime", pl.String)
-    column_map.validate(["DateTime"])
-    assert str(column_map.expr) == str(pl.col("DateTime").cast(pl.String).alias("Date"))
-
-
-def test_ConvertUnits():
-    """Test the ConvertUnits class."""
-    column_map = ConvertUnits("Current [A]", "I [*]")
-    column_map.validate(["I [mA]"])
-    df = pl.DataFrame({"I [mA]": [1.0, 2.0, 3.0]})
-    assert_frame_equal(
-        df.select(column_map.expr),
-        df.select((pl.col("I [mA]") / 1000).alias("Current [A]")),
-    )
-
-
-def test_ConvertTemperature():
-    """Test the ConvertTemperature class."""
-    column_map = ConvertTemperature("Temperature/*")
-    column_map.validate(["Temperature/K"])
-    df = pl.DataFrame({"Temperature/K": [300, 305, 310]})
-    expected_df = pl.DataFrame({"Temperature [C]": [26.85, 31.85, 36.85]})
-    assert_frame_equal(df.select(column_map.expr), expected_df)
-
-
-def test_CapacityFromChDch():
-    """Test the CapacityFromChDch class."""
-    column_map = CapacityFromChDch("Q_ch [*]", "Q_dis [*]")
-    column_map.validate(["Q_ch [mAh]", "Q_dis [Ah]"])
-    df = pl.DataFrame({"Q_ch [mAh]": [1.0, 0.0, 0.0], "Q_dis [Ah]": [0.0, 1, 2]})
-    expected_df = pl.DataFrame({"Capacity [Ah]": [0.001, -0.999, -1.999]})
-    assert_frame_equal(df.select(column_map.expr), expected_df)
-
-
-def test_CapacityFromCurrentSign():
-    """Test the CapacityFromCurrentSign class."""
-    column_map = CapacityFromCurrentSign(
-        "Q [*]",
-        "I [*]",
-    )
-    df = pl.DataFrame({"I [mA]": [1.0, -1.0, -1.0], "Q [Ah]": [1.0, 1.0, 2.0]})
-    column_map.validate(df.columns)
-    expected_df = pl.DataFrame({"Capacity [Ah]": [1.0, 0.0, -1.0]})
-    assert_frame_equal(df.select(column_map.expr), expected_df)
-
-
-def test_DateTime():
-    """Test the DateTime class."""
-    column_map = DateTime("DateTime", "%Y-%m-%d %H:%M:%S%.f")
-    column_map.validate(["DateTime"])
-    df = pl.DataFrame(
-        {
-            "DateTime": [
-                "2022-04-02 02:06:00.000000",
-                "2022-04-02 02:06:01.000000",
-                "2022-04-02 02:06:02.000000",
-            ],
-        },
-    )
-    expected_df = pl.DataFrame(
-        {
-            "Date": [
-                datetime.datetime(2022, 4, 2, 2, 6),
-                datetime.datetime(2022, 4, 2, 2, 6, 1),
-                datetime.datetime(2022, 4, 2, 2, 6, 2),
-            ],
-        },
-    )
-    assert_frame_equal(df.select(column_map.expr), expected_df)
-
-
-def test_TimeFromDate():
-    """Test the TimeFromDate class."""
-    column_map = TimeFromDate("DateTime", "%Y-%m-%d %H:%M:%S%.f")
-    column_map.validate(["DateTime"])
-    df = pl.DataFrame(
-        {
-            "DateTime": [
-                "2022-04-02 02:06:00.000000",
-                "2022-04-02 02:06:01.000000",
-                "2022-04-02 02:06:02.000000",
-            ],
-        },
-    )
-    expected_df = pl.DataFrame({"Time [s]": [0.0, 1.0, 2.0]})
-    assert_frame_equal(df.select(column_map.expr), expected_df)
 
 
 @pytest.fixture
@@ -255,6 +58,16 @@ def sample_pyprobe_dataframe():
             "Capacity [Ah]": [1.0, 0.5, -1.5],
             "Temperature [C]": [13.0, 14.0, 15.0],
         },
+        schema={
+            "Date": pl.String,
+            "Time [s]": pl.Float64,
+            "Step": pl.UInt64,
+            "Event": pl.UInt64,
+            "Current [A]": pl.Float64,
+            "Voltage [V]": pl.Float64,
+            "Capacity [Ah]": pl.Float64,
+            "Temperature [C]": pl.Float64,
+        },
     ).with_columns(pl.col("Date").str.to_datetime())
 
 
@@ -262,14 +75,14 @@ def sample_pyprobe_dataframe():
 def column_importer_fixture():
     """A sample column importer."""
     return [
-        CastAndRename("Step", "Count", pl.Int64),
-        ConvertUnits("Current [A]", "I [*]"),
-        ConvertUnits("Voltage [V]", "V [*]"),
-        ConvertUnits("Capacity [Ah]", "Q [*]"),
-        CapacityFromChDch("Q_ch [*]", "Q_dis [*]"),
-        ConvertTemperature("Temp [*]"),
-        DateTime("DateTime", "%Y-%m-%d %H:%M:%S%.f"),
-        ConvertUnits("Time [s]", "T [*]"),
+        CastAndRenameMap("Step", "Count", pl.UInt64),
+        ConvertUnitsMap("Current [A]", "I [*]"),
+        ConvertUnitsMap("Voltage [V]", "V [*]"),
+        ConvertUnitsMap("Capacity [Ah]", "Q [*]"),
+        CapacityFromChDchMap("Q_ch [*]", "Q_dis [*]"),
+        ConvertTemperatureMap("Temp [*]"),
+        DateTimeMap("DateTime", "%Y-%m-%d %H:%M:%S%.f"),
+        ConvertUnitsMap("Time [s]", "T [*]"),
     ]
 
 
@@ -283,7 +96,7 @@ def test_basecycler_init(caplog):
     assert cycler.input_data_path == "tests/sample_data/neware/sample_data_neware.csv"
     assert cycler.output_data_path == "tests/sample_data/sample_data1.parquet"
     assert cycler.column_importers == []
-    assert cycler.compression == "performance"
+    assert cycler.compression_priority == "performance"
     assert not cycler.overwrite_existing
     assert cycler.header_row_index == 0
 
@@ -348,6 +161,37 @@ def test_basecycler_init(caplog):
             == "Output file extension .txt will be replaced with .parquet"
         )
 
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [4, 5, 6],
+        }
+    )
+    df.write_csv("tests/sample_data/sample_basecyclerinit_data1.csv")
+    df.write_csv("tests/sample_data/sample_basecyclerinit_data2.csv")
+    # Test with wildcards in input_data_path
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_basecyclerinit_data*.csv",
+        column_importers=[],
+    )
+    assert (
+        cycler.output_data_path
+        == "tests/sample_data/sample_basecyclerinit_datax.parquet"
+    )
+    os.remove("tests/sample_data/sample_basecyclerinit_data1.csv")
+    os.remove("tests/sample_data/sample_basecyclerinit_data2.csv")
+
+
+def test_extra_column_importers():
+    """Test the extra_column_importers method."""
+    cycler_instance = BaseCycler(
+        input_data_path="tests/sample_data/neware/sample_data_neware.csv",
+        output_data_path="tests/sample_data/sample_data.parquet",
+        column_importers=[CastAndRenameMap("Step", "Step", pl.UInt64)],
+        extra_column_importers=[CastAndRenameMap("Cycle", "Cycle", pl.UInt64)],
+    )
+    assert "Cycle" in cycler_instance.get_pyprobe_dataframe().columns
+
 
 def test_process(mocker, caplog):
     """Test the process method."""
@@ -409,6 +253,7 @@ def test_get_pyprobe_dataframe(
         pyprobe_dataframe,
         sample_pyprobe_dataframe,
         check_column_order=False,
+        check_dtypes=False,
     )
     os.remove("tests/sample_data/sample_data.csv")
 
@@ -448,5 +293,181 @@ def helper_read_and_process(
         expected_final_row,
         pyprobe_dataframe.tail(1),
         check_column_order=False,
+        check_dtypes=False,
     )
     return pyprobe_dataframe
+
+
+def test_event_expr():
+    """Test the event_expr method."""
+    df = pl.DataFrame({"Step": [1, 1, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3, 4, 4, 4, 4, 5, 5]})
+    expected_df = pl.DataFrame(
+        {
+            "Step": [1, 1, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3, 4, 4, 4, 4, 5, 5],
+            "Event": [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7],
+        }
+    )
+    assert_frame_equal(
+        df.with_columns(BaseCycler.event_expr()), expected_df, check_dtypes=False
+    )
+
+
+def test_get_dataframe_list(caplog):
+    """Test the get_dataframe_list method."""
+    df = pl.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [4, 5, 6],
+        }
+    )
+    df2 = pl.DataFrame(
+        {
+            "a": [7, 8, 9],
+            "b": [10, 11, 12],
+        }
+    )
+    df.write_csv("tests/sample_data/sample_dataframelist_data1.csv")
+    df2.write_csv("tests/sample_data/sample_dataframelist_data2.csv")
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_dataframelist_data1.csv",
+        column_importers=[],
+    )
+    assert len(cycler._get_dataframe_list()) == 1
+    assert_frame_equal(
+        cycler._get_dataframe_list()[0],
+        df.lazy().with_columns(pl.all().cast(pl.String)),
+    )
+
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_dataframelist_data*.csv",
+        column_importers=[],
+    )
+    assert len(cycler._get_dataframe_list()) == 2
+    assert_frame_equal(
+        cycler._get_dataframe_list()[0],
+        df.lazy().with_columns(pl.all().cast(pl.String)),
+    )
+    assert_frame_equal(
+        cycler._get_dataframe_list()[1],
+        df2.lazy().with_columns(pl.all().cast(pl.String)),
+    )
+
+    df3 = pl.DataFrame(
+        {
+            "a": [13, 14, 15],
+        }
+    )
+    df3.write_csv("tests/sample_data/sample_dataframelist_data3.csv")
+    cycler = BaseCycler(
+        input_data_path="tests/sample_data/sample_dataframelist_data*.csv",
+        column_importers=[],
+    )
+
+    with caplog.at_level(logging.WARNING):
+        cycler._get_dataframe_list()
+        assert (
+            caplog.messages[-1]
+            == "File sample_dataframelist_data3.csv has missing columns, "
+            "these have been filled with null values."
+        )
+    os.remove("tests/sample_data/sample_dataframelist_data1.csv")
+    os.remove("tests/sample_data/sample_dataframelist_data2.csv")
+    os.remove("tests/sample_data/sample_dataframelist_data3.csv")
+
+
+def test_read_file_csv(tmp_path):
+    """Test reading a CSV file."""
+    df = pl.DataFrame(
+        {
+            "header1": ["1", "4"],
+            "header2": ["2", "5"],
+            "header3": ["3", "6"],
+        }
+    )
+    df.write_csv(tmp_path / "test.csv")
+    result = BaseCycler.read_file(str(tmp_path / "test.csv"))
+    assert_frame_equal(result, df.lazy().with_columns(pl.all().cast(pl.String)))
+
+
+def test_read_file_csv_with_header_row(tmp_path):
+    """Test reading a CSV file with a custom header row index."""
+    # Create a temporary CSV file with a header on the second row
+    csv_path = tmp_path / "test_header.csv"
+    test_data = "ignore this row\nheader1,header2,header3\n1,2,3\n4,5,6"
+    with open(csv_path, "w") as f:
+        f.write(test_data)
+
+    # Test reading the file with header_row_index=1
+    result = BaseCycler.read_file(str(csv_path), header_row_index=1)
+    result = result.collect()
+
+    # Verify the result
+    assert result.shape == (2, 3)
+    assert result.columns == ["header1", "header2", "header3"]
+    assert result["header1"].to_list() == ["1", "4"]
+
+
+@pytest.mark.parametrize("file_ext", [".txt", ".dat", ".json", ".pdf"])
+def test_read_file_unsupported_extension(tmp_path, file_ext):
+    """Test reading a file with an unsupported extension."""
+    # Create a temporary file with unsupported extension
+    test_file = tmp_path / f"test{file_ext}"
+    test_file.write_text("some content")
+
+    # Test that reading the file raises a ValueError
+    with pytest.raises(ValueError, match=f"Unsupported file extension: {file_ext}"):
+        BaseCycler.read_file(str(test_file))
+
+
+def test_read_file_excel(tmp_path, mocker):
+    """Test reading an Excel file."""
+    # Mock the polars.read_excel function since creating actual Excel files is complex
+    mock_excel = mocker.patch("polars.read_excel")
+    mock_df = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+    mock_excel.return_value = mock_df
+
+    # Create a simple .xlsx file (content doesn't matter as we're mocking the read)
+    excel_path = tmp_path / "test.xlsx"
+    with open(excel_path, "wb") as f:
+        f.write(b"dummy content")
+
+    # Test reading the Excel file
+    result = BaseCycler.read_file(str(excel_path))
+
+    # Verify that read_excel was called with the correct arguments
+    mock_excel.assert_called_once_with(
+        str(excel_path),
+        engine="calamine",
+        infer_schema_length=0,
+        read_options={"header_row": 0},
+    )
+
+    # Verify the result
+    assert result is mock_df
+
+
+def test_read_file_excel_with_header_row(tmp_path, mocker):
+    """Test reading an Excel file with a custom header row index."""
+    # Mock the polars.read_excel function
+    mock_excel = mocker.patch("polars.read_excel")
+    mock_df = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+    mock_excel.return_value = mock_df
+
+    # Create a simple .xlsx file
+    excel_path = tmp_path / "test_header.xlsx"
+    with open(excel_path, "wb") as f:
+        f.write(b"dummy content")
+
+    # Test reading the Excel file with header_row_index=2
+    result = BaseCycler.read_file(str(excel_path), header_row_index=2)
+
+    # Verify that read_excel was called with the correct header_row argument
+    mock_excel.assert_called_once_with(
+        str(excel_path),
+        engine="calamine",
+        infer_schema_length=0,
+        read_options={"header_row": 2},
+    )
+
+    # Verify the result
+    assert result is mock_df

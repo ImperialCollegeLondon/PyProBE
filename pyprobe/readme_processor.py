@@ -1,13 +1,11 @@
 """Module for processing PyPrBE README files."""
 
-import logging
 from typing import Any, cast
 
 import yaml
+from loguru import logger
 
 from pyprobe import utils
-
-logger = logging.getLogger(__name__)
 
 
 class ReadmeModel:

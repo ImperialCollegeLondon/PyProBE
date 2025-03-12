@@ -4,20 +4,21 @@ from datetime import datetime
 
 import polars as pl
 
-from pyprobe.cyclers import basecycler as bc
+from pyprobe.cyclers import column_maps
+from pyprobe.cyclers.basecycler import BaseCycler
 
 
-class Basytec(bc.BaseCycler):
+class Basytec(BaseCycler):
     """A class to load and process Basytec battery cycler data."""
 
-    column_importers: list[bc.ColumnMap] = [
-        bc.DateTime("Date", "%Y-%m-%d %H:%M:%S%.f"),
-        bc.CastAndRename("Step", "Line", pl.Int64),
-        bc.ConvertUnits("Time [s]", "~Time[*]"),
-        bc.ConvertUnits("Current [A]", "I[*]"),
-        bc.ConvertUnits("Voltage [V]", "U[*]"),
-        bc.ConvertUnits("Capacity [Ah]", "Ah[*]"),
-        bc.ConvertTemperature("T1[*]"),
+    column_importers: list[column_maps.ColumnMap] = [
+        column_maps.DateTimeMap("Date", "%Y-%m-%d %H:%M:%S%.f"),
+        column_maps.CastAndRenameMap("Step", "Line", pl.UInt64),
+        column_maps.ConvertUnitsMap("Time [s]", "~Time[*]"),
+        column_maps.ConvertUnitsMap("Current [A]", "I[*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "U[*]"),
+        column_maps.ConvertUnitsMap("Capacity [Ah]", "Ah[*]"),
+        column_maps.ConvertTemperatureMap("T1[*]"),
     ]
 
     @staticmethod

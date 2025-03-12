@@ -1,6 +1,5 @@
 """Module for utilities for analysis classes."""
 
-import logging
 from typing import Any
 
 import numpy as np
@@ -9,8 +8,6 @@ from pydantic import BaseModel, model_validator
 
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
-
-logger = logging.getLogger(__name__)
 
 
 def assemble_array(input_data: list[Result], name: str) -> NDArray[Any]:
