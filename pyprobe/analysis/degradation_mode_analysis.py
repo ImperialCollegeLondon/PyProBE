@@ -8,8 +8,8 @@ import joblib
 import numpy as np
 import polars as pl
 import sympy as sp
-from loguru import logger
 from joblib import Parallel, delayed
+from loguru import logger
 from numpy.typing import NDArray
 from pydantic import ConfigDict, validate_call
 from scipy import optimize
