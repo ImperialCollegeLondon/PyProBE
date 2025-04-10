@@ -28,8 +28,8 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          # Extract version from _version.py file
-          VERSION=$(grep -o '".*"' pyprobe/_version.py | sed 's/"//g')
+          # Extract version from pyproject file
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install uv

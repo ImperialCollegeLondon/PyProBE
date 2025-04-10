@@ -41,7 +41,7 @@ jobs:
         id: bump
         run: |
           uv run semantic-release version --no-commit --no-tag --skip-build
-          VERSION=$(grep -o '".*"' pyprobe/_version.py | sed 's/"//g')
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Update uv lockfile
