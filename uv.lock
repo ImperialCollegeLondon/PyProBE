@@ -1716,6 +1716,7 @@ wheels = [
 
 [[package]]
 name = "pyprobe-data"
+version = "2.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "distinctipy" },
@@ -1801,7 +1802,7 @@ requires-dist = [
     { name = "sympy", specifier = ">=1.13.3" },
     { name = "xlsxwriter", marker = "extra == 'dev'", specifier = ">=3.2.0" },
 ]
-provides-extras = ["dev", "docs", "hvplot", "pybamm", "seaborn"]
+provides-extras = ["hvplot", "seaborn", "dev", "docs", "pybamm"]
 
 [[package]]
 name = "pytest"

@@ -3,7 +3,7 @@ name = "PyProBE-Data"
 authors = [
   {name = "Thomas Holland"},
 ]
-dynamic = ["version"]
+version = "2.2.0"
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -86,12 +86,9 @@ exclude = [
     "examples/*"
 ]
 
-[tool.hatch.version]
-path = "pyprobe/_version.py"
-
 [tool.semantic_release]
 version_source = "tag"
-version_variables = ["pyprobe/_version.py:__version__"]
+version_toml = ["pyproject.toml:project.version"]
 changelog_file = false
 branch = "main" 
 commit_version_number = false  # disable auto commits
