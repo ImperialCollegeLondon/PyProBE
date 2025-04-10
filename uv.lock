@@ -1355,15 +1355,15 @@ wheels = [
 
 [[package]]
 name = "plotly"
-version = "6.0.0"
+version = "6.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "narwhals" },
     { name = "packaging" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/80/761c14012d6daf18e12b6d1e4f6b218e999bcceb694d7a9b180154f9e4db/plotly-6.0.0.tar.gz", hash = "sha256:c4aad38b8c3d65e4a5e7dd308b084143b9025c2cc9d5317fc1f1d30958db87d3", size = 8111782 }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/cc/e41b5f697ae403f0b50e47b7af2e36642a193085f553bf7cc1169362873a/plotly-6.0.1.tar.gz", hash = "sha256:dd8400229872b6e3c964b099be699f8d00c489a974f2cfccfad5e8240873366b", size = 8094643 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0e/77/a946f38b57fb88e736c71fbdd737a1aebd27b532bda0779c137f357cf5fc/plotly-6.0.0-py3-none-any.whl", hash = "sha256:f708871c3a9349a68791ff943a5781b1ec04de7769ea69068adcd9202e57653a", size = 14805949 },
+    { url = "https://files.pythonhosted.org/packages/02/65/ad2bc85f7377f5cfba5d4466d5474423a3fb7f6a97fd807c06f92dd3e721/plotly-6.0.1-py3-none-any.whl", hash = "sha256:4714db20fea57a435692c548a4eb4fae454f7daddf15f8d8ba7e1045681d7768", size = 14805757 },
 ]
 
 [[package]]
@@ -1768,22 +1768,22 @@ seaborn = [
 
 [package.metadata]
 requires-dist = [
-    { name = "distinctipy", specifier = ">=1.3.4" },
-    { name = "fastexcel", specifier = ">=0.12.0" },
+    { name = "distinctipy", specifier = "==1.3.4" },
+    { name = "fastexcel", specifier = "==0.13.0" },
     { name = "hvplot", marker = "extra == 'hvplot'", specifier = ">=0.11.2" },
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "joblib", specifier = ">=1.4.2" },
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "matplotlib", specifier = ">=3.10.0" },
+    { name = "ipykernel", specifier = "==6.29.5" },
+    { name = "joblib", specifier = "==1.4.2" },
+    { name = "loguru", specifier = "==0.7.3" },
+    { name = "matplotlib", specifier = "==3.10.1" },
     { name = "myst-nb", marker = "extra == 'docs'", specifier = ">=1.2.0" },
     { name = "nbmake", marker = "extra == 'dev'", specifier = ">=1.5.5" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "pandas", specifier = ">=2.2.3" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "pandas", specifier = "==2.2.3" },
     { name = "plotly", specifier = ">=5.24.1" },
-    { name = "polars", specifier = ">=1.18.0" },
+    { name = "polars", specifier = "==1.24.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0.1" },
     { name = "pybamm", extras = ["cite"], marker = "extra == 'pybamm'", specifier = ">=25.1.1" },
-    { name = "pydantic", specifier = ">=2.10.4" },
+    { name = "pydantic", specifier = "==2.10.6" },
     { name = "pydata-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.16.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4" },
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1.0" },
@@ -1791,18 +1791,18 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.1" },
     { name = "python-semantic-release", marker = "extra == 'dev'", specifier = ">=9.15.2" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "scikit-learn", specifier = ">=1.6.0" },
+    { name = "pyyaml", specifier = "==6.0.2" },
+    { name = "scikit-learn", specifier = "==1.6.1" },
     { name = "seaborn", marker = "extra == 'seaborn'", specifier = ">=0.13.2" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.2.6" },
     { name = "sphinx-design", marker = "extra == 'docs'", specifier = ">=0.6.1" },
     { name = "sphinx-tabs", marker = "extra == 'docs'", specifier = ">=3.4.7" },
     { name = "sphinxcontrib-bibtex", marker = "extra == 'docs'", specifier = ">=2.6.3" },
-    { name = "streamlit", specifier = ">=1.41.1" },
-    { name = "sympy", specifier = ">=1.13.3" },
+    { name = "streamlit", specifier = "==1.43.2" },
+    { name = "sympy", specifier = "==1.13.3" },
     { name = "xlsxwriter", marker = "extra == 'dev'", specifier = ">=3.2.0" },
 ]
-provides-extras = ["hvplot", "seaborn", "dev", "docs", "pybamm"]
+provides-extras = ["dev", "docs", "hvplot", "pybamm", "seaborn"]
 
 [[package]]
 name = "pytest"
