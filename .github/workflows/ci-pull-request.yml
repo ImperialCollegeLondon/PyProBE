@@ -8,7 +8,7 @@ on:
       - tests/**
       - docs/source/examples/*ipynb
       - pyproject.toml
-      - .github/workflows/ci.yml
+      - .github/workflows/ci-pull-request.yml
       - uv.lock
   workflow_dispatch:
 permissions:

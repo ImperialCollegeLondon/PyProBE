@@ -7,7 +7,7 @@ on:
       - pyprobe/**
       - tests/**
       - pyproject.toml
-      - .github/workflows/ci.yml
+      - .github/workflows/ci-push.yml
       - uv.lock
   workflow_dispatch:
 permissions:
