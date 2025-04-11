@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           shopt -s extglob
-          uv run --all-extras --frozen --isolated pytest -n auto --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
+          uv run --all-extras --frozen --isolated pytest --nbmake docs/source/examples/!(comparing-pyprobe-performance).ipynb
       
       - name: Test upgraded dependencies
         run: uv run --extra dev --upgrade --isolated pytest -n auto
