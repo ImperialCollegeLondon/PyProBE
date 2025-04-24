@@ -23,7 +23,7 @@ jobs:
           ref: main  # Correct branch reference
 
       - name: Install uv & dependencies
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
           # Install a specific version of uv.
           version: "0.6.16"
