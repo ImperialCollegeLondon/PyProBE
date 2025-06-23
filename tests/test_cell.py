@@ -219,7 +219,9 @@ def test_import_pybamm_solution(benchmark):
         ]
         * 3
         + [
-            "Discharge at 1C until 3.3 V",
+            "Discharge at 2A until 3.3 V",
+            "Charge at 1 A until 4.1 V",
+            "Discharge at 1A until 3.3 V",
         ],
     )
     sim = pybamm.Simulation(
@@ -280,11 +282,11 @@ def test_import_pybamm_solution(benchmark):
     experiment2 = pybamm.Experiment(
         [
             (
-                "Discharge at 1C for 10 hours or until 3.3 V",
                 "Rest for 1 hour",
                 "Charge at 1 A until 4.1 V",
                 "Hold at 4.1 V until 50 mA",
                 "Rest for 1 hour",
+                "Discharge at 1C until 3.3 V",
             ),
         ]
         * 5,
