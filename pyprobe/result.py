@@ -38,7 +38,7 @@ class _PolarsColumnCache:
     def __init__(self, base_dataframe: pl.LazyFrame | pl.DataFrame) -> None:
         """Initialize the _PolarsColumnCache object."""
         self.cache: dict[str, pl.Series] = {}
-        self._cached_dataframe = None
+        self._cached_dataframe = pl.DataFrame()
         self._base_dataframe = base_dataframe
         if isinstance(base_dataframe, pl.DataFrame):
             self.cached_dataframe = base_dataframe
@@ -122,12 +122,12 @@ class _PolarsColumnCache:
     def clear_cache(self) -> None:
         """Clear the cache."""
         self.cache = {}
-        self._cached_dataframe = None
+        self._cached_dataframe = pl.DataFrame()
 
     @property
     def cached_dataframe(self) -> pl.DataFrame:
         """Return the cached dataframe as a Polars DataFrame."""
-        if self._cached_dataframe is None or set(
+        if self._cached_dataframe.is_empty() or set(
             self._cached_dataframe.collect_schema().names()
         ) != set(
             self.cache.keys(),

@@ -79,7 +79,7 @@ def test_cached_dataframe():
     """Test the cached_dataframe property."""
     lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
     cache = _PolarsColumnCache(lf)
-    assert cache._cached_dataframe is None
+    assert cache._cached_dataframe.is_empty()
     assert cache.cached_dataframe.is_empty()
 
     cache.collect_columns("a")
