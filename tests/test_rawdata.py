@@ -33,21 +33,6 @@ def test_init(RawData_fixture, step_descriptions_fixture):
         RawData(base_dataframe=data, info={"test": 1})
 
 
-def test_data(RawData_fixture):
-    """Test the data property."""
-    columns = copy.deepcopy(RawData_fixture.data.collect_schema().names())
-    RawData_fixture.live_dataframe = RawData_fixture.live_dataframe.select(columns)
-    assert RawData_fixture.data.columns == [
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Date",
-    ]
-
-
 def test_capacity(BreakinCycles_fixture):
     """Test the capacity property."""
     capacity = BreakinCycles_fixture.cycle(0).charge(0).capacity

@@ -290,7 +290,10 @@ def test_data(Result_fixture):
     assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
     assert isinstance(Result_fixture.data, pl.DataFrame)
     assert isinstance(Result_fixture.live_dataframe, pl.DataFrame)
-    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.live_dataframe)
+    pl_testing.assert_frame_equal(
+        Result_fixture.data, Result_fixture.live_dataframe, check_column_order=False
+    )
+    assert Result_fixture.data.columns == sorted(Result_fixture.data.columns)
 
 
 def test_quantities(Result_fixture):

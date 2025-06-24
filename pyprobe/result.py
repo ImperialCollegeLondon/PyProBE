@@ -261,7 +261,7 @@ class Result:
         self._polars_cache.base_dataframe = complete_dataframe
         if complete_dataframe.is_empty():
             raise ValueError("No data exists for this filter.")
-        return complete_dataframe
+        return complete_dataframe.select(sorted(all_columns))
 
     @wraps(pd.DataFrame.plot)
     def plot(self, *args: Any, **kwargs: Any) -> Axes | NDArray[Axes]:

@@ -9,27 +9,6 @@ from pyprobe.result import Result
 from pyprobe.units import split_quantity_unit
 from pyprobe.utils import deprecated
 
-required_columns = [
-    "Time [s]",
-    "Step",
-    "Event",
-    "Current [A]",
-    "Voltage [V]",
-    "Capacity [Ah]",
-]
-
-default_column_definitions = {
-    "Date": "The timestamp of the data point. Type: datetime.",
-    "Time": "The time passed from the start of the procedure.",
-    "Step": "The step number.",
-    "Cycle": "The cycle number.",
-    "Event": "The event number. Counts the changes in cycles and steps.",
-    "Current": "The current through the cell.",
-    "Voltage": "The terminal voltage.",
-    "Capacity": "The net charge passed since the start of the procedure.",
-    "Temperature": "The temperature of the cell.",
-}
-
 
 class RawData(Result):
     """A class for holding data in the PyProBE format.
@@ -98,23 +77,6 @@ class RawData(Result):
             column_definitions=column_definitions,
         )
         self.step_descriptions = step_descriptions
-
-    @property
-    def data(self) -> pl.DataFrame:
-        """Return the data as a polars DataFrame.
-
-        Returns:
-            pl.DataFrame: The data as a polars DataFrame.
-
-        Raises:
-            ValueError: If no data exists for this filter.
-        """
-        dataframe = super().data
-        unsorted_columns = set(dataframe.collect_schema().names()) - set(
-            required_columns,
-        )
-        sorted_columns = list(required_columns) + list(unsorted_columns)
-        return dataframe.select(sorted_columns)
 
     def zero_column(
         self,
