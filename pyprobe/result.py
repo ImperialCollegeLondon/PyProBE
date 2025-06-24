@@ -16,7 +16,7 @@ from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
-from pyprobe.utils import catch_pydantic_validation, deprecated
+from pyprobe.utils import PyProBEValidationError, catch_pydantic_validation, deprecated
 
 try:
     import hvplot.polars  # noqa: F401
@@ -183,6 +183,29 @@ class Result:
             data.
     """
 
+    data_schema: dict[str, pl.DataType | tuple[pl.DataType]] = {}
+
+    @staticmethod
+    def _validate_data_schema(
+        df: pl.DataFrame, schema: dict[str, pl.DataType | tuple[pl.DataType]]
+    ) -> None:
+        """Validate the provided data against the class schema."""
+        data_schema = df.collect_schema()
+        for required_column, dtype in schema.items():
+            if required_column not in data_schema.names():
+                error_msg = f"Column '{required_column}' is missing from the data."
+                logger.error(error_msg)
+                raise PyProBEValidationError(error_msg)
+            if not isinstance(dtype, tuple):
+                dtype = (dtype,)
+            if data_schema[required_column] not in dtype:
+                error_msg = (
+                    f"Column '{required_column}' has incorrect type. Expected "
+                    f"{dtype}, got {data_schema[required_column]}."
+                )
+                logger.error(error_msg)
+                raise PyProBEValidationError(error_msg)
+
     def __init__(
         self,
         base_dataframe: pl.LazyFrame | pl.DataFrame,
@@ -190,6 +213,10 @@ class Result:
         column_definitions: dict[str, str] = {},
     ) -> None:
         """Initialize the Result object."""
+        self._validate_data_schema(
+            base_dataframe,
+            self.data_schema,
+        )
         self.base_dataframe = base_dataframe
         self.info = info
         self.column_definitions = column_definitions

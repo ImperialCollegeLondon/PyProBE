@@ -10,6 +10,7 @@ import pytest
 from scipy.io import loadmat
 
 from pyprobe.result import Result, _PolarsColumnCache, combine_results
+from pyprobe.utils import PyProBEValidationError
 
 
 def test__PolarsColumnCache_lazyframe():
@@ -135,6 +136,69 @@ def Result_fixture(lazyframe_fixture, info_fixture):
             "Current": "Current definition",
         },
     )
+
+
+def test_validate_data_schema():
+    """Test the _validate_data_schema method."""
+    schema = {
+        "Current [A]": pl.Int64,
+        "Voltage [V]": pl.Float64,
+    }
+    df = pl.DataFrame({"Current [A]": [1, 2, 3], "Voltage [V]": [4.0, 5.0, 6.0]})
+
+    # with no error
+    Result._validate_data_schema(df, schema)
+
+    # with missing column
+    df_missing = pl.DataFrame({"Current [A]": [1, 2, 3]})
+    with pytest.raises(
+        PyProBEValidationError,
+        match=r"Column 'Voltage \[V\]' is missing from the data.",
+    ):
+        Result._validate_data_schema(df_missing, schema)
+
+    # with extra column
+    df_extra = pl.DataFrame(
+        {"Current [A]": [1, 2, 3], "Voltage [V]": [4.0, 5.0, 6.0], "Extra": [7, 8, 9]}
+    )
+    Result._validate_data_schema(df_extra, schema)
+
+    # with incorrect type
+    df_incorrect_type = pl.DataFrame(
+        {"Current [A]": [1, 2, 3], "Voltage [V]": ["4.0", "5.0", "6.0"]}
+    )
+    with pytest.raises(
+        PyProBEValidationError,
+        match=r"Column 'Voltage \[V\]' has incorrect type. Expected \(Float64,\), "
+        r"got String.",
+    ):
+        Result._validate_data_schema(df_incorrect_type, schema)
+
+    # with multiple type options
+    schema_multiple_types = {
+        "Current [A]": pl.Int64,
+        "Voltage [V]": (pl.Float64, pl.Int64),
+    }
+    df_multiple_types = pl.DataFrame(
+        {"Current [A]": [1, 2, 3], "Voltage [V]": [4.0, 5.0, 6.0]}
+    )
+    Result._validate_data_schema(df_multiple_types, schema_multiple_types)
+    df_multiple_types_int = pl.DataFrame(
+        {"Current [A]": [1, 2, 3], "Voltage [V]": [4, 5, 6]}
+    )
+    Result._validate_data_schema(df_multiple_types_int, schema_multiple_types)
+
+    df_multiple_types_incorrect = pl.DataFrame(
+        {"Current [A]": [1, 2, 3], "Voltage [V]": ["4", "5", "6"]},
+    )
+    with pytest.raises(
+        PyProBEValidationError,
+        match=(
+            r"Column 'Voltage \[V\]' has incorrect type. Expected \(Float64, Int64\)"
+            r", got String."
+        ),
+    ):
+        Result._validate_data_schema(df_multiple_types_incorrect, schema_multiple_types)
 
 
 def test_init(Result_fixture):
