@@ -1,13 +1,13 @@
 """Tests for the RawData class."""
 
 import copy
-import random
 
 import numpy as np
 import polars as pl
 import pytest
 
 from pyprobe.rawdata import RawData
+from pyprobe.utils import PyProBEValidationError
 
 
 @pytest.fixture
@@ -29,14 +29,13 @@ def test_init(RawData_fixture, step_descriptions_fixture):
 
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
-    with pytest.raises(ValueError):
+    with pytest.raises(PyProBEValidationError):
         RawData(base_dataframe=data, info={"test": 1})
 
 
 def test_data(RawData_fixture):
     """Test the data property."""
     columns = copy.deepcopy(RawData_fixture.data.collect_schema().names())
-    random.shuffle(columns)
     RawData_fixture.live_dataframe = RawData_fixture.live_dataframe.select(columns)
     assert RawData_fixture.data.columns == [
         "Time [s]",
@@ -118,19 +117,6 @@ def test_set_reference_capacity(BreakinCycles_fixture):
     assert procedure2.get("Capacity - Referenced [Ah]").max() == 0.04
 
 
-def test_zero_column(RawData_fixture):
-    """Test method for zeroing the first value of a selected column."""
-    RawData_fixture.zero_column(
-        "Capacity [Ah]",
-        "Zeroed Capacity [Ah]",
-        "Capacity column with first value zeroed.",
-    )
-    assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
-    assert RawData_fixture.column_definitions["Zeroed Capacity"] == (
-        "Capacity column with first value zeroed."
-    )
-
-
 def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Test that the definitions have been correctly set."""
     rawdata = RawData(
@@ -152,12 +138,25 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
     }
 
 
+def test_zero_column(RawData_fixture):
+    """Test method for zeroing the first value of a selected column."""
+    RawData_fixture.zero_column(
+        "Capacity [Ah]",
+        "Zeroed Capacity [Ah]",
+        "Capacity column with first value zeroed.",
+    )
+    assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
+    assert RawData_fixture.column_definitions["Zeroed Capacity"] == (
+        "Capacity column with first value zeroed."
+    )
+
+
 def test_pybamm_experiment():
     """Test successful creation of PyBaMM experiment list."""
     # Create test data
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2, 3],
+            "Time [s]": [1.0, 2.0, 3.0],
             "Step": [1, 2, 2],
             "Event": [1, 2, 2],
             "Current [A]": [0.1, 0.2, 0.3],
@@ -188,7 +187,7 @@ def test_pybamm_experiment_missing_descriptions():
     """Test error handling when step descriptions are missing."""
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2, 3],
+            "Time [s]": [1.0, 2.0, 3.0],
             "Step": [1, 2, 3],
             "Event": [1, 2, 3],
             "Current [A]": [0.1, 0.2, 0.3],
@@ -216,7 +215,7 @@ def test_pybamm_experiment_multiple_conditions():
     """Test handling of steps with multiple comma-separated conditions."""
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2],
+            "Time [s]": [1.0, 2.0],
             "Step": [1, 2],
             "Event": [1, 2],
             "Current [A]": [0.1, 0.2],
@@ -252,7 +251,7 @@ def test_pybamm_experiment_with_loops():
     base_df = pl.DataFrame(
         {
             "Step": [1, 1, 1, 2, 2, 1, 1, 2, 2],
-            "Time [s]": range(9),
+            "Time [s]": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
             "Voltage [V]": [3.0] * 9,
             "Current [A]": [0.1] * 9,
             "Capacity [Ah]": [0.1] * 9,

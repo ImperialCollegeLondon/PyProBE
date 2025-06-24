@@ -1,10 +1,9 @@
 """A module for the RawData class."""
 
-from typing import Optional
+from typing import Any, Optional
 
 import polars as pl
 from loguru import logger
-from pydantic import Field, field_validator
 
 from pyprobe.result import Result
 from pyprobe.units import split_quantity_unit
@@ -51,32 +50,54 @@ class RawData(Result):
         - `Capacity [Ah]`
 
     This defines the PyProBE format.
+
+    Args:
+        base_dataframe (pl.LazyFrame | pl.DataFrame):
+            The base dataframe containing the data.
+        info (dict[str, Any | None]):
+            A dictionary containing metadata about the data.
+        column_definitions (dict[str, str]):
+            A dictionary containing the definitions of the columns in the data.
+            Defaults to a predefined set of definitions for the PyProBE format.
+        step_descriptions (dict[str, list[str | int | None]], optional):
+            A dictionary containing the fields 'Step' and 'Description'.
+            'Step' is a list of step numbers, and 'Description' is a list of
+            corresponding descriptions in PyBaMM Experiment format.
     """
 
-    column_definitions: dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy(),
-    )
-    step_descriptions: dict[str, list[str | int | None]] = {}
-    """A dictionary containing the fields 'Step' and 'Description'.
+    data_schema = {
+        "Time [s]": pl.Float64,
+        "Step": pl.Int64,
+        "Event": pl.Int64,
+        "Current [A]": pl.Float64,
+        "Voltage [V]": pl.Float64,
+        "Capacity [Ah]": pl.Float64,
+    }
 
-    - 'Step' is a list of step numbers.
-    - 'Description' is a list of corresponding descriptions in PyBaMM Experiment format.
-    """
-
-    @field_validator("base_dataframe")
-    @classmethod
-    def check_required_columns(
-        cls,
-        dataframe: pl.LazyFrame | pl.DataFrame,
-    ) -> "RawData":
-        """Check if the required columns are present in the input_data."""
-        column_list = dataframe.collect_schema().names()
-        missing_columns = [col for col in required_columns if col not in column_list]
-        if missing_columns:
-            error_msg = f"Missing required columns: {missing_columns}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        return dataframe
+    def __init__(
+        self,
+        base_dataframe: pl.LazyFrame | pl.DataFrame,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] = {
+            "Date": "The timestamp of the data point. Type: datetime.",
+            "Time": "The time passed from the start of the procedure.",
+            "Step": "The step number.",
+            "Cycle": "The cycle number.",
+            "Event": "The event number. Counts the changes in cycles and steps.",
+            "Current": "The current through the cell.",
+            "Voltage": "The terminal voltage.",
+            "Capacity": "The net charge passed since the start of the procedure.",
+            "Temperature": "The temperature of the cell.",
+        },
+        step_descriptions: dict[str, list[str | int | None]] = {},
+    ) -> None:
+        """Initialize the RawData object."""
+        super().__init__(
+            base_dataframe=base_dataframe,
+            info=info,
+            column_definitions=column_definitions,
+        )
+        self.step_descriptions = step_descriptions
 
     @property
     def data(self) -> pl.DataFrame:
