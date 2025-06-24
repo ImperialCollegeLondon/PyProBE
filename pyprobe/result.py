@@ -12,7 +12,6 @@ import polars as pl
 from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
-from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
 
 from pyprobe.plot import _retrieve_relevant_columns
@@ -161,7 +160,7 @@ class _PolarsColumnCache:
         return set(_quantities)
 
 
-class Result(BaseModel):
+class Result:
     """A class for holding any data in PyProBE.
 
     A Result object is the base type for every data object in PyProBE. This class
@@ -176,31 +175,25 @@ class Result(BaseModel):
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
         - :attr:`column_list`: A list of column names.
+
+    Args:
+        base_dataframe (pl.LazyFrame | pl.DataFrame): The data to store.
+        info (dict[str, Any | None]): Metadata about the data, such as test info.
+        column_definitions (dict[str, str] | None): Definitions of the columns in the
+            data.
     """
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    """The data as a polars DataFrame or LazyFrame."""
-    info: dict[str, Any | None]
-    """Dictionary containing information about the cell."""
-    column_definitions: dict[str, str] = Field(default_factory=dict)
-    """A dictionary containing the definitions of the columns in the data."""
-
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization method for the Pydantic model."""
+    def __init__(
+        self,
+        base_dataframe: pl.LazyFrame | pl.DataFrame,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] = {},
+    ) -> None:
+        """Initialize the Result object."""
+        self.base_dataframe = base_dataframe
+        self.info = info
+        self.column_definitions = column_definitions
         self._polars_cache = _PolarsColumnCache(self.base_dataframe)
-
-    @model_validator(mode="before")
-    @classmethod
-    def _load_base_dataframe(cls, data: Any) -> Any:
-        """Load the base dataframe from a file if provided as a string."""
-        if "base_dataframe" in data and isinstance(data["base_dataframe"], str):
-            data["base_dataframe"] = pl.scan_parquet(data["base_dataframe"])
-        return data
 
     @property
     def live_dataframe(self) -> pl.DataFrame:
