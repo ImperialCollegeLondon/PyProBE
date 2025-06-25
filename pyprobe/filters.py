@@ -415,7 +415,6 @@ class Procedure(RawData):
         ]
         for experiment_name in experiment_names:
             self.readme_dict.pop(experiment_name)
-        self.model_post_init(self)
         self.live_dataframe = self.live_dataframe.filter(conditions)
 
     @property
@@ -528,22 +527,27 @@ class Experiment(RawData):
 class Cycle(RawData):
     """A class for a cycle in a battery experimental procedure."""
 
-    cycle_info: list[tuple[int, int, int]] = []
-    """A list of tuples representing the cycle information from the README yaml file.
-
-    The tuple format is
-    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
-    """
-
-    def model_post_init(self, __context: Any) -> None:
-        """Create a cycle class."""
-        super().model_post_init(self)
+    def __init__(
+        self,
+        base_dataframe: pl.LazyFrame | pl.DataFrame,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] = {},
+        step_descriptions: dict[str, list[str | int | None]] = {},
+        cycle_info: list[tuple[int, int, int]] = [],
+    ) -> None:
+        """Initialise the Cycle class."""
+        self.cycle_info = cycle_info
+        super().__init__(
+            base_dataframe=base_dataframe,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
         self.zero_column(
             "Time [s]",
             "Cycle Time [s]",
             "Time elapsed since beginning of cycle.",
         )
-
         self.zero_column(
             "Capacity [Ah]",
             "Cycle Capacity [Ah]",
@@ -562,9 +566,20 @@ class Cycle(RawData):
 class Step(RawData):
     """A class for a step in a battery experimental procedure."""
 
-    def model_post_init(self, __context: Any) -> None:
-        """Create a step class."""
-        super().model_post_init(self)
+    def __init__(
+        self,
+        base_dataframe: pl.LazyFrame | pl.DataFrame,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] = {},
+        step_descriptions: dict[str, list[str | int | None]] = {},
+    ) -> None:
+        """Initialise the Cycle class."""
+        super().__init__(
+            base_dataframe=base_dataframe,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
         self.zero_column(
             "Time [s]",
             "Step Time [s]",
