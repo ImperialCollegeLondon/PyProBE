@@ -487,16 +487,22 @@ class Procedure(RawData):
 class Experiment(RawData):
     """A class for an experiment in a battery experimental procedure."""
 
-    cycle_info: list[tuple[int, int, int]] = []
-    """A list of tuples representing the cycle information from the README yaml file.
-
-    The tuple format is
-    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
-    """
-
-    def model_post_init(self, __context: Any) -> None:
-        """Create an experiment class."""
-        super().model_post_init(self)
+    def __init__(
+        self,
+        base_dataframe: pl.LazyFrame | pl.DataFrame,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] = {},
+        step_descriptions: dict[str, list[str | int | None]] = {},
+        cycle_info: list[tuple[int, int, int]] = [],
+    ) -> None:
+        """Initialise the Experiment class."""
+        self.cycle_info = cycle_info
+        super().__init__(
+            base_dataframe=base_dataframe,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
         self.zero_column(
             "Time [s]",
             "Experiment Time [s]",
