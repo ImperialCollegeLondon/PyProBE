@@ -57,20 +57,22 @@ class RawData(Result):
         self,
         base_dataframe: pl.LazyFrame | pl.DataFrame,
         info: dict[str, Any | None],
-        column_definitions: dict[str, str] = {
-            "Date": "The timestamp of the data point. Type: datetime.",
-            "Time": "The time passed from the start of the procedure.",
-            "Step": "The step number.",
-            "Cycle": "The cycle number.",
-            "Event": "The event number. Counts the changes in cycles and steps.",
-            "Current": "The current through the cell.",
-            "Voltage": "The terminal voltage.",
-            "Capacity": "The net charge passed since the start of the procedure.",
-            "Temperature": "The temperature of the cell.",
-        },
+        column_definitions: dict[str, str] = {},
         step_descriptions: dict[str, list[str | int | None]] = {},
     ) -> None:
         """Initialize the RawData object."""
+        if column_definitions == {}:
+            column_definitions = {
+                "Date": "The timestamp of the data point. Type: datetime.",
+                "Time": "The time passed from the start of the procedure.",
+                "Step": "The step number.",
+                "Cycle": "The cycle number.",
+                "Event": "The event number. Counts the changes in cycles and steps.",
+                "Current": "The current through the cell.",
+                "Voltage": "The terminal voltage.",
+                "Capacity": "The net charge passed since the start of the procedure.",
+                "Temperature": "The temperature of the cell.",
+            }
         super().__init__(
             base_dataframe=base_dataframe,
             info=info,
