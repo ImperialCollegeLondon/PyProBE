@@ -11,16 +11,15 @@ from typing import Any, Literal
 
 import polars as pl
 from loguru import logger
-from pydantic import BaseModel, Field, ValidationError, validate_call
+from pydantic import ValidationError
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
-from pyprobe.utils import PyBaMMSolution, catch_pydantic_validation, deprecated
+from pyprobe.utils import PyBaMMSolution, deprecated
 
 
-@catch_pydantic_validation
 def process_cycler_data(
     cycler: Literal[
         "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
@@ -95,23 +94,16 @@ def process_cycler_data(
     return processor.output_data_path
 
 
-class Cell(BaseModel):
+class Cell:
     """A class for a cell in a battery experiment."""
 
-    info: dict[str, Any | None]
-    """Dictionary containing information about the cell.
-    The dictionary must contain a 'Name' field, other information may include
-    channel number or other rig information.
-    """
-    procedure: dict[str, Procedure] = Field(default_factory=dict)
-    """Dictionary containing the procedures that have been run on the cell."""
+    def __init__(
+        self, info: dict[str, Any | None], procedure: dict[str, Procedure] = {}
+    ) -> None:
+        """Initialise the Cell class."""
+        self.info = info
+        self.procedure = procedure
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
-
-    @catch_pydantic_validation
     def import_data(
         self,
         procedure_name: str,
@@ -237,7 +229,6 @@ class Cell(BaseModel):
                 readme_path = None
         self.import_data(procedure_name, output_data_path, readme_path)
 
-    @catch_pydantic_validation
     def import_pybamm_solution(
         self,
         procedure_name: str,
@@ -620,7 +611,6 @@ class Cell(BaseModel):
         "PyProBE format, use the import_data method.",
         version="2.0.1",
     )
-    @validate_call
     def add_procedure(
         self,
         procedure_name: str,
@@ -669,7 +659,6 @@ class Cell(BaseModel):
         "PyProBE format, use the import_data method.",
         version="2.0.1",
     )
-    @validate_call
     def quick_add_procedure(
         self,
         procedure_name: str,
@@ -772,7 +761,6 @@ class Cell(BaseModel):
         return data_path
 
 
-@catch_pydantic_validation
 def load_archive(path: str) -> Cell:
     """Load a cell object from an archive.
 
@@ -811,7 +799,6 @@ def load_archive(path: str) -> Cell:
     return cell
 
 
-@catch_pydantic_validation
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,

@@ -554,7 +554,7 @@ def test_import_data(cell_instance, mocker, caplog):
         mocker.patch("os.path.exists", return_value=False)
         cell_instance.import_data(procedure_name, data_path)
         assert cell_instance.procedure[procedure_name].readme_dict == {}
-        assert caplog.messages[0] == (
+        assert caplog.messages[-1] == (
             "No README file found for test_procedure_no_readme. Proceeding without"
             " README."
         )
