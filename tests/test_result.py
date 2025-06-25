@@ -165,12 +165,16 @@ def test_validate_data_schema():
 
     # with incorrect type
     df_incorrect_type = pl.DataFrame(
-        {"Current [A]": [1, 2, 3], "Voltage [V]": ["4.0", "5.0", "6.0"]}
+        {"Current [A]": [1, 2, 3], "Voltage [V]": ["fail", "this", "test"]}
     )
     with pytest.raises(
         PyProBEValidationError,
-        match=r"Column 'Voltage \[V\]' has incorrect type. Expected \(Float64,\), "
-        r"got String.",
+        match=(
+            r"Column 'Voltage \[V\]' has incorrect type\. Expected \((Float64, "
+            r"Int64|Float64,)\), got String\. Casting to correct dtype failed: "
+            r"conversion from `str` to `f64` failed in column 'Voltage \[V\]' for 3 out"
+            r" of 3 values: \[\"fail\", \"this\", \"test\"\]"
+        ),
     ):
         Result._validate_data_schema(df_incorrect_type, schema)
 
@@ -189,13 +193,16 @@ def test_validate_data_schema():
     Result._validate_data_schema(df_multiple_types_int, schema_multiple_types)
 
     df_multiple_types_incorrect = pl.DataFrame(
-        {"Current [A]": [1, 2, 3], "Voltage [V]": ["4", "5", "6"]},
+        {"Current [A]": [1, 2, 3], "Voltage [V]": ["fail", "this", "test"]},
     )
+    # Accept both (Float64, Int64) and (Float64,) in the error message
     with pytest.raises(
         PyProBEValidationError,
         match=(
-            r"Column 'Voltage \[V\]' has incorrect type. Expected \(Float64, Int64\)"
-            r", got String."
+            r"Column 'Voltage \[V\]' has incorrect type\. Expected \((Float64, "
+            r"Int64|Float64,)\), got String\. Casting to correct dtype failed: "
+            r"conversion from `str` to `f64` failed in column 'Voltage \[V\]' for 3 out"
+            r" of 3 values: \[\"fail\", \"this\", \"test\"\]"
         ),
     ):
         Result._validate_data_schema(df_multiple_types_incorrect, schema_multiple_types)

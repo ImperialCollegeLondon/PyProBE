@@ -199,12 +199,21 @@ class Result:
             if not isinstance(dtype, tuple):
                 dtype = (dtype,)
             if data_schema[required_column] not in dtype:
-                error_msg = (
-                    f"Column '{required_column}' has incorrect type. Expected "
-                    f"{dtype}, got {data_schema[required_column]}."
-                )
-                logger.error(error_msg)
-                raise PyProBEValidationError(error_msg)
+                target_type = dtype[0]
+                try:  # try to cast the column to the correct type
+                    df = df.with_columns(pl.col(required_column).cast(target_type))
+                    logger.info(
+                        f"Column '{required_column}' cast from type "
+                        f"{data_schema[required_column]} to {target_type}."
+                    )
+                except pl.exceptions.InvalidOperationError as e:  # else raise error
+                    error_msg = (
+                        f"Column '{required_column}' has incorrect type. Expected "
+                        f"{dtype}, got {data_schema[required_column]}. "
+                        f"Casting to correct dtype failed: {e}"
+                    )
+                    logger.error(error_msg)
+                    raise PyProBEValidationError(error_msg)
 
     def __init__(
         self,
