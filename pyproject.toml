@@ -1,5 +1,5 @@
 [project]
-name = "PyProBE-Data"
+name = "pyprobe"
 authors = [
   {name = "Thomas Holland"},
 ]
