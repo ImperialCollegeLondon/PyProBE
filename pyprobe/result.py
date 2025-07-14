@@ -1,8 +1,8 @@
 """A module for the Result class."""
 
 import difflib
-import warnings
 import re
+import warnings
 from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
@@ -333,13 +333,22 @@ class Result(BaseModel):
             info=self.info,
         )
 
-    def get(self, *column_names: str, fuzzy: bool | float = True, cutoff: float | None = None) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
+    def get(
+        self,
+        *column_names: str,
+        fuzzy: bool | float = True,
+        cutoff: float | None = None,
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         if len(column_names) == 0:
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        fm_cutoff = 0.6 if fuzzy is True else (float(fuzzy) if isinstance(fuzzy, float) else None)
+        fm_cutoff = (
+            0.6
+            if fuzzy is True
+            else (float(fuzzy) if isinstance(fuzzy, float) else None)
+        )
         resolved: list[str] = []
         available = self.column_list
 
@@ -347,23 +356,24 @@ class Result(BaseModel):
             if name in available:
                 resolved.append(name)
             elif fm_cutoff is not None:
-                match = difflib.get_close_matches(name, available, n=1, cutoff=fm_cutoff)
+                match = difflib.get_close_matches(
+                    name, available, n=1, cutoff=fm_cutoff
+                )
                 if match:
                     best = match[0]
                     warnings.warn(
                         f'Column "{name}" not found. Using closest match: "{best}"',
                         UserWarning,
-                        stacklevel=2
+                        stacklevel=2,
                     )
                     resolved.append(best)
                 else:
-                    raise ValueError(f'Column "{name}" not found. Available columns: {", ".join(available)}')
+                    raise ValueError(
+                        f'Column "{name}" not found. Available columns: {", ".join(available)}'
+                    )
 
-
-        
         array = self.data_with_columns(*resolved).to_numpy()
         return array.T[0] if len(resolved) == 1 else tuple(array.T)
-                
 
     @property
     def contains_lazyframe(self) -> bool:
