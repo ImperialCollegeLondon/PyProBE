@@ -3,7 +3,7 @@ name = "PyProBE-Data"
 authors = [
   {name = "Thomas Holland"},
 ]
-version = "2.2.0"
+version = "2.2.1"
 requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
 readme = {file = "README.md", content-type = "text/markdown"}
