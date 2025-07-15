@@ -177,29 +177,31 @@ class Result(BaseModel):
         - :meth:`print_definitions`: Print the column definitions.
         - :attr:`column_list`: A list of column names.
     """
+
     def __repr__(self):
         """Provides simple representation of a Result instance."""
         return (
             f"<Result: {len(self.column_list)} columns, "
             f"{self.live_dataframe.shape[0]} rows> - use .what_can_i_do() to explore"
         )
-    
+
     def what_can_i_do(self):
         """Prints docstring for public methods and attributes of the Result class."""
         from inspect import getdoc
+
         print(f"\n{self.__class__.__name__} - Available methods and attributes:\n")
-        
+
         for attr_name in dir(self):
-            if attr_name.startswith('_'):
+            if attr_name.startswith("_"):
                 continue
             attr = getattr(self, attr_name)
             if callable(attr):
-                kind = 'Method'
+                kind = "Method"
             else:
-                kind = 'Attribute'
-            doc = getdoc(attr) or 'No documentation available.'
-            print(f'{kind}: {attr_name}()\n {doc.strip()}\n')
-            
+                kind = "Attribute"
+            doc = getdoc(attr) or "No documentation available."
+            print(f"{kind}: {attr_name}()\n {doc.strip()}\n")
+
     class Config:
         """Pydantic configuration."""
 
