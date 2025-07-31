@@ -149,6 +149,13 @@ PyProBE is fully open source. For more information about its license, see [LICEN
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/FW-Coding">
+                    <img src="https://avatars.githubusercontent.com/u/120202729?v=4" width="100;" alt="FW-Coding"/>
+                    <br />
+                    <sub><b>Felix Watson</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/mohammedasher">
                     <img src="https://avatars.githubusercontent.com/u/168521559?v=4" width="100;" alt="mohammedasher"/>
                     <br />
