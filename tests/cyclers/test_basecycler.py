@@ -86,7 +86,7 @@ def column_importer_fixture():
     ]
 
 
-def test_basecycler_init(caplog):
+def test_basecycler_init(caplog, tmp_path):
     """Test input validation in the BaseCycler class."""
     cycler = BaseCycler(
         input_data_path="tests/sample_data/neware/sample_data_neware.csv",
@@ -175,18 +175,19 @@ def test_basecycler_init(caplog):
             "b": [4, 5, 6],
         }
     )
-    df.write_csv("tests/sample_data/sample_basecyclerinit_data1.csv")
-    df.write_csv("tests/sample_data/sample_basecyclerinit_data2.csv")
+    file1 = tmp_path / "sample_basecyclerinit_data1.csv"
+    file2 = tmp_path / "sample_basecyclerinit_data2.csv"
+    df.write_csv(file1)
+    df.write_csv(file2)
     # Test with wildcards in input_data_path
     cycler = BaseCycler(
-        input_data_path="tests/sample_data/sample_basecyclerinit_data*.csv",
+        input_data_path=str(tmp_path / "sample_basecyclerinit_data*.csv"),
         column_importers=[],
     )
+    expected_output = str(tmp_path / "sample_basecyclerinit_datax.parquet")
     assert os.path.normpath(cycler.output_data_path) == os.path.normpath(
-        "tests/sample_data/sample_basecyclerinit_datax.parquet"
+        expected_output
     )
-    os.remove("tests/sample_data/sample_basecyclerinit_data1.csv")
-    os.remove("tests/sample_data/sample_basecyclerinit_data2.csv")
 
 
 def test_extra_column_importers():
@@ -200,11 +201,12 @@ def test_extra_column_importers():
     assert "Cycle" in cycler_instance.get_pyprobe_dataframe().columns
 
 
-def test_process(mocker, caplog):
+def test_process(mocker, caplog, tmp_path):
     """Test the process method."""
+    output_path = tmp_path / "sample_data.parquet"
     cycler_instance = BaseCycler(
         input_data_path="tests/sample_data/neware/sample_data_neware.csv",
-        output_data_path="tests/sample_data/sample_data.parquet",
+        output_data_path=str(output_path),
         column_importers=[],
     )
     df = pl.DataFrame(
@@ -220,17 +222,14 @@ def test_process(mocker, caplog):
         cycler_instance.process()
         message = caplog.messages[-1]
         assert re.match(r"parquet written in \d+(\.\d+)? seconds\.", message)
-        assert_frame_equal(pl.read_parquet("tests/sample_data/sample_data.parquet"), df)
+        assert_frame_equal(pl.read_parquet(output_path), df)
         cycler_instance.process()
-        assert (
-            caplog.messages[-1]
-            == "File tests/sample_data/sample_data.parquet already exists. Skipping."
-        )
-    os.remove("tests/sample_data/sample_data.parquet")
+        assert caplog.messages[-1] == f"File {output_path} already exists. Skipping."
 
+    output_path2 = tmp_path / "sample_data2.parquet"
     cycler_instance = BaseCycler(
         input_data_path="tests/sample_data/neware/sample_data_neware.csv",
-        output_data_path="tests/sample_data/sample_data.parquet",
+        output_data_path=str(output_path2),
         column_importers=[],
         overwrite_existing=True,
     )
@@ -238,21 +237,22 @@ def test_process(mocker, caplog):
         cycler_instance.process()
         message = caplog.messages[-1]
         assert re.match(r"parquet written in \d+(\.\d+)? seconds\.", message)
-        assert_frame_equal(pl.read_parquet("tests/sample_data/sample_data.parquet"), df)
+        assert_frame_equal(pl.read_parquet(output_path2), df)
         cycler_instance.process()
         assert re.match(r"parquet written in \d+(\.\d+)? seconds\.", message)
-    os.remove("tests/sample_data/sample_data.parquet")
 
 
 def test_get_pyprobe_dataframe(
     sample_dataframe,
     sample_pyprobe_dataframe,
     column_importer_fixture,
+    tmp_path,
 ):
     """Test the get_pyprobe_dataframe method."""
-    sample_dataframe.write_csv("tests/sample_data/sample_data.csv")
+    csv_path = tmp_path / "sample_data.csv"
+    sample_dataframe.write_csv(csv_path)
     cycler_instance = BaseCycler(
-        input_data_path="tests/sample_data/sample_data.csv",
+        input_data_path=str(csv_path),
         column_importers=column_importer_fixture,
     )
     pyprobe_dataframe = cycler_instance.get_pyprobe_dataframe()
@@ -262,7 +262,6 @@ def test_get_pyprobe_dataframe(
         check_column_order=False,
         check_dtypes=False,
     )
-    os.remove("tests/sample_data/sample_data.csv")
 
 
 def helper_read_and_process(
@@ -319,7 +318,7 @@ def test_event_expr():
     )
 
 
-def test_get_dataframe_list(caplog):
+def test_get_dataframe_list(caplog, tmp_path):
     """Test the get_dataframe_list method."""
     df = pl.DataFrame(
         {
@@ -333,10 +332,12 @@ def test_get_dataframe_list(caplog):
             "b": [10, 11, 12],
         }
     )
-    df.write_csv("tests/sample_data/sample_dataframelist_data1.csv")
-    df2.write_csv("tests/sample_data/sample_dataframelist_data2.csv")
+    file1 = tmp_path / "sample_dataframelist_data1.csv"
+    file2 = tmp_path / "sample_dataframelist_data2.csv"
+    df.write_csv(file1)
+    df2.write_csv(file2)
     cycler = BaseCycler(
-        input_data_path="tests/sample_data/sample_dataframelist_data1.csv",
+        input_data_path=str(file1),
         column_importers=[],
     )
     assert len(cycler._get_dataframe_list()) == 1
@@ -346,7 +347,7 @@ def test_get_dataframe_list(caplog):
     )
 
     cycler = BaseCycler(
-        input_data_path="tests/sample_data/sample_dataframelist_data*.csv",
+        input_data_path=str(tmp_path / "sample_dataframelist_data*.csv"),
         column_importers=[],
     )
     assert len(cycler._get_dataframe_list()) == 2
@@ -364,9 +365,10 @@ def test_get_dataframe_list(caplog):
             "a": [13, 14, 15],
         }
     )
-    df3.write_csv("tests/sample_data/sample_dataframelist_data3.csv")
+    file3 = tmp_path / "sample_dataframelist_data3.csv"
+    df3.write_csv(file3)
     cycler = BaseCycler(
-        input_data_path="tests/sample_data/sample_dataframelist_data*.csv",
+        input_data_path=str(tmp_path / "sample_dataframelist_data*.csv"),
         column_importers=[],
     )
 
@@ -377,9 +379,6 @@ def test_get_dataframe_list(caplog):
             == "File sample_dataframelist_data3.csv has missing columns, "
             "these have been filled with null values."
         )
-    os.remove("tests/sample_data/sample_dataframelist_data1.csv")
-    os.remove("tests/sample_data/sample_dataframelist_data2.csv")
-    os.remove("tests/sample_data/sample_dataframelist_data3.csv")
 
 
 def test_read_file_csv(tmp_path):

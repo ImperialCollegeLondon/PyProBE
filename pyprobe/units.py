@@ -17,6 +17,7 @@ unit_dict: dict[str, str] = {
     "Seconds": "Time",
     "%": "Percentage",
     "K": "Temperature",
+    "°C": "Temperature",
 }
 """A dictionary of valid units and their corresponding quantities."""
 
@@ -34,6 +35,7 @@ time_unit_dict: dict[str, float] = {
     "min": 60,
     "hr": 3600,
     "Seconds": 1,
+    "h": 3600,
 }
 """A dictionary of valid time units and their corresponding factors."""
 valid_units = set(

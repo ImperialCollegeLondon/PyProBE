@@ -14,16 +14,42 @@ from loguru import logger
 from pydantic import BaseModel, Field, ValidationError, validate_call
 
 from pyprobe._version import __version__
-from pyprobe.cyclers import arbin, basecycler, basytec, biologic, maccor, neware
+from pyprobe.cyclers import (
+    arbin,
+    basecycler,
+    basytec,
+    biologic,
+    maccor,
+    neware,
+    novonix,
+)
 from pyprobe.filters import Procedure
 from pyprobe.readme_processor import process_readme
 from pyprobe.utils import PyBaMMSolution, catch_pydantic_validation, deprecated
+
+_cycler_dict = {
+    "neware": neware.Neware,
+    "biologic": biologic.Biologic,
+    "biologic_MB": biologic.BiologicMB,
+    "arbin": arbin.Arbin,
+    "basytec": basytec.Basytec,
+    "maccor": maccor.Maccor,
+    "novonix": novonix.Novonix,
+    "generic": basecycler.BaseCycler,
+}
 
 
 @catch_pydantic_validation
 def process_cycler_data(
     cycler: Literal[
-        "neware", "biologic", "biologic_MB", "arbin", "basytec", "maccor", "generic"
+        "neware",
+        "biologic",
+        "biologic_MB",
+        "arbin",
+        "basytec",
+        "maccor",
+        "novonix",
+        "generic",
     ],
     input_data_path: str,
     output_data_path: str | None = None,
@@ -53,17 +79,7 @@ def process_cycler_data(
     Returns:
         The path to the output parquet file.
     """
-    cycler_map = {
-        "neware": neware.Neware,
-        "biologic": biologic.Biologic,
-        "biologic_MB": biologic.BiologicMB,
-        "arbin": arbin.Arbin,
-        "basytec": basytec.Basytec,
-        "maccor": maccor.Maccor,
-        "generic": basecycler.BaseCycler,
-    }
-
-    cycler_class = cycler_map.get(cycler)
+    cycler_class = _cycler_dict.get(cycler)
     if not cycler_class:
         msg = f"Unsupported cycler type: {cycler}"
         logger.error(msg)
@@ -166,6 +182,7 @@ class Cell(BaseModel):
             "arbin",
             "basytec",
             "maccor",
+            "novonix",
             "generic",
         ],
         input_data_path: str,
@@ -490,14 +507,6 @@ class Cell(BaseModel):
                 overwritten. If False, the function will skip the conversion if the
                 parquet file already exists.
         """
-        cycler_dict = {
-            "neware": neware.Neware,
-            "biologic": biologic.Biologic,
-            "biologic_MB": biologic.BiologicMB,
-            "arbin": arbin.Arbin,
-            "basytec": basytec.Basytec,
-            "maccor": maccor.Maccor,
-        }
         input_data_path = self._get_data_paths(
             folder_path,
             input_filename,
@@ -509,7 +518,7 @@ class Cell(BaseModel):
             filename_inputs,
         )
         try:
-            importer = cycler_dict[cycler](
+            importer = _cycler_dict[cycler](
                 input_data_path=input_data_path,
                 output_data_path=output_data_path,
                 compression_priority=compression_priority,
