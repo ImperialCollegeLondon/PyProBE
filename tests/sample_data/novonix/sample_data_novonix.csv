@@ -5,7 +5,7 @@ Channel: 01
 Cell: Co10x3_1Cx3_2_CH01.csv
 Serial Number: 
 Description: LGM50LT-Co10-1C
-Protocol: D:\Derek\LGM50 Validation tests\LGM50LT_Co10x3_1Cx3_OCV.pro2
+Protocol:
 Mass (g): 1.000
 Capacity (Ah): 5
 Area (cm2): 1.000

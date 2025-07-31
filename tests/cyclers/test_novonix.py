@@ -12,7 +12,7 @@ from .test_basecycler import helper_read_and_process
 def test_read_file_novonix():
     """Test reading a Basytec file."""
     dataframe = Novonix.read_file(
-        "tests/sample_data/novonix/Novonix_Test.csv",
+        "tests/sample_data/novonix/sample_data_novonix.csv",
     )
     assert dataframe is not None
     assert isinstance(dataframe, pl.LazyFrame)
@@ -21,7 +21,7 @@ def test_read_file_novonix():
 def test_read_and_process_novonix(benchmark):
     """Test the full process of reading and processing a file."""
     novonix_cycler = Novonix(
-        input_data_path="tests/sample_data/novonix/Novonix_Test.csv",
+        input_data_path="tests/sample_data/novonix/sample_data_novonix.csv",
     )
     last_row = pl.DataFrame(
         {

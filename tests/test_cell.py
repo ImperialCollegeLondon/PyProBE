@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import os
+from unittest.mock import patch
 
 import polars as pl
 import pytest
@@ -85,6 +86,7 @@ def test_process_cycler_file(cell_instance, mocker):
         "tests/sample_data/biologic/Sample_data_biologic_CA1.txt",
         "tests/sample_data/basytec/sample_data_basytec.txt",
         "tests/sample_data/arbin/sample_data_arbin.csv",
+        "tests/sample_data/novonix/sample_data_novonix.csv",
     ]
 
     for cycler, file in zip(cyclers, file_paths):
@@ -718,52 +720,6 @@ def test_import_from_cycler(cell_instance, mocker):
     )
 
 
-def test_process_cycler_data(mocker):
-    """Test the process_cycler_file method."""
-    output_name = "test.parquet"
-
-    cyclers = ["neware", "maccor", "biologic", "basytec", "arbin"]
-    file_paths = [
-        "tests/sample_data/neware/sample_data_neware.xlsx",
-        "tests/sample_data/maccor/sample_data_maccor.csv",
-        "tests/sample_data/biologic/Sample_data_biologic_01_MB_CA1.txt",
-        "tests/sample_data/basytec/sample_data_basytec.txt",
-        "tests/sample_data/arbin/sample_data_arbin.csv",
-    ]
-
-    for cycler, file in zip(cyclers, file_paths):
-        process_patch = mocker.patch(
-            f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}.process"
-        )
-        cell.process_cycler_data(
-            cycler,
-            file,
-            output_name,
-            overwrite_existing=True,
-        )
-        process_patch.assert_called_once()
-
-    for cycler in cyclers:
-        mock_cycler = mocker.patch(f"pyprobe.cyclers.{cycler}.{cycler.capitalize()}")
-        cell.process_cycler_data(
-            cycler=cycler,
-            input_data_path="tests/sample_data/test_generic_file.csv",
-            output_data_path="tests/sample_data/test_generic_file.parquet",
-            column_importers=["a", "b", "c"],
-            extra_column_importers=["d", "e", "f"],
-            compression_priority="fast",
-            overwrite_existing=True,
-        )
-        mock_cycler.assert_called_once_with(
-            input_data_path="tests/sample_data/test_generic_file.csv",
-            output_data_path="tests/sample_data/test_generic_file.parquet",
-            column_importers=["a", "b", "c"],
-            extra_column_importers=["d", "e", "f"],
-            compression_priority="fast",
-            overwrite_existing=True,
-        )
-
-
 def test_process_cycler_data_generic(tmp_path):
     """Test the process_generic_file method."""
     data_path = tmp_path / "test_generic_file.csv"
@@ -818,4 +774,162 @@ def test_process_cycler_data_generic(tmp_path):
         cell.process_cycler_data(
             cycler="generic",
             input_data_path=str(data_path),
+        )
+
+
+@pytest.mark.parametrize(
+    "cycler_type",
+    [
+        "neware",
+        "biologic",
+        "biologic_MB",
+        "arbin",
+        "basytec",
+        "maccor",
+        "novonix",
+        "generic",
+    ],
+)
+def test_process_cycler_data_processor_process_called(mocker, cycler_type):
+    """Test that process_cycler_data calls the correct processor.process() method."""
+    # Test data paths
+    input_data_path = "test_input.csv"
+    output_data_path = "test_output.parquet"
+
+    # Create a mock processor instance that will be returned by the cycler class
+    mock_processor_instance = mocker.MagicMock()
+    mock_processor_instance.output_data_path = output_data_path
+
+    # Create a mock cycler class that returns our mock instance
+    mock_cycler_class = mocker.MagicMock(return_value=mock_processor_instance)
+
+    # Mock the _cycler_dict to return our mock class
+    with patch.dict("pyprobe.cell._cycler_dict", {cycler_type: mock_cycler_class}):
+        # Test without column_importers (default behavior for non-generic cyclers)
+        if cycler_type != "generic":
+            result = cell.process_cycler_data(
+                cycler=cycler_type,
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                compression_priority="performance",
+                overwrite_existing=False,
+            )
+
+            # Verify the processor class was instantiated correctly
+            mock_cycler_class.assert_called_once_with(
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                compression_priority="performance",
+                overwrite_existing=False,
+                extra_column_importers=[],
+            )
+
+            # Verify process() method was called
+            mock_processor_instance.process.assert_called_once()
+
+            # Verify the correct output path is returned
+            assert result == output_data_path
+
+        else:
+            # For generic cycler, test with column_importers
+            from pyprobe.cyclers import column_maps
+
+            test_column_importers = [
+                column_maps.ConvertUnitsMap("Time [s]", "T [*]"),
+            ]
+
+            result = cell.process_cycler_data(
+                cycler=cycler_type,
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                column_importers=test_column_importers,
+                compression_priority="performance",
+                overwrite_existing=False,
+            )
+
+            # Verify the processor class was instantiated correctly
+            mock_cycler_class.assert_called_once_with(
+                input_data_path=input_data_path,
+                output_data_path=output_data_path,
+                compression_priority="performance",
+                overwrite_existing=False,
+                column_importers=test_column_importers,
+                extra_column_importers=[],
+            )
+
+            # Verify process() method was called
+            mock_processor_instance.process.assert_called_once()
+
+            # Verify the correct output path is returned
+            assert result == output_data_path
+
+
+def test_process_cycler_data_with_column_importers(mocker):
+    """Test that process_cycler_data uses column_importers when provided."""
+    input_data_path = "test_input.csv"
+    output_data_path = "test_output.parquet"
+
+    from pyprobe.cyclers import column_maps
+
+    test_column_importers = [
+        column_maps.ConvertUnitsMap("Time [s]", "T [*]"),
+        column_maps.ConvertUnitsMap("Voltage [V]", "V [*]"),
+    ]
+    test_extra_column_importers = [
+        column_maps.ConvertUnitsMap("Temperature [C]", "Temp [*]"),
+    ]
+
+    # Create a mock processor instance
+    mock_processor_instance = mocker.MagicMock()
+    mock_processor_instance.output_data_path = output_data_path
+
+    # Create a mock cycler class that returns our mock instance
+    mock_cycler_class = mocker.MagicMock(return_value=mock_processor_instance)
+
+    # Mock the _cycler_dict to return our mock class for neware
+    with patch.dict("pyprobe.cell._cycler_dict", {"neware": mock_cycler_class}):
+        result = cell.process_cycler_data(
+            cycler="neware",
+            input_data_path=input_data_path,
+            output_data_path=output_data_path,
+            column_importers=test_column_importers,
+            extra_column_importers=test_extra_column_importers,
+            compression_priority="file size",
+            overwrite_existing=True,
+        )
+
+        # Verify the processor was instantiated with column_importers
+        mock_cycler_class.assert_called_once_with(
+            input_data_path=input_data_path,
+            output_data_path=output_data_path,
+            compression_priority="file size",
+            overwrite_existing=True,
+            column_importers=test_column_importers,
+            extra_column_importers=test_extra_column_importers,
+        )
+
+        # Verify process() method was called
+        mock_processor_instance.process.assert_called_once()
+
+        # Verify the correct output path is returned
+        assert result == output_data_path
+
+
+def test_process_cycler_data_unsupported_cycler():
+    """Test that process_cycler_data raises ValueError for unsupported cycler."""
+    with pytest.raises(ValueError, match="Unsupported cycler type: invalid_cycler"):
+        cell.process_cycler_data(
+            cycler="invalid_cycler",
+            input_data_path="test_input.csv",
+        )
+
+
+def test_process_cycler_data_generic_without_column_importers():
+    """Test process_cycler_data raises error without column_importers."""
+    with pytest.raises(
+        ValueError, match="Column importers must be provided for generic cycler type."
+    ):
+        cell.process_cycler_data(
+            cycler="generic",
+            input_data_path="test_input.csv",
         )
