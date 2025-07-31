@@ -1,4 +1,4 @@
-"""A module to load and process Biologic battery cycler data."""
+"""A module to load and process Novonix battery cycler data."""
 
 import polars as pl
 
