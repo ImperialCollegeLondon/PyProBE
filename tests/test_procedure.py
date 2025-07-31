@@ -1,7 +1,6 @@
 """Module containing tests of the procedure class."""
 
 import copy
-import os
 
 import numpy as np
 import pandas as pd
@@ -70,7 +69,7 @@ def test_zero_columns(procedure_fixture):
     assert procedure_fixture.data["Procedure Capacity [Ah]"][0] == 0
 
 
-def test_add_external_data(procedure_fixture):
+def test_add_external_data(procedure_fixture, tmp_path):
     """Test adding external data to the procedure."""
     # Create external data
     data = pl.read_excel("tests/sample_data/neware/sample_data_neware.xlsx").to_pandas()
@@ -80,11 +79,12 @@ def test_add_external_data(procedure_fixture):
     seconds_passed = (date_range - start_date).total_seconds()
     value = 10 * np.sin(0.001 * seconds_passed)
     dataframe = pl.DataFrame({"Date": date_range, "Value": value})
-    dataframe.write_csv("tests/sample_data/neware/external_data.csv")
+    external_data_path = tmp_path / "external_data.csv"
+    dataframe.write_csv(external_data_path)
 
     procedure1 = copy.deepcopy(procedure_fixture)
     procedure1.add_external_data(
-        filepath="tests/sample_data/neware/external_data.csv",
+        filepath=str(external_data_path),
         importing_columns=["Value"],
         date_column_name="Date",
     )
@@ -95,7 +95,7 @@ def test_add_external_data(procedure_fixture):
 
     procedure2 = copy.deepcopy(procedure_fixture)
     procedure2.add_external_data(
-        filepath="tests/sample_data/neware/external_data.csv",
+        filepath=str(external_data_path),
         importing_columns={"Value": "new column"},
     )
     assert "new column" in procedure2.column_list
@@ -109,5 +109,3 @@ def test_add_external_data(procedure_fixture):
     value = value[~nan_mask]
     data = data[~nan_mask]
     assert np.allclose(data, value, atol=0.005)
-
-    os.remove("tests/sample_data/neware/external_data.csv")

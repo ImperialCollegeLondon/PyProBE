@@ -1,6 +1,5 @@
 """Tests for the result module."""
 
-import os
 from datetime import datetime, timedelta
 
 import numpy.testing as np_testing
@@ -570,10 +569,11 @@ def test_combine_results():
     )
 
 
-def test_export_to_mat(Result_fixture):
+def test_export_to_mat(Result_fixture, tmp_path):
     """Test the export to mat function."""
-    Result_fixture.export_to_mat("./test_mat.mat")
-    saved_data = loadmat("./test_mat.mat")
+    mat_path = tmp_path / "test_mat.mat"
+    Result_fixture.export_to_mat(str(mat_path))
+    saved_data = loadmat(str(mat_path))
     assert "data" in saved_data
     assert "info" in saved_data
     expected_columns = {
@@ -587,54 +587,48 @@ def test_export_to_mat(Result_fixture):
     }
     actual_columns = set(saved_data["data"].dtype.names)
     assert actual_columns == expected_columns
-    os.remove("./test_mat.mat")
 
 
-def test_from_polars_io():
+def test_from_polars_io(tmp_path):
     """Test the from_polars_io method."""
     # Test with read_csv function
     test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    test_df.write_csv("test_data.csv")
+    csv_path = tmp_path / "test_data.csv"
+    test_df.write_csv(csv_path)
 
-    try:
-        # Test with basic parameters
-        result = Result.from_polars_io(
-            info={"test": "info"},
-            column_definitions={"a": "Column A"},
-            polars_io_func=pl.read_csv,
-            source="test_data.csv",
-        )
-        assert isinstance(result, Result)
-        assert result.info == {"test": "info"}
-        assert result.column_definitions == {"a": "Column A"}
-        pl_testing.assert_frame_equal(result.data, test_df)
+    # Test with basic parameters
+    result = Result.from_polars_io(
+        info={"test": "info"},
+        column_definitions={"a": "Column A"},
+        polars_io_func=pl.read_csv,
+        source=str(csv_path),
+    )
+    assert isinstance(result, Result)
+    assert result.info == {"test": "info"}
+    assert result.column_definitions == {"a": "Column A"}
+    pl_testing.assert_frame_equal(result.data, test_df)
 
-        # Test with LazyFrame function
-        result_lazy = Result.from_polars_io(
-            info={"test": "lazy"},
-            column_definitions={},
-            polars_io_func=pl.scan_csv,
-            source="test_data.csv",
-        )
-        assert isinstance(result_lazy, Result)
-        assert isinstance(result_lazy.base_dataframe, pl.LazyFrame)
+    # Test with LazyFrame function
+    result_lazy = Result.from_polars_io(
+        info={"test": "lazy"},
+        column_definitions={},
+        polars_io_func=pl.scan_csv,
+        source=str(csv_path),
+    )
+    assert isinstance(result_lazy, Result)
+    assert isinstance(result_lazy.base_dataframe, pl.LazyFrame)
 
-        # Test with keyword arguments
-        result_with_kwargs = Result.from_polars_io(
-            info={"test": "kwargs"},
-            column_definitions={"a": "Column A with kwargs"},
-            polars_io_func=pl.read_csv,
-            source="test_data.csv",
-            has_header=True,
-            skip_rows=0,
-        )
-        assert isinstance(result_with_kwargs, Result)
-        pl_testing.assert_frame_equal(result_with_kwargs.data, test_df)
-
-    finally:
-        # Clean up test file
-        if os.path.exists("test_data.csv"):
-            os.remove("test_data.csv")
+    # Test with keyword arguments
+    result_with_kwargs = Result.from_polars_io(
+        info={"test": "kwargs"},
+        column_definitions={"a": "Column A with kwargs"},
+        polars_io_func=pl.read_csv,
+        source=str(csv_path),
+        has_header=True,
+        skip_rows=0,
+    )
+    assert isinstance(result_with_kwargs, Result)
+    pl_testing.assert_frame_equal(result_with_kwargs.data, test_df)
 
 
 @pytest.mark.parametrize(
