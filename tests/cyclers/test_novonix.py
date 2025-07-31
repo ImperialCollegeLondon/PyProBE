@@ -13,7 +13,8 @@ def test_read_file_novonix():
     """Test reading a Basytec file."""
     dataframe = Novonix.read_file(
         "tests/sample_data/novonix/Novonix_Test.csv",
-    )
+    assert dataframe is not None
+    assert isinstance(dataframe, pl.LazyFrame)
     assert dataframe is not None
     assert isinstance(dataframe, pl.LazyFrame)
 
