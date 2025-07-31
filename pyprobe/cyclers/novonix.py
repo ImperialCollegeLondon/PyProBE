@@ -1,6 +1,5 @@
 """A module to load and process Biologic battery cycler data."""
 
-import re
 from datetime import datetime
 
 import polars as pl
@@ -15,7 +14,9 @@ class Novonix(BaseCycler):
     input_data_path: str
 
     column_importers: list[column_maps.ColumnMap] = [
-        column_maps.DateTimeMap("Date and Time", "%Y-%m-%d %H:%M:%S"),##swapped the date formatting around to match the Novonix file format
+        column_maps.DateTimeMap(
+            "Date and Time", "%Y-%m-%d %H:%M:%S"
+        ),  ##swapped the date formatting around to match the Novonix file format
         column_maps.CastAndRenameMap("Step", "Step Number", pl.UInt64),
         column_maps.ConvertUnitsMap("Time [s]", "Run Time (*)"),
         column_maps.ConvertUnitsMap("Current [A]", "Current (*)"),
@@ -51,4 +52,3 @@ class Novonix(BaseCycler):
             infer_schema_length=100,  # or infer_schema=True
         )
         return dataframe
-

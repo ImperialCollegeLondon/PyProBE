@@ -8,12 +8,12 @@ from pyprobe.cyclers.novonix import Novonix
 
 from .test_basecycler import helper_read_and_process
 
+
 def test_read_file_novonix():
     """Test reading a Basytec file."""
     dataframe = Novonix.read_file(
         "tests/sample_data/novonix/Novonix_Test.csv",
     )
-
 
 
 def test_read_and_process_novonix(benchmark):
