@@ -17,7 +17,7 @@ unit_dict: dict[str, str] = {
     "Seconds": "Time",
     "%": "Percentage",
     "K": "Temperature",
-    "Â°C": "Temperature",
+    "°C": "Temperature",
 }
 """A dictionary of valid units and their corresponding quantities."""
 
