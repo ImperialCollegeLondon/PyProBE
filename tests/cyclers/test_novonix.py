@@ -17,6 +17,7 @@ def test_read_file_novonix():
     assert dataframe is not None
     assert isinstance(dataframe, pl.LazyFrame)
 
+
 def test_read_and_process_novonix(benchmark):
     """Test the full process of reading and processing a file."""
     novonix_cycler = Novonix(
