@@ -30,25 +30,15 @@ class Novonix(BaseCycler):
         filepath: str,
         header_row_index: int = 0,
     ) -> pl.DataFrame | pl.LazyFrame:
+        """Read a Novonix file and return a DataFrame."""
         n_header_lines = 0
-        start_time_line = None
         with open(filepath, encoding="utf-8") as file:
             for line in file:
-                if line.startswith("Started:"):
-                    start_time_line = line
-                if line.startswith("Date and Time"):
+                if line.startswith("[Data]"):
+                    n_header_lines += 1
                     break
                 n_header_lines += 1
-
-        if start_time_line is not None:
-            _, value = start_time_line.split(": ")
-            start_time = datetime.strptime(value.strip(), "%Y-%m-%d %H:%M:%S")
-            # Optionally use start_time here if needed
-
-        dataframe = pl.scan_csv(
+        return BaseCycler.read_file(
             filepath,
-            skip_rows=max(n_header_lines, 0),
-            separator=",",
-            infer_schema_length=100,  # or infer_schema=True
+            header_row_index=n_header_lines,
         )
-        return dataframe
