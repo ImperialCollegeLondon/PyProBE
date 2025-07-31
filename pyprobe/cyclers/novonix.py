@@ -1,7 +1,5 @@
 """A module to load and process Biologic battery cycler data."""
 
-from datetime import datetime
-
 import polars as pl
 
 from pyprobe.cyclers import column_maps
