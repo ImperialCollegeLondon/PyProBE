@@ -50,3 +50,22 @@ jobs:
       
       - name: Test upgraded dependencies
         run: uv run --extra dev --upgrade --isolated pytest -n auto
+
+      - name: Build and create clean virtual environment
+        run: |
+          uv sync --all-extras --frozen
+          uv build
+          uv venv
+          echo "WHEEL_FILE=$(ls dist/*.whl | head -n 1)" >> $GITHUB_ENV
+
+      - name: Install wheel with all optional dependencies
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: uv pip install "${WHEEL_FILE}[hvplot,seaborn,dev,docs,pybamm]"
+
+      - name: Install wheel with all optional dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: uv pip install "$env:WHEEL_FILE[hvplot,seaborn,dev,docs,pybamm]"
+
+      - name: Run tests
+        run: uv run --no-sync pytest -n auto
