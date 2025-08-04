@@ -47,7 +47,14 @@ jobs:
         run: |
             uv sync --all-extras --frozen
             uv build
+            echo "WHEEL_FILE=$(ls dist/*.whl | head -n 1)" >> $GITHUB_ENV
 
+      - name: Test build
+        run: |
+          uv venv
+          uv pip install "${WHEEL_FILE}[hvplot,seaborn,dev,docs,pybamm]"
+          uv run --no-sync pytest -n auto
+          
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
