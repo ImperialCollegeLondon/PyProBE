@@ -65,7 +65,7 @@ jobs:
       - name: Install wheel with all optional dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: uv pip install "$env:WHEEL_FILE[hvplot,seaborn,dev,docs,pybamm]"
+        run: uv pip install "$($env:WHEEL_FILE)[hvplot,seaborn,dev,docs,pybamm]"
 
       - name: Run tests
         run: uv run --no-sync pytest -n auto
