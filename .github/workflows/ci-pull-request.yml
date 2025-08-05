@@ -50,3 +50,25 @@ jobs:
       
       - name: Test upgraded dependencies
         run: uv run --extra dev --upgrade --isolated pytest -n auto
+
+      - name: Build and test distribution installation (Linux/macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          uv sync --all-extras --frozen
+          uv build
+          uv venv
+          WHEEL_FILE=$(ls dist/*.whl | head -n 1)
+          uv pip install ${WHEEL_FILE}[hvplot,seaborn,dev,docs,pybamm]
+          uv run --no-sync pytest -n auto
+
+      - name: Build and test distribution installation (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          uv sync --all-extras --frozen
+          uv build
+          uv venv
+          $wheelFile = Get-ChildItem dist/*.whl | Select-Object -First 1 | ForEach-Object { $_.FullName }
+          $wheel = $wheelFile + "[hvplot,seaborn,dev,docs,pybamm]"
+          uv pip install $wheel
+          uv run --no-sync pytest -n auto
