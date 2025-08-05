@@ -43,11 +43,15 @@ jobs:
         with:
             python-version-file: "pyproject.toml"
 
-      - name: Build distribution packages
+      - name: Build and test distribution installation
         run: |
-            uv sync --all-extras --frozen
-            uv build
-
+          uv sync --all-extras --frozen
+          uv build
+          uv venv
+          WHEEL_FILE=$(ls dist/*.whl | head -n 1)
+          uv pip install ${WHEEL_FILE}[hvplot,seaborn,dev,docs,pybamm]
+          uv run --no-sync pytest -n auto
+          
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
