@@ -4,15 +4,19 @@ import tomllib
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-# Try to get version from pyproject.toml first (for development)
-pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-try:
-    with open(pyproject_path, "rb") as f:
-        pyproject_data = tomllib.load(f)
-    __version__ = pyproject_data["project"]["version"]
-except FileNotFoundError:
-    # Fallback to installed package metadata if pyproject.toml not available
+
+def _get_version() -> str:
+    """Get the version of the pyprobe."""
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
     try:
-        __version__ = version("PyProBE-Data")
-    except (ImportError, PackageNotFoundError):
-        __version__ = "unknown"
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomllib.load(f)
+        return pyproject_data["project"]["version"]
+    except FileNotFoundError:
+        try:
+            return version("PyProBE-Data")
+        except (ImportError, PackageNotFoundError):
+            return "unknown"
+
+
+__version__ = _get_version()
