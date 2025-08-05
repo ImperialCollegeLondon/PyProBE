@@ -13,7 +13,7 @@
         "/^\\.github/workflows/.*\\.ya?ml$/"
       ],
       "matchStrings": [
-        "(?s)uses:\\s+astral-sh/setup-uv@v5.*?version:\\s*[\"'](?<currentValue>[^\"]+)[\"']"
+        "(?s)uses:\\s+astral-sh/setup-uv@v\\d+.*?version:\\s*[\"'](?<currentValue>[^\"']+)[\"']"
       ],
       "depNameTemplate": "astral-sh/uv",
       "datasourceTemplate": "github-releases",
