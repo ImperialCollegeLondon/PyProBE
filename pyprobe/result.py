@@ -2,7 +2,6 @@
 
 import difflib
 import re
-import warnings
 from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
@@ -335,46 +334,42 @@ class Result(BaseModel):
 
     def get(
         self,
-        *column_names: str,
-        fuzzy: bool | float = True,
-        cutoff: float | None = None,
-    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
+        *column_names: str) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
+        """Return one or more columns of the data as separate 1D numpy arrays.
+        
+        Args:
+            column_names (str): The column name(s) to return.
+            
+        Returns:
+            Union[NDArray[np.float64], tuple[NDArray[np.float64],...]]:
+                The column(s) as numpy array(s).
+
+        Raises:
+            ValueError: If no column names are provided
+            ValueError: If a column is not in the data. Includes suggested close matches if available.
+        """
         if len(column_names) == 0:
-            error_msg = "At least one column name must be provided."
+            error_msg = 'At least one column name must be provided.'
             logger.error(error_msg)
             raise ValueError(error_msg)
-
-        fm_cutoff = (
-            0.6
-            if fuzzy is True
-            else (float(fuzzy) if isinstance(fuzzy, float) else None)
-        )
-        resolved: list[str] = []
-        available = self.column_list
-
-        for name in column_names:
-            if name in available:
-                resolved.append(name)
-            elif fm_cutoff is not None:
-                match = difflib.get_close_matches(
-                    name, available, n=1, cutoff=fm_cutoff
-                )
-                if match:
-                    best = match[0]
-                    warnings.warn(
-                        f'Column "{name}" not found. Using closest match: "{best}"',
-                        UserWarning,
-                        stacklevel=2,
-                    )
-                    resolved.append(best)
+        
+        unrecognized_names = set(column_names) - set(self.column_list)
+        if not unrecognized_names:
+            return self.data_with_columns(*column_names).to_numpy().T[0] if len(column_names) == 1 else tuple(self.data_with_columns(*column_names).to_numpy().T)
+        else:
+            error_msgs = []
+            for name in unrecognized_names:
+                matches = difflib.get_close_matches(name, self.column_list, n=1, cutoff=0.5)
+                if matches:
+                    error_msg = f'Column "{name}" not found. Did you mean "{matches[0]}"?'
+                    logger.error(error_msg)
+                    error_msgs.append(error_msg)
                 else:
-                    raise ValueError(
-                        f'Column "{name}" not found. Available columns: {", ".join(available)}'
-                    )
-
-        array = self.data_with_columns(*resolved).to_numpy()
-        return array.T[0] if len(resolved) == 1 else tuple(array.T)
-
+                    error_msg = f'Column "{name}" not found and no close match found. Available columns: {", ".join(self.column_list)}'
+                    logger.error(error_msg)
+            if error_msgs:
+                raise ValueError("\n" + "\n".join(f"- {msg}" for msg in error_msgs))
+        
     @property
     def contains_lazyframe(self) -> bool:
         """Return whether the data is a LazyFrame.
