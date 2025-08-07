@@ -126,7 +126,7 @@ def test_live_dataframe():
 
 
 @pytest.fixture
-def Result_fixture(lazyframe_fixture, info_fixture):
+def  Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
     return Result(
         base_dataframe=lazyframe_fixture,
@@ -190,6 +190,13 @@ def test_get(Result_fixture):
         voltage,
         Result_fixture.data["Voltage [V]"].to_numpy(),
     )
+    # Test with a mistyped column
+    with pytest.raises(ValueError):
+        current = Result_fixture.get("Crrent [A]")
+        np_testing.assert_array_equal(
+            current,
+            Result_fixture.data["Current [A]"].to_numpy(),
+        )
 
 
 def test_get_only(Result_fixture):
@@ -709,3 +716,5 @@ def test_from_polars_io_python_object():
     assert isinstance(result.base_dataframe, pl.DataFrame)
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+Result_fixture.get('Voltage [V]')  # Ensure Result_fixture is used
