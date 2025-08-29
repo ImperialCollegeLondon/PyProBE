@@ -125,7 +125,7 @@ def test_live_dataframe():
 
 
 @pytest.fixture
-def  Result_fixture(lazyframe_fixture, info_fixture):
+def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
     return Result(
         base_dataframe=lazyframe_fixture,
@@ -711,4 +711,5 @@ def test_from_polars_io_python_object():
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
-Result_fixture.get('Voltage [V]')  # Ensure Result_fixture is used
+
+Result_fixture.get("Voltage [V]")  # Ensure Result_fixture is used
