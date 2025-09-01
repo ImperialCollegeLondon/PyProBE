@@ -354,16 +354,15 @@ class Result(BaseModel):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        unrecognized_names = set(column_names) - set(self.column_list)
-        if not unrecognized_names:
+        try:
             return (
                 self.data_with_columns(*column_names).to_numpy().T[0]
                 if len(column_names) == 1
                 else tuple(self.data_with_columns(*column_names).to_numpy().T)
             )
-        else:
+        except ValueError:
             error_msgs = []
-            for name in unrecognized_names:
+            for name in column_names:
                 matches = difflib.get_close_matches(
                     name, self.column_list, n=1, cutoff=0.5
                 )
