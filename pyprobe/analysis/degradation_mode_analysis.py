@@ -98,7 +98,7 @@ class OCP(_AbstractOCP):
         stoichiometry: NDArray[np.float64],
         ocp: NDArray[np.float64],
         interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-    ) -> "OCP":
+    ) -> OCP:
         """Create an OCP object from stoichiometry and OCP data.
 
         Appends to the ocp list for the given electrode. Composite electrodes require
@@ -121,7 +121,7 @@ class OCP(_AbstractOCP):
         return OCP(interpolator(stoichiometry, ocp))
 
     @staticmethod
-    def from_expression(sympy_expression: sp.Expr) -> "OCP":
+    def from_expression(sympy_expression: sp.Expr) -> OCP:
         """Create an OCP object from a sympy expression.
 
         Args:
@@ -181,7 +181,7 @@ class CompositeOCP(_AbstractOCP):
         stoichiometry_comp2: NDArray[np.float64],
         ocp_comp2: NDArray[np.float64],
         interpolation_method: Literal["linear", "cubic", "Pchip", "Akima"] = "linear",
-    ) -> "CompositeOCP":
+    ) -> CompositeOCP:
         """Create a CompositeOCP object from stoichiometry and OCP data.
 
         Args:

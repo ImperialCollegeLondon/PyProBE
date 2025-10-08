@@ -317,7 +317,7 @@ class Result(BaseModel):
         self._polars_cache.collect_columns(*column_names)
         return self._polars_cache.cached_dataframe.select(column_names)
 
-    def __getitem__(self, *column_names: str) -> "Result":
+    def __getitem__(self, *column_names: str) -> Result:
         """Return a new result object with the specified columns.
 
         Args:
@@ -426,7 +426,7 @@ class Result(BaseModel):
         self,
         dataframe: pl.DataFrame | pl.LazyFrame | None = None,
         column_definitions: dict[str, str] | None = None,
-    ) -> "Result":
+    ) -> Result:
         """Create a copy of the result object with info dictionary but without data.
 
         Args:
@@ -551,7 +551,7 @@ class Result(BaseModel):
 
     def join(
         self,
-        other: "Result",
+        other: Result,
         on: str | list[str],
         how: str = "inner",
         coalesce: bool = True,
@@ -588,7 +588,7 @@ class Result(BaseModel):
 
     def extend(
         self,
-        other: Union["Result", list["Result"]],  # noqa: UP007
+        other: Union[Result, list[Result]],  # noqa: UP007
         concat_method: str = "diagonal",
     ) -> None:
         """Extend the data in this Result object with the data in another Result object.
@@ -636,7 +636,7 @@ class Result(BaseModel):
             ]
         ],
         info: dict[str, Any | None],
-    ) -> "Result":
+    ) -> Result:
         """Build a Result object from a list of dataframes.
 
         Args:
@@ -701,7 +701,7 @@ class Result(BaseModel):
         info: dict[str, Any | None] = {},
         column_definitions: dict[str, str] = {},
         **kwargs: Any,
-    ) -> "Result":
+    ) -> Result:
         """Create a new Result object with data from a Polars IO function.
 
         Refer to the Polars documentation for a list of available IO functions:

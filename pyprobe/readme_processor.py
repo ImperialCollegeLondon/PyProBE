@@ -108,7 +108,7 @@ class ReadmeModel:
 
 def process_readme(
     readme_path: str,
-) -> "ReadmeModel":
+) -> ReadmeModel:
     """Function to process the README.yaml file.
 
     Args:
