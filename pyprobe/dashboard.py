@@ -157,7 +157,7 @@ class _Dashboard:
         else:
             return ()
 
-    def get_data(self) -> list["Result"]:
+    def get_data(self) -> list[Result]:
         """Get the data from the selected cells."""
         selected_data = []
         for i in range(len(self.selected_indices)):
@@ -182,7 +182,7 @@ class _Dashboard:
             selected_data.append(filtered_data)
         return selected_data
 
-    def add_primary_trace(self, data: "Result", color: str) -> None:
+    def add_primary_trace(self, data: Result, color: str) -> None:
         """Add the primary trace to the plot.
 
         Args:
@@ -198,7 +198,7 @@ class _Dashboard:
         )
         self.fig.add_trace(primary_trace)
 
-    def add_secondary_trace(self, data: "Result", color: str) -> None:
+    def add_secondary_trace(self, data: Result, color: str) -> None:
         """Add the secondary trace to the plot.
 
         Args:

@@ -13,7 +13,7 @@ from pyprobe.units import split_quantity_unit
 
 
 def _retrieve_relevant_columns(
-    result_obj: "Result",
+    result_obj: Result,
     args: tuple[Any, ...],
     kwargs: dict[Any, Any],
 ) -> pl.DataFrame:

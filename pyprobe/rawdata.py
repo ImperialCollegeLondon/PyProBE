@@ -1,7 +1,5 @@
 """A module for the RawData class."""
 
-from typing import Optional
-
 import polars as pl
 from loguru import logger
 from pydantic import Field, field_validator
@@ -68,7 +66,7 @@ class RawData(Result):
     def check_required_columns(
         cls,
         dataframe: pl.LazyFrame | pl.DataFrame,
-    ) -> "RawData":
+    ) -> RawData:
         """Check if the required columns are present in the input_data."""
         column_list = dataframe.collect_schema().names()
         missing_columns = [col for col in required_columns if col not in column_list]
@@ -135,7 +133,7 @@ class RawData(Result):
     def set_soc(
         self,
         reference_capacity: float | None = None,
-        reference_charge: Optional["RawData"] = None,
+        reference_charge: RawData | None = None,
     ) -> None:
         """Add an SOC column to the data.
 
@@ -213,7 +211,7 @@ class RawData(Result):
     def set_SOC(  # noqa: N802
         self,
         reference_capacity: float | None = None,
-        reference_charge: Optional["RawData"] = None,
+        reference_charge: RawData | None = None,
     ) -> None:
         """Add an SOC column to the data.
 

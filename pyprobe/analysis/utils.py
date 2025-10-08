@@ -37,7 +37,7 @@ class AnalysisValidator(BaseModel):
     """The columns required to conduct the analysis."""
 
     @model_validator(mode="after")
-    def validate_required_columns(self) -> "AnalysisValidator":
+    def validate_required_columns(self) -> AnalysisValidator:
         """Check if the required columns are present in the input_data.
 
         Returns:

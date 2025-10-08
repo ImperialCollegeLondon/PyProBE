@@ -60,7 +60,7 @@ class BaseCycler(BaseModel):
         return str(path)
 
     @model_validator(mode="after")
-    def validate_output_path(self) -> "BaseCycler":
+    def validate_output_path(self) -> BaseCycler:
         """Set the default output path if not provided."""
         if self.output_data_path is not None:
             path = Path(self.output_data_path)
@@ -88,7 +88,7 @@ class BaseCycler(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def import_and_validate_data(self) -> "BaseCycler":
+    def import_and_validate_data(self) -> BaseCycler:
         """Import the data and validate the column mapping."""
         if not os.path.exists(str(self.output_data_path)) or self.overwrite_existing:
             dataframe_list = self._get_dataframe_list()

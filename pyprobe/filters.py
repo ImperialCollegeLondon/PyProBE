@@ -62,10 +62,10 @@ def _filter_numerical(
 
 
 def _step(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
     *step_numbers: int | range,
     condition: pl.Expr | None = None,
-) -> "Step":
+) -> Step:
     """Return a step object. Filters to a numerical condition on the Event column.
 
     Args:
@@ -101,7 +101,7 @@ def _step(
 
 
 def get_cycle_column(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
 ) -> pl.DataFrame | pl.LazyFrame:
     """Adds a cycle column to the data.
 
@@ -139,7 +139,7 @@ def get_cycle_column(
     return filtered_object.live_dataframe.with_columns(cycle_column)
 
 
-def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cycle":
+def _cycle(filtered_object: ExperimentOrCycleType, *cycle_numbers: int) -> Cycle:
     """Return a cycle object. Filters on the Cycle column.
 
     Args:
@@ -170,9 +170,9 @@ def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cy
 
 
 def _charge(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
     *charge_numbers: int | range,
-) -> "Step":
+) -> Step:
     """Return a charge step.
 
     Args:
@@ -189,9 +189,9 @@ def _charge(
 
 
 def _discharge(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
     *discharge_numbers: int | range,
-) -> "Step":
+) -> Step:
     """Return a discharge step.
 
     Args:
@@ -208,9 +208,9 @@ def _discharge(
 
 
 def _chargeordischarge(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
     *chargeordischarge_numbers: int | range,
-) -> "Step":
+) -> Step:
     """Return a charge or discharge step.
 
     Args:
@@ -231,7 +231,7 @@ def _chargeordischarge(
     return filtered_object.step(*chargeordischarge_numbers, condition=condition)
 
 
-def _rest(filtered_object: "FilterToCycleType", *rest_numbers: int | range) -> "Step":
+def _rest(filtered_object: FilterToCycleType, *rest_numbers: int | range) -> Step:
     """Return a rest step object.
 
     Args:
@@ -248,9 +248,9 @@ def _rest(filtered_object: "FilterToCycleType", *rest_numbers: int | range) -> "
 
 
 def _constant_current(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
     *constant_current_numbers: int | range,
-) -> "Step":
+) -> Step:
     """Return a constant current step object.
 
     Args:
@@ -277,9 +277,9 @@ def _constant_current(
 
 
 def _constant_voltage(
-    filtered_object: "FilterToCycleType",
+    filtered_object: FilterToCycleType,
     *constant_voltage_numbers: int | range,
-) -> "Step":
+) -> Step:
     """Return a constant voltage step object.
 
     Args:
@@ -348,7 +348,7 @@ class Procedure(RawData):
     constant_current = _constant_current
     constant_voltage = _constant_voltage
 
-    def experiment(self, *experiment_names: str) -> "Experiment":
+    def experiment(self, *experiment_names: str) -> Experiment:
         """Return an experiment object from the procedure.
 
         Args:
