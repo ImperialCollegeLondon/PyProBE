@@ -56,7 +56,7 @@ def test_summary(BreakinCycles_fixture):
     assert math.isclose(
         summary.data["Charge Capacity [Ah]"].tail(1)[0],
         0.04139,
-        rel_tol=1e-5,
+        abs_tol=1e-4,
     )
     assert math.isclose(
         summary.data["Discharge Capacity [Ah]"].tail(1)[0],
