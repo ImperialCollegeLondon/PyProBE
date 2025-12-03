@@ -528,7 +528,7 @@ class Result(BaseModel):
                 return pl.scan_parquet(filepath)
             case ".xlsx":
                 warnings.warn("Excel reading is slow. Consider converting to CSV.")
-                return pl.read_excel(filepath)
+                return pl.read_excel(filepath).lazy()
             case _:
                 error_msg = f"Unsupported file type: {file_ext}"
                 logger.error(error_msg)
@@ -604,7 +604,7 @@ class Result(BaseModel):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # check if the new data is lazyframe or not
+        # Convert new_data to match the type of live_dataframe
         _, new_data = self._verify_compatible_frames(
             self.live_dataframe,
             [new_data],
@@ -679,9 +679,7 @@ class Result(BaseModel):
             _, new_result = align_data(self, new_result, col_existing, col_new)
 
         new_data = new_result.live_dataframe
-        new_data_cols = new_data.collect_schema().names()
-        new_data_cols.remove("Date")
-
+        new_data_cols = [col for col in new_data.collect_schema().names() if col != "Date"]
         all_data = self.live_dataframe.clone().join(
             new_data,
             on="Date",
