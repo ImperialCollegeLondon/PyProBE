@@ -105,7 +105,10 @@ def align_data(
 
     # Determine sampling rate (median dt)
     if len(t1) < 2 or len(t2) < 2:
-        error_msg = "Insufficient data points for alignment after cleaning. Need at least 2 valid points in each dataset."
+        error_msg = (
+            "Insufficient data points for alignment after cleaning. Need at least 2 "
+            "valid points in each dataset."
+        )
         logger.error(error_msg)
         raise ValueError(error_msg)
     dt1 = np.median(np.diff(t1))
