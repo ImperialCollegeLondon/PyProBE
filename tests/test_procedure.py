@@ -69,7 +69,7 @@ def test_zero_columns(procedure_fixture):
     assert procedure_fixture.data["Procedure Capacity [Ah]"][0] == 0
 
 
-def test_add_external_data(procedure_fixture, tmp_path):
+def test_add_data_from_file(procedure_fixture, tmp_path):
     """Test adding external data to the procedure."""
     # Create external data
     data = pl.read_excel("tests/sample_data/neware/sample_data_neware.xlsx").to_pandas()
@@ -83,10 +83,10 @@ def test_add_external_data(procedure_fixture, tmp_path):
     dataframe.write_csv(external_data_path)
 
     procedure1 = copy.deepcopy(procedure_fixture)
-    procedure1.add_external_data(
-        filepath=str(external_data_path),
-        importing_columns=["Value"],
+    procedure1.add_data(
+        new_data=str(external_data_path),
         date_column_name="Date",
+        importing_columns=["Value"],
     )
     assert "Value" in procedure1.column_list
     assert procedure1.data.select(
@@ -94,8 +94,9 @@ def test_add_external_data(procedure_fixture, tmp_path):
     ).unique().to_numpy() == np.array([True])
 
     procedure2 = copy.deepcopy(procedure_fixture)
-    procedure2.add_external_data(
-        filepath=str(external_data_path),
+    procedure2.add_data(
+        new_data=str(external_data_path),
+        date_column_name="Date",
         importing_columns={"Value": "new column"},
     )
     assert "new column" in procedure2.column_list

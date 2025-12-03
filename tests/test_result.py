@@ -1,6 +1,7 @@
 """Tests for the result module."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import numpy.testing as np_testing
 import polars as pl
@@ -278,8 +279,8 @@ def test_build():
     )
 
 
-def test_add_new_data_columns():
-    """Test the add_new_data_columns method."""
+def test_add_data():
+    """Test the add_data method."""
     existing_data = pl.LazyFrame(
         {
             "Date": pl.datetime_range(
@@ -306,7 +307,7 @@ def test_add_new_data_columns():
         },
     )
     result_object = Result(base_dataframe=existing_data, info={})
-    result_object.add_new_data_columns(new_data, date_column_name="DateTime")
+    result_object.add_data(new_data, date_column_name="DateTime")
     expected_data = pl.DataFrame(
         {
             "Date": pl.datetime_range(
@@ -317,6 +318,7 @@ def test_add_new_data_columns():
                 eager=True,
             )
             .dt.cast_time_unit("us")
+            .dt.replace_time_zone("GMT")
             .alias("datetime"),
             "Data": [2, 4, 6, 8, 10, 12],
             "Data 1": [None, None, None, 3.0, 5.0, 7.0],
@@ -328,6 +330,102 @@ def test_add_new_data_columns():
         expected_data,
         check_column_order=False,
     )
+
+
+def test_add_new_data_columns_deprecated():
+    """Test that add_new_data_columns works but is deprecated."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(1985, 1, 1, 0, 0, 0),
+                datetime(1985, 1, 1, 0, 0, 5),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ).alias("datetime"),
+            "Data": [2, 4, 6, 8, 10, 12],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": pl.datetime_range(
+                datetime(1985, 1, 1, 0, 0, 2, 500000),
+                datetime(1985, 1, 1, 0, 0, 7, 500000),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ).alias("datetime"),
+            "Data 1": [2, 4, 6, 8, 10, 12],
+        },
+    )
+    result_object = Result(base_dataframe=existing_data, info={})
+
+    with patch("pyprobe.utils.logger.warning") as mock_warning:
+        result_object.add_new_data_columns(new_data, date_column_name="DateTime")
+        mock_warning.assert_called_with("Deprecation Warning: Use add_data instead.")
+
+    assert "Data 1" in result_object.column_list
+
+
+def test_add_data_timezone_handling():
+    """Test timezone handling in add_data."""
+    # Case 1: Existing data is naive, new data is aware (UTC)
+    # Should default to local timezone (or London) for existing, and convert new to that
+    existing_data = pl.LazyFrame(
+        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
+    )
+
+    new_data = pl.LazyFrame(
+        {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
+    )
+
+    result = Result(base_dataframe=existing_data, info={})
+    result.add_data(new_data, date_column_name="DateUTC")
+
+    schema = result.live_dataframe.collect_schema()
+    assert isinstance(schema["Date"], pl.Datetime)
+    assert schema["Date"].time_zone is not None
+
+    # Case 2: Explicit timezones
+    existing_data_naive = pl.LazyFrame(
+        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
+    )
+
+    new_data_naive = pl.LazyFrame(
+        {"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]}
+    )
+
+    result2 = Result(base_dataframe=existing_data_naive, info={})
+    result2.add_data(
+        new_data_naive,
+        date_column_name="DateNew",
+        existing_data_timezone="UTC",
+        new_data_timezone="Europe/Paris",
+    )
+
+    schema2 = result2.live_dataframe.collect_schema()
+    assert schema2["Date"].time_zone == "UTC"
+
+
+def test_add_data_with_format():
+    """Test add_data with datetime format string."""
+    existing_data = pl.LazyFrame(
+        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
+    )
+
+    new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
+
+    result = Result(base_dataframe=existing_data, info={})
+    result.add_data(
+        new_data, date_column_name="DateStr", datetime_format="%Y/%m/%d %H:%M:%S"
+    )
+
+    schema = result.live_dataframe.collect_schema()
+    assert isinstance(schema["Date"], pl.Datetime)
+
+    data = result.data
+    assert "Ext" in data.columns
+    assert data["Ext"][0] == 10
 
 
 @pytest.fixture
