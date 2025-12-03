@@ -307,7 +307,11 @@ def test_add_data():
         },
     )
     result_object = Result(base_dataframe=existing_data, info={})
-    result_object.add_data(new_data, date_column_name="DateTime")
+    result_object.add_data(
+        new_data,
+        date_column_name="DateTime",
+        existing_data_timezone="GMT",
+    )
     expected_data = pl.DataFrame(
         {
             "Date": pl.datetime_range(
