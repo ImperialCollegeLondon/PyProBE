@@ -1,10 +1,13 @@
 """A module for the Result class."""
 
+import os
 import re
+import warnings
 from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
 from typing import Any, Literal, Union
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import numpy as np
 import pandas as pd
@@ -14,6 +17,7 @@ from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
+from tzlocal import get_localzone
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
@@ -25,6 +29,27 @@ try:
     hvplot_exists = True
 except ImportError:
     hvplot_exists = False
+
+
+def _validate_timezone(timezone: str) -> str:
+    """Validate that a timezone string is a valid IANA timezone.
+
+    Args:
+        timezone: The timezone string to validate.
+
+    Returns:
+        The validated timezone string.
+
+    Raises:
+        ValueError: If the timezone string is not valid.
+    """
+    try:
+        ZoneInfo(timezone)
+        return timezone
+    except ZoneInfoNotFoundError as e:
+        error_msg = f"Invalid timezone: '{timezone}'. Must be a valid IANA timezone."
+        logger.error(error_msg)
+        raise ValueError(error_msg) from e
 
 
 class _PolarsColumnCache:
@@ -484,6 +509,199 @@ class Result(BaseModel):
 
         return base_frame, verified_frames
 
+    def load_external_file(self, filepath: str) -> pl.LazyFrame:
+        """Load an external file into a LazyFrame.
+
+        Supported file types are CSV, Parquet, and Excel. For maximum performance,
+        consider using Parquet files. If you have an Excel file, consider converting
+        it to CSV before loading.
+
+        Args:
+            filepath (str): The path to the external file.
+        """
+        file = os.path.basename(filepath)
+        file_ext = os.path.splitext(file)[1]
+        match file_ext:
+            case ".csv":
+                return pl.scan_csv(filepath)
+            case ".parquet":
+                return pl.scan_parquet(filepath)
+            case ".xlsx":
+                warnings.warn("Excel reading is slow. Consider converting to CSV.")
+                return pl.read_excel(filepath).lazy()
+            case _:
+                error_msg = f"Unsupported file type: {file_ext}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+    def add_data(
+        self,
+        new_data: pl.DataFrame | pl.LazyFrame | str,
+        date_column_name: str,
+        datetime_format: str | None = None,
+        importing_columns: list[str] | dict[str, str] | None = None,
+        existing_data_timezone: str | None = None,
+        new_data_timezone: str | None = None,
+        align_on: tuple[str, str] | None = None,
+    ) -> None:
+        """Add new data columns to the result object.
+
+        The data must be time series data with a date column. The new data is joined to
+        the base dataframe on the date column, and the new data columns are interpolated
+        to fill in missing values.
+
+        Args:
+            new_data (pl.DataFrame | pl.LazyFrame | str):
+                The new data to add to the result object. Can be a DataFrame, LazyFrame,
+                or a path to a file (CSV, Parquet, Excel).
+            date_column_name (str):
+                The name of the column in the new data containing the date.
+            datetime_format (Optional[str]):
+                The format string for parsing the date column if it is a string.
+                Defaults to None.
+            importing_columns (Optional[List[str] | dict[str, str]]):
+                The columns to import from the external file. If a list, the columns
+                will be imported as is. If a dict, the keys are the columns in the data
+                you want to import and the values are the columns you want to rename
+                them to. If None, all columns will be imported. Defaults to None.
+            existing_data_timezone (Optional[str]):
+                The timezone of the existing data. If None, the timezone is inferred
+                from the local machine. Defaults to None.
+            new_data_timezone (Optional[str]):
+                The timezone of the new data. If None, and the new data is naive, it is
+                assumed to be in the same timezone as the existing data. Defaults to
+                None.
+            align_on (Optional[Tuple[str, str]]):
+                A tuple of column names to use for aligning the new data with the
+                existing data. The first element is the column name in the existing
+                data, and the second element is the column name in the new data.
+                The new data will be shifted in time to maximize the cross-correlation
+                between the two columns. Defaults to None.
+
+        Raises:
+            ValueError: If the base dataframe has no date column.
+            ValueError: If an invalid timezone string is provided.
+        """
+        # Validate timezone inputs
+        if existing_data_timezone is not None:
+            _validate_timezone(existing_data_timezone)
+        if new_data_timezone is not None:
+            _validate_timezone(new_data_timezone)
+
+        if isinstance(new_data, str):
+            new_data = self.load_external_file(new_data)
+
+        if isinstance(importing_columns, dict):
+            new_data = new_data.select(
+                [date_column_name] + list(importing_columns.keys()),
+            )
+            new_data = new_data.rename(importing_columns)
+        elif isinstance(importing_columns, list):
+            new_data = new_data.select([date_column_name] + importing_columns)
+
+        if "Date" not in self.column_list:
+            error_msg = "No date column in the base dataframe."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # Convert new_data to match the type of live_dataframe
+        _, new_data = self._verify_compatible_frames(
+            self.live_dataframe,
+            [new_data],
+            mode="match 1",
+        )
+        new_data = new_data[0]
+        if not isinstance(
+            new_data.collect_schema().dtypes()[
+                new_data.collect_schema().names().index(date_column_name)
+            ],
+            pl.Datetime,
+        ):
+            new_data = new_data.with_columns(
+                pl.col(date_column_name).str.to_datetime(format=datetime_format),
+            )
+
+        # Ensure both DataFrames have DateTime columns in the same unit
+        new_data = new_data.with_columns(
+            pl.col(date_column_name).dt.cast_time_unit("us"),
+        )
+        self.live_dataframe = self.live_dataframe.with_columns(
+            pl.col("Date").dt.cast_time_unit("us"),
+        )
+
+        # Check for timezone mismatch and harmonize to self.live_dataframe's timezone
+        live_schema = self.live_dataframe.collect_schema()
+        new_schema = new_data.collect_schema()
+
+        live_dtype = live_schema["Date"]
+        new_dtype = new_schema[date_column_name]
+
+        if isinstance(live_dtype, pl.Datetime) and isinstance(new_dtype, pl.Datetime):
+            live_tz = live_dtype.time_zone
+            new_tz = new_dtype.time_zone
+
+            if live_tz is None:
+                if existing_data_timezone is not None:
+                    local_tz = existing_data_timezone
+                else:
+                    local_tz = str(get_localzone())
+                self.live_dataframe = self.live_dataframe.with_columns(
+                    pl.col("Date").dt.replace_time_zone(local_tz),
+                )
+                live_tz = local_tz
+
+            if new_tz is None and new_data_timezone is not None:
+                new_data = new_data.with_columns(
+                    pl.col(date_column_name).dt.replace_time_zone(new_data_timezone),
+                )
+                new_tz = new_data_timezone
+
+            if live_tz != new_tz:
+                if new_tz is None:
+                    # New is naive, assume it is in live_tz
+                    new_data = new_data.with_columns(
+                        pl.col(date_column_name).dt.replace_time_zone(live_tz),
+                    )
+                else:
+                    # Both aware, convert new to live_tz
+                    new_data = new_data.with_columns(
+                        pl.col(date_column_name).dt.convert_time_zone(live_tz),
+                    )
+
+        # Rename date column to "Date"
+        new_data = new_data.rename({date_column_name: "Date"})
+        new_result = Result(base_dataframe=new_data, info={})
+
+        if align_on is not None:
+            from pyprobe.analysis.time_series import align_data
+
+            col_existing, col_new = align_on
+            _, new_result = align_data(self, new_result, col_existing, col_new)
+
+        new_data = new_result.live_dataframe
+        new_data_cols = [
+            col for col in new_data.collect_schema().names() if col != "Date"
+        ]
+        all_data = self.live_dataframe.clone().join(
+            new_data,
+            on="Date",
+            how="full",
+            coalesce=True,
+        )
+        interpolated = all_data.with_columns(
+            pl.col(new_data_cols).interpolate_by("Date"),
+        ).select(pl.col(["Date"] + new_data_cols))
+        self.live_dataframe = self.live_dataframe.join(
+            interpolated,
+            on="Date",
+            how="left",
+            coalesce=True,
+        )
+
+    @deprecated(
+        reason="Use add_data instead.",
+        version="2.3.1",
+    )
     def add_new_data_columns(
         self,
         new_data: pl.DataFrame | pl.LazyFrame,

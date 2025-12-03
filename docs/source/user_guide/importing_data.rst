@@ -147,7 +147,7 @@ Adding data not from a cycler
 -----------------------------
 In your battery experiment, it is likely that you will be collecting data from sources
 additional to your battery cycler. This can be added to your :class:`~pyprobe.filters.Procedure`
-object after it has been created with its :func:`~pyprobe.filters.Procedure.add_external_data`
+object after it has been created with its :func:`~pyprobe.result.Result.add_data`
 method.
 
 The data that you provide must be timeseries, with a column that can be interpreted in

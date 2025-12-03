@@ -1,6 +1,5 @@
 """A module for the filtering classes."""
 
-import os
 import warnings
 from typing import TYPE_CHECKING, Any, cast
 
@@ -422,6 +421,10 @@ class Procedure(RawData):
         """
         return list(self.readme_dict.keys())
 
+    @utils.deprecated(
+        reason="Use add_data instead.",
+        version="2.3.1",
+    )
     def add_external_data(
         self,
         filepath: str,
@@ -452,31 +455,6 @@ class Procedure(RawData):
         elif isinstance(importing_columns, list):
             external_data = external_data.select([date_column_name] + importing_columns)
         self.add_new_data_columns(external_data, date_column_name)
-
-    def load_external_file(self, filepath: str) -> pl.LazyFrame:
-        """Load an external file into a LazyFrame.
-
-        Supported file types are CSV, Parquet, and Excel. For maximum performance,
-        consider using Parquet files. If you have an Excel file, consider converting
-        it to CSV before loading.
-
-        Args:
-            filepath (str): The path to the external file.
-        """
-        file = os.path.basename(filepath)
-        file_ext = os.path.splitext(file)[1]
-        match file_ext:
-            case ".csv":
-                return pl.scan_csv(filepath)
-            case ".parquet":
-                return pl.scan_parquet(filepath)
-            case ".xlsx":
-                warnings.warn("Excel reading is slow. Consider converting to CSV.")
-                return pl.read_excel(filepath)
-            case _:
-                error_msg = f"Unsupported file type: {file_ext}"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
 
 
 class Experiment(RawData):

@@ -23,6 +23,7 @@ dependencies = [
     "scikit-learn>=1.6.0",
     "streamlit>=1.41.1",
     "sympy>=1.13.3",
+    "tzlocal>=5.2",
 ]
 
 classifiers = [
