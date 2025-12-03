@@ -679,7 +679,9 @@ class Result(BaseModel):
             _, new_result = align_data(self, new_result, col_existing, col_new)
 
         new_data = new_result.live_dataframe
-        new_data_cols = [col for col in new_data.collect_schema().names() if col != "Date"]
+        new_data_cols = [
+            col for col in new_data.collect_schema().names() if col != "Date"
+        ]
         all_data = self.live_dataframe.clone().join(
             new_data,
             on="Date",
