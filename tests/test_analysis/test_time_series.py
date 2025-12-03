@@ -11,9 +11,28 @@ from pyprobe.result import Result
 
 def test_align_data():
     """Test align_data with LazyFrames."""
-    t = np.linspace(0, 20, 200)
-    y1 = np.sin(t)
-    y2 = np.sin(t - 2.0)
+    dt = 0.1
+    t = np.arange(0, 20, dt)
+
+    # Create square wave signals by sampling a continuous signal
+    # This simulates real data where edge timing is preserved in sample values
+    t_continuous = np.linspace(0, 20, 100000)
+    y1_continuous = np.zeros_like(t_continuous)
+    y1_continuous[t_continuous >= 5.0] = 1.0
+    y1_continuous[t_continuous >= 10.0] = 0.0
+    y1_continuous[t_continuous >= 12.0] = -1.0
+    y1_continuous[t_continuous >= 17.0] = 0.0
+
+    shift = 2.35
+    y2_continuous = np.zeros_like(t_continuous)
+    y2_continuous[t_continuous >= (5.0 + shift)] = 1.0
+    y2_continuous[t_continuous >= (10.0 + shift)] = 0.0
+    y2_continuous[t_continuous >= (12.0 + shift)] = -1.0
+    y2_continuous[t_continuous >= (17.0 + shift)] = 0.0
+
+    # Sample the continuous signals
+    y1 = np.interp(t, t_continuous, y1_continuous)
+    y2 = np.interp(t, t_continuous, y2_continuous)
 
     start_time = datetime(2023, 1, 1, 10, 0, 0)
 
@@ -43,4 +62,7 @@ def test_align_data():
     new_date = r2_df["Date"][0]
 
     diff = (new_date - original_date).total_seconds()
-    assert np.isclose(diff, -2.0, atol=0.2)
+    # The shift applied to result2 should be negative of the delay to align it back
+    # y2 is delayed by 2.35s, so we need to shift it by -2.35s to match y1
+    # Tolerance of 0.01s accounts for sub-sample precision of the alignment algorithm
+    assert np.isclose(diff, -shift, atol=0.01)

@@ -3,6 +3,7 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+import numpy as np
 import numpy.testing as np_testing
 import polars as pl
 import polars.testing as pl_testing
@@ -805,3 +806,84 @@ def test_from_polars_io_python_object():
     assert isinstance(result.base_dataframe, pl.DataFrame)
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+
+def test_add_data_with_alignment():
+    """Test add_data with the align_on parameter."""
+    # Create base data: Square wave signals by sampling continuous signals
+    # This simulates real data where edge timing is preserved in sample values
+    dt = 0.1
+    t = np.arange(0, 20, dt)
+
+    t_continuous = np.linspace(0, 20, 100000)
+    y_continuous = np.zeros_like(t_continuous)
+    y_continuous[t_continuous >= 5.0] = 1.0
+    y_continuous[t_continuous >= 10.0] = 0.0
+    y_continuous[t_continuous >= 12.0] = -1.0
+    y_continuous[t_continuous >= 17.0] = 0.0
+
+    # Sample the continuous signal
+    y = np.interp(t, t_continuous, y_continuous)
+
+    start_time = datetime(2023, 1, 1, 10, 0, 0)
+
+    base_df = pl.DataFrame(
+        {"Date": [start_time + timedelta(seconds=float(val)) for val in t], "Signal": y}
+    )
+
+    # Create new data: Same signal but shifted
+    shift = 2.35
+    y_shifted_continuous = np.zeros_like(t_continuous)
+    y_shifted_continuous[t_continuous >= (5.0 + shift)] = 1.0
+    y_shifted_continuous[t_continuous >= (10.0 + shift)] = 0.0
+    y_shifted_continuous[t_continuous >= (12.0 + shift)] = -1.0
+    y_shifted_continuous[t_continuous >= (17.0 + shift)] = 0.0
+
+    y_shifted = np.interp(t, t_continuous, y_shifted_continuous)
+
+    new_df = pl.DataFrame(
+        {
+            "DateNew": [start_time + timedelta(seconds=float(val)) for val in t],
+            "SignalNew": y_shifted,
+        }
+    )
+
+    result = Result(base_dataframe=base_df, info={})
+
+    # Add data with alignment
+    result.add_data(
+        new_df, date_column_name="DateNew", align_on=("Signal", "SignalNew")
+    )
+
+    combined_df = result.data
+
+    # Check that SignalNew is aligned with Signal
+    s1 = combined_df["Signal"].to_numpy()
+    s2 = combined_df["SignalNew"].to_numpy()
+
+    # Filter out NaNs (due to shifting, some points might not overlap)
+    mask = ~np.isnan(s2)
+
+    # Assert that the signals are close (alignment worked)
+    # Tolerance of 0.5 accounts for edge transition differences after interpolation
+    np_testing.assert_allclose(s1[mask], s2[mask], atol=0.5)
+
+
+def test_add_data_with_alignment_error():
+    """Test add_data with invalid align_on columns."""
+    start_time = datetime(2023, 1, 1, 10, 0, 0)
+    base_df = pl.DataFrame({"Date": [start_time], "Signal": [1.0]})
+    new_df = pl.DataFrame({"DateNew": [start_time], "SignalNew": [1.0]})
+    result = Result(base_dataframe=base_df, info={})
+
+    # Test with missing column in base data
+    with pytest.raises(ValueError):
+        result.add_data(
+            new_df, date_column_name="DateNew", align_on=("NonExistent", "SignalNew")
+        )
+
+    # Test with missing column in new data
+    with pytest.raises(ValueError):
+        result.add_data(
+            new_df, date_column_name="DateNew", align_on=("Signal", "NonExistent")
+        )

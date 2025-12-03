@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import polars as pl
 from loguru import logger
-from scipy import signal
+from scipy import ndimage, signal
 
 from pyprobe.analysis.utils import AnalysisValidator
 
@@ -37,6 +37,32 @@ def _clean_data(
 
     sort_idx = np.argsort(t)
     return t[sort_idx], y[sort_idx]
+
+
+def _parabolic_peak(corr: np.ndarray, peak_idx: int, lags: np.ndarray) -> float:
+    """Refine peak location using parabolic interpolation.
+
+    Fits a parabola to the peak and its two neighbors to find the true maximum.
+    This provides sub-sample precision for the correlation peak.
+
+    Args:
+        corr: Correlation values.
+        peak_idx: Index of the discrete peak.
+        lags: Lag values corresponding to correlation.
+
+    Returns:
+        Refined lag value at the interpolated peak.
+    """
+    if 0 < peak_idx < len(corr) - 1:
+        y_m1 = corr[peak_idx - 1]
+        y_0 = corr[peak_idx]
+        y_p1 = corr[peak_idx + 1]
+
+        denom = 2 * (y_m1 - 2 * y_0 + y_p1)
+        if abs(denom) > 1e-10:
+            delta = (y_m1 - y_p1) / denom
+            return lags[peak_idx] + delta * (lags[1] - lags[0])
+    return lags[peak_idx]
 
 
 def align_data(
@@ -87,7 +113,7 @@ def align_data(
     t_end = max(t1[-1], t2[-1])
     t_grid = np.arange(t_start, t_end, dt)
 
-    # Interpolate
+    # Interpolate onto uniform grid
     y1_interp = np.interp(t_grid, t1, y1, left=0, right=0)
     y2_interp = np.interp(t_grid, t2, y2, left=0, right=0)
 
@@ -95,10 +121,23 @@ def align_data(
     y1_interp = y1_interp - np.mean(y1_interp)
     y2_interp = y2_interp - np.mean(y2_interp)
 
-    # Correlate
-    correlation = signal.correlate(y1_interp, y2_interp, mode="full")
-    lags = signal.correlation_lags(len(y1_interp), len(y2_interp), mode="full")
-    lag = lags[np.argmax(correlation)]
+    # Apply Gaussian smoothing to enable sub-sample peak interpolation
+    # This converts sharp edges into smooth curves that can be accurately
+    # interpolated. A sigma of 2 samples provides good smoothing without
+    # excessive blurring.
+    sigma = 2  # samples
+    y1_smooth = ndimage.gaussian_filter1d(y1_interp, sigma)
+    y2_smooth = ndimage.gaussian_filter1d(y2_interp, sigma)
+
+    # Correlate smoothed signals
+    correlation = signal.correlate(y1_smooth, y2_smooth, mode="full")
+    lags = signal.correlation_lags(len(y1_smooth), len(y2_smooth), mode="full")
+
+    # Find discrete peak
+    peak_idx = np.argmax(correlation)
+
+    # Refine peak using parabolic interpolation for sub-sample precision
+    lag = _parabolic_peak(correlation, peak_idx, lags.astype(float))
 
     time_shift = lag * dt
     time_shift_duration = datetime.timedelta(microseconds=time_shift)
