@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import numpy.testing as np_testing
@@ -9,8 +10,14 @@ import polars as pl
 import polars.testing as pl_testing
 import pytest
 from scipy.io import loadmat
+from tzlocal import get_localzone
 
-from pyprobe.result import Result, _PolarsColumnCache, combine_results
+from pyprobe.result import (
+    Result,
+    _PolarsColumnCache,
+    _validate_timezone,
+    combine_results,
+)
 
 
 def test__PolarsColumnCache_lazyframe():
@@ -410,6 +417,90 @@ def test_add_data_timezone_handling():
 
     schema2 = result2.live_dataframe.collect_schema()
     assert schema2["Date"].time_zone == "UTC"
+
+
+def test_validate_timezone_valid():
+    """Test _validate_timezone with valid timezone strings."""
+    # Test common valid timezones
+    assert _validate_timezone("UTC") == "UTC"
+    assert _validate_timezone("Europe/London") == "Europe/London"
+    assert _validate_timezone("America/New_York") == "America/New_York"
+    assert _validate_timezone("Asia/Tokyo") == "Asia/Tokyo"
+
+
+def test_validate_timezone_invalid():
+    """Test _validate_timezone raises error for invalid timezone strings."""
+    with pytest.raises(ValueError, match="Invalid timezone"):
+        _validate_timezone("Invalid/Timezone")
+
+    with pytest.raises(ValueError, match="Invalid timezone"):
+        _validate_timezone("NotATimezone")
+
+    with pytest.raises(ValueError, match="Invalid timezone"):
+        _validate_timezone("GMT+5")  # Not a valid IANA timezone format
+
+
+def test_add_data_invalid_existing_timezone():
+    """Test add_data raises error for invalid existing_data_timezone."""
+    existing_data = pl.LazyFrame(
+        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
+    )
+    new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
+    result = Result(base_dataframe=existing_data, info={})
+
+    with pytest.raises(ValueError, match="Invalid timezone"):
+        result.add_data(
+            new_data,
+            date_column_name="DateNew",
+            existing_data_timezone="Invalid/Timezone",
+        )
+
+
+def test_add_data_invalid_new_timezone():
+    """Test add_data raises error for invalid new_data_timezone."""
+    existing_data = pl.LazyFrame(
+        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
+    )
+    new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
+    result = Result(base_dataframe=existing_data, info={})
+
+    with pytest.raises(ValueError, match="Invalid timezone"):
+        result.add_data(
+            new_data,
+            date_column_name="DateNew",
+            new_data_timezone="NotATimezone",
+        )
+
+
+def test_tzlocal_returns_valid_timezone():
+    """Test that tzlocal returns a valid IANA timezone that can be used."""
+    local_tz = str(get_localzone())
+    # Verify it's a valid timezone by trying to create a ZoneInfo from it
+    zone = ZoneInfo(local_tz)
+    assert zone is not None
+
+    # Also verify it works with polars
+    df = pl.DataFrame({"Date": [datetime(2023, 1, 1, 10, 0, 0)]})
+    df_with_tz = df.with_columns(pl.col("Date").dt.replace_time_zone(local_tz))
+    assert df_with_tz["Date"].dtype.time_zone == local_tz
+
+
+def test_add_data_uses_local_timezone_when_not_specified():
+    """Test that add_data uses the local timezone when no timezone is specified."""
+    existing_data = pl.LazyFrame(
+        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
+    )
+    new_data = pl.LazyFrame(
+        {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
+    )
+
+    result = Result(base_dataframe=existing_data, info={})
+    result.add_data(new_data, date_column_name="DateUTC")
+
+    schema = result.live_dataframe.collect_schema()
+    # The timezone should be the local timezone from tzlocal
+    expected_tz = str(get_localzone())
+    assert schema["Date"].time_zone == expected_tz
 
 
 def test_add_data_with_format():

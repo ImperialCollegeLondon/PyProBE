@@ -1,6 +1,5 @@
 """A module for the Result class."""
 
-import datetime
 import os
 import re
 import warnings
@@ -8,6 +7,7 @@ from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
 from typing import Any, Literal, Union
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,7 @@ from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, model_validator
 from scipy.io import savemat
+from tzlocal import get_localzone
 
 from pyprobe.plot import _retrieve_relevant_columns
 from pyprobe.units import get_unit_scaling, split_quantity_unit
@@ -28,6 +29,27 @@ try:
     hvplot_exists = True
 except ImportError:
     hvplot_exists = False
+
+
+def _validate_timezone(timezone: str) -> str:
+    """Validate that a timezone string is a valid IANA timezone.
+
+    Args:
+        timezone: The timezone string to validate.
+
+    Returns:
+        The validated timezone string.
+
+    Raises:
+        ValueError: If the timezone string is not valid.
+    """
+    try:
+        ZoneInfo(timezone)
+        return timezone
+    except ZoneInfoNotFoundError as e:
+        error_msg = f"Invalid timezone: '{timezone}'. Must be a valid IANA timezone."
+        logger.error(error_msg)
+        raise ValueError(error_msg) from e
 
 
 class _PolarsColumnCache:
@@ -558,7 +580,14 @@ class Result(BaseModel):
 
         Raises:
             ValueError: If the base dataframe has no date column.
+            ValueError: If an invalid timezone string is provided.
         """
+        # Validate timezone inputs
+        if existing_data_timezone is not None:
+            _validate_timezone(existing_data_timezone)
+        if new_data_timezone is not None:
+            _validate_timezone(new_data_timezone)
+
         if isinstance(new_data, str):
             new_data = self.load_external_file(new_data)
 
@@ -615,10 +644,7 @@ class Result(BaseModel):
                 if existing_data_timezone is not None:
                     local_tz = existing_data_timezone
                 else:
-                    try:
-                        local_tz = str(datetime.datetime.now().astimezone().tzinfo)
-                    except Exception:
-                        local_tz = "Europe/London"
+                    local_tz = str(get_localzone())
                 self.live_dataframe = self.live_dataframe.with_columns(
                     pl.col("Date").dt.replace_time_zone(local_tz),
                 )
