@@ -7,6 +7,7 @@ Examples
    getting-started
    filtering-data
    plotting
+   maximising-performance
    sharing-data
    working-with-pybamm-models
    analysing-GITT-data
