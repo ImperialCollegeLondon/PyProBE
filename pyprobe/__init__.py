@@ -8,4 +8,4 @@ from .dashboard import launch_dashboard  # noqa: F401
 from .result import Result  # noqa: F401
 from .utils import set_log_level
 
-set_log_level("ERROR")
+set_log_level("WARNING")
