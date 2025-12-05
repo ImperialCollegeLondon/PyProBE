@@ -33,7 +33,7 @@ PyProBE is able to import data from the following cyclers:
 PyProBE data columns
 --------------------
 Once converted into the standard PyProBE format, the data columns stored in 
-:attr:`RawData.base_dataframe <pyprobe.rawdata.RawData.base_dataframe>` are as follows:
+:attr:`RawData.lf <pyprobe.rawdata.RawData.lf>` are as follows:
 
 - 'Date' (`polars.datatypes.Datetime <https://docs.pola.rs/py-polars/html/reference/api/polars.datatypes.Datetime.html#polars.datatypes.Datetime>`_): the timestamp
    Date and time the measurement was taken
