@@ -152,8 +152,6 @@ def align_data(
     logger.info(f"Applying time shift of {time_shift_duration} to new data.")
 
     # Shift result2
-    result2.live_dataframe = result2.live_dataframe.with_columns(
-        pl.col("Date") + time_shift_duration
-    )
+    result2.lf = result2.lf.with_columns(pl.col("Date") + time_shift_duration)
 
     return result1, result2

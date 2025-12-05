@@ -49,26 +49,26 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         input_data=input_data,
         required_columns=["Capacity [Ah]", "Time [s]"],
     )
-    input_data.live_dataframe = get_cycle_column(input_data)
+    input_data.lf = get_cycle_column(input_data)
 
-    input_data.live_dataframe = _create_capacity_throughput(input_data.live_dataframe)
-    lf_capacity_throughput = input_data.live_dataframe.group_by(
+    input_data.lf = _create_capacity_throughput(input_data.lf)
+    lf_capacity_throughput = input_data.lf.group_by(
         "Cycle",
         maintain_order=True,
     ).agg(pl.col("Capacity Throughput [Ah]").first())
-    lf_time = input_data.live_dataframe.group_by("Cycle", maintain_order=True).agg(
+    lf_time = input_data.lf.group_by("Cycle", maintain_order=True).agg(
         pl.col("Time [s]").first(),
     )
 
     lf_charge = (
         input_data.charge()
-        .live_dataframe.group_by("Cycle", maintain_order=True)
+        .lf.group_by("Cycle", maintain_order=True)
         .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
         .rename({"Capacity [Ah]": "Charge Capacity [Ah]"})
     )
     lf_discharge = (
         input_data.discharge()
-        .live_dataframe.group_by("Cycle", maintain_order=True)
+        .lf.group_by("Cycle", maintain_order=True)
         .agg(pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min())
         .rename({"Capacity [Ah]": "Discharge Capacity [Ah]"})
     )
@@ -120,7 +120,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         ),
     }
     return Result(
-        base_dataframe=lf,
+        lf=lf,
         info=input_data.info,
         column_definitions=column_definitions,
     )

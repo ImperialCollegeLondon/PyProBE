@@ -48,7 +48,8 @@ def _retrieve_relevant_columns(
         raise ValueError(
             f"None of the columns in {all_args} are present in the Result object.",
         )
-    return result_obj.data_with_columns(*relevant_columns)
+    result_obj.check_columns(relevant_columns)
+    return result_obj.lf.select(*relevant_columns).collect()
 
 
 try:
