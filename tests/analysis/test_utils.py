@@ -12,7 +12,7 @@ from pyprobe.result import Result
 def input_data_fixture():
     """Return a Result instance."""
     return Result(
-        base_dataframe=pl.LazyFrame(
+        lf=pl.LazyFrame(
             {"x": [1, 2, 3], "y": [4, 5, 6], "Units [Ah]": [7, 8, 9]},
         ),
         info={},

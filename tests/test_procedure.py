@@ -88,7 +88,7 @@ def test_add_data_from_file(procedure_fixture, tmp_path):
         date_column_name="Date",
         importing_columns=["Value"],
     )
-    assert "Value" in procedure1.column_list
+    assert "Value" in procedure1.columns
     assert procedure1.data.select(
         pl.col("Value").tail(69).is_null(),
     ).unique().to_numpy() == np.array([True])
@@ -99,7 +99,7 @@ def test_add_data_from_file(procedure_fixture, tmp_path):
         date_column_name="Date",
         importing_columns={"Value": "new column"},
     )
-    assert "new column" in procedure2.column_list
+    assert "new column" in procedure2.columns
 
     time = procedure2.data["Time [s]"].to_numpy() + 30.54
     value = 10 * np.sin(0.001 * time)

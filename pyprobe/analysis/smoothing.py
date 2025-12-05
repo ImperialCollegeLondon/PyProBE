@@ -69,7 +69,7 @@ def spline_smoothing(
 
     data = copy.deepcopy(input_data)
     smoothed_data_column = pl.Series(target_column, smoothed_y)
-    smoothed_dataframe = data.live_dataframe.with_columns(
+    smoothed_dataframe = data.lf.with_columns(
         smoothed_data_column.alias(target_column),
     )
 
@@ -212,14 +212,14 @@ def downsample(
     data = copy.deepcopy(input_data)
     if monotonic:
         downsampled_data = _downsample_monotonic_data(
-            data.live_dataframe,
+            data.lf,
             target_column,
             sampling_interval,
             occurrence,
         )
     else:
         downsampled_data = _downsample_non_monotonic_data(
-            data.live_dataframe,
+            data.lf,
             target_column,
             sampling_interval,
         )
@@ -269,7 +269,7 @@ def savgol_smoothing(
 
     smoothed_data_column = pl.Series(target_column, smoothed_y)
     result = copy.deepcopy(input_data)
-    result.live_dataframe = result.live_dataframe.with_columns(
+    result.lf = result.lf.with_columns(
         smoothed_data_column.alias(target_column),
     )
     return result

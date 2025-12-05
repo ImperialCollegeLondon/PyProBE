@@ -257,7 +257,7 @@ def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
     ocv_target = ocv_pe - ocv_ne
 
     input_data = Result(
-        base_dataframe=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
+        lf=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
         info={},
     )
 
@@ -329,7 +329,7 @@ def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
     dQdV_target = 1 / d_ocv_target
 
     input_data = Result(
-        base_dataframe=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
+        lf=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
         info={},
     )
 
@@ -409,7 +409,7 @@ def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
     dVdQ_target = d_ocv_target
 
     input_data = Result(
-        base_dataframe=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
+        lf=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
         info={},
     )
 
@@ -477,7 +477,7 @@ def test_run_batch_dma():
     ]
     input_data_list = [
         Result(
-            base_dataframe=pl.DataFrame(
+            lf=pl.DataFrame(
                 {"Voltage [V]": ocv_target, "Capacity [Ah]": soc},
             ),
             info={},
@@ -548,7 +548,7 @@ def test_run_batch_dma():
     # test with invalid input
     with pytest.raises(ValueError):
         dma.run_batch_dma_parallel(
-            input_data_list=[Result(base_dataframe=pl.DataFrame({}), info={})],
+            input_data_list=[Result(lf=pl.DataFrame({}), info={})],
             ocp_ne=np.ones(10),
             ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
             fitting_target="OCV",
@@ -621,7 +621,7 @@ def bol_stoich_fixture(
 ):
     """Return a Result instance."""
     stoichiometry_limits = Result(
-        base_dataframe=pl.LazyFrame(
+        lf=pl.LazyFrame(
             {
                 "x_pe low SOC": bol_pe_limits_fixture[0],
                 "x_pe high SOC": bol_pe_limits_fixture[1],
@@ -646,7 +646,7 @@ def eol_stoich_fixture(
 ):
     """Return a Result instance."""
     stoichiometry_limits = Result(
-        base_dataframe=pl.LazyFrame(
+        lf=pl.LazyFrame(
             {
                 "x_pe low SOC": eol_pe_limits_fixture[0],
                 "x_pe high SOC": eol_pe_limits_fixture[1],
@@ -702,7 +702,7 @@ def test_quantify_degradation_modes(
 
     # test with missing or incorrect input data
     result = Result(
-        base_dataframe=pl.DataFrame(
+        lf=pl.DataFrame(
             {
                 "Voltage [V]": np.linspace(0, 1, 10),
                 "Capacity [Ah]": np.linspace(0, 1, 10),
@@ -794,7 +794,7 @@ def test_run_batch_dma_sequential_basic():
     ]
     input_data_list = [
         Result(
-            base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+            lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
             info={},
         )
         for ocv in ocv_target_list
@@ -834,7 +834,7 @@ def test_run_batch_dma_sequential_multiple_optimizers():
     ]
     input_data_list = [
         Result(
-            base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+            lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
             info={},
         )
         for ocv in ocv_target_list
@@ -868,7 +868,7 @@ def test_run_batch_dma_sequential_linked_results():
     ]
     input_data_list = [
         Result(
-            base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+            lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
             info={},
         )
         for ocv in ocv_target_list
@@ -893,7 +893,7 @@ def test_run_batch_dma_sequential_invalid_inputs():
     soc = np.linspace(0, 1, 1000)
     ocv = get_sample_ocv_data([0.83, 0.1, 0.1, 0.73])
     input_data = Result(
-        base_dataframe=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
+        lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
         info={},
     )
 

@@ -101,7 +101,7 @@ class ColumnMap(ABC):
 
         return matches
 
-    def validate(self, column_list: list[str]) -> None:
+    def validate(self, columns: list[str]) -> None:
         """Validate the column mapping.
 
         This method checks if the required columns are present in the cycler data. It
@@ -111,9 +111,9 @@ class ColumnMap(ABC):
         present.
 
         Args:
-            column_list: The list of columns in the cycler data.
+            columns: The list of columns in the cycler data.
         """
-        self.column_map = self.match_columns(column_list, self.required_cycler_cols)
+        self.column_map = self.match_columns(columns, self.required_cycler_cols)
         self.columns_validated = len(self.column_map) == len(self.required_cycler_cols)
         with logger.contextualize(
             column_importer=self.__class__.__name__,

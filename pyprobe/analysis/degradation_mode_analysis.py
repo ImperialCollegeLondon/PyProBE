@@ -542,7 +542,7 @@ def run_ocv_curve_fit(
         - The stoichiometry limits and electrode capacities.
         - The fitted OCV data.
     """
-    if "SOC" in input_data.column_list:
+    if "SOC" in input_data.columns:
         required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
         validator = AnalysisValidator(
             input_data=input_data,
@@ -758,7 +758,7 @@ def quantify_degradation_modes(
             },
         ),
     )
-    dma_result.live_dataframe = dma_result.live_dataframe.with_columns(
+    dma_result.lf = dma_result.lf.with_columns(
         pl.col("Index").cast(pl.Int64),
     )
     dma_result.column_definitions = {
@@ -825,7 +825,7 @@ def run_batch_dma_parallel(
     fitted_ocvs = [result[1] for result in fit_results]
 
     for index, sto_limit in enumerate(stoichiometry_limit_list):
-        sto_limit.live_dataframe = sto_limit.live_dataframe.with_columns(
+        sto_limit.lf = sto_limit.lf.with_columns(
             pl.lit(index).cast(pl.Int64).alias("Index"),
         )
 

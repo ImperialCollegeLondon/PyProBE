@@ -62,7 +62,7 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
         required_columns=["Current [A]", "Voltage [V]", "Time [s]", "SOC"],
     )
 
-    all_data_df = input_data.live_dataframe
+    all_data_df = input_data.lf
     ocv_df = _get_end_of_rest_points(all_data_df).drop("Pulse Number")
     return input_data.clean_copy(
         ocv_df,
@@ -105,7 +105,7 @@ def get_resistances(
         input_data=input_data,
         required_columns=["Current [A]", "Voltage [V]", "Time [s]", "Event", "SOC"],
     )
-    all_data_df = input_data.live_dataframe
+    all_data_df = input_data.lf
 
     # get the pulse number for each row
     all_data_df = _get_pulse_number(all_data_df)

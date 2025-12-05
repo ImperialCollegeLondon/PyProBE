@@ -62,7 +62,7 @@ def catch_pydantic_validation(func: Any) -> Any:
 
 
 def deprecated(*, reason: str, version: str, plain_reason: str | None = None) -> Any:
-    """A decorator to mark a function as deprecated.
+    """A decorator to mark a function or property as deprecated.
 
     Args:
         reason (str): The reason for deprecation, using RST formatting for docs.
@@ -72,6 +72,38 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
     """
 
     def decorator(func: Any) -> Any:
+        # Handle property objects
+        if isinstance(func, property):
+            warning_msg = plain_reason if plain_reason else reason
+
+            # Wrap the getter
+            def getter(self: Any) -> Any:
+                logger.warning(
+                    "Deprecation Warning: " + warning_msg,
+                )
+                if func.fget is None:
+                    raise AttributeError("unreadable attribute")
+                return func.fget(self)
+
+            # Wrap the setter if it exists
+            def make_setter(fset: Any) -> Any:
+                def set_func(self: Any, value: Any) -> None:
+                    logger.warning(
+                        "Deprecation Warning: " + warning_msg,
+                    )
+                    fset(self, value)
+
+                return set_func
+
+            setter = make_setter(func.fset) if func.fset is not None else None
+
+            # Create new property with wrapped getter/setter
+            deprecation_note = f".. deprecated:: {version} {reason}\n\n"
+            new_prop = property(getter, setter, func.fdel, func.__doc__)
+            new_prop.__doc__ = deprecation_note + (func.__doc__ or "")
+            return new_prop
+
+        # Handle regular functions
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             logger.warning(

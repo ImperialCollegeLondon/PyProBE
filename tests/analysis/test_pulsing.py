@@ -54,5 +54,5 @@ def test_get_ocv_curve(Pulsing_fixture):
         3.4513,
     ]
     assert isinstance(result, Result)
-    assert result.column_list == Pulsing_fixture.column_list
+    assert result.columns == Pulsing_fixture.columns
     assert np.allclose(result.get("Voltage [V]"), expected_ocv_points)
