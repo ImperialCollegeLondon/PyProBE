@@ -112,6 +112,20 @@ class Result(BaseModel):
             data["lf"] = pl.scan_parquet(data["lf"])
         return data
 
+    def collect(self) -> pl.DataFrame:
+        """Collect the lazy dataframe into a polars DataFrame.
+
+        Use this method to resolve the lazy computations in the Result object. This can
+        improve performance if you are reading a large amount of data from disk, and
+        will be performing multiple calls to access the data.
+
+        Returns:
+            pl.DataFrame: The collected dataframe.
+        """
+        lf = self.lf.collect()
+        self.lf = lf.lazy()
+        return lf
+
     @property
     def columns(self) -> list[str]:
         """The columns in the data.

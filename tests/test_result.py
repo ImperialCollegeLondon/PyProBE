@@ -54,6 +54,21 @@ def test_df_setter(Result_fixture):
     pl_testing.assert_frame_equal(Result_fixture.df, new_df)
 
 
+def test_collect(Result_fixture):
+    """Test the collect method."""
+    # Collect the lazy dataframe
+    collected_df = Result_fixture.collect()
+
+    # Verify it returns a DataFrame
+    assert isinstance(collected_df, pl.DataFrame)
+
+    # Verify it matches the data
+    pl_testing.assert_frame_equal(collected_df, Result_fixture.data)
+
+    # Verify the internal lf is still a LazyFrame
+    assert isinstance(Result_fixture.lf, pl.LazyFrame)
+
+
 def test_check_columns_valid(Result_fixture):
     """Test check_columns with valid columns."""
     # Should not raise any exception
