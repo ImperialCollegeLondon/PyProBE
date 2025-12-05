@@ -375,8 +375,8 @@ def test_archive(cell_instance, tmp_path):
         == cell_from_file.procedure[title].cycle_info
     )
     assert_frame_equal(
-        cell_instance.procedure[title].live_dataframe,
-        cell_from_file.procedure[title].live_dataframe,
+        cell_instance.procedure[title].lf,
+        cell_from_file.procedure[title].lf,
     )
 
     # test loading an incorrect pyprobe version
@@ -421,8 +421,8 @@ def test_archive(cell_instance, tmp_path):
         == cell_from_file.procedure[title].cycle_info
     )
     assert_frame_equal(
-        cell_instance.procedure[title].live_dataframe,
-        cell_from_file.procedure[title].live_dataframe,
+        cell_instance.procedure[title].lf,
+        cell_from_file.procedure[title].lf,
     )
 
 
@@ -530,9 +530,17 @@ def test_import_data(cell_instance, mocker, caplog):
         cell_instance.procedure[procedure_name].readme_dict
         == process_readme(readme_path).experiment_dict
     )
+    expected_df = sample_df.with_columns(
+        (pl.col("Time [s]") - pl.col("Time [s]").first()).alias(
+            "Procedure Time [s]",
+        ),
+        (pl.col("Capacity [Ah]") - pl.col("Capacity [Ah]").first()).alias(
+            "Procedure Capacity [Ah]",
+        ),
+    )
     assert_frame_equal(
-        cell_instance.procedure[procedure_name].base_dataframe,
-        sample_df,
+        cell_instance.procedure[procedure_name].lf,
+        expected_df,
     )
 
     # test with no readme
@@ -608,9 +616,17 @@ def test_import_from_cycler(cell_instance, mocker):
         cell_instance.procedure[procedure_name].readme_dict
         == process_readme(readme_path).experiment_dict
     )
+    expected_df = sample_df.with_columns(
+        (pl.col("Time [s]") - pl.col("Time [s]").first()).alias(
+            "Procedure Time [s]",
+        ),
+        (pl.col("Capacity [Ah]") - pl.col("Capacity [Ah]").first()).alias(
+            "Procedure Capacity [Ah]",
+        ),
+    )
     assert_frame_equal(
-        cell_instance.procedure[procedure_name].base_dataframe,
-        sample_df,
+        cell_instance.procedure[procedure_name].lf,
+        expected_df,
     )
 
     # Test with no readme_path provided

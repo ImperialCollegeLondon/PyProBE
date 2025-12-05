@@ -14,130 +14,16 @@ from tzlocal import get_localzone
 
 from pyprobe.result import (
     Result,
-    _PolarsColumnCache,
     _validate_timezone,
     combine_results,
 )
-
-
-def test__PolarsColumnCache_lazyframe():
-    """Test the _PolarsColumnCache class."""
-    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = _PolarsColumnCache(lf)
-    assert cache.cache == {}
-    pl_testing.assert_frame_equal(cache.base_dataframe, lf)
-
-
-def test__PolarsColumnCache_dataframe():
-    """Test the _PolarsColumnCache class with a DataFrame."""
-    df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = _PolarsColumnCache(df)
-    pl_testing.assert_frame_equal(cache.cached_dataframe, df)
-    expected_a = df.select("a")["a"]
-    expected_b = df.select("b")["b"]
-    expected_c = df.select("c")["c"]
-    assert cache.cache["a"].to_list() == expected_a.to_list()
-    assert cache.cache["b"].to_list() == expected_b.to_list()
-    assert cache.cache["c"].to_list() == expected_c.to_list()
-
-
-def test_collect_columns():
-    """Test the collect_columns method."""
-    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = _PolarsColumnCache(lf)
-
-    # Test single column collection
-    cache.collect_columns("a")
-    expected_a = lf.select("a").collect()["a"]
-    assert cache.cache["a"].to_list() == expected_a.to_list()
-    pl_testing.assert_frame_equal(cache.cached_dataframe, lf.select("a").collect())
-
-    # Test making a second collection
-    cache.collect_columns("b")
-    pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
-
-    # Test multiple column collection
-    cache = _PolarsColumnCache(lf)
-    cache.collect_columns("a", "b")
-    expected_a = lf.select("a").collect()["a"]
-    expected_b = lf.select("b").collect()["b"]
-    assert cache.cache["a"].to_list() == expected_a.to_list()
-    assert cache.cache["b"].to_list() == expected_b.to_list()
-    pl_testing.assert_frame_equal(
-        cache.cached_dataframe,
-        lf.select("a", "b").collect(),
-        check_column_order=False,
-    )
-
-    # Test unit conversion
-    lf = pl.LazyFrame(
-        {
-            "Current [A]": [1, 2, 3],
-            "Voltage [V]": [4, 5, 6],
-            "Date": [5, 6, 7],
-        },
-    )
-    cache = _PolarsColumnCache(lf)
-    cache.collect_columns("Current [mA]")
-    expected_current = pl.Series("Current [mA]", [1000, 2000, 3000])
-    assert cache.cache["Current [mA]"].to_list() == expected_current.to_list()
-
-
-def test_cached_dataframe():
-    """Test the cached_dataframe property."""
-    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    cache = _PolarsColumnCache(lf)
-    assert cache._cached_dataframe.is_empty()
-    assert cache.cached_dataframe.is_empty()
-
-    cache.collect_columns("a")
-    assert cache._cached_dataframe.is_empty()
-    pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a").collect())
-    pl.testing.assert_frame_equal(cache._cached_dataframe, lf.select("a").collect())
-
-    cache.collect_columns("b")
-    pl.testing.assert_frame_equal(cache._cached_dataframe, lf.select("a").collect())
-    pl.testing.assert_frame_equal(cache.cached_dataframe, lf.select("a", "b").collect())
-    pl.testing.assert_frame_equal(
-        cache._cached_dataframe,
-        lf.select("a", "b").collect(),
-    )
-
-
-def test_live_dataframe():
-    """Test the live_dataframe property."""
-    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    result_object = Result(base_dataframe=lf, info={})
-    pl_testing.assert_frame_equal(result_object.live_dataframe, lf)
-    assert result_object._polars_cache.columns == ["a", "b", "c"]
-    assert result_object._polars_cache.quantities == {"a", "b", "c"}
-
-    # test updating a column of the live_dataframe
-    result_object.live_dataframe = result_object.live_dataframe.with_columns(
-        (pl.col("a") * 10).alias("a"),
-    )
-    result_object._polars_cache.collect_columns("a")
-    pl_testing.assert_frame_equal(
-        result_object.live_dataframe,
-        lf.with_columns(pl.col("a") * 10),
-    )
-
-    result_object = Result(base_dataframe=lf, info={})
-    result_object._polars_cache.collect_columns("a")
-    result_object.live_dataframe = result_object.live_dataframe.with_columns(
-        (pl.col("a") * 10).alias("d"),
-    )
-    pl.testing.assert_frame_equal(
-        result_object.live_dataframe,
-        lf.with_columns((pl.col("a") * 10).alias("d")),
-    )
 
 
 @pytest.fixture
 def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
     return Result(
-        base_dataframe=lazyframe_fixture,
+        lf=lazyframe_fixture,
         info=info_fixture,
         column_definitions={
             "Current": "Current definition",
@@ -148,35 +34,43 @@ def Result_fixture(lazyframe_fixture, info_fixture):
 def test_init(Result_fixture):
     """Test the __init__ method."""
     assert isinstance(Result_fixture, Result)
-    assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
+    assert isinstance(Result_fixture.lf, pl.LazyFrame)
     assert isinstance(Result_fixture.info, dict)
 
 
-def test_cache_columns():
-    """Test the collect method."""
-    lf = pl.LazyFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    result_object = Result(base_dataframe=lf, info={})
-    result_object.cache_columns("a")
-    pl_testing.assert_frame_equal(
-        result_object._polars_cache.cached_dataframe,
-        lf.select("a").collect(),
-    )
+def test_df(Result_fixture):
+    """Test the df property."""
+    df = Result_fixture.df
+    assert isinstance(df, pl.DataFrame)
+    pl_testing.assert_frame_equal(df, Result_fixture.lf.collect())
 
-    result_object = Result(base_dataframe=lf, info={})
-    result_object.cache_columns("a", "b")
-    pl_testing.assert_frame_equal(
-        result_object._polars_cache.cached_dataframe,
-        lf.select("a", "b").collect(),
-        check_column_order=False,
-    )
 
-    result_object = Result(base_dataframe=lf, info={})
-    result_object.cache_columns()
-    pl_testing.assert_frame_equal(
-        result_object._polars_cache.cached_dataframe,
-        lf.collect(),
-        check_column_order=False,
-    )
+def test_df_setter(Result_fixture):
+    """Test the df setter."""
+    new_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    Result_fixture.df = new_df
+    assert isinstance(Result_fixture.lf, pl.LazyFrame)
+    pl_testing.assert_frame_equal(Result_fixture.lf.collect(), new_df)
+    pl_testing.assert_frame_equal(Result_fixture.df, new_df)
+
+
+def test_check_columns_valid(Result_fixture):
+    """Test check_columns with valid columns."""
+    # Should not raise any exception
+    Result_fixture.check_columns(["Current [A]", "Voltage [V]"])
+
+
+def test_check_columns_missing(Result_fixture):
+    """Test check_columns with missing columns."""
+    with pytest.raises(ValueError, match="Quantities .* not in data"):
+        Result_fixture.check_columns(["NonExistent [A]"])
+
+
+def test_check_columns_unit_conversion(Result_fixture):
+    """Test check_columns with unit conversion."""
+    # Current [A] exists, so requesting Current [mA] should work via unit conversion
+    Result_fixture.check_columns(["Current [mA]"])
+    assert "Current [mA]" in Result_fixture.columns
 
 
 def test_get(Result_fixture):
@@ -214,15 +108,15 @@ def test_get_only(Result_fixture):
 def test_getitem(Result_fixture):
     """Test the __getitem__ method."""
     current = Result_fixture["Current [A]"]
-    assert "Current [A]" in current.column_list
+    assert "Current [A]" in current.columns
     assert isinstance(current, Result)
     pl_testing.assert_frame_equal(
         current.data,
         Result_fixture.data.select("Current [A]"),
     )
     current_mA = Result_fixture["Current [mA]"]
-    assert "Current [mA]" in current_mA.column_list
-    assert "Current [A]" not in current_mA.column_list
+    assert "Current [mA]" in current_mA.columns
+    assert "Current [A]" not in current_mA.columns
     np_testing.assert_allclose(
         current_mA.get("Current [mA]"),
         Result_fixture.get("Current [mA]"),
@@ -231,10 +125,9 @@ def test_getitem(Result_fixture):
 
 def test_data(Result_fixture):
     """Test the data property."""
-    assert isinstance(Result_fixture.base_dataframe, pl.LazyFrame)
+    assert isinstance(Result_fixture.lf, pl.LazyFrame)
     assert isinstance(Result_fixture.data, pl.DataFrame)
-    assert isinstance(Result_fixture.live_dataframe, pl.DataFrame)
-    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.live_dataframe)
+    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.lf.collect())
 
 
 def test_quantities(Result_fixture):
@@ -314,7 +207,7 @@ def test_add_data():
             "Data 2": [4, 8, 12, 16, 20, 24],
         },
     )
-    result_object = Result(base_dataframe=existing_data, info={})
+    result_object = Result(lf=existing_data, info={})
     result_object.add_data(
         new_data,
         date_column_name="DateTime",
@@ -370,13 +263,13 @@ def test_add_new_data_columns_deprecated():
             "Data 1": [2, 4, 6, 8, 10, 12],
         },
     )
-    result_object = Result(base_dataframe=existing_data, info={})
+    result_object = Result(lf=existing_data, info={})
 
     with patch("pyprobe.utils.logger.warning") as mock_warning:
         result_object.add_new_data_columns(new_data, date_column_name="DateTime")
         mock_warning.assert_called_with("Deprecation Warning: Use add_data instead.")
 
-    assert "Data 1" in result_object.column_list
+    assert "Data 1" in result_object.columns
 
 
 def test_add_data_timezone_handling():
@@ -391,10 +284,10 @@ def test_add_data_timezone_handling():
         {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
     )
 
-    result = Result(base_dataframe=existing_data, info={})
+    result = Result(lf=existing_data, info={})
     result.add_data(new_data, date_column_name="DateUTC")
 
-    schema = result.live_dataframe.collect_schema()
+    schema = result.lf.collect_schema()
     assert isinstance(schema["Date"], pl.Datetime)
     assert schema["Date"].time_zone is not None
 
@@ -407,7 +300,7 @@ def test_add_data_timezone_handling():
         {"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]}
     )
 
-    result2 = Result(base_dataframe=existing_data_naive, info={})
+    result2 = Result(lf=existing_data_naive, info={})
     result2.add_data(
         new_data_naive,
         date_column_name="DateNew",
@@ -415,7 +308,7 @@ def test_add_data_timezone_handling():
         new_data_timezone="Europe/Paris",
     )
 
-    schema2 = result2.live_dataframe.collect_schema()
+    schema2 = result2.lf.collect_schema()
     assert schema2["Date"].time_zone == "UTC"
 
 
@@ -446,7 +339,7 @@ def test_add_data_invalid_existing_timezone():
         {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
     )
     new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
-    result = Result(base_dataframe=existing_data, info={})
+    result = Result(lf=existing_data, info={})
 
     with pytest.raises(ValueError, match="Invalid timezone"):
         result.add_data(
@@ -462,7 +355,7 @@ def test_add_data_invalid_new_timezone():
         {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
     )
     new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
-    result = Result(base_dataframe=existing_data, info={})
+    result = Result(lf=existing_data, info={})
 
     with pytest.raises(ValueError, match="Invalid timezone"):
         result.add_data(
@@ -494,10 +387,10 @@ def test_add_data_uses_local_timezone_when_not_specified():
         {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
     )
 
-    result = Result(base_dataframe=existing_data, info={})
+    result = Result(lf=existing_data, info={})
     result.add_data(new_data, date_column_name="DateUTC")
 
-    schema = result.live_dataframe.collect_schema()
+    schema = result.lf.collect_schema()
     # The timezone should be the local timezone from tzlocal
     expected_tz = str(get_localzone())
     assert schema["Date"].time_zone == expected_tz
@@ -511,12 +404,12 @@ def test_add_data_with_format():
 
     new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
 
-    result = Result(base_dataframe=existing_data, info={})
+    result = Result(lf=existing_data, info={})
     result.add_data(
         new_data, date_column_name="DateStr", datetime_format="%Y/%m/%d %H:%M:%S"
     )
 
-    schema = result.live_dataframe.collect_schema()
+    schema = result.lf.collect_schema()
     assert isinstance(schema["Date"], pl.Datetime)
 
     data = result.data
@@ -534,7 +427,7 @@ def reduced_result_fixture():
         },
     )
     return Result(
-        base_dataframe=data,
+        lf=data,
         info={"test": "info"},
         column_definitions={
             "Voltage": "Voltage definition",
@@ -609,7 +502,7 @@ def test_join_left(reduced_result_fixture):
         },
     )
     other_result = Result(
-        base_dataframe=other_data,
+        lf=other_data,
         info={"test": "info"},
         column_definitions={"Voltage": "Voltage definition"},
     )
@@ -638,7 +531,7 @@ def test_extend(reduced_result_fixture):
         },
     )
     other_result = Result(
-        base_dataframe=other_data,
+        lf=other_data,
         info={"test": "info"},
         column_definitions={"Voltage": "Voltage definition"},
     )
@@ -667,7 +560,7 @@ def test_extend_with_new_columns(reduced_result_fixture):
         },
     )
     other_result = Result(
-        base_dataframe=other_data,
+        lf=other_data,
         info={"test": "info"},
         column_definitions={
             "Voltage": "New voltage definition",
@@ -700,7 +593,7 @@ def test_clean_copy(reduced_result_fixture):
     # Test default parameters (empty dataframe)
     clean_result = reduced_result_fixture.clean_copy()
     assert isinstance(clean_result, Result)
-    assert clean_result.base_dataframe.is_empty()
+    assert clean_result.lf.collect().is_empty()
     assert clean_result.info == reduced_result_fixture.info
     assert clean_result.column_definitions == {}
 
@@ -716,7 +609,7 @@ def test_clean_copy(reduced_result_fixture):
     new_defs = {"New Column [A]": "New definition"}
     clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
     assert isinstance(clean_result, Result)
-    assert clean_result.base_dataframe.is_empty()
+    assert clean_result.lf.collect().is_empty()
     assert clean_result.info == reduced_result_fixture.info
     assert clean_result.column_definitions == new_defs
 
@@ -734,18 +627,18 @@ def test_clean_copy(reduced_result_fixture):
     lazy_df = new_df.lazy()
     clean_result = reduced_result_fixture.clean_copy(dataframe=lazy_df)
     assert isinstance(clean_result, Result)
-    assert isinstance(clean_result.base_dataframe, pl.LazyFrame)
+    assert isinstance(clean_result.lf, pl.LazyFrame)
     pl_testing.assert_frame_equal(clean_result.data, new_df)
 
 
 def test_combine_results():
     """Test the combine results method."""
     result1 = Result(
-        base_dataframe=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
+        lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
         info={"test index": 1.0},
     )
     result2 = Result(
-        base_dataframe=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}),
+        lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}),
         info={"test index": 2.0},
     )
     combined_result = combine_results([result1, result2])
@@ -810,7 +703,7 @@ def test_from_polars_io(tmp_path):
         source=str(csv_path),
     )
     assert isinstance(result_lazy, Result)
-    assert isinstance(result_lazy.base_dataframe, pl.LazyFrame)
+    assert isinstance(result_lazy.lf, pl.LazyFrame)
 
     # Test with keyword arguments
     result_with_kwargs = Result.from_polars_io(
@@ -857,7 +750,7 @@ def test_from_polars_io_different_formats(io_function, expected_type, tmp_path):
 
     # Check the result
     assert isinstance(result, Result)
-    assert isinstance(result.base_dataframe, expected_type)
+    assert isinstance(result.lf, pl.LazyFrame)
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
@@ -880,7 +773,7 @@ def test_from_polars_io_python_object():
 
     # Check the result
     assert isinstance(result, Result)
-    assert isinstance(result.base_dataframe, pl.DataFrame)
+    assert isinstance(result.lf, pl.LazyFrame)
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
@@ -894,7 +787,7 @@ def test_from_polars_io_python_object():
 
     # Check the result
     assert isinstance(result, Result)
-    assert isinstance(result.base_dataframe, pl.DataFrame)
+    assert isinstance(result.lf, pl.LazyFrame)
     assert result.info == info
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
@@ -939,7 +832,7 @@ def test_add_data_with_alignment():
         }
     )
 
-    result = Result(base_dataframe=base_df, info={})
+    result = Result(lf=base_df, info={})
 
     # Add data with alignment
     result.add_data(
@@ -965,7 +858,7 @@ def test_add_data_with_alignment_error():
     start_time = datetime(2023, 1, 1, 10, 0, 0)
     base_df = pl.DataFrame({"Date": [start_time], "Signal": [1.0]})
     new_df = pl.DataFrame({"DateNew": [start_time], "SignalNew": [1.0]})
-    result = Result(base_dataframe=base_df, info={})
+    result = Result(lf=base_df, info={})
 
     # Test with missing column in base data
     with pytest.raises(ValueError):
@@ -978,3 +871,45 @@ def test_add_data_with_alignment_error():
         result.add_data(
             new_df, date_column_name="DateNew", align_on=("Signal", "NonExistent")
         )
+
+
+def test_base_dataframe_deprecated_property(Result_fixture, caplog):
+    """Test that base_dataframe property is deprecated."""
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        _ = Result_fixture.base_dataframe
+    assert "base_dataframe" in caplog.text
+    assert "deprecated" in caplog.text
+
+
+def test_base_dataframe_setter_deprecated(Result_fixture, caplog):
+    """Test that base_dataframe setter is deprecated."""
+    import logging
+
+    new_lf = pl.LazyFrame({"a": [1, 2, 3]})
+    with caplog.at_level(logging.WARNING):
+        Result_fixture.base_dataframe = new_lf
+    assert "base_dataframe" in caplog.text
+    assert "deprecated" in caplog.text
+
+
+def test_live_dataframe_deprecated_property(Result_fixture, caplog):
+    """Test that live_dataframe property is deprecated."""
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        _ = Result_fixture.live_dataframe
+    assert "live_dataframe" in caplog.text
+    assert "deprecated" in caplog.text
+
+
+def test_live_dataframe_setter_deprecated(Result_fixture, caplog):
+    """Test that live_dataframe setter is deprecated."""
+    import logging
+
+    new_lf = pl.LazyFrame({"a": [1, 2, 3]})
+    with caplog.at_level(logging.WARNING):
+        Result_fixture.live_dataframe = new_lf
+    assert "live_dataframe" in caplog.text
+    assert "deprecated" in caplog.text

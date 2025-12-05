@@ -50,13 +50,13 @@ def test_align_data():
         }
     ).lazy()
 
-    result1 = Result(base_dataframe=df1, info={})
-    result2 = Result(base_dataframe=df2, info={})
+    result1 = Result(lf=df1, info={})
+    result2 = Result(lf=df2, info={})
 
     r1, r2 = align_data(result1, result2, "Signal", "Signal")
 
     # Trigger collection
-    r2_df = r2.live_dataframe.collect()
+    r2_df = r2.lf.collect()
 
     original_date = start_time
     new_date = r2_df["Date"][0]

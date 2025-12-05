@@ -13,7 +13,7 @@ from pyprobe.result import Result
 def Cycling_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Cycling instance."""
     input_data = Experiment(
-        base_dataframe=lazyframe_fixture,
+        lf=lazyframe_fixture,
         info=info_fixture,
         step_descriptions=step_descriptions_fixture,
         cycle_info=[],
@@ -24,7 +24,7 @@ def Cycling_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
 def test_set_capacity_throughput(Cycling_fixture):
     """Test the set_capacity_throughput method."""
     result = cycling._create_capacity_throughput(
-        Cycling_fixture.base_dataframe,
+        Cycling_fixture.lf,
     ).collect()
     assert "Capacity Throughput [Ah]" in result.columns
     assert result["Capacity Throughput [Ah]"].head(1)[0] == 0
