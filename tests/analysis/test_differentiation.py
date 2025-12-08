@@ -17,7 +17,7 @@ y_data = np.array([2, 4, 6, 8, 10])
 def differentiation_fixture():
     """Return a Differentiation instance."""
     input_data = Result(
-        base_dataframe=pl.DataFrame({"x": x_data, "y": y_data}),
+        lf=pl.DataFrame({"x": x_data, "y": y_data}),
         info={},
     )
     input_data.column_definitions = {"x": "The x data", "y": "The y data"}

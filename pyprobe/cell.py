@@ -168,7 +168,7 @@ class Cell(BaseModel):
 
         self.procedure[procedure_name] = Procedure(
             readme_dict=readme_dict,
-            base_dataframe=pl.scan_parquet(data_path),
+            lf=pl.scan_parquet(data_path),
             info=self.info,
         )
 
@@ -378,7 +378,7 @@ class Cell(BaseModel):
             experiment_dict[experiment]["Step Descriptions"] = []
 
         # reformat the data to the PyProBE format
-        base_dataframe = all_solution_data.select(
+        lf = all_solution_data.select(
             [
                 pl.col("Time [s]"),
                 pl.col("Current [A]") * -1,
@@ -399,7 +399,7 @@ class Cell(BaseModel):
         )
         # create the procedure object
         self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe,
+            lf=lf,
             info=self.info,
             readme_dict=experiment_dict,
         )
@@ -408,7 +408,7 @@ class Cell(BaseModel):
         if output_data_path is not None:
             if not output_data_path.endswith(".parquet"):
                 output_data_path += ".parquet"
-            base_dataframe.collect().write_parquet(output_data_path)
+            lf.collect().write_parquet(output_data_path)
 
     def archive(self, path: str) -> None:
         """Archive the cell object.
@@ -426,16 +426,16 @@ class Cell(BaseModel):
         metadata = self.dict()
         metadata["PyProBE Version"] = __version__
         for procedure_name, procedure in self.procedure.items():
-            if isinstance(procedure.live_dataframe, pl.LazyFrame):
-                df = procedure.live_dataframe.collect()
+            if isinstance(procedure.lf, pl.LazyFrame):
+                df = procedure.lf.collect()
             else:
-                df = procedure.live_dataframe
+                df = procedure.lf
             # write the dataframe to a parquet file
             filename = procedure_name + ".parquet"
             filepath = os.path.join(path, filename)
             df.write_parquet(filepath)
             # update the metadata with the filename
-            metadata["procedure"][procedure_name]["base_dataframe"] = filename
+            metadata["procedure"][procedure_name]["lf"] = filename
         with open(os.path.join(path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
 
@@ -658,14 +658,14 @@ class Cell(BaseModel):
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         self._check_parquet(output_data_path)
-        base_dataframe = pl.scan_parquet(output_data_path)
+        lf = pl.scan_parquet(output_data_path)
         data_folder = os.path.dirname(output_data_path)
         readme_path = os.path.join(data_folder, readme_name)
         readme = process_readme(readme_path)
 
         self.procedure[procedure_name] = Procedure(
             readme_dict=readme.experiment_dict,
-            base_dataframe=base_dataframe,
+            lf=lf,
             info=self.info,
         )
 
@@ -706,9 +706,9 @@ class Cell(BaseModel):
         """
         output_data_path = self._get_data_paths(folder_path, filename, filename_inputs)
         self._check_parquet(output_data_path)
-        base_dataframe = pl.scan_parquet(output_data_path)
+        lf = pl.scan_parquet(output_data_path)
         self.procedure[procedure_name] = Procedure(
-            base_dataframe=base_dataframe,
+            lf=lf,
             info=self.info,
             readme_dict={},
         )
@@ -811,9 +811,9 @@ def load_archive(path: str) -> Cell:
         )
     metadata.pop("PyProBE Version")
     for procedure in metadata["procedure"].values():
-        procedure["base_dataframe"] = os.path.join(
+        procedure["lf"] = os.path.join(
             archive_path,
-            procedure["base_dataframe"],
+            procedure["lf"],
         )
     cell = Cell(**metadata)
 

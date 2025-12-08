@@ -80,19 +80,19 @@ def _step(
         Step: A step object.
     """
     if condition is not None:
-        base_dataframe = _filter_numerical(
-            filtered_object.live_dataframe.filter(condition),
+        lf = _filter_numerical(
+            filtered_object.lf.filter(condition),
             "Event",
             step_numbers,
         )
     else:
-        base_dataframe = _filter_numerical(
-            filtered_object.live_dataframe,
+        lf = _filter_numerical(
+            filtered_object.lf,
             "Event",
             step_numbers,
         )
     return Step(
-        base_dataframe=base_dataframe,
+        lf=lf,
         info=filtered_object.info,
         column_definitions=filtered_object.column_definitions,
         step_descriptions=filtered_object.step_descriptions,
@@ -135,7 +135,7 @@ def get_cycle_column(
             .cum_sum()
             .alias("Cycle")
         )
-    return filtered_object.live_dataframe.with_columns(cycle_column)
+    return filtered_object.lf.with_columns(cycle_column)
 
 
 def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cycle":
@@ -160,7 +160,7 @@ def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cy
     lf_filtered = _filter_numerical(df, "Cycle", cycle_numbers)
 
     return Cycle(
-        base_dataframe=lf_filtered,
+        lf=lf_filtered,
         info=filtered_object.info,
         column_definitions=filtered_object.column_definitions,
         step_descriptions=filtered_object.step_descriptions,
@@ -368,7 +368,7 @@ class Procedure(RawData):
         conditions = [
             pl.col("Step").is_in(flattened_steps),
         ]
-        lf_filtered = self.live_dataframe.filter(conditions)
+        lf_filtered = self.lf.filter(conditions)
         cycles_list: list[tuple[int, int, int]] = []
         if len(experiment_names) > 1:
             warnings.warn(
@@ -381,7 +381,7 @@ class Procedure(RawData):
             cycles_list = self.readme_dict[experiment_names[0]]["Cycles"]  # type: ignore
 
         return Experiment(
-            base_dataframe=lf_filtered,
+            lf=lf_filtered,
             info=self.info,
             column_definitions=self.column_definitions,
             step_descriptions=self.step_descriptions,
@@ -395,7 +395,6 @@ class Procedure(RawData):
             experiment_names (str):
                 Variable-length argument list of experiment names.
         """
-        self._polars_cache.clear_cache()
         steps_idx = []
         for experiment_name in experiment_names:
             if experiment_name not in self.experiment_names:
@@ -410,7 +409,7 @@ class Procedure(RawData):
         for experiment_name in experiment_names:
             self.readme_dict.pop(experiment_name)
         self.model_post_init(self)
-        self.live_dataframe = self.live_dataframe.filter(conditions)
+        self.lf = self.lf.filter(conditions)
 
     @property
     def experiment_names(self) -> list[str]:

@@ -242,7 +242,7 @@ def generic_experiment():
 
     cycle_info = [(0, 3, 2), (0, 1, 2)]
     return filters.Experiment(
-        base_dataframe=dataframe,
+        lf=dataframe,
         info=info,
         step_descriptions=step_descriptions,
         cycle_info=cycle_info,

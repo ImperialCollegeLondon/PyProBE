@@ -15,7 +15,7 @@ import polars as pl
 from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from scipy.io import savemat
 from tzlocal import get_localzone
 
@@ -52,140 +52,6 @@ def _validate_timezone(timezone: str) -> str:
         raise ValueError(error_msg) from e
 
 
-class _PolarsColumnCache:
-    """A class to cache columns from a Polars DataFrame.
-
-    Args:
-        base_dataframe (pl.LazyFrame | pl.DataFrame):
-            The base dataframe to cache columns from.
-    """
-
-    def __init__(self, base_dataframe: pl.LazyFrame | pl.DataFrame) -> None:
-        """Initialize the _PolarsColumnCache object."""
-        self.cache: dict[str, pl.Series] = {}
-        self._cached_dataframe = pl.DataFrame()
-        self._base_dataframe = base_dataframe
-        if isinstance(base_dataframe, pl.DataFrame):
-            self.cached_dataframe = base_dataframe
-
-    @property
-    def base_dataframe(self) -> pl.LazyFrame | pl.DataFrame:
-        """The base dataframe.
-
-        Returns:
-            pl.LazyFrame | pl.DataFrame: The base dataframe.
-        """
-        return self._base_dataframe
-
-    @base_dataframe.setter
-    def base_dataframe(self, value: pl.LazyFrame | pl.DataFrame) -> None:
-        """Set the base dataframe."""
-        self.clear_cache()
-        self._base_dataframe = value
-
-    @property
-    def columns(self) -> list[str]:
-        """The columns in the data.
-
-        Returns:
-            List[str]: The columns in the data.
-        """
-        return self.base_dataframe.collect_schema().names()
-
-    @property
-    def quantities(self) -> set[str]:
-        """The quantities of the data, with unit information removed.
-
-        Returns:
-            Set[str]: The quantities of the data.
-        """
-        return self.get_quantities(self.columns)
-
-    def collect_columns(self, *columns: str) -> None:
-        """Collect columns from the base dataframe and add to the cache.
-
-        This method will check if the columns are in the cache. If they are not, it will
-        check if they are in the base dataframe. If they are not, it will attempt to
-        convert the column to the requested units and add to the lazyframe.
-
-        Args:
-            *columns (str): The columns to collect.
-
-        Raises:
-            ValueError:
-                If the requested columns are not in the base dataframe and cannot
-                be converted.
-        """
-        missing_from_cache = list(set(columns) - set(self.cache.keys()))
-        if missing_from_cache:
-            missing_from_data = list(set(missing_from_cache) - set(self.columns))
-            if missing_from_data:
-                # if missing from cache and data, may be a candidate for conversion
-                requested_quantities = self.get_quantities(missing_from_data)
-                missing_quantities = requested_quantities - self.quantities
-                if missing_quantities:
-                    # not a candidate for conversion as quantities are not in data
-                    raise ValueError(f"Quantities {missing_quantities} not in data.")
-                # convert the missing columns to the requested units and add to the
-                # lazyframe
-                for col in missing_from_data:
-                    quantity, unit = split_quantity_unit(col)
-                    if unit == "":
-                        continue
-                    _, base_unit = get_unit_scaling(unit)
-                    self.base_dataframe = self.base_dataframe.with_columns(
-                        (pl.col(f"{quantity} [{base_unit}]").units.to_unit(unit)),
-                    )
-            # collect any missing columns and add to the cache
-            if isinstance(self.base_dataframe, pl.LazyFrame):
-                dataframe = self.base_dataframe.select(missing_from_cache).collect()
-            else:
-                dataframe = self.base_dataframe.select(missing_from_cache)
-            for col in missing_from_cache:
-                self.cache[col] = dataframe[col]
-
-    def clear_cache(self) -> None:
-        """Clear the cache."""
-        self.cache = {}
-        self._cached_dataframe = pl.DataFrame()
-
-    @property
-    def cached_dataframe(self) -> pl.DataFrame:
-        """Return the cached dataframe as a Polars DataFrame."""
-        if self._cached_dataframe.is_empty() or set(
-            self._cached_dataframe.collect_schema().names()
-        ) != set(
-            self.cache.keys(),
-        ):
-            self._cached_dataframe = pl.DataFrame(self.cache)
-        return self._cached_dataframe
-
-    @cached_dataframe.setter
-    def cached_dataframe(self, value: pl.DataFrame) -> None:
-        """Set the cached dataframe."""
-        self.cache = value.to_dict()
-        self._cached_dataframe = value
-
-    @staticmethod
-    def get_quantities(column_list: list[str]) -> set[str]:
-        """The quantities of the data, with unit information removed.
-
-        Args:
-            column_list (List[str]): The columns to get the quantities of.
-
-        Returns:
-            Set[str]: The quantities of the data.
-        """
-        _quantities: list[str] = []
-        for _, column in enumerate(column_list):
-            try:
-                quantity, _ = split_quantity_unit(column)
-                _quantities.append(quantity)
-            except ValueError:
-                continue
-        return set(_quantities)
-
-
 class Result(BaseModel):
     """A class for holding any data in PyProBE.
 
@@ -200,7 +66,7 @@ class Result(BaseModel):
         - :attr:`info`: A dictionary containing information about the cell.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
-        - :attr:`column_list`: A list of column names.
+        - :attr:`columns`: A list of column names.
     """
 
     class Config:
@@ -208,47 +74,142 @@ class Result(BaseModel):
 
         arbitrary_types_allowed = True
 
-    base_dataframe: pl.LazyFrame | pl.DataFrame
-    """The data as a polars DataFrame or LazyFrame."""
+    lf: pl.LazyFrame
     info: dict[str, Any | None]
     """Dictionary containing information about the cell."""
     column_definitions: dict[str, str] = Field(default_factory=dict)
     """A dictionary containing the definitions of the columns in the data."""
 
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization method for the Pydantic model."""
-        self._polars_cache = _PolarsColumnCache(self.base_dataframe)
-
     @model_validator(mode="before")
     @classmethod
     def _load_base_dataframe(cls, data: Any) -> Any:
         """Load the base dataframe from a file if provided as a string."""
-        if "base_dataframe" in data and isinstance(data["base_dataframe"], str):
-            data["base_dataframe"] = pl.scan_parquet(data["base_dataframe"])
+        if "base_dataframe" in data:
+            data["lf"] = data.pop("base_dataframe")
+            warning_msg = "'base_dataframe' is deprecated. Please use 'lf' instead."
+            logger.warning(
+                warning_msg,
+            )
+            warnings.warn(
+                warning_msg,
+                DeprecationWarning,
+            )
         return data
 
+    @field_validator("lf", mode="before")
+    @classmethod
+    def _validate_lf(cls, data: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
+        """Validate that the base dataframe is a LazyFrame."""
+        if isinstance(data, pl.DataFrame):
+            data = data.lazy()
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _load_lf(cls, data: Any) -> Any:
+        """Load the base dataframe from a file if provided as a string."""
+        if "lf" in data and isinstance(data["lf"], str):
+            data["lf"] = pl.scan_parquet(data["lf"])
+        return data
+
+    def collect(self) -> pl.DataFrame:
+        """Collect the lazy dataframe into a polars DataFrame.
+
+        Use this method to resolve the lazy computations in the Result object. This can
+        improve performance if you are reading a large amount of data from disk, and
+        will be performing multiple calls to access the data.
+
+        Returns:
+            pl.DataFrame: The collected dataframe.
+        """
+        lf = self.lf.collect()
+        self.lf = lf.lazy()
+        return lf
+
     @property
-    def live_dataframe(self) -> pl.DataFrame:
-        """Return the data as a polars DataFrame."""
-        return self._polars_cache.base_dataframe
+    def columns(self) -> list[str]:
+        """The columns in the data.
 
-    @live_dataframe.setter
-    def live_dataframe(self, value: pl.DataFrame) -> None:
-        """Set the data as a polars DataFrame."""
-        self._polars_cache.base_dataframe = value
+        Returns:
+            List[str]: The columns in the data.
+        """
+        return self.lf.collect_schema().names()
 
-    def cache_columns(self, *columns: str) -> None:
-        """Collect columns from the base dataframe and add to the cache.
-
-        If no columns are provided, all columns will be cached.
+    @staticmethod
+    def _get_quantities(columns: list[str]) -> list[str]:
+        """The quantities of the data, with unit information removed.
 
         Args:
-            *columns (str): The columns to cache.
+            columns (List[str]): The columns to get the quantities of.
+
+        Returns:
+            List[str]: The quantities of the data.
         """
-        if columns:
-            self._polars_cache.collect_columns(*columns)
-        else:
-            self._polars_cache.collect_columns(*self.column_list)
+        _quantities: set[str] = set()
+        for _, column in enumerate(columns):
+            try:
+                quantity, _ = split_quantity_unit(column)
+                _quantities.add(quantity)
+            except ValueError:
+                continue
+        return list(_quantities)
+
+    @property
+    def quantities(self) -> list[str]:
+        """The quantities of the data, with unit information removed.
+
+        Returns:
+            List[str]: The quantities of the data.
+        """
+        return self._get_quantities(self.columns)
+
+    @property
+    def df(self) -> pl.DataFrame:
+        """Return the data as a Polars DataFrame.
+
+        Returns:
+            pl.DataFrame: The data as a Polars DataFrame.
+        """
+        return self.collect()
+
+    @df.setter
+    def df(self, dataframe: pl.DataFrame) -> None:
+        """Set the data as a Polars DataFrame.
+
+        Args:
+            dataframe (pl.DataFrame): The data as a Polars DataFrame.
+        """
+        self.lf = dataframe.lazy()
+
+    def check_columns(self, columns: list[str]) -> None:
+        """Check whether a column exists in the data.
+
+        Convert units if selected quantity exists in data with different unit.
+
+        Args:
+            columns (List[str]): The columns to check.
+
+        Raises:
+            ValueError: If a column does not exist in the data.
+        """
+        missing_columns = set(columns) - set(self.columns)
+        if missing_columns:
+            logger.info("Missing columns: {}", missing_columns)
+            # check if missing columns can be converted from existing quantities
+            quantities = set(self._get_quantities(list(missing_columns)))
+            missing_quantities = set(quantities) - set(self.quantities)
+            if missing_quantities:
+                raise ValueError(f"Quantities {missing_quantities} not in data.")
+            # convert missing columns to requested units
+            for col in missing_columns:
+                quantity, unit = split_quantity_unit(col)
+                if unit == "":
+                    continue
+                _, base_unit = get_unit_scaling(unit)
+                self.lf = self.lf.with_columns(
+                    (pl.col(f"{quantity} [{base_unit}]").units.to_unit(unit)),
+                )
+                logger.info(f"Converted column {col} from {base_unit} to {unit}.")
 
     @property
     def data(self) -> pl.DataFrame:
@@ -260,13 +221,10 @@ class Result(BaseModel):
         Raises:
             ValueError: If no data exists for this filter.
         """
-        all_columns = self._polars_cache.columns
-        self._polars_cache.collect_columns(*all_columns)
-        complete_dataframe = self._polars_cache.cached_dataframe
-        self._polars_cache.base_dataframe = complete_dataframe
-        if complete_dataframe.is_empty():
+        df = self.collect()
+        if df.is_empty():
             raise ValueError("No data exists for this filter.")
-        return complete_dataframe
+        return df
 
     @wraps(pd.DataFrame.plot)
     def plot(self, *args: Any, **kwargs: Any) -> Axes | NDArray[Axes]:
@@ -330,18 +288,6 @@ class Result(BaseModel):
         and examples.
         """
 
-    def data_with_columns(self, *column_names: str) -> pl.DataFrame:
-        """Return a subset of the data with the specified columns.
-
-        Args:
-            *column_names: The columns to include in the returned dataframe.
-
-        Returns:
-            A subset of the data with the specified columns.
-        """
-        self._polars_cache.collect_columns(*column_names)
-        return self._polars_cache.cached_dataframe.select(column_names)
-
     def __getitem__(self, *column_names: str) -> "Result":
         """Return a new result object with the specified columns.
 
@@ -351,8 +297,9 @@ class Result(BaseModel):
         Returns:
             Result: A new result object with the specified columns.
         """
+        self.check_columns(list(column_names))
         return Result(
-            base_dataframe=self.data_with_columns(*column_names),
+            lf=self.lf.select(*column_names),
             info=self.info,
         )
 
@@ -373,24 +320,16 @@ class Result(BaseModel):
             ValueError: If no column names are provided.
             ValueError: If a column name is not in the data.
         """
-        array = self.data_with_columns(*column_names).to_numpy()
         if len(column_names) == 0:
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)
             raise ValueError(error_msg)
-        elif len(column_names) == 1:
+        self.check_columns(list(column_names))
+        array = self.lf.select(*column_names).collect().to_numpy()
+        if len(column_names) == 1:
             return array.T[0]
         else:
             return tuple(array.T)
-
-    @property
-    def contains_lazyframe(self) -> bool:
-        """Return whether the data is a LazyFrame.
-
-        Returns:
-            bool: True if the data is a LazyFrame, False otherwise.
-        """
-        return isinstance(self.live_dataframe, pl.LazyFrame)
 
     @deprecated(
         reason="The get_only method is deprecated. Use the get method instead.",
@@ -415,24 +354,6 @@ class Result(BaseModel):
             logger.error(error_msg)
             raise ValueError(error_msg)
         return column
-
-    @property
-    def quantities(self) -> set[str]:
-        """The quantities of the data, with unit information removed.
-
-        Returns:
-            List[str]: The quantities of the data.
-        """
-        return self._polars_cache.quantities
-
-    @property
-    def column_list(self) -> list[str]:
-        """The columns in the data.
-
-        Returns:
-            List[str]: The columns in the data.
-        """
-        return self.live_dataframe.collect_schema().names()
 
     def define_column(self, column_name: str, definition: str) -> None:
         """Define a new column when it is added to the dataframe.
@@ -464,11 +385,13 @@ class Result(BaseModel):
             Result: A new result object with the specified data.
         """
         if dataframe is None:
-            dataframe = pl.DataFrame({})
+            dataframe = pl.LazyFrame({})
+        elif isinstance(dataframe, pl.DataFrame):
+            dataframe = dataframe.lazy()
         if column_definitions is None:
             column_definitions = {}
         return Result(
-            base_dataframe=dataframe,
+            lf=dataframe,
             info=self.info,
             column_definitions=column_definitions,
         )
@@ -599,14 +522,14 @@ class Result(BaseModel):
         elif isinstance(importing_columns, list):
             new_data = new_data.select([date_column_name] + importing_columns)
 
-        if "Date" not in self.column_list:
+        if "Date" not in self.columns:
             error_msg = "No date column in the base dataframe."
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # Convert new_data to match the type of live_dataframe
+        # Convert new_data to match the type of lf
         _, new_data = self._verify_compatible_frames(
-            self.live_dataframe,
+            self.lf,
             [new_data],
             mode="match 1",
         )
@@ -625,12 +548,12 @@ class Result(BaseModel):
         new_data = new_data.with_columns(
             pl.col(date_column_name).dt.cast_time_unit("us"),
         )
-        self.live_dataframe = self.live_dataframe.with_columns(
+        self.lf = self.lf.with_columns(
             pl.col("Date").dt.cast_time_unit("us"),
         )
 
-        # Check for timezone mismatch and harmonize to self.live_dataframe's timezone
-        live_schema = self.live_dataframe.collect_schema()
+        # Check for timezone mismatch and harmonize to self.lf's timezone
+        live_schema = self.lf.collect_schema()
         new_schema = new_data.collect_schema()
 
         live_dtype = live_schema["Date"]
@@ -645,7 +568,7 @@ class Result(BaseModel):
                     local_tz = existing_data_timezone
                 else:
                     local_tz = str(get_localzone())
-                self.live_dataframe = self.live_dataframe.with_columns(
+                self.lf = self.lf.with_columns(
                     pl.col("Date").dt.replace_time_zone(local_tz),
                 )
                 live_tz = local_tz
@@ -670,7 +593,7 @@ class Result(BaseModel):
 
         # Rename date column to "Date"
         new_data = new_data.rename({date_column_name: "Date"})
-        new_result = Result(base_dataframe=new_data, info={})
+        new_result = Result(lf=new_data, info={})
 
         if align_on is not None:
             from pyprobe.analysis.time_series import align_data
@@ -678,11 +601,11 @@ class Result(BaseModel):
             col_existing, col_new = align_on
             _, new_result = align_data(self, new_result, col_existing, col_new)
 
-        new_data = new_result.live_dataframe
+        new_data = new_result.lf
         new_data_cols = [
             col for col in new_data.collect_schema().names() if col != "Date"
         ]
-        all_data = self.live_dataframe.clone().join(
+        all_data = self.lf.clone().join(
             new_data,
             on="Date",
             how="full",
@@ -691,7 +614,7 @@ class Result(BaseModel):
         interpolated = all_data.with_columns(
             pl.col(new_data_cols).interpolate_by("Date"),
         ).select(pl.col(["Date"] + new_data_cols))
-        self.live_dataframe = self.live_dataframe.join(
+        self.lf = self.lf.join(
             interpolated,
             on="Date",
             how="left",
@@ -722,7 +645,7 @@ class Result(BaseModel):
         Raises:
             ValueError: If the base dataframe has no date column.
         """
-        if "Date" not in self.column_list:
+        if "Date" not in self.columns:
             error_msg = "No date column in the base dataframe."
             logger.error(error_msg)
             raise ValueError(error_msg)
@@ -731,7 +654,7 @@ class Result(BaseModel):
         new_data_cols.remove(date_column_name)
         # check if the new data is lazyframe or not
         _, new_data = self._verify_compatible_frames(
-            self.live_dataframe,
+            self.lf,
             [new_data],
             mode="match 1",
         )
@@ -746,11 +669,11 @@ class Result(BaseModel):
         new_data = new_data.with_columns(
             pl.col(date_column_name).dt.cast_time_unit("us"),
         )
-        self.live_dataframe = self.live_dataframe.with_columns(
+        self.lf = self.lf.with_columns(
             pl.col("Date").dt.cast_time_unit("us"),
         )
 
-        all_data = self.live_dataframe.clone().join(
+        all_data = self.lf.clone().join(
             new_data,
             left_on="Date",
             right_on=date_column_name,
@@ -760,7 +683,7 @@ class Result(BaseModel):
         interpolated = all_data.with_columns(
             pl.col(new_data_cols).interpolate_by("Date"),
         ).select(pl.col(["Date"] + new_data_cols))
-        self.live_dataframe = self.live_dataframe.join(
+        self.lf = self.lf.join(
             interpolated,
             on="Date",
             how="left",
@@ -787,13 +710,13 @@ class Result(BaseModel):
             coalesce (bool): Whether to coalesce the columns. Default is True.
         """
         _, other_frame = self._verify_compatible_frames(
-            self.live_dataframe,
-            [other.live_dataframe],
+            self.lf,
+            [other.lf],
             mode="match 1",
         )
         if isinstance(on, str):
             on = [on]
-        self.live_dataframe = self.live_dataframe.join(
+        self.lf = self.lf.join(
             other_frame[0],
             on=on,
             how=how,
@@ -822,17 +745,16 @@ class Result(BaseModel):
                 The method to use for concatenation. Default is 'diagonal'. See the
                 polars.concat method documentation for more information.
         """
-        self._polars_cache.clear_cache()
         if not isinstance(other, list):
             other = [other]
-        other_frame_list = [other_result.live_dataframe for other_result in other]
-        self.live_dataframe, other_frame_list = self._verify_compatible_frames(
-            self.live_dataframe,
+        other_frame_list = [other_result.lf for other_result in other]
+        self.lf, other_frame_list = self._verify_compatible_frames(
+            self.lf,
             other_frame_list,
             mode="collect all",
         )
-        self.live_dataframe = pl.concat(
-            [self.live_dataframe] + other_frame_list,
+        self.lf = pl.concat(
+            [self.lf] + other_frame_list,
             how=concat_method,
         )
         original_column_definitions = self.column_definitions.copy()
@@ -881,7 +803,7 @@ class Result(BaseModel):
                 )
                 data.append(step_data)
         data = pl.concat(data)
-        return cls(base_dataframe=data, info=info)
+        return cls(lf=data, info=info)
 
     def export_to_mat(self, filename: str) -> None:
         """Export the data to a .mat file.
@@ -978,10 +900,60 @@ class Result(BaseModel):
 
         """
         return Result(
-            base_dataframe=polars_io_func(**kwargs),
+            lf=polars_io_func(**kwargs),
             info=info,
             column_definitions=column_definitions,
         )
+
+    @property
+    @deprecated(
+        reason=(
+            "The live_dataframe property is deprecated. Use the lf property instead."
+        ),
+        version="2.4.0",
+    )
+    def live_dataframe(self) -> pl.LazyFrame:
+        """The base dataframe as a LazyFrame.
+
+        Returns:
+            pl.LazyFrame: The base dataframe as a LazyFrame.
+        """
+        return self.lf
+
+    @live_dataframe.setter
+    @deprecated(
+        reason=(
+            "The live_dataframe property is deprecated. Use the lf property instead."
+        ),
+        version="2.4.0",
+    )
+    def live_dataframe(self, value: pl.LazyFrame) -> None:
+        self.lf = value
+
+    @property
+    @deprecated(
+        reason=(
+            "The base_dataframe property is deprecated. Use the lf property instead."
+        ),
+        version="2.4.0",
+    )
+    def base_dataframe(self) -> pl.LazyFrame:
+        """The base dataframe as a LazyFrame.
+
+        Returns:
+            pl.LazyFrame: The base dataframe as a LazyFrame.
+        """
+        return self.lf
+
+    @base_dataframe.setter
+    @deprecated(
+        reason=(
+            "The base_dataframe property is deprecated. Use the lf property instead."
+        ),
+        version="2.4.0",
+    )
+    def base_dataframe(self, value: pl.LazyFrame) -> None:
+        self.lf = value
 
 
 def combine_results(
@@ -1005,6 +977,6 @@ def combine_results(
     """
     for result in results:
         instructions = [pl.lit(result.info[key]).alias(key) for key in result.info]
-        result.live_dataframe = result.live_dataframe.with_columns(instructions)
+        result.lf = result.lf.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]

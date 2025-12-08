@@ -14,7 +14,7 @@ from pyprobe.rawdata import RawData
 def RawData_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Result instance."""
     return RawData(
-        base_dataframe=lazyframe_fixture,
+        lf=lazyframe_fixture,
         info=info_fixture,
         step_descriptions=step_descriptions_fixture,
     )
@@ -23,21 +23,21 @@ def RawData_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
 def test_init(RawData_fixture, step_descriptions_fixture):
     """Test the __init__ method."""
     assert isinstance(RawData_fixture, RawData)
-    assert isinstance(RawData_fixture.base_dataframe, pl.LazyFrame)
+    assert isinstance(RawData_fixture.lf, pl.LazyFrame)
     assert isinstance(RawData_fixture.info, dict)
     assert RawData_fixture.step_descriptions == step_descriptions_fixture
 
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
-        RawData(base_dataframe=data, info={"test": 1})
+        RawData(lf=data, info={"test": 1})
 
 
 def test_data(RawData_fixture):
     """Test the data property."""
     columns = copy.deepcopy(RawData_fixture.data.collect_schema().names())
     random.shuffle(columns)
-    RawData_fixture.live_dataframe = RawData_fixture.live_dataframe.select(columns)
+    RawData_fixture.lf = RawData_fixture.lf.select(columns)
     assert RawData_fixture.data.columns == [
         "Time [s]",
         "Step",
@@ -59,13 +59,13 @@ def test_set_SOC(BreakinCycles_fixture):
     """Test the set_soc method."""
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert isinstance(with_charge_specified.live_dataframe, pl.LazyFrame)
+    assert isinstance(with_charge_specified.lf, pl.LazyFrame)
     assert "Capacity [Ah]_right" not in with_charge_specified.data.columns
     with_charge_specified = with_charge_specified.data["SOC"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     without_charge_specified.set_soc(0.04)
-    assert isinstance(without_charge_specified.live_dataframe, pl.LazyFrame)
+    assert isinstance(without_charge_specified.lf, pl.LazyFrame)
     without_charge_specified = without_charge_specified.data["SOC"]
 
     assert (with_charge_specified == without_charge_specified).all()
@@ -76,20 +76,18 @@ def test_set_SOC(BreakinCycles_fixture):
 def test_SOC_ref_as_dataframe(BreakinCycles_fixture):
     """Test the set_soc method with the reference charge collected into a dataframe."""
     with_charge_specified = BreakinCycles_fixture
-    assert isinstance(with_charge_specified.base_dataframe, pl.LazyFrame)
+    assert isinstance(with_charge_specified.lf, pl.LazyFrame)
     BreakinCycles_fixture.cycle(-1).charge(-1).data
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert isinstance(with_charge_specified.live_dataframe, pl.LazyFrame)
+    assert isinstance(with_charge_specified.lf, pl.LazyFrame)
 
 
 def test_SOC_with_base_as_dataframe(BreakinCycles_fixture):
     """Test the set_soc method with the base dataframe collected into a dataframe."""
     with_charge_specified = BreakinCycles_fixture
     with_charge_specified.data
-    assert isinstance(with_charge_specified.live_dataframe, pl.DataFrame)
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert isinstance(with_charge_specified.live_dataframe, pl.DataFrame)
-    assert "SOC" in with_charge_specified._polars_cache.columns
+    assert "SOC" in with_charge_specified.columns
 
 
 def test_deprecated_set_SOC(BreakinCycles_fixture, mocker):
@@ -134,7 +132,7 @@ def test_zero_column(RawData_fixture):
 def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Test that the definitions have been correctly set."""
     rawdata = RawData(
-        base_dataframe=lazyframe_fixture,
+        lf=lazyframe_fixture,
         info=info_fixture,
         step_descriptions=step_descriptions_fixture,
     )
@@ -172,7 +170,7 @@ def test_pybamm_experiment():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data,
+        lf=test_data,
         info={},
         step_descriptions=step_descriptions,
     )
@@ -203,7 +201,7 @@ def test_pybamm_experiment_missing_descriptions():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data,
+        lf=test_data,
         info={},
         step_descriptions=step_descriptions,
     )
@@ -234,7 +232,7 @@ def test_pybamm_experiment_multiple_conditions():
     }
 
     raw_data = RawData(
-        base_dataframe=test_data,
+        lf=test_data,
         info={},
         step_descriptions=step_descriptions,
     )
@@ -265,7 +263,7 @@ def test_pybamm_experiment_with_loops():
         "Description": ["Discharge at C/10", "Rest for 1 hour"],
     }
 
-    data = RawData(base_dataframe=base_df, info={}, step_descriptions=step_descriptions)
+    data = RawData(lf=base_df, info={}, step_descriptions=step_descriptions)
 
     expected = [
         "Discharge at C/10",  # Step 1
