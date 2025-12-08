@@ -170,7 +170,7 @@ class Result(BaseModel):
         Returns:
             pl.DataFrame: The data as a Polars DataFrame.
         """
-        return self.lf.collect()
+        return self.collect()
 
     @df.setter
     def df(self, dataframe: pl.DataFrame) -> None:
@@ -221,7 +221,7 @@ class Result(BaseModel):
         Raises:
             ValueError: If no data exists for this filter.
         """
-        df = self.df
+        df = self.collect()
         if df.is_empty():
             raise ValueError("No data exists for this filter.")
         return df
