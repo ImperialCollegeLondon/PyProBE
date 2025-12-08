@@ -182,7 +182,7 @@ class Result(BaseModel):
         self.lf = dataframe.lazy()
 
     def check_columns(self, columns: list[str]) -> None:
-        """Check wheter a column exists in the data.
+        """Check whether a column exists in the data.
 
         Convert units if selected quantity exists in data with different unit.
 
