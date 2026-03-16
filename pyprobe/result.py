@@ -656,7 +656,8 @@ class Result(BaseModel):
         if fill_strategy not in valid_fill_strategies:
             raise ValueError(
                 f"Unsupported fill_strategy: {fill_strategy!r}. "
-                "Valid options are None, 'interpolate', 'forward_fill', 'backward_fill'."
+                "Valid options are None, 'interpolate', 'forward_fill', "
+                "'backward_fill'."
             )
         if fill_strategy == "interpolate":
             if numeric_cols_except_date:
