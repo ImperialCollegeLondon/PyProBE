@@ -466,40 +466,60 @@ class Result(BaseModel):
         existing_data_timezone: str | None = None,
         new_data_timezone: str | None = None,
         align_on: tuple[str, str] | None = None,
+        join_strategy: Literal[
+            "keep_existing", "keep_new", "keep_both"
+        ] = "keep_existing",
+        fill_strategy: Literal["interpolate", "forward_fill", "backward_fill"]
+        | None = "interpolate",
     ) -> None:
         """Add new data columns to the result object.
 
         The data must be time series data with a date column. The new data is joined to
-        the base dataframe on the date column, and the new data columns are interpolated
-        to fill in missing values.
+        the base dataframe on the date column. Choose which dates to keep with the join
+        strategy, and how to fill missing values with the fill strategy.
 
         Args:
-            new_data (pl.DataFrame | pl.LazyFrame | str):
+            new_data:
                 The new data to add to the result object. Can be a DataFrame, LazyFrame,
                 or a path to a file (CSV, Parquet, Excel).
-            date_column_name (str):
+            date_column_name:
                 The name of the column in the new data containing the date.
-            datetime_format (Optional[str]):
+            datetime_format:
                 The format string for parsing the date column if it is a string.
                 Defaults to None.
-            importing_columns (Optional[List[str] | dict[str, str]]):
+            importing_columns:
                 The columns to import from the external file. If a list, the columns
                 will be imported as is. If a dict, the keys are the columns in the data
                 you want to import and the values are the columns you want to rename
                 them to. If None, all columns will be imported. Defaults to None.
-            existing_data_timezone (Optional[str]):
+            existing_data_timezone:
                 The timezone of the existing data. If None, the timezone is inferred
                 from the local machine. Defaults to None.
-            new_data_timezone (Optional[str]):
+            new_data_timezone:
                 The timezone of the new data. If None, and the new data is naive, it is
                 assumed to be in the same timezone as the existing data. Defaults to
                 None.
-            align_on (Optional[Tuple[str, str]]):
+            align_on:
                 A tuple of column names to use for aligning the new data with the
                 existing data. The first element is the column name in the existing
                 data, and the second element is the column name in the new data.
                 The new data will be shifted in time to maximize the cross-correlation
                 between the two columns. Defaults to None.
+            join_strategy:
+                The strategy for which dates to keep in the result:
+                - "keep_existing": Keep only dates from existing data
+                - "keep_new": Keep only dates from new data
+                - "keep_both": Keep all dates from both datasets
+                Defaults to "keep_existing".
+            fill_strategy:
+                The strategy for filling missing values in the merged dataset columns
+                after applying the join strategy (this may affect both existing and
+                new columns):
+                - "interpolate": Interpolate missing values by date
+                - "forward_fill": Forward fill missing values
+                - "backward_fill": Backward fill missing values
+                - None: Don't fill missing values
+                Defaults to "interpolate".
 
         Raises:
             ValueError: If the base dataframe has no date column.
@@ -605,21 +625,85 @@ class Result(BaseModel):
         new_data_cols = [
             col for col in new_data.collect_schema().names() if col != "Date"
         ]
-        all_data = self.lf.clone().join(
-            new_data,
-            on="Date",
-            how="full",
-            coalesce=True,
+
+        # Join all data to prepare for filling
+        all_data = (
+            self.lf.clone()
+            .join(
+                new_data,
+                on="Date",
+                how="full",
+                coalesce=True,
+            )
+            .sort("Date")
         )
-        interpolated = all_data.with_columns(
-            pl.col(new_data_cols).interpolate_by("Date"),
-        ).select(pl.col(["Date"] + new_data_cols))
-        self.lf = self.lf.join(
-            interpolated,
-            on="Date",
-            how="left",
-            coalesce=True,
-        )
+
+        # Get all non-Date columns for filling
+        all_cols_except_date = [
+            col for col in all_data.collect_schema().names() if col != "Date"
+        ]
+        # Restrict interpolation to numeric columns only, since interpolate_by
+        # is not supported for non-numeric dtypes.
+        schema = all_data.collect_schema()
+        numeric_cols_except_date = [
+            name
+            for name, dtype in zip(schema.names(), schema.dtypes())
+            if name != "Date" and dtype in pl.NUMERIC_DTYPES
+        ]
+
+        # Apply fill strategy to all columns (both existing and new)
+        valid_fill_strategies = {None, "interpolate", "forward_fill", "backward_fill"}
+        if fill_strategy not in valid_fill_strategies:
+            raise ValueError(
+                f"Unsupported fill_strategy: {fill_strategy!r}. "
+                "Valid options are None, 'interpolate', 'forward_fill', "
+                "'backward_fill'."
+            )
+        if fill_strategy == "interpolate":
+            if numeric_cols_except_date:
+                filled = all_data.with_columns(
+                    pl.col(numeric_cols_except_date).interpolate_by("Date"),
+                )
+            else:
+                # No numeric columns to interpolate; leave data unchanged.
+                filled = all_data
+        elif fill_strategy == "forward_fill":
+            filled = all_data.with_columns(
+                pl.col(all_cols_except_date).forward_fill(),
+            )
+        elif fill_strategy == "backward_fill":
+            filled = all_data.with_columns(
+                pl.col(all_cols_except_date).backward_fill(),
+            )
+        else:  # fill_strategy is None
+            filled = all_data
+
+        # Apply join strategy
+        if join_strategy == "keep_existing":
+            # Keep only existing dates
+            filled_new_cols = filled.select(pl.col(["Date"] + new_data_cols))
+            self.lf = self.lf.join(
+                filled_new_cols,
+                on="Date",
+                how="left",
+                coalesce=True,
+            )
+        elif join_strategy == "keep_new":
+            # Keep only new dates
+            # Filter filled to only dates that exist in new_data
+            self.lf = filled.join(
+                new_data.select(["Date"]),
+                on="Date",
+                how="inner",
+            )
+        elif join_strategy == "keep_both":
+            # Keep all dates from both datasets
+            self.lf = filled
+        else:
+            raise ValueError(
+                f"Unsupported join_strategy: {join_strategy!r}. "
+                "Expected one of: 'keep_existing', 'keep_new', 'keep_both'."
+            )
 
     @deprecated(
         reason="Use add_data instead.",

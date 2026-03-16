@@ -432,6 +432,536 @@ def test_add_data_with_format():
     assert data["Ext"][0] == 10
 
 
+def test_add_data_join_strategy_keep_existing():
+    """Test add_data with join_strategy='keep_existing'."""
+    # Temperature logged every second
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0],
+        },
+    )
+    # Voltage logged every 2 seconds (lower frequency)
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=2),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Voltage": [3.6, 3.8, 4.0],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_existing",
+        fill_strategy="interpolate",
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # Should keep all 5 temperature timestamps
+    assert len(data) == 5
+    assert "Temperature" in data.columns
+    assert "Voltage" in data.columns
+
+    # Voltage should be interpolated at odd seconds
+    assert data["Voltage"][0] == pytest.approx(3.6)  # Original value
+    assert data["Voltage"][1] == pytest.approx(3.7)  # Interpolated between 3.6 and 3.8
+    assert data["Voltage"][2] == pytest.approx(3.8)  # Original value
+    assert data["Voltage"][3] == pytest.approx(3.9)  # Interpolated between 3.8 and 4.0
+    assert data["Voltage"][4] == pytest.approx(4.0)  # Original value
+
+
+def test_add_data_join_strategy_keep_new():
+    """Test add_data with join_strategy='keep_new'."""
+    # Existing data logged every 2 seconds
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=2),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 22.0, 24.0],
+        },
+    )
+    # New data logged every second (higher frequency)
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Voltage": [3.6, 3.7, 3.8, 3.9, 4.0],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_new",
+        fill_strategy="interpolate",
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # Should have 5 rows (from new data)
+    assert len(data) == 5
+    assert "Temperature" in data.columns
+    assert "Voltage" in data.columns
+
+    # Temperature should be interpolated at odd seconds
+    assert data["Temperature"][0] == 20.0  # Original value
+    assert data["Temperature"][1] == 21.0  # Interpolated between 20.0 and 22.0
+    assert data["Temperature"][2] == 22.0  # Original value
+    assert data["Temperature"][3] == 23.0  # Interpolated between 22.0 and 24.0
+    assert data["Temperature"][4] == 24.0  # Original value
+
+
+def test_add_data_join_strategy_keep_both():
+    """Test add_data with join_strategy='keep_both'."""
+    # Temperature logged at whole seconds
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 2),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 21.0, 22.0],
+        },
+    )
+    # Voltage logged at half-seconds (offset)
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [
+                datetime(2024, 1, 1, 0, 0, 0, 500000),
+                datetime(2024, 1, 1, 0, 0, 1, 500000),
+            ],
+            "Voltage": [3.65, 3.85],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_both",
+        fill_strategy="interpolate",
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # Should have 5 rows (3 from existing + 2 from new)
+    assert len(data) == 5
+    assert "Temperature" in data.columns
+    assert "Voltage" in data.columns
+
+    # At whole seconds, Temperature is original, Voltage is interpolated
+    temp_at_0s = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, 0).replace(tzinfo=ZoneInfo("GMT")).timestamp()
+        * 1_000_000
+    )
+    assert len(temp_at_0s) == 1
+    assert temp_at_0s["Temperature"][0] == 20.0
+
+    # At half-seconds, Voltage is original, Temperature is interpolated
+    temp_at_0_5s = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, 0, 500000)
+        .replace(tzinfo=ZoneInfo("GMT"))
+        .timestamp()
+        * 1_000_000
+    )
+    assert len(temp_at_0_5s) == 1
+    assert temp_at_0_5s["Voltage"][0] == 3.65
+    assert temp_at_0_5s["Temperature"][0] == 20.5  # Interpolated between 20.0 and 21.0
+
+
+def test_add_data_fill_strategy_forward_fill():
+    """Test add_data with fill_strategy='forward_fill'."""
+    # Temperature logged every second
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 5),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0],
+        },
+    )
+    # Voltage logged sparsely (every 3 seconds)
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [
+                datetime(2024, 1, 1, 0, 0, 1),
+                datetime(2024, 1, 1, 0, 0, 4),
+            ],
+            "Voltage": [3.7, 4.0],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_existing",
+        fill_strategy="forward_fill",
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # First row should have null (no previous value)
+    assert data["Voltage"][0] is None
+    # Value at second 1
+    assert data["Voltage"][1] == 3.7
+    # Seconds 2-3 should be forward filled with 3.7
+    assert data["Voltage"][2] == 3.7
+    assert data["Voltage"][3] == 3.7
+    # Value at second 4
+    assert data["Voltage"][4] == 4.0
+    # Last row forward filled with 4.0
+    assert data["Voltage"][5] == 4.0
+
+
+def test_add_data_fill_strategy_backward_fill():
+    """Test add_data with fill_strategy='backward_fill'."""
+    # Temperature logged every second
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 5),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0],
+        },
+    )
+    # Voltage logged sparsely
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [
+                datetime(2024, 1, 1, 0, 0, 1),
+                datetime(2024, 1, 1, 0, 0, 4),
+            ],
+            "Voltage": [3.7, 4.0],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_existing",
+        fill_strategy="backward_fill",
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # First row should be backward filled with 3.7
+    assert data["Voltage"][0] == 3.7
+    # Value at second 1
+    assert data["Voltage"][1] == 3.7
+    # Seconds 2-3 should be backward filled with 4.0
+    assert data["Voltage"][2] == 4.0
+    assert data["Voltage"][3] == 4.0
+    # Value at second 4
+    assert data["Voltage"][4] == 4.0
+    # Last row should have null (no future value)
+    assert data["Voltage"][5] is None
+
+
+def test_add_data_fill_strategy_none():
+    """Test add_data with fill_strategy=None."""
+    # Temperature logged every second
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=1),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0],
+        },
+    )
+    # Voltage logged every 2 seconds (lower frequency)
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=2),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Voltage": [3.6, 3.8, 4.0],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_existing",
+        fill_strategy=None,
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # Only even seconds should have Voltage values
+    assert data["Voltage"][0] == 3.6  # Second 0
+    assert data["Voltage"][1] is None  # Second 1 (no data)
+    assert data["Voltage"][2] == 3.8  # Second 2
+    assert data["Voltage"][3] is None  # Second 3 (no data)
+    assert data["Voltage"][4] == 4.0  # Second 4
+
+
+def test_add_data_combined_strategies():
+    """Test add_data with combined join and fill strategies."""
+    # Temperature logged every 2 seconds
+    existing_data = pl.LazyFrame(
+        {
+            "Date": pl.datetime_range(
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 4),
+                timedelta(seconds=2),
+                time_unit="ms",
+                eager=True,
+            ),
+            "Temperature": [20.0, 22.0, 24.0],
+        },
+    )
+    # Voltage logged at odd seconds
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [
+                datetime(2024, 1, 1, 0, 0, 1),
+                datetime(2024, 1, 1, 0, 0, 3),
+                datetime(2024, 1, 1, 0, 0, 5),
+            ],
+            "Voltage": [3.7, 3.9, 4.1],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy="keep_both",
+        fill_strategy="forward_fill",
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    # Should have 6 rows total (3 + 3)
+    assert len(data) == 6
+
+    # At even seconds, Temperature is original, Voltage is forward filled
+    row_0s = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, 0).replace(tzinfo=ZoneInfo("GMT")).timestamp()
+        * 1_000_000
+    )
+    assert row_0s["Temperature"][0] == 20.0
+    assert row_0s["Voltage"][0] is None  # No previous voltage
+
+    row_2s = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, 2).replace(tzinfo=ZoneInfo("GMT")).timestamp()
+        * 1_000_000
+    )
+    assert row_2s["Temperature"][0] == 22.0
+    assert row_2s["Voltage"][0] == 3.7  # Forward filled from 1s
+
+    # At odd seconds, Voltage is original, Temperature is forward filled
+    row_1s = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, 1).replace(tzinfo=ZoneInfo("GMT")).timestamp()
+        * 1_000_000
+    )
+    assert row_1s["Voltage"][0] == 3.7
+    assert row_1s["Temperature"][0] == 20.0  # Forward filled from 0s
+
+    row_3s = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, 3).replace(tzinfo=ZoneInfo("GMT")).timestamp()
+        * 1_000_000
+    )
+    assert row_3s["Voltage"][0] == 3.9
+    assert row_3s["Temperature"][0] == 22.0  # Forward filled from 2s
+
+
+@pytest.mark.parametrize(
+    (
+        "join_strategy",
+        "fill_strategy",
+        "expected_length",
+        "check_column",
+        "check_second",
+        "expected_value",
+    ),
+    [
+        ("keep_existing", "interpolate", 3, "Voltage", 2, 3.8),
+        ("keep_existing", "forward_fill", 3, "Voltage", 2, 3.7),
+        ("keep_existing", "backward_fill", 3, "Voltage", 2, 3.9),
+        ("keep_existing", None, 3, "Voltage", 2, None),
+        ("keep_new", "interpolate", 3, "Temperature", 3, 23.0),
+        ("keep_new", "forward_fill", 3, "Temperature", 3, 22.0),
+        ("keep_new", "backward_fill", 3, "Temperature", 3, 24.0),
+        ("keep_new", None, 3, "Temperature", 3, None),
+        ("keep_both", "interpolate", 6, "Voltage", 2, 3.8),
+        ("keep_both", "forward_fill", 6, "Voltage", 2, 3.7),
+        ("keep_both", "backward_fill", 6, "Voltage", 2, 3.9),
+        ("keep_both", None, 6, "Voltage", 2, None),
+    ],
+)
+def test_add_data_all_join_fill_strategy_combinations(
+    join_strategy,
+    fill_strategy,
+    expected_length,
+    check_column,
+    check_second,
+    expected_value,
+):
+    """Test all join_strategy x fill_strategy combinations for add_data."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": [
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 2),
+                datetime(2024, 1, 1, 0, 0, 4),
+            ],
+            "Temperature": [20.0, 22.0, 24.0],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [
+                datetime(2024, 1, 1, 0, 0, 1),
+                datetime(2024, 1, 1, 0, 0, 3),
+                datetime(2024, 1, 1, 0, 0, 5),
+            ],
+            "Voltage": [3.7, 3.9, 4.1],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy=join_strategy,
+        fill_strategy=fill_strategy,
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    assert len(data) == expected_length
+
+    row = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, check_second)
+        .replace(tzinfo=ZoneInfo("GMT"))
+        .timestamp()
+        * 1_000_000
+    )
+    assert len(row) == 1
+    if expected_value is None:
+        assert row[check_column][0] is None
+    else:
+        assert row[check_column][0] == pytest.approx(expected_value)
+
+
+def test_add_data_invalid_join_strategy_raises():
+    """Test add_data with an invalid join strategy."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Temperature": [20.0],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Voltage": [3.7],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^Unsupported join_strategy: 'bad_strategy'\. "
+            r"Expected one of: 'keep_existing', 'keep_new', 'keep_both'\.$"
+        ),
+    ):
+        result.add_data(
+            new_data,
+            date_column_name="DateTime",
+            join_strategy="bad_strategy",
+            existing_data_timezone="GMT",
+        )
+
+
+def test_add_data_invalid_fill_strategy_raises():
+    """Test add_data with an invalid fill strategy."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Temperature": [20.0],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Voltage": [3.7],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^Unsupported fill_strategy: 'bad_strategy'\. "
+            r"Valid options are None, 'interpolate', 'forward_fill', "
+            r"'backward_fill'\.$"
+        ),
+    ):
+        result.add_data(
+            new_data,
+            date_column_name="DateTime",
+            fill_strategy="bad_strategy",
+            existing_data_timezone="GMT",
+        )
+
+
 @pytest.fixture
 def reduced_result_fixture():
     """Return a Result instance with reduced data."""
