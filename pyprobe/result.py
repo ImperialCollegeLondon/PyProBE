@@ -512,7 +512,9 @@ class Result(BaseModel):
                 - "keep_both": Keep all dates from both datasets
                 Defaults to "keep_existing".
             fill_strategy:
-                The strategy for filling missing values in the new columns:
+                The strategy for filling missing values in the merged dataset columns
+                after applying the join strategy (this may affect both existing and
+                new columns):
                 - "interpolate": Interpolate missing values by date
                 - "forward_fill": Forward fill missing values
                 - "backward_fill": Backward fill missing values
@@ -640,12 +642,30 @@ class Result(BaseModel):
         all_cols_except_date = [
             col for col in all_data.collect_schema().names() if col != "Date"
         ]
+        # Restrict interpolation to numeric columns only, since interpolate_by
+        # is not supported for non-numeric dtypes.
+        schema = all_data.collect_schema()
+        numeric_cols_except_date = [
+            name
+            for name, dtype in zip(schema.names(), schema.dtypes())
+            if name != "Date" and dtype in pl.NUMERIC_DTYPES
+        ]
 
         # Apply fill strategy to all columns (both existing and new)
-        if fill_strategy == "interpolate":
-            filled = all_data.with_columns(
-                pl.col(all_cols_except_date).interpolate_by("Date"),
+        valid_fill_strategies = {None, "interpolate", "forward_fill", "backward_fill"}
+        if fill_strategy not in valid_fill_strategies:
+            raise ValueError(
+                f"Unsupported fill_strategy: {fill_strategy!r}. "
+                "Valid options are None, 'interpolate', 'forward_fill', 'backward_fill'."
             )
+        if fill_strategy == "interpolate":
+            if numeric_cols_except_date:
+                filled = all_data.with_columns(
+                    pl.col(numeric_cols_except_date).interpolate_by("Date"),
+                )
+            else:
+                # No numeric columns to interpolate; leave data unchanged.
+                filled = all_data
         elif fill_strategy == "forward_fill":
             filled = all_data.with_columns(
                 pl.col(all_cols_except_date).forward_fill(),
@@ -675,9 +695,14 @@ class Result(BaseModel):
                 on="Date",
                 how="inner",
             )
-        else:  # join_strategy == "keep_both"
+        elif join_strategy == "keep_both":
             # Keep all dates from both datasets
             self.lf = filled
+        else:
+            raise ValueError(
+                f"Unsupported join_strategy: {join_strategy!r}. "
+                "Expected one of: 'keep_existing', 'keep_new', 'keep_both'."
+            )
 
     @deprecated(
         reason="Use add_data instead.",

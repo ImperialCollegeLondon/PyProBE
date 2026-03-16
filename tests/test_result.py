@@ -477,11 +477,11 @@ def test_add_data_join_strategy_keep_existing():
     assert "Voltage" in data.columns
 
     # Voltage should be interpolated at odd seconds
-    assert data["Voltage"][0] == 3.6  # Original value
-    assert data["Voltage"][1] == 3.7  # Interpolated between 3.6 and 3.8
-    assert data["Voltage"][2] == 3.8  # Original value
-    assert data["Voltage"][3] == 3.9  # Interpolated between 3.8 and 4.0
-    assert data["Voltage"][4] == 4.0  # Original value
+    assert data["Voltage"][0] == pytest.approx(3.6)  # Original value
+    assert data["Voltage"][1] == pytest.approx(3.7)  # Interpolated between 3.6 and 3.8
+    assert data["Voltage"][2] == pytest.approx(3.8)  # Original value
+    assert data["Voltage"][3] == pytest.approx(3.9)  # Interpolated between 3.8 and 4.0
+    assert data["Voltage"][4] == pytest.approx(4.0)  # Original value
 
 
 def test_add_data_join_strategy_keep_new():
