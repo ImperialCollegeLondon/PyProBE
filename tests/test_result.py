@@ -819,6 +819,149 @@ def test_add_data_combined_strategies():
     assert row_3s["Temperature"][0] == 22.0  # Forward filled from 2s
 
 
+@pytest.mark.parametrize(
+    (
+        "join_strategy",
+        "fill_strategy",
+        "expected_length",
+        "check_column",
+        "check_second",
+        "expected_value",
+    ),
+    [
+        ("keep_existing", "interpolate", 3, "Voltage", 2, 3.8),
+        ("keep_existing", "forward_fill", 3, "Voltage", 2, 3.7),
+        ("keep_existing", "backward_fill", 3, "Voltage", 2, 3.9),
+        ("keep_existing", None, 3, "Voltage", 2, None),
+        ("keep_new", "interpolate", 3, "Temperature", 3, 23.0),
+        ("keep_new", "forward_fill", 3, "Temperature", 3, 22.0),
+        ("keep_new", "backward_fill", 3, "Temperature", 3, 24.0),
+        ("keep_new", None, 3, "Temperature", 3, None),
+        ("keep_both", "interpolate", 6, "Voltage", 2, 3.8),
+        ("keep_both", "forward_fill", 6, "Voltage", 2, 3.7),
+        ("keep_both", "backward_fill", 6, "Voltage", 2, 3.9),
+        ("keep_both", None, 6, "Voltage", 2, None),
+    ],
+)
+def test_add_data_all_join_fill_strategy_combinations(
+    join_strategy,
+    fill_strategy,
+    expected_length,
+    check_column,
+    check_second,
+    expected_value,
+):
+    """Test all join_strategy x fill_strategy combinations for add_data."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": [
+                datetime(2024, 1, 1, 0, 0, 0),
+                datetime(2024, 1, 1, 0, 0, 2),
+                datetime(2024, 1, 1, 0, 0, 4),
+            ],
+            "Temperature": [20.0, 22.0, 24.0],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [
+                datetime(2024, 1, 1, 0, 0, 1),
+                datetime(2024, 1, 1, 0, 0, 3),
+                datetime(2024, 1, 1, 0, 0, 5),
+            ],
+            "Voltage": [3.7, 3.9, 4.1],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    result.add_data(
+        new_data,
+        date_column_name="DateTime",
+        join_strategy=join_strategy,
+        fill_strategy=fill_strategy,
+        existing_data_timezone="GMT",
+    )
+
+    data = result.data
+    assert len(data) == expected_length
+
+    row = data.filter(
+        pl.col("Date").dt.timestamp("us")
+        == datetime(2024, 1, 1, 0, 0, check_second)
+        .replace(tzinfo=ZoneInfo("GMT"))
+        .timestamp()
+        * 1_000_000
+    )
+    assert len(row) == 1
+    if expected_value is None:
+        assert row[check_column][0] is None
+    else:
+        assert row[check_column][0] == pytest.approx(expected_value)
+
+
+def test_add_data_invalid_join_strategy_raises():
+    """Test add_data with an invalid join strategy."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Temperature": [20.0],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Voltage": [3.7],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^Unsupported join_strategy: 'bad_strategy'\. "
+            r"Expected one of: 'keep_existing', 'keep_new', 'keep_both'\.$"
+        ),
+    ):
+        result.add_data(
+            new_data,
+            date_column_name="DateTime",
+            join_strategy="bad_strategy",
+            existing_data_timezone="GMT",
+        )
+
+
+def test_add_data_invalid_fill_strategy_raises():
+    """Test add_data with an invalid fill strategy."""
+    existing_data = pl.LazyFrame(
+        {
+            "Date": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Temperature": [20.0],
+        },
+    )
+    new_data = pl.LazyFrame(
+        {
+            "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+            "Voltage": [3.7],
+        },
+    )
+
+    result = Result(lf=existing_data, info={})
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^Unsupported fill_strategy: 'bad_strategy'\. "
+            r"Valid options are None, 'interpolate', 'forward_fill', "
+            r"'backward_fill'\.$"
+        ),
+    ):
+        result.add_data(
+            new_data,
+            date_column_name="DateTime",
+            fill_strategy="bad_strategy",
+            existing_data_timezone="GMT",
+        )
+
+
 @pytest.fixture
 def reduced_result_fixture():
     """Return a Result instance with reduced data."""
