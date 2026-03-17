@@ -24,6 +24,7 @@ dependencies = [
     "streamlit>=1.41.1",
     "sympy>=1.13.3",
     "tzlocal>=5.2",
+    "pint>=0.25.2",
 ]
 
 classifiers = [
