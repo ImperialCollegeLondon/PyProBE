@@ -140,3 +140,6 @@ tests/sample_data/test_data_1.csv
 tests/sample_data/test_data_2.csv
 
 tests/sample_data/test_data.csv
+
+# coding agents
+**/agents/
