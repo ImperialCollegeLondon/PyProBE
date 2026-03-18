@@ -154,6 +154,8 @@ class ColumnName:
             self._unit: pint.Unit | None = None
         else:
             resolved = _UNIT_ALIASES.get(raw_unit, raw_unit)
+            if self._quantity.lower() == "temperature" and resolved == "C":
+                resolved = "degC"
             try:
                 self._unit = _ureg.parse_units(resolved)
             except pint.errors.UndefinedUnitError as exc:
