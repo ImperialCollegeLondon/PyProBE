@@ -35,6 +35,7 @@ PARSE_CASES = [
     ("Resistance [Ohm]", BRACKET, "Resistance", "ohm"),
     ("Time [Seconds]", BRACKET, "Time", "s"),
     ("Temperature [°C]", BRACKET, "Temperature", "degC"),
+    ("Temperature [C]", BRACKET, "Temperature", "degC"),
     ("Time / sec", BDF, "Time", "s"),
     ("Time [hr]", BRACKET, "Time", "hour"),
     ("Charge [A.h]", BRACKET, "Charge", "Ah"),
@@ -60,6 +61,7 @@ PARSE_IDS = [
     "alias_Ohm",
     "alias_Seconds",
     "alias_degC",
+    "temperature_C_to_degC",
     "alias_sec",
     "alias_hr",
     "alias_A.h",
@@ -116,6 +118,21 @@ class TestParsing:
         _assert_unit_converts(cn1.unit, "ohm")
         _assert_unit_converts(cn2.unit, "ohm")
 
+    def test_temperature_c_is_degc_not_coulombs(self):
+        """Temperature [C] resolves to degC, not coulombs.
+
+        Charge [C] resolves to coulombs.
+        """
+        # Temperature [C] should resolve to degC
+        temp_cn = ColumnName("Temperature [C]", BRACKET)
+        assert temp_cn.unit is not None
+        _assert_unit_converts(temp_cn.unit, "degC")
+
+        # Charge [C] should resolve to coulombs (not affected by the special case)
+        charge_cn = ColumnName("Charge [C]", BRACKET)
+        assert charge_cn.unit is not None
+        _assert_unit_converts(charge_cn.unit, "coulomb")
+
 
 class TestConversionParameters:
     """ColumnName.conversion_parameters."""
@@ -131,6 +148,7 @@ class TestConversionParameters:
             ("Voltage [V]", BRACKET, "V", 1.0, 0.0),
             ("Temperature [degC]", BRACKET, "K", 1.0, 273.15),
             ("Temperature [K]", BRACKET, "degC", 1.0, -273.15),
+            ("Temperature [C]", BRACKET, "K", 1.0, 273.15),
         ],
         ids=[
             "A_to_mA",
@@ -141,6 +159,7 @@ class TestConversionParameters:
             "V_to_V",
             "degC_to_K",
             "K_to_degC",
+            "C_to_K",
         ],
     )
     def test_conversion(self, name, pattern, target, factor, offset):
@@ -345,6 +364,16 @@ class TestResolve:
                 [233.15, 0.0],
                 None,
             ),
+            # Step 2: temperature format conversion (C notation to K)
+            (
+                "Temperature / K",
+                BDF,
+                ["Temperature [C]"],
+                "square_bracket",
+                [0.0, 100.0],
+                [273.15, 373.15],
+                None,
+            ),
             # Step 3: BDF alias with unit conversion
             (
                 "Current / A",
@@ -367,6 +396,7 @@ class TestResolve:
             "degC_to_K",
             "K_to_degC",
             "negative_temps",
+            "temperature_C_format",
             "bdf_alias_I",
         ],
     )
