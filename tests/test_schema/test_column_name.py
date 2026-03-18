@@ -3,8 +3,8 @@
 import polars as pl
 import pytest
 
-from pyprobe.bdf import ALL_COLUMNS
-from pyprobe.column_name import FORMAT_REGISTRY, ColumnName, _ureg
+from pyprobe.schema.bdf import ALL_COLUMNS
+from pyprobe.schema.column_name import FORMAT_REGISTRY, ColumnName, _ureg
 
 BDF = FORMAT_REGISTRY["bdf"]
 BRACKET = FORMAT_REGISTRY["square_bracket"]
