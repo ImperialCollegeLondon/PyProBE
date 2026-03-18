@@ -1,4 +1,21 @@
-"""A module for parsing and converting column names with physical units."""
+"""Parse and convert cycler column names with physical units.
+
+This module provides :class:`ColumnName`, which parses cycler-specific column
+name formats (Arbin, Biologic, Neware, etc.) into quantity and unit components,
+and performs automatic unit conversions.
+
+It is the core building block of the column resolution system:
+:meth:`ColumnName.resolve` implements the full resolution chain used by
+:meth:`~pyprobe.schema.bdf.BDFColumn.from_columns`:
+
+1. Exact string match
+2. Direct quantity match (with unit conversion if needed)
+3. BDF alias match (requires :data:`~pyprobe.schema.bdf.ALL_COLUMNS`)
+4. BDF recipe fallback (computed column, requires
+   :data:`~pyprobe.schema.bdf.ALL_COLUMNS`)
+
+All cycler format patterns are defined in :data:`FORMAT_REGISTRY`.
+"""
 
 from __future__ import annotations
 
@@ -9,7 +26,7 @@ import pint
 import polars as pl
 
 if TYPE_CHECKING:
-    from pyprobe.bdf import BDFColumn
+    from pyprobe.schema.bdf import BDFColumn
 
 FORMAT_REGISTRY: dict[str, str] = {
     "bdf": r"^([^/]*?)(?:\s*/\s*(.+?))?\s*$",
@@ -80,7 +97,7 @@ class ColumnName:
     as ``~``, ``<>``, and ``.``.
 
     Examples:
-        >>> from pyprobe.column_name import FORMAT_REGISTRY
+        >>> from pyprobe.schema.column_name import FORMAT_REGISTRY
         >>> cn = ColumnName("Current / A", FORMAT_REGISTRY["bdf"])
         >>> cn.quantity
         'Current'
@@ -109,7 +126,7 @@ class ColumnName:
             ValueError: If ``name`` does not match ``pattern``.
 
         Examples:
-            >>> from pyprobe.column_name import FORMAT_REGISTRY
+            >>> from pyprobe.schema.column_name import FORMAT_REGISTRY
             >>> ColumnName._extract_quantity_and_unit(
             ...     "Current [A]", FORMAT_REGISTRY["square_bracket"]
             ... )
@@ -212,7 +229,7 @@ class ColumnName:
             ValueError: If the units are dimensionally incompatible.
 
         Examples:
-            >>> from pyprobe.column_name import FORMAT_REGISTRY
+            >>> from pyprobe.schema.column_name import FORMAT_REGISTRY
             >>> cn = ColumnName("Current [A]", FORMAT_REGISTRY["square_bracket"])
             >>> cn.conversion_parameters("mA")
             (1000.0, 0.0)
@@ -320,7 +337,7 @@ class ColumnName:
            column whose parsed quantity equals ``self.quantity``; applies unit
            conversion if needed.
         3. **BDF alias match** (requires ``bdf_columns``) — finds the
-           :class:`~pyprobe.bdf.BDFColumn` whose :meth:`matches` returns
+           :class:`~pyprobe.schema.bdf.BDFColumn` whose :meth:`matches` returns
            ``True`` for ``self.quantity``, then searches all its aliases via
            :meth:`find`.
         4. **BDF recipe** (requires ``bdf_columns``) — calls
