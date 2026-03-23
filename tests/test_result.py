@@ -38,6 +38,13 @@ def test_init(Result_fixture):
     assert isinstance(Result_fixture.info, dict)
 
 
+def test_init_accepts_dataframe():
+    """Test that DataFrame input is converted to LazyFrame at construction."""
+    result = Result(lf=pl.DataFrame({"a": [1, 2, 3]}), info={})
+    assert isinstance(result.lf, pl.LazyFrame)
+    pl_testing.assert_frame_equal(result.data, pl.DataFrame({"a": [1, 2, 3]}))
+
+
 def test_df(Result_fixture):
     """Test the df property."""
     df = Result_fixture.df
@@ -972,7 +979,7 @@ def reduced_result_fixture():
         },
     )
     return Result(
-        lf=data,
+        lf=data.lazy(),
         info={"test": "info"},
         column_definitions={
             "Voltage": "Voltage definition",
@@ -1047,7 +1054,7 @@ def test_join_left(reduced_result_fixture):
         },
     )
     other_result = Result(
-        lf=other_data,
+        lf=other_data.lazy(),
         info={"test": "info"},
         column_definitions={"Voltage": "Voltage definition"},
     )
@@ -1076,7 +1083,7 @@ def test_extend(reduced_result_fixture):
         },
     )
     other_result = Result(
-        lf=other_data,
+        lf=other_data.lazy(),
         info={"test": "info"},
         column_definitions={"Voltage": "Voltage definition"},
     )
@@ -1105,7 +1112,7 @@ def test_extend_with_new_columns(reduced_result_fixture):
         },
     )
     other_result = Result(
-        lf=other_data,
+        lf=other_data.lazy(),
         info={"test": "info"},
         column_definitions={
             "Voltage": "New voltage definition",
@@ -1179,11 +1186,11 @@ def test_clean_copy(reduced_result_fixture):
 def test_combine_results():
     """Test the combine results method."""
     result1 = Result(
-        lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
+        lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).lazy(),
         info={"test index": 1.0},
     )
     result2 = Result(
-        lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}),
+        lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}).lazy(),
         info={"test index": 2.0},
     )
     combined_result = combine_results([result1, result2])
@@ -1377,7 +1384,7 @@ def test_add_data_with_alignment():
         }
     )
 
-    result = Result(lf=base_df, info={})
+    result = Result(lf=base_df.lazy(), info={})
 
     # Add data with alignment
     result.add_data(
@@ -1403,7 +1410,7 @@ def test_add_data_with_alignment_error():
     start_time = datetime(2023, 1, 1, 10, 0, 0)
     base_df = pl.DataFrame({"Date": [start_time], "Signal": [1.0]})
     new_df = pl.DataFrame({"DateNew": [start_time], "SignalNew": [1.0]})
-    result = Result(lf=base_df, info={})
+    result = Result(lf=base_df.lazy(), info={})
 
     # Test with missing column in base data
     with pytest.raises(ValueError):

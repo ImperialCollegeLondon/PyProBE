@@ -1,10 +1,9 @@
 """A module for the RawData class."""
 
-from typing import Optional
+from typing import Any, Optional
 
 import polars as pl
 from loguru import logger
-from pydantic import Field, field_validator
 
 from pyprobe.result import Result
 from pyprobe.units import split_quantity_unit
@@ -53,30 +52,42 @@ class RawData(Result):
     This defines the PyProBE format.
     """
 
-    column_definitions: dict[str, str] = Field(
-        default_factory=lambda: default_column_definitions.copy(),
-    )
-    step_descriptions: dict[str, list[str | int | None]] = {}
+    step_descriptions: dict[str, list[str | int | None]]
     """A dictionary containing the fields 'Step' and 'Description'.
 
     - 'Step' is a list of step numbers.
     - 'Description' is a list of corresponding descriptions in PyBaMM Experiment format.
     """
 
-    @field_validator("lf", mode="after")
-    @classmethod
-    def check_required_columns(
-        cls,
-        dataframe: pl.LazyFrame,
-    ) -> "RawData":
-        """Check if the required columns are present in the input_data."""
-        columns = dataframe.collect_schema().names()
+    def __init__(
+        self,
+        lf: pl.LazyFrame | str,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] | None = None,
+        step_descriptions: dict[str, list[str | int | None]] | None = None,
+    ) -> None:
+        """Create a RawData object with required-column validation."""
+        if column_definitions is None:
+            column_definitions = default_column_definitions.copy()
+        super().__init__(lf=lf, info=info, column_definitions=column_definitions)
+
+        if step_descriptions is None:
+            self.step_descriptions = {}
+        else:
+            self.step_descriptions = {
+                key: value.copy() for key, value in step_descriptions.items()
+            }
+
+        self._check_required_columns()
+
+    def _check_required_columns(self) -> None:
+        """Check if the required columns are present in the data."""
+        columns = self.lf.collect_schema().names()
         missing_columns = [col for col in required_columns if col not in columns]
         if missing_columns:
             error_msg = f"Missing required columns: {missing_columns}"
             logger.error(error_msg)
             raise ValueError(error_msg)
-        return dataframe
 
     @property
     def data(self) -> pl.DataFrame:

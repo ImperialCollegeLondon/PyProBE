@@ -15,7 +15,6 @@ import polars as pl
 from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
-from pydantic import BaseModel, Field, field_validator, model_validator
 from scipy.io import savemat
 from tzlocal import get_localzone
 
@@ -52,7 +51,7 @@ def _validate_timezone(timezone: str) -> str:
         raise ValueError(error_msg) from e
 
 
-class Result(BaseModel):
+class Result:
     """A class for holding any data in PyProBE.
 
     A Result object is the base type for every data object in PyProBE. This class
@@ -69,48 +68,43 @@ class Result(BaseModel):
         - :attr:`columns`: A list of column names.
     """
 
-    class Config:
-        """Pydantic configuration."""
+    def __init__(
+        self,
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] | None = None,
+    ) -> None:
+        """Create a Result with explicit constructor validation.
 
-        arbitrary_types_allowed = True
+        Args:
+            lf: A LazyFrame, DataFrame, or a path to a parquet file.
+            info: Dictionary containing metadata about the result.
+            column_definitions: Optional definitions for data columns.
 
-    lf: pl.LazyFrame
-    info: dict[str, Any | None]
-    """Dictionary containing information about the cell."""
-    column_definitions: dict[str, str] = Field(default_factory=dict)
-    """A dictionary containing the definitions of the columns in the data."""
+        Raises:
+            ValueError: If constructor inputs do not match expected types.
+        """
+        if isinstance(lf, str):
+            lf = pl.scan_parquet(lf)
+        if not isinstance(lf, pl.LazyFrame):
+            if isinstance(lf, pl.DataFrame):
+                lf = lf.lazy()
+            elif isinstance(lf, str):
+                lf = pl.scan_parquet(lf)
+            else:
+                raise ValueError(
+                    "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
+                )
+        if not isinstance(info, dict):
+            raise ValueError("info must be a dictionary.")
+        if column_definitions is None:
+            column_definitions = {}
+        elif not isinstance(column_definitions, dict):
+            raise ValueError("column_definitions must be a dictionary.")
 
-    @model_validator(mode="before")
-    @classmethod
-    def _load_base_dataframe(cls, data: Any) -> Any:
-        """Load the base dataframe from a file if provided as a string."""
-        if "base_dataframe" in data:
-            data["lf"] = data.pop("base_dataframe")
-            warning_msg = "'base_dataframe' is deprecated. Please use 'lf' instead."
-            logger.warning(
-                warning_msg,
-            )
-            warnings.warn(
-                warning_msg,
-                DeprecationWarning,
-            )
-        return data
-
-    @field_validator("lf", mode="before")
-    @classmethod
-    def _validate_lf(cls, data: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
-        """Validate that the base dataframe is a LazyFrame."""
-        if isinstance(data, pl.DataFrame):
-            data = data.lazy()
-        return data
-
-    @model_validator(mode="before")
-    @classmethod
-    def _load_lf(cls, data: Any) -> Any:
-        """Load the base dataframe from a file if provided as a string."""
-        if "lf" in data and isinstance(data["lf"], str):
-            data["lf"] = pl.scan_parquet(data["lf"])
-        return data
+        self.lf: pl.LazyFrame = lf
+        self.info = info
+        self.column_definitions = column_definitions.copy()
 
     def collect(self) -> pl.DataFrame:
         """Collect the lazy dataframe into a polars DataFrame.
@@ -613,6 +607,8 @@ class Result(BaseModel):
 
         # Rename date column to "Date"
         new_data = new_data.rename({date_column_name: "Date"})
+        if isinstance(new_data, pl.DataFrame):
+            new_data = new_data.lazy()
         new_result = Result(lf=new_data, info={})
 
         if align_on is not None:
@@ -887,6 +883,8 @@ class Result(BaseModel):
                 )
                 data.append(step_data)
         data = pl.concat(data)
+        if isinstance(data, pl.DataFrame):
+            data = data.lazy()
         return cls(lf=data, info=info)
 
     def export_to_mat(self, filename: str) -> None:
@@ -983,11 +981,10 @@ class Result(BaseModel):
             )
 
         """
-        return Result(
-            lf=polars_io_func(**kwargs),
-            info=info,
-            column_definitions=column_definitions,
-        )
+        lf = polars_io_func(**kwargs)
+        if isinstance(lf, pl.DataFrame):
+            lf = lf.lazy()
+        return Result(lf=lf, info=info, column_definitions=column_definitions)
 
     @property
     @deprecated(

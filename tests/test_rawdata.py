@@ -30,7 +30,7 @@ def test_init(RawData_fixture, step_descriptions_fixture):
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
-        RawData(lf=data, info={"test": 1})
+        RawData(lf=data.lazy(), info={"test": 1})
 
 
 def test_data(RawData_fixture):
@@ -170,7 +170,7 @@ def test_pybamm_experiment():
     }
 
     raw_data = RawData(
-        lf=test_data,
+        lf=test_data.lazy(),
         info={},
         step_descriptions=step_descriptions,
     )
@@ -201,7 +201,7 @@ def test_pybamm_experiment_missing_descriptions():
     }
 
     raw_data = RawData(
-        lf=test_data,
+        lf=test_data.lazy(),
         info={},
         step_descriptions=step_descriptions,
     )
@@ -232,7 +232,7 @@ def test_pybamm_experiment_multiple_conditions():
     }
 
     raw_data = RawData(
-        lf=test_data,
+        lf=test_data.lazy(),
         info={},
         step_descriptions=step_descriptions,
     )
@@ -263,7 +263,7 @@ def test_pybamm_experiment_with_loops():
         "Description": ["Discharge at C/10", "Rest for 1 hour"],
     }
 
-    data = RawData(lf=base_df, info={}, step_descriptions=step_descriptions)
+    data = RawData(lf=base_df.lazy(), info={}, step_descriptions=step_descriptions)
 
     expected = [
         "Discharge at C/10",  # Step 1
