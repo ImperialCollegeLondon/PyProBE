@@ -312,9 +312,28 @@ class Procedure(RawData):
     :code:`(start step (inclusive), end step (inclusive), cycle count)`.
     """
 
-    def model_post_init(self, __context: Any) -> None:
+    def __init__(
+        self,
+        lf: pl.LazyFrame | str,
+        info: dict[str, Any | None],
+        readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]],
+        column_definitions: dict[str, str] | None = None,
+        step_descriptions: dict[str, list[str | int | None]] | None = None,
+        cycle_info: list[tuple[int, int, int]] | None = None,
+    ) -> None:
+        """Initialize a procedure with README-derived experiment metadata."""
+        super().__init__(
+            lf=lf,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
+        self.readme_dict = readme_dict
+        self.cycle_info = cycle_info.copy() if cycle_info is not None else []
+        self._initialize_procedure()
+
+    def _initialize_procedure(self) -> None:
         """Create a procedure class."""
-        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Procedure Time [s]",
@@ -408,7 +427,7 @@ class Procedure(RawData):
         ]
         for experiment_name in experiment_names:
             self.readme_dict.pop(experiment_name)
-        self.model_post_init(self)
+        self._initialize_procedure()
         self.lf = self.lf.filter(conditions)
 
     @property
@@ -466,9 +485,26 @@ class Experiment(RawData):
     :code:`(start step (inclusive), end step (inclusive), cycle count)`.
     """
 
-    def model_post_init(self, __context: Any) -> None:
+    def __init__(
+        self,
+        lf: pl.LazyFrame | str,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] | None = None,
+        step_descriptions: dict[str, list[str | int | None]] | None = None,
+        cycle_info: list[tuple[int, int, int]] | None = None,
+    ) -> None:
+        """Initialize an experiment view with optional cycle metadata."""
+        super().__init__(
+            lf=lf,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
+        self.cycle_info = cycle_info.copy() if cycle_info is not None else []
+        self._initialize_experiment()
+
+    def _initialize_experiment(self) -> None:
         """Create an experiment class."""
-        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Experiment Time [s]",
@@ -501,9 +537,26 @@ class Cycle(RawData):
     :code:`(start step (inclusive), end step (inclusive), cycle count)`.
     """
 
-    def model_post_init(self, __context: Any) -> None:
+    def __init__(
+        self,
+        lf: pl.LazyFrame | str,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] | None = None,
+        step_descriptions: dict[str, list[str | int | None]] | None = None,
+        cycle_info: list[tuple[int, int, int]] | None = None,
+    ) -> None:
+        """Initialize a cycle view with optional nested cycle metadata."""
+        super().__init__(
+            lf=lf,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
+        self.cycle_info = cycle_info.copy() if cycle_info is not None else []
+        self._initialize_cycle()
+
+    def _initialize_cycle(self) -> None:
         """Create a cycle class."""
-        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Cycle Time [s]",
@@ -528,9 +581,24 @@ class Cycle(RawData):
 class Step(RawData):
     """A class for a step in a battery experimental procedure."""
 
-    def model_post_init(self, __context: Any) -> None:
+    def __init__(
+        self,
+        lf: pl.LazyFrame | str,
+        info: dict[str, Any | None],
+        column_definitions: dict[str, str] | None = None,
+        step_descriptions: dict[str, list[str | int | None]] | None = None,
+    ) -> None:
+        """Initialize a step view with inherited metadata and definitions."""
+        super().__init__(
+            lf=lf,
+            info=info,
+            column_definitions=column_definitions,
+            step_descriptions=step_descriptions,
+        )
+        self._initialize_step()
+
+    def _initialize_step(self) -> None:
         """Create a step class."""
-        super().model_post_init(self)
         self.zero_column(
             "Time [s]",
             "Step Time [s]",

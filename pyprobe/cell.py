@@ -423,8 +423,11 @@ class Cell(BaseModel):
             zip_file = False
         if not os.path.exists(path):
             os.makedirs(path)
-        metadata = self.dict()
-        metadata["PyProBE Version"] = __version__
+        metadata: dict[str, Any] = {
+            "info": self.info,
+            "procedure": {},
+            "PyProBE Version": __version__,
+        }
         for procedure_name, procedure in self.procedure.items():
             if isinstance(procedure.lf, pl.LazyFrame):
                 df = procedure.lf.collect()
@@ -434,8 +437,14 @@ class Cell(BaseModel):
             filename = procedure_name + ".parquet"
             filepath = os.path.join(path, filename)
             df.write_parquet(filepath)
-            # update the metadata with the filename
-            metadata["procedure"][procedure_name]["lf"] = filename
+            metadata["procedure"][procedure_name] = {
+                "lf": filename,
+                "info": procedure.info,
+                "column_definitions": procedure.column_definitions,
+                "step_descriptions": procedure.step_descriptions,
+                "readme_dict": procedure.readme_dict,
+                "cycle_info": procedure.cycle_info,
+            }
         with open(os.path.join(path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
 
@@ -810,12 +819,22 @@ def load_archive(path: str) -> Cell:
             f" issues.",
         )
     metadata.pop("PyProBE Version")
-    for procedure in metadata["procedure"].values():
-        procedure["lf"] = os.path.join(
-            archive_path,
-            procedure["lf"],
+    cell = Cell(info=metadata["info"])
+    for procedure_name, procedure in metadata["procedure"].items():
+        readme_dict = procedure.get("readme_dict", {})
+        for experiment_data in readme_dict.values():
+            if "Cycles" in experiment_data:
+                experiment_data["Cycles"] = [
+                    tuple(cycle) for cycle in experiment_data["Cycles"]
+                ]
+        cell.procedure[procedure_name] = Procedure(
+            lf=os.path.join(archive_path, procedure["lf"]),
+            info=procedure.get("info", cell.info),
+            readme_dict=readme_dict,
+            column_definitions=procedure.get("column_definitions"),
+            step_descriptions=procedure.get("step_descriptions"),
+            cycle_info=procedure.get("cycle_info"),
         )
-    cell = Cell(**metadata)
 
     return cell
 
