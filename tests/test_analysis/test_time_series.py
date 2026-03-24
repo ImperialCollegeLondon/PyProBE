@@ -50,8 +50,8 @@ def test_align_data():
         }
     ).lazy()
 
-    result1 = Result(lf=df1, info={})
-    result2 = Result(lf=df2, info={})
+    result1 = Result(lf=df1, metadata={})
+    result2 = Result(lf=df2, metadata={})
 
     r1, r2 = align_data(result1, result2, "Signal", "Signal")
 

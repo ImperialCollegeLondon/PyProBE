@@ -93,7 +93,7 @@ def _step(
         )
     return Step(
         lf=lf,
-        info=filtered_object.info,
+        metadata=filtered_object.metadata,
         column_definitions=filtered_object.column_definitions,
         step_descriptions=filtered_object.step_descriptions,
     )
@@ -161,7 +161,7 @@ def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cy
 
     return Cycle(
         lf=lf_filtered,
-        info=filtered_object.info,
+        metadata=filtered_object.metadata,
         column_definitions=filtered_object.column_definitions,
         step_descriptions=filtered_object.step_descriptions,
         cycle_info=next_cycle_info,
@@ -302,29 +302,29 @@ def _constant_voltage(
 class Procedure(RawData):
     """A class for a procedure in a battery experiment."""
 
-    readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]]
-    """A dictionary representing the data contained in the README yaml file."""
-
-    cycle_info: list[tuple[int, int, int]] = []
-    """A list of tuples representing the cycle information from the README yaml file.
-
-    The tuple format is
-    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
-    """
-
     def __init__(
         self,
-        lf: pl.LazyFrame | str,
-        info: dict[str, Any | None],
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        metadata: dict[str, Any | None],
         readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
     ) -> None:
-        """Initialize a procedure with README-derived experiment metadata."""
+        """Initialize a procedure with README-derived experiment metadata.
+
+        Args:
+            lf: A LazyFrame, DataFrame, or a path to a parquet file.
+            metadata: Dictionary containing metadata about the procedure and
+                data source.
+            readme_dict: Experiment definitions from README.
+            column_definitions: Column descriptions.
+            step_descriptions: Step-by-step descriptions.
+            cycle_info: Cycle boundary information.
+        """
         super().__init__(
             lf=lf,
-            info=info,
+            metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
         )
@@ -401,7 +401,7 @@ class Procedure(RawData):
 
         return Experiment(
             lf=lf_filtered,
-            info=self.info,
+            metadata=self.metadata,
             column_definitions=self.column_definitions,
             step_descriptions=self.step_descriptions,
             cycle_info=cycles_list,
@@ -487,16 +487,25 @@ class Experiment(RawData):
 
     def __init__(
         self,
-        lf: pl.LazyFrame | str,
-        info: dict[str, Any | None],
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        metadata: dict[str, Any | None],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
     ) -> None:
-        """Initialize an experiment view with optional cycle metadata."""
+        """Initialize an experiment view with optional cycle metadata.
+
+        Args:
+            lf: A LazyFrame, DataFrame, or a path to a parquet file.
+            metadata: Dictionary containing metadata about the experiment and
+                data source.
+            column_definitions: Column descriptions.
+            step_descriptions: Step-by-step descriptions.
+            cycle_info: Cycle boundary information.
+        """
         super().__init__(
             lf=lf,
-            info=info,
+            metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
         )
@@ -539,16 +548,24 @@ class Cycle(RawData):
 
     def __init__(
         self,
-        lf: pl.LazyFrame | str,
-        info: dict[str, Any | None],
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        metadata: dict[str, Any | None],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
     ) -> None:
-        """Initialize a cycle view with optional nested cycle metadata."""
+        """Initialize a cycle view with optional nested cycle metadata.
+
+        Args:
+            lf: A LazyFrame, DataFrame, or a path to a parquet file.
+            metadata: Dictionary containing metadata about the cycle and data source.
+            column_definitions: Column descriptions.
+            step_descriptions: Step-by-step descriptions.
+            cycle_info: Cycle boundary information.
+        """
         super().__init__(
             lf=lf,
-            info=info,
+            metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
         )
@@ -583,15 +600,22 @@ class Step(RawData):
 
     def __init__(
         self,
-        lf: pl.LazyFrame | str,
-        info: dict[str, Any | None],
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        metadata: dict[str, Any | None],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
     ) -> None:
-        """Initialize a step view with inherited metadata and definitions."""
+        """Initialize a step view.
+
+        Args:
+            lf: A LazyFrame, DataFrame, or a path to a parquet file.
+            metadata: Dictionary containing metadata about the step and data source.
+            column_definitions: Column descriptions.
+            step_descriptions: Step-by-step descriptions.
+        """
         super().__init__(
             lf=lf,
-            info=info,
+            metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
         )

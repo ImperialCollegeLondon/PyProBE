@@ -61,15 +61,17 @@ class RawData(Result):
 
     def __init__(
         self,
-        lf: pl.LazyFrame | str,
-        info: dict[str, Any | None],
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        metadata: dict[str, Any | None],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
     ) -> None:
         """Create a RawData object with required-column validation."""
         if column_definitions is None:
             column_definitions = default_column_definitions.copy()
-        super().__init__(lf=lf, info=info, column_definitions=column_definitions)
+        super().__init__(
+            lf=lf, metadata=metadata, column_definitions=column_definitions
+        )
 
         if step_descriptions is None:
             self.step_descriptions = {}
