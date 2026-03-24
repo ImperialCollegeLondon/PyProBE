@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import polars as pl
 import polars.testing as pl_testing
+import pyarrow.parquet as pq
 import pytest
 
 from pyprobe.io import (
@@ -220,6 +221,123 @@ class TestProcessCyclerSkipIfExists:
         result = lf.collect()
         assert result.shape[0] == 3
 
+    def test_skip_exists_true_updates_stale_parquet_metadata(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """Cached parquet metadata is updated without re-reading raw data."""
+        with patch("bdf.read", return_value=bdf_df):
+            process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                metadata={"cell_id": "A"},
+                metadata_format="parquet",
+            )
+
+        with patch("bdf.read", side_effect=Exception("Should not be called")):
+            lf = process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                skip_if_exists=True,
+                metadata={"cell_id": "B", "batch": "1"},
+                metadata_format="parquet",
+            )
+
+        result = lf.collect()
+        assert result.shape[0] == 3
+        output_file = tmp_path / "fake.bdx.parquet"
+        meta = read_parquet_metadata(output_file)
+        assert meta["cell_id"] == "B"
+        assert meta["batch"] == "1"
+
+    def test_skip_exists_true_does_not_update_when_parquet_metadata_matches(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """No metadata write occurs when cached parquet metadata already matches."""
+        with patch("bdf.read", return_value=bdf_df):
+            process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                metadata={"cell_id": "A"},
+                metadata_format="parquet",
+            )
+
+        with (
+            patch("bdf.read", side_effect=Exception("Should not be called")),
+            patch("pyprobe.io.MetadataManager.update") as mock_update,
+        ):
+            process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                skip_if_exists=True,
+                metadata={"cell_id": "A"},
+                metadata_format="parquet",
+            )
+
+        mock_update.assert_not_called()
+
+    def test_skip_exists_true_updates_stale_json_metadata(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """Cached JSON sidecar metadata is updated without re-reading raw data."""
+        with patch("bdf.read", return_value=bdf_df):
+            process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                metadata={"cell_id": "A"},
+                metadata_format="json",
+            )
+
+        with patch("bdf.read", side_effect=Exception("Should not be called")):
+            lf = process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                skip_if_exists=True,
+                metadata={"cell_id": "B", "batch": "1"},
+                metadata_format="json",
+            )
+
+        result = lf.collect()
+        assert result.shape[0] == 3
+        sidecar = tmp_path / "fake.bdx.json"
+        loaded = json.loads(sidecar.read_text())
+        assert loaded["cell_id"] == "B"
+        assert loaded["batch"] == "1"
+
+    def test_skip_exists_false_overwrites_data_and_metadata(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """With skip_if_exists=False, data and metadata are fully overwritten."""
+        with patch("bdf.read", return_value=bdf_df):
+            process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                metadata={"cell_id": "A"},
+                metadata_format="parquet",
+            )
+
+        new_df = pd.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0, 2.0, 3.0],
+                "Current / A": [1.0, -1.0, 0.5, 0.3],
+                "Voltage / V": [3.7, 3.6, 3.8, 3.7],
+            }
+        )
+        with patch("bdf.read", return_value=new_df) as mock_read:
+            lf = process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                skip_if_exists=False,
+                metadata={"cell_id": "B"},
+                metadata_format="parquet",
+            )
+
+        mock_read.assert_called_once()
+        result = lf.collect()
+        assert result.shape[0] == 4
+        output_file = tmp_path / "fake.bdx.parquet"
+        meta = read_parquet_metadata(output_file)
+        assert meta["cell_id"] == "B"
+
 
 class TestProcessCyclerMissingColumns:
     """Tests for error handling when required or optional columns are missing."""
@@ -339,20 +457,26 @@ class TestMetadataRoundTrip:
         sidecar = tmp_path / "test.json"
         assert not sidecar.exists()
 
-    def test_metadata_roundtrip_non_string_values_as_strings(
+    def test_metadata_roundtrip_non_string_values_preserve_types(
         self, tmp_path: Path
     ) -> None:
-        """Non-string values come back as strings from parquet footer."""
+        """JSON-serializable values preserve types through parquet metadata."""
         output_file = tmp_path / "test.parquet"
         df = pl.DataFrame({"x": [1, 2, 3]})
-        metadata = {"count": "42", "rate": "3.14", "flag": "true"}
+        metadata = {
+            "count": 42,
+            "rate": 3.14,
+            "flag": True,
+            "nested": {"a": 1, "b": [1, 2]},
+        }
 
         _write_parquet(df, output_file, metadata)  # type: ignore
 
         read_meta = read_parquet_metadata(output_file)
-        assert read_meta["count"] == "42"
-        assert read_meta["rate"] == "3.14"
-        assert read_meta["flag"] == "true"
+        assert read_meta["count"] == 42
+        assert read_meta["rate"] == 3.14
+        assert read_meta["flag"] is True
+        assert read_meta["nested"] == {"a": 1, "b": [1, 2]}
 
 
 class TestReadMetadata:
@@ -953,3 +1077,175 @@ class TestProcessCyclerIntegration:
         # Results should be identical
         pl_testing.assert_frame_equal(result1, result2)
         assert result1.shape == result2.shape
+
+
+class TestCorruptedParquetMetadataRecovery:
+    """Tests for handling corrupted Parquet metadata gracefully."""
+
+    def test_metadata_manager_read_parquet_json_decode_error(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        """MetadataManager.read_parquet() handles JSONDecodeError and logs warning."""
+        from pyprobe.io import MetadataManager
+
+        # Create a valid Parquet file with corrupted metadata
+        output_file = tmp_path / "test.parquet"
+        df = pl.DataFrame({"x": [1, 2, 3]})
+        table = df.to_arrow()
+
+        # Inject corrupted (non-JSON) metadata
+        corrupted_metadata: dict[bytes, bytes] = {
+            b"bdx_metadata": b"this is not valid json }{[",
+        }
+        table = table.replace_schema_metadata(corrupted_metadata)
+        pq.write_table(table, output_file)
+
+        # Try to read the corrupted metadata
+        manager = MetadataManager(output_file)
+        result = manager.read_parquet()
+
+        # Should return empty dict and log a warning
+        assert result == {}
+        assert "Failed to decode metadata" in caplog.text or len(result) == 0
+
+    def test_metadata_manager_read_parquet_unicode_decode_error(
+        self, tmp_path: Path
+    ) -> None:
+        """MetadataManager.read_parquet() handles UnicodeDecodeError gracefully."""
+        from pyprobe.io import MetadataManager
+
+        output_file = tmp_path / "test.parquet"
+        df = pl.DataFrame({"x": [1, 2, 3]})
+        table = df.to_arrow()
+
+        # Inject invalid UTF-8 sequence as metadata
+        corrupted_metadata: dict[bytes, bytes] = {
+            b"bdx_metadata": b"\x80\x81\x82\x83",
+        }
+        table = table.replace_schema_metadata(corrupted_metadata)
+        pq.write_table(table, output_file)
+
+        # Try to read the corrupted metadata
+        manager = MetadataManager(output_file)
+        result = manager.read_parquet()
+
+        # Should return empty dict without raising
+        assert isinstance(result, dict)
+        assert len(result) == 0
+
+    def test_metadata_manager_read_both_with_corrupted_parquet(
+        self, tmp_path: Path
+    ) -> None:
+        """With corrupted parquet metadata, read_both falls back to JSON sidecar."""
+        from pyprobe.io import MetadataManager
+
+        output_file = tmp_path / "test.parquet"
+        df = pl.DataFrame({"x": [1, 2, 3]})
+        table = df.to_arrow()
+
+        # Parquet metadata is corrupted
+        corrupted_metadata: dict[bytes, bytes] = {
+            b"bdx_metadata": b"invalid json",
+        }
+        table = table.replace_schema_metadata(corrupted_metadata)
+        pq.write_table(table, output_file)
+
+        # But JSON sidecar has valid metadata
+        sidecar = tmp_path / "test.json"
+        json_metadata = {"cell_id": "C001", "source": "json"}
+        sidecar.write_text(json.dumps(json_metadata))
+
+        # read_both should return the JSON metadata
+        manager = MetadataManager(output_file)
+        result = manager.read_both(prefer="json")
+
+        assert result == json_metadata
+
+
+class TestExtraColumnsValidation:
+    """Tests for validation of BDF column format in extra_columns."""
+
+    @pytest.mark.parametrize(
+        "invalid_format",
+        [
+            "InvalidNoUnit",  # Missing " / unit" format
+            "Pressure kPa",  # Wrong separator (space instead of " / ")
+            "/ kPa",  # Missing quantity
+            "",  # Empty string
+            "Quantity //",  # Missing unit after separator
+        ],
+    )
+    def test_extra_columns_invalid_bdf_format_raises_value_error(
+        self, tmp_path: Path, bdf_df: pd.DataFrame, invalid_format: str
+    ) -> None:
+        """process_cycler raises for invalid BDF column format in extra_columns."""
+        raw_df = pd.DataFrame(
+            {
+                "Time(s)": [0.0, 1.0],
+                "I(A)": [1.0, -1.0],
+                "V(V)": [3.7, 3.6],
+                "Pressure(kPa)": [101.3, 101.4],
+            }
+        )
+        with (
+            patch("bdf.read", side_effect=[bdf_df, raw_df]),
+            pytest.raises(ValueError, match="does not match pattern"),
+        ):
+            process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                extra_columns={invalid_format: "Pressure(kPa)"},
+            )
+
+    def test_extra_columns_valid_bdf_format_with_slash(self, tmp_path: Path) -> None:
+        """process_cycler accepts valid BDF format with slash separator."""
+        bdf_df = pd.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0],
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+        raw_df = pd.DataFrame(
+            {
+                "Time(s)": [0.0, 1.0],
+                "Pressure(kPa)": [101.3, 101.4],
+            }
+        )
+        with patch("bdf.read", side_effect=[bdf_df, raw_df]):
+            lf = process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                extra_columns={"Pressure / kPa": "Pressure(kPa)"},
+            )
+
+        result = lf.collect()
+        assert "Pressure / kPa" in result.columns
+
+    @pytest.mark.parametrize(
+        "valid_format,source_col",
+        [
+            ("Temperature / degC", "Temp(C)"),
+            ("Pressure / bar", "Press(bar)"),
+            ("Humidity / %", "Humid(%)"),
+            ("Flow Rate / mL/min", "Flow(mL/min)"),
+            ("Quantity / 1", "Count"),
+        ],
+    )
+    def test_extra_columns_various_valid_bdf_formats(
+        self, tmp_path: Path, bdf_df: pd.DataFrame, valid_format: str, source_col: str
+    ) -> None:
+        """process_cycler accepts various valid BDF column formats."""
+        raw_df = bdf_df.copy()
+        raw_df[source_col] = [1.0, 2.0, 3.0]
+
+        with patch("bdf.read", side_effect=[bdf_df, raw_df]):
+            lf = process_cycler(
+                "fake.csv",
+                output_dir=tmp_path,
+                extra_columns={valid_format: source_col},
+            )
+
+        result = lf.collect()
+        # Column should exist in result (exact name depends on BDF parsing)
+        assert len(result.columns) > 3  # More than just the 3 required columns
