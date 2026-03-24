@@ -62,7 +62,8 @@ class Result:
         - :meth:`get`: Get a column from the data as a NumPy array.
 
     Key attributes for describing the data:
-        - :attr:`info`: A dictionary containing information about the cell.
+        - :attr:`metadata`: A dictionary containing metadata about the cell and
+          data source.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
         - :attr:`columns`: A list of column names.
@@ -71,19 +72,29 @@ class Result:
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        info: dict[str, Any | None],
+        metadata: dict[str, Any | None] | None = None,
         column_definitions: dict[str, str] | None = None,
+        info: dict[str, Any | None] | None = None,
     ) -> None:
         """Create a Result with explicit constructor validation.
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            info: Dictionary containing metadata about the result.
+            metadata: Dictionary containing metadata about the result.
             column_definitions: Optional definitions for data columns.
+            info: Deprecated. Use metadata instead.
 
         Raises:
             ValueError: If constructor inputs do not match expected types.
         """
+        # Handle backward compatibility: accept both 'info' and 'metadata'
+        if info is not None and metadata is not None:
+            raise ValueError("Cannot specify both 'info' and 'metadata' parameters.")
+        if info is not None:
+            metadata = info
+        if metadata is None:
+            metadata = {}
+
         if isinstance(lf, str):
             lf = pl.scan_parquet(lf)
         if not isinstance(lf, pl.LazyFrame):
@@ -95,15 +106,15 @@ class Result:
                 raise ValueError(
                     "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
                 )
-        if not isinstance(info, dict):
-            raise ValueError("info must be a dictionary.")
+        if not isinstance(metadata, dict):
+            raise ValueError("metadata must be a dictionary.")
         if column_definitions is None:
             column_definitions = {}
         elif not isinstance(column_definitions, dict):
             raise ValueError("column_definitions must be a dictionary.")
 
         self.lf: pl.LazyFrame = lf
-        self.info = info
+        self.metadata = metadata
         self.column_definitions = column_definitions.copy()
 
     def collect(self) -> pl.DataFrame:
@@ -128,6 +139,15 @@ class Result:
             List[str]: The columns in the data.
         """
         return self.lf.collect_schema().names()
+
+    @property
+    def info(self) -> dict[str, Any | None]:
+        """Backward compatibility alias for metadata.
+
+        Returns:
+            dict: The metadata dictionary.
+        """
+        return self.metadata
 
     @staticmethod
     def _get_quantities(columns: list[str]) -> list[str]:
@@ -294,7 +314,7 @@ class Result:
         self.check_columns(list(column_names))
         return Result(
             lf=self.lf.select(*column_names),
-            info=self.info,
+            metadata=self.metadata,
         )
 
     def get(
@@ -386,7 +406,7 @@ class Result:
             column_definitions = {}
         return Result(
             lf=dataframe,
-            info=self.info,
+            metadata=self.metadata,
             column_definitions=column_definitions,
         )
 
@@ -609,7 +629,7 @@ class Result:
         new_data = new_data.rename({date_column_name: "Date"})
         if isinstance(new_data, pl.DataFrame):
             new_data = new_data.lazy()
-        new_result = Result(lf=new_data, info={})
+        new_result = Result(lf=new_data, metadata={})
 
         if align_on is not None:
             from pyprobe.analysis.time_series import align_data
@@ -885,7 +905,7 @@ class Result:
         data = pl.concat(data)
         if isinstance(data, pl.DataFrame):
             data = data.lazy()
-        return cls(lf=data, info=info)
+        return cls(lf=data, metadata=info)
 
     def export_to_mat(self, filename: str) -> None:
         """Export the data to a .mat file.
@@ -907,7 +927,7 @@ class Result:
         # Replace any non-alphanumeric character with an underscore in the info
         # dictionary keys
         renamed_info = {
-            re.sub(r"\W", "_", key): value for key, value in self.info.items()
+            re.sub(r"\W", "_", key): value for key, value in self.metadata.items()
         }
 
         variable_dict = {
@@ -952,7 +972,7 @@ class Result:
 
             result = Result.from_polars_io(
                 pl.scan_csv,
-                info={"test": "test"},
+                metadata={"test": "test"},
                 column_definitions={},
                 source="data.csv",
             )
@@ -963,7 +983,7 @@ class Result:
 
             result = Result.from_polars_io(
                 pl.from_pandas,
-                info={"test": "test"},
+                metadata={"test": "test"},
                 column_definitions={},
                 data=pd.DataFrame({"a": [1, 2, 3]}),
             )
@@ -974,7 +994,7 @@ class Result:
 
             result = Result.from_polars_io(
                 pl.from_numpy,
-                info={"test": "test"},
+                metadata={"test": "test"},
                 column_definitions={},
                 data=np.array([[1, 2, 3], [4, 5, 6]]),
                 schema=["a", "b"]
@@ -984,7 +1004,7 @@ class Result:
         lf = polars_io_func(**kwargs)
         if isinstance(lf, pl.DataFrame):
             lf = lf.lazy()
-        return Result(lf=lf, info=info, column_definitions=column_definitions)
+        return Result(lf=lf, metadata=info, column_definitions=column_definitions)
 
     @property
     @deprecated(
@@ -1057,7 +1077,9 @@ def combine_results(
         Result: A new result object with the combined data.
     """
     for result in results:
-        instructions = [pl.lit(result.info[key]).alias(key) for key in result.info]
+        instructions = [
+            pl.lit(result.metadata[key]).alias(key) for key in result.metadata
+        ]
         result.lf = result.lf.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]

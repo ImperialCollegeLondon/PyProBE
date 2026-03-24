@@ -24,7 +24,7 @@ def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
     return Result(
         lf=lazyframe_fixture,
-        info=info_fixture,
+        metadata=info_fixture,
         column_definitions={
             "Current": "Current definition",
         },
@@ -40,7 +40,7 @@ def test_init(Result_fixture):
 
 def test_init_accepts_dataframe():
     """Test that DataFrame input is converted to LazyFrame at construction."""
-    result = Result(lf=pl.DataFrame({"a": [1, 2, 3]}), info={})
+    result = Result(lf=pl.DataFrame({"a": [1, 2, 3]}), metadata={})
     assert isinstance(result.lf, pl.LazyFrame)
     pl_testing.assert_frame_equal(result.data, pl.DataFrame({"a": [1, 2, 3]}))
 
@@ -229,7 +229,7 @@ def test_add_data():
             "Data 2": [4, 8, 12, 16, 20, 24],
         },
     )
-    result_object = Result(lf=existing_data, info={})
+    result_object = Result(lf=existing_data, metadata={})
     result_object.add_data(
         new_data,
         date_column_name="DateTime",
@@ -285,7 +285,7 @@ def test_add_new_data_columns_deprecated():
             "Data 1": [2, 4, 6, 8, 10, 12],
         },
     )
-    result_object = Result(lf=existing_data, info={})
+    result_object = Result(lf=existing_data, metadata={})
 
     with patch("pyprobe.utils.logger.warning") as mock_warning:
         result_object.add_new_data_columns(new_data, date_column_name="DateTime")
@@ -306,7 +306,7 @@ def test_add_data_timezone_handling():
         {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(new_data, date_column_name="DateUTC")
 
     schema = result.lf.collect_schema()
@@ -322,7 +322,7 @@ def test_add_data_timezone_handling():
         {"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]}
     )
 
-    result2 = Result(lf=existing_data_naive, info={})
+    result2 = Result(lf=existing_data_naive, metadata={})
     result2.add_data(
         new_data_naive,
         date_column_name="DateNew",
@@ -361,7 +361,7 @@ def test_add_data_invalid_existing_timezone():
         {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
     )
     new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
 
     with pytest.raises(ValueError, match="Invalid timezone"):
         result.add_data(
@@ -377,7 +377,7 @@ def test_add_data_invalid_new_timezone():
         {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
     )
     new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
 
     with pytest.raises(ValueError, match="Invalid timezone"):
         result.add_data(
@@ -409,7 +409,7 @@ def test_add_data_uses_local_timezone_when_not_specified():
         {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(new_data, date_column_name="DateUTC")
 
     schema = result.lf.collect_schema()
@@ -426,7 +426,7 @@ def test_add_data_with_format():
 
     new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data, date_column_name="DateStr", datetime_format="%Y/%m/%d %H:%M:%S"
     )
@@ -468,7 +468,7 @@ def test_add_data_join_strategy_keep_existing():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -520,7 +520,7 @@ def test_add_data_join_strategy_keep_new():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -569,7 +569,7 @@ def test_add_data_join_strategy_keep_both():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -632,7 +632,7 @@ def test_add_data_fill_strategy_forward_fill():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -681,7 +681,7 @@ def test_add_data_fill_strategy_backward_fill():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -733,7 +733,7 @@ def test_add_data_fill_strategy_none():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -778,7 +778,7 @@ def test_add_data_combined_strategies():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -880,7 +880,7 @@ def test_add_data_all_join_fill_strategy_combinations(
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     result.add_data(
         new_data,
         date_column_name="DateTime",
@@ -921,7 +921,7 @@ def test_add_data_invalid_join_strategy_raises():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     with pytest.raises(
         ValueError,
         match=(
@@ -952,7 +952,7 @@ def test_add_data_invalid_fill_strategy_raises():
         },
     )
 
-    result = Result(lf=existing_data, info={})
+    result = Result(lf=existing_data, metadata={})
     with pytest.raises(
         ValueError,
         match=(
@@ -1384,7 +1384,7 @@ def test_add_data_with_alignment():
         }
     )
 
-    result = Result(lf=base_df.lazy(), info={})
+    result = Result(lf=base_df.lazy(), metadata={})
 
     # Add data with alignment
     result.add_data(
@@ -1410,7 +1410,7 @@ def test_add_data_with_alignment_error():
     start_time = datetime(2023, 1, 1, 10, 0, 0)
     base_df = pl.DataFrame({"Date": [start_time], "Signal": [1.0]})
     new_df = pl.DataFrame({"DateNew": [start_time], "SignalNew": [1.0]})
-    result = Result(lf=base_df.lazy(), info={})
+    result = Result(lf=base_df.lazy(), metadata={})
 
     # Test with missing column in base data
     with pytest.raises(ValueError):

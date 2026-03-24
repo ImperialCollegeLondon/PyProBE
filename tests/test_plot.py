@@ -12,7 +12,7 @@ def test_retrieve_relevant_columns_args():
     """Test _retrieve_relevant_columns with positional arguments."""
     # Set up test data
     data = pl.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6], "col3": [7, 8, 9]})
-    result = Result(lf=data, info={})
+    result = Result(lf=data, metadata={})
 
     # Test with args only
     args = ["col1", "col2"]
@@ -27,7 +27,7 @@ def test_retrieve_relevant_columns_args():
 def test_retrieve_relevant_columns_kwargs():
     """Test _retrieve_relevant_columns with keyword arguments."""
     data = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6], "z": [7, 8, 9]})
-    result = Result(lf=data, info={})
+    result = Result(lf=data, metadata={})
 
     # Test with kwargs only
     args = []
@@ -42,7 +42,7 @@ def test_retrieve_relevant_columns_kwargs():
 def test_retrieve_relevant_columns_mixed():
     """Test _retrieve_relevant_columns with both args and kwargs."""
     data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    result = Result(lf=data, info={})
+    result = Result(lf=data, metadata={})
 
     args = ["a"]
     kwargs = {"col": "b"}
@@ -56,7 +56,7 @@ def test_retrieve_relevant_columns_mixed():
 def test_retrieve_relevant_columns_lazy():
     """Test _retrieve_relevant_columns with LazyFrame."""
     data = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]}).lazy()
-    result = Result(lf=data, info={})
+    result = Result(lf=data, metadata={})
 
     args = ["x"]
     kwargs = {"y_col": "y"}
@@ -70,7 +70,7 @@ def test_retrieve_relevant_columns_lazy():
 def test_retrieve_relevant_columns_intersection():
     """Test _retrieve_relevant_columns column intersection behavior."""
     data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    result = Result(lf=data, info={})
+    result = Result(lf=data, metadata={})
 
     # Request columns including ones that don't exist
     args = ["a", "nonexistent1"]
@@ -85,7 +85,7 @@ def test_retrieve_relevant_columns_intersection():
 def test_retrieve_relevant_columns_no_columns():
     """Test _retrieve_relevant_columns with no columns."""
     data = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    result = Result(lf=data, info={})
+    result = Result(lf=data, metadata={})
 
     # Request columns that don't exist
     args = ["nonexistent1"]
@@ -100,7 +100,7 @@ def test_retrieve_relevant_columns_with_unit_conversion():
     data = pl.DataFrame({"I [A]": [1, 2, 3], "V [V]": [4, 5, 6]})
     result = Result(
         lf=data,
-        info={},
+        metadata={},
         column_definitions={"I": "Current", "V": "Voltage"},
     )
 
@@ -127,7 +127,7 @@ def test_seaborn_wrapper_data_conversion(mocker):
     sns = pytest.importorskip("seaborn")
     result = Result(
         lf=pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]}),
-        info={},
+        metadata={},
         column_definitions={"x": "int", "y": "int"},
     )
     data = result.data.to_pandas()

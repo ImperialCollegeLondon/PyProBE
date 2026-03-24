@@ -15,7 +15,7 @@ def RawData_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Result instance."""
     return RawData(
         lf=lazyframe_fixture,
-        info=info_fixture,
+        metadata=info_fixture,
         step_descriptions=step_descriptions_fixture,
     )
 
@@ -30,7 +30,7 @@ def test_init(RawData_fixture, step_descriptions_fixture):
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
-        RawData(lf=data.lazy(), info={"test": 1})
+        RawData(lf=data.lazy(), metadata={"test": 1})
 
 
 def test_data(RawData_fixture):
@@ -133,7 +133,7 @@ def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture)
     """Test that the definitions have been correctly set."""
     rawdata = RawData(
         lf=lazyframe_fixture,
-        info=info_fixture,
+        metadata=info_fixture,
         step_descriptions=step_descriptions_fixture,
     )
     definition_keys = list(rawdata.column_definitions.keys())
@@ -171,7 +171,7 @@ def test_pybamm_experiment():
 
     raw_data = RawData(
         lf=test_data.lazy(),
-        info={},
+        metadata={},
         step_descriptions=step_descriptions,
     )
 
@@ -202,7 +202,7 @@ def test_pybamm_experiment_missing_descriptions():
 
     raw_data = RawData(
         lf=test_data.lazy(),
-        info={},
+        metadata={},
         step_descriptions=step_descriptions,
     )
 
@@ -233,7 +233,7 @@ def test_pybamm_experiment_multiple_conditions():
 
     raw_data = RawData(
         lf=test_data.lazy(),
-        info={},
+        metadata={},
         step_descriptions=step_descriptions,
     )
 
@@ -263,7 +263,7 @@ def test_pybamm_experiment_with_loops():
         "Description": ["Discharge at C/10", "Rest for 1 hour"],
     }
 
-    data = RawData(lf=base_df.lazy(), info={}, step_descriptions=step_descriptions)
+    data = RawData(lf=base_df.lazy(), metadata={}, step_descriptions=step_descriptions)
 
     expected = [
         "Discharge at C/10",  # Step 1

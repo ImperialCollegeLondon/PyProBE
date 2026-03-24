@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 import polars as pl
 from loguru import logger
-from pydantic import BaseModel, Field, ValidationError, validate_call
+from pydantic import BaseModel, Field, ValidationError
 
 from pyprobe._version import __version__
 from pyprobe.cyclers import (
@@ -169,7 +169,7 @@ class Cell(BaseModel):
         self.procedure[procedure_name] = Procedure(
             readme_dict=readme_dict,
             lf=pl.scan_parquet(data_path),
-            info=self.info,
+            metadata=self.info,
         )
 
     def import_from_cycler(
@@ -400,7 +400,7 @@ class Cell(BaseModel):
         # create the procedure object
         self.procedure[procedure_name] = Procedure(
             lf=lf,
-            info=self.info,
+            metadata=self.info,
             readme_dict=experiment_dict,
         )
 
@@ -638,7 +638,6 @@ class Cell(BaseModel):
         "PyProBE format, use the import_data method.",
         version="2.0.1",
     )
-    @validate_call
     def add_procedure(
         self,
         procedure_name: str,
@@ -675,7 +674,7 @@ class Cell(BaseModel):
         self.procedure[procedure_name] = Procedure(
             readme_dict=readme.experiment_dict,
             lf=lf,
-            info=self.info,
+            metadata=self.info,
         )
 
     @deprecated(
@@ -687,7 +686,6 @@ class Cell(BaseModel):
         "PyProBE format, use the import_data method.",
         version="2.0.1",
     )
-    @validate_call
     def quick_add_procedure(
         self,
         procedure_name: str,
@@ -718,7 +716,7 @@ class Cell(BaseModel):
         lf = pl.scan_parquet(output_data_path)
         self.procedure[procedure_name] = Procedure(
             lf=lf,
-            info=self.info,
+            metadata=self.info,
             readme_dict={},
         )
 
@@ -829,7 +827,7 @@ def load_archive(path: str) -> Cell:
                 ]
         cell.procedure[procedure_name] = Procedure(
             lf=os.path.join(archive_path, procedure["lf"]),
-            info=procedure.get("info", cell.info),
+            metadata=procedure.get("metadata", cell.info),
             readme_dict=readme_dict,
             column_definitions=procedure.get("column_definitions"),
             step_descriptions=procedure.get("step_descriptions"),
