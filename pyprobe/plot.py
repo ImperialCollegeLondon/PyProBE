@@ -4,52 +4,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
-import polars as pl
-
 if TYPE_CHECKING:
-    from pyprobe.result import Result
-
-from pyprobe.units import split_quantity_unit
-
-
-def _retrieve_relevant_columns(
-    result_obj: "Result",
-    args: tuple[Any, ...],
-    kwargs: dict[Any, Any],
-) -> pl.DataFrame:
-    """Retrieve relevant columns from a Result object for plotting.
-
-    This function analyses the arguments passed to a plotting function and retrieves the
-    used columns from the Result object.
-
-    Args:
-        result_obj: The Result object.
-        args: The positional arguments passed to the plotting function.
-        kwargs: The keyword arguments passed to the plotting function.
-
-    Returns:
-        A dataframe containing the relevant columns from the Result object.
-    """
-    kwargs_values = [
-        v for k, v in kwargs.items() if isinstance(v, str) and k != "label"
-    ]
-    args_values = [v for v in args if isinstance(v, str)]
-    all_args = set(kwargs_values + args_values)
-    relevant_columns = []
-    for arg in all_args:
-        try:
-            quantity, _ = split_quantity_unit(arg)
-
-        except ValueError:
-            continue
-        if quantity in result_obj.quantities:
-            relevant_columns.append(arg)
-    if len(relevant_columns) == 0:
-        raise ValueError(
-            f"None of the columns in {all_args} are present in the Result object.",
-        )
-    result_obj.check_columns(relevant_columns)
-    return result_obj.lf.select(*relevant_columns).collect()
+    pass
 
 
 try:
@@ -97,11 +53,14 @@ def _create_seaborn_wrapper() -> Any:
                 The result of the wrapped function.
             """
             if "data" in kwargs:
-                kwargs["data"] = _retrieve_relevant_columns(
-                    kwargs["data"],
-                    args,
-                    kwargs,
-                ).to_pandas()
+                kwargs["data"] = (
+                    kwargs["data"]
+                    .get_plotting_data(
+                        args,
+                        kwargs,
+                    )
+                    .to_pandas()
+                )
             if func.__name__ == "lineplot" and "estimator" not in kwargs:
                 kwargs["estimator"] = None
             return func(*args, **kwargs)

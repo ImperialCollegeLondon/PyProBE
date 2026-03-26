@@ -1,15 +1,17 @@
 """A module for the filtering classes."""
 
 import warnings
-from typing import TYPE_CHECKING, Any, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import polars as pl
 
 from pyprobe import utils
+from pyprobe.column import BDF, ColumnSet
 from pyprobe.rawdata import RawData
 
 if TYPE_CHECKING:
-    from pyprobe.pyprobe_types import (  # , FilterToStepType
+    from pyprobe.pyprobe_types import (
         ExperimentOrCycleType,
         FilterToCycleType,
     )
@@ -20,15 +22,15 @@ from loguru import logger
 
 def _filter_numerical(
     dataframe: pl.LazyFrame | pl.DataFrame,
-    column: str,
+    column: str | pl.Expr,
     indices: tuple[int | range, ...],
 ) -> pl.LazyFrame | pl.DataFrame:
-    """Filter a polars Lazyframe or Dataframe by a numerical condition.
+    """Filter a polars LazyFrame or DataFrame by a numerical condition.
 
     Args:
-        dataframe (pl.LazyFrame | pl.DataFrame): A LazyFrame or DataFrame to filter.
-        column (str): The column to filter on.
-        indices (Tuple[Union[int, range], ...]): A tuple of index values to filter by.
+        dataframe: A LazyFrame or DataFrame to filter.
+        column: The column name or expression to filter on.
+        indices: A tuple of index values to filter by.
 
     Returns:
         pl.LazyFrame | pl.DataFrame: A filtered LazyFrame or DataFrame.
@@ -44,13 +46,14 @@ def _filter_numerical(
             index_list.extend([index])
 
     if len(index_list) > 0:
+        col_expr = pl.col(column) if isinstance(column, str) else column
         if all(item >= 0 for item in index_list):
             index_list = [item + 1 for item in index_list]
-            return dataframe.filter(pl.col(column).rank("dense").is_in(index_list))
+            return dataframe.filter(col_expr.rank("dense").is_in(index_list))
         elif all(item < 0 for item in index_list):
             index_list = [item * -1 for item in index_list]
             return dataframe.filter(
-                pl.col(column).rank("dense", descending=True).is_in(index_list),
+                col_expr.rank("dense", descending=True).is_in(index_list),
             )
         else:
             error_msg = "Indices must be all positive or all negative."
@@ -65,30 +68,28 @@ def _step(
     *step_numbers: int | range,
     condition: pl.Expr | None = None,
 ) -> "Step":
-    """Return a step object. Filters to a numerical condition on the Event column.
+    """Return a step object. Filters to a numerical condition on the Step Index column.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        step_numbers (int | range):
-            Variable-length argument list of step indices or a range object.
-        condition (pl.Expr, optional):
-            A polars expression to filter the step before applying the numerical filter.
-            Defaults to None.
+        filtered_object: A filter object that this method is called on.
+        step_numbers: Variable-length argument list of step indices or a range object.
+        condition: A polars expression to filter the step before applying the numerical
+            filter. Defaults to None.
 
     Returns:
         Step: A step object.
     """
+    step_index_expr = filtered_object.columns.resolve(BDF.STEP_INDEX)
     if condition is not None:
         lf = _filter_numerical(
             filtered_object.lf.filter(condition),
-            "Event",
+            step_index_expr,
             step_numbers,
         )
     else:
         lf = _filter_numerical(
             filtered_object.lf,
-            "Event",
+            step_index_expr,
             step_numbers,
         )
     return Step(
@@ -102,62 +103,69 @@ def _step(
 def get_cycle_column(
     filtered_object: "FilterToCycleType",
 ) -> pl.DataFrame | pl.LazyFrame:
-    """Adds a cycle column to the data.
+    """Add a Cycle Count column to the data.
 
-    If cycle details have been provided in the README, the cycle column will be created
-    by checking for the last step of the cycle. For nested cycles, the "outer" cycle
-    will be created first. Subsequent filtering with the cycle method will then allow
-    for filtering on the "inner" cycles.
+    If cycle details have been provided in the README, the cycle column will be
+    created by checking for the last step of the cycle. For nested cycles, the
+    "outer" cycle will be created first; subsequent filtering with the cycle method
+    allows for filtering on the "inner" cycles.
 
-    If no cycle details have been provided, the cycle column will be created by
-    identifying the last step of the cycle by checking for a decrease in the step
-    number.
+    If no cycle details have been provided, the cycle column will be inferred from
+    a decrease in the step count.
 
     Args:
         filtered_object: The experiment or cycle object.
 
     Returns:
-        pl.DataFrame | pl.LazyFrame: The data with a cycle column.
+        pl.DataFrame | pl.LazyFrame: The data with a cycle count column.
     """
+    step_expr = filtered_object.columns.resolve(BDF.STEP_INDEX)
+    cycle_col_name = BDF.CYCLE_COUNT.name
     if len(filtered_object.cycle_info) > 0:
-        cycle_ends = (pl.col("Step").shift() == filtered_object.cycle_info[0][1]) & (
-            pl.col("Step") != filtered_object.cycle_info[0][1]
-        ).fill_null(strategy="zero").cast(pl.Int16)
-        cycle_column = cycle_ends.cum_sum().fill_null(strategy="zero").alias("Cycle")
+        cycle_ends = (
+            (
+                (step_expr.shift() == filtered_object.cycle_info[0][1])
+                & (step_expr != filtered_object.cycle_info[0][1])
+            )
+            .fill_null(strategy="zero")
+            .cast(pl.Int16)
+        )
+        cycle_column = (
+            cycle_ends.cum_sum().fill_null(strategy="zero").alias(cycle_col_name)
+        )
     else:
         warnings.warn(
             "No cycle information provided. Cycles will be inferred from the step "
             "numbers.",
         )
         cycle_column = (
-            (pl.col("Step").cast(pl.Int64) - pl.col("Step").cast(pl.Int64).shift() < 0)
+            (step_expr.cast(pl.Int64) - step_expr.cast(pl.Int64).shift() < 0)
             .fill_null(strategy="zero")
             .cum_sum()
-            .alias("Cycle")
+            .alias(cycle_col_name)
         )
     return filtered_object.lf.with_columns(cycle_column)
 
 
 def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cycle":
-    """Return a cycle object. Filters on the Cycle column.
+    """Return a cycle object. Filters on the Cycle Count column.
 
     Args:
-        filtered_object (FilterToExperimentType):
-            A filter object that this method is called on.
-        cycle_numbers (int | range):
-            Variable-length argument list of cycle indices or a range object.
+        filtered_object: A filter object that this method is called on.
+        cycle_numbers: Variable-length argument list of cycle indices or a range object.
 
     Returns:
         Cycle: A cycle object.
     """
     df = get_cycle_column(filtered_object)
-
     if len(filtered_object.cycle_info) > 1:
         next_cycle_info = filtered_object.cycle_info[1:]
     else:
         next_cycle_info = []
 
-    lf_filtered = _filter_numerical(df, "Cycle", cycle_numbers)
+    df_column_set = ColumnSet(df.collect_schema().names())
+    cycle_expr = df_column_set.resolve(BDF.CYCLE_COUNT)
+    lf_filtered = _filter_numerical(df, cycle_expr, cycle_numbers)
 
     return Cycle(
         lf=lf_filtered,
@@ -175,15 +183,15 @@ def _charge(
     """Return a charge step.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        charge_numbers (int | range):
-            Variable-length argument list of charge indices or a range object.
+        filtered_object: A filter object that this method is called on.
+        charge_numbers: Variable-length argument list of charge indices or a range
+            object.
 
     Returns:
         Step: A charge step object.
     """
-    condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
+    current_expr = filtered_object.columns.resolve(BDF.CURRENT_AMPERE)
+    condition = current_expr > current_expr.abs().max() / 10e4
     return filtered_object.step(*charge_numbers, condition=condition)
 
 
@@ -194,15 +202,15 @@ def _discharge(
     """Return a discharge step.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        discharge_numbers (int | range):
-            Variable-length argument list of discharge indices or a range object.
+        filtered_object: A filter object that this method is called on.
+        discharge_numbers: Variable-length argument list of discharge indices or a range
+            object.
 
     Returns:
         Step: A discharge step object.
     """
-    condition = pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
+    current_expr = filtered_object.columns.resolve(BDF.CURRENT_AMPERE)
+    condition = current_expr < -current_expr.abs().max() / 10e4
     return filtered_object.step(*discharge_numbers, condition=condition)
 
 
@@ -213,19 +221,16 @@ def _chargeordischarge(
     """Return a charge or discharge step.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        chargeordischarge_numbers (int | range):
-            Variable-length argument list of charge or discharge indices or a range
-            object.
+        filtered_object: A filter object that this method is called on.
+        chargeordischarge_numbers: Variable-length argument list of charge or discharge
+            indices or a range object.
 
     Returns:
         Step: A charge or discharge step object.
     """
-    charge_condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
-    discharge_condition = (
-        pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
-    )
+    current_expr = filtered_object.columns.resolve(BDF.CURRENT_AMPERE)
+    charge_condition = current_expr > current_expr.abs().max() / 10e4
+    discharge_condition = current_expr < -current_expr.abs().max() / 10e4
     condition = charge_condition | discharge_condition
     return filtered_object.step(*chargeordischarge_numbers, condition=condition)
 
@@ -234,15 +239,14 @@ def _rest(filtered_object: "FilterToCycleType", *rest_numbers: int | range) -> "
     """Return a rest step object.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        rest_numbers (int | range):
-            Variable-length argument list of rest indices or a range object.
+        filtered_object: A filter object that this method is called on.
+        rest_numbers: Variable-length argument list of rest indices or a range object.
 
     Returns:
         Step: A rest step object.
     """
-    condition = pl.col("Current [A]") == 0
+    current_expr = filtered_object.columns.resolve(BDF.CURRENT_AMPERE)
+    condition = current_expr == 0
     return filtered_object.step(*rest_numbers, condition=condition)
 
 
@@ -253,24 +257,18 @@ def _constant_current(
     """Return a constant current step object.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        constant_current_numbers (int | range):
-            Variable-length argument list of constant current indices or a range object.
+        filtered_object: A filter object that this method is called on.
+        constant_current_numbers: Variable-length argument list of constant current
+            indices or a range object.
 
     Returns:
         Step: A constant current step object.
     """
+    current_expr = filtered_object.columns.resolve(BDF.CURRENT_AMPERE)
     condition = (
-        (pl.col("Current [A]") != 0)
-        & (
-            pl.col("Current [A]").abs()
-            > 0.999 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
-        )
-        & (
-            pl.col("Current [A]").abs()
-            < 1.001 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
-        )
+        (current_expr != 0)
+        & (current_expr.abs() > 0.999 * current_expr.abs().round_sig_figs(4).mode())
+        & (current_expr.abs() < 1.001 * current_expr.abs().round_sig_figs(4).mode())
     )
     return filtered_object.step(*constant_current_numbers, condition=condition)
 
@@ -283,19 +281,16 @@ def _constant_voltage(
 
     Args:
         filtered_object: A filter object that this method is called on.
-        *constant_voltage_numbers:
-            Variable-length argument list of constant voltage indices or a range object.
+        *constant_voltage_numbers: Variable-length argument list of constant voltage
+            indices or a range object.
 
     Returns:
         Step: A constant voltage step object.
     """
+    voltage_expr = filtered_object.columns.resolve(BDF.VOLTAGE_VOLT)
     condition = (
-        pl.col("Voltage [V]").abs()
-        > 0.999 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
-    ) & (
-        pl.col("Voltage [V]").abs()
-        < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
-    )
+        voltage_expr.abs() > 0.999 * voltage_expr.abs().round_sig_figs(4).mode()
+    ) & (voltage_expr.abs() < 1.001 * voltage_expr.abs().round_sig_figs(4).mode())
     return filtered_object.step(*constant_voltage_numbers, condition=condition)
 
 
@@ -330,21 +325,10 @@ class Procedure(RawData):
         )
         self.readme_dict = readme_dict
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
-        self._initialize_procedure()
+        self._populate_step_descriptions()
 
-    def _initialize_procedure(self) -> None:
-        """Create a procedure class."""
-        self.zero_column(
-            "Time [s]",
-            "Procedure Time [s]",
-            "Time elapsed since beginning of procedure.",
-        )
-
-        self.zero_column(
-            "Capacity [Ah]",
-            "Procedure Capacity [Ah]",
-            "The net charge passed since beginning of procedure.",
-        )
+    def _populate_step_descriptions(self) -> None:
+        """Populate step_descriptions from readme_dict."""
         self.step_descriptions = {"Step": [], "Description": []}
         for experiment in self.readme_dict:
             steps = cast(list[int], self.readme_dict[experiment]["Steps"])
@@ -356,6 +340,61 @@ class Procedure(RawData):
                 )
             self.step_descriptions["Step"].extend(steps)
             self.step_descriptions["Description"].extend(descriptions)
+
+    @classmethod
+    def load(
+        cls,
+        parquet_path: str | Path,
+        readme_path: str | Path | None = None,
+        metadata: dict[str, Any | None] | None = None,
+        metadata_prefer: Literal["parquet", "json"] = "parquet",
+    ) -> "Procedure":
+        """Load a Procedure from a processed .bdx.parquet file.
+
+        Args:
+            parquet_path: Path to a ``.bdx.parquet`` file (e.g. from
+                :func:`~pyprobe.io.process_cycler`).
+            readme_path: Optional path to a README.yaml for experiment definitions.
+                When None, no experiment filtering is available.
+            metadata: Optional metadata dict merged with parquet-stored metadata.
+                Provided values take precedence over parquet-stored values.
+            metadata_prefer: Whether to prefer ``"parquet"`` footer or ``"json"``
+                sidecar when both sources have metadata.
+
+        Returns:
+            Procedure with BDF-format columns and optional experiment definitions.
+
+        Raises:
+            FileNotFoundError: If *parquet_path* does not exist.
+
+        Example::
+
+            from pyprobe.io import process_cycler
+            from pyprobe.filters import Procedure
+
+            path = process_cycler("data.xlsx")
+            procedure = Procedure.load(path, readme_path="README.yaml")
+        """
+        from pyprobe.io import read_metadata
+        from pyprobe.readme_processor import process_readme
+
+        parquet_path = Path(parquet_path)
+        if not parquet_path.exists():
+            raise FileNotFoundError(f"Parquet file not found: {parquet_path}")
+
+        lf = pl.scan_parquet(parquet_path)
+        parquet_metadata = read_metadata(parquet_path, prefer=metadata_prefer)
+        merged: dict[str, Any | None] = {**parquet_metadata, **(metadata or {})}
+
+        readme_dict: dict[str, dict[str, Any]] = {}
+        if readme_path is not None:
+            rp = Path(readme_path)
+            if rp.exists():
+                readme_dict = process_readme(str(rp)).experiment_dict
+            else:
+                logger.warning("README path provided but not found: {}", readme_path)
+
+        return cls(lf=lf, metadata=merged, readme_dict=readme_dict)
 
     step = _step
     cycle = _cycle
@@ -370,8 +409,7 @@ class Procedure(RawData):
         """Return an experiment object from the procedure.
 
         Args:
-            experiment_names (str):
-                Variable-length argument list of experiment names.
+            experiment_names: Variable-length argument list of experiment names.
 
         Returns:
             Experiment: An experiment object from the procedure.
@@ -385,7 +423,7 @@ class Procedure(RawData):
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
-            pl.col("Step").is_in(flattened_steps),
+            pl.col(BDF.STEP_INDEX.name).is_in(flattened_steps),
         ]
         lf_filtered = self.lf.filter(conditions)
         cycles_list: list[tuple[int, int, int]] = []
@@ -395,9 +433,7 @@ class Procedure(RawData):
                 "the step numbers.",
             )
         elif "Cycles" in self.readme_dict[experiment_names[0]]:
-            # ignore type on below line due to persistent mypy warnings about
-            # incompatible types
-            cycles_list = self.readme_dict[experiment_names[0]]["Cycles"]  # type: ignore
+            cycles_list = self.readme_dict[experiment_names[0]]["Cycles"]  # type: ignore[assignment]
 
         return Experiment(
             lf=lf_filtered,
@@ -411,8 +447,7 @@ class Procedure(RawData):
         """Remove an experiment from the procedure.
 
         Args:
-            experiment_names (str):
-                Variable-length argument list of experiment names.
+            experiment_names: Variable-length argument list of experiment names.
         """
         steps_idx = []
         for experiment_name in experiment_names:
@@ -423,11 +458,11 @@ class Procedure(RawData):
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
-            pl.col("Step").is_in(flattened_steps).not_(),
+            pl.col(BDF.STEP_INDEX.name).is_in(flattened_steps).not_(),
         ]
         for experiment_name in experiment_names:
             self.readme_dict.pop(experiment_name)
-        self._initialize_procedure()
+        self._populate_step_descriptions()
         self.lf = self.lf.filter(conditions)
 
     @property
@@ -451,28 +486,12 @@ class Procedure(RawData):
     ) -> None:
         """Add data from another source to the procedure.
 
-        The data must be timestamped, with a column that can be interpreted in
-        DateTime format. The data will be interpolated to the procedure's time.
-
         Args:
-            filepath (str): The path to the external file.
-            importing_columns (List[str] | dict[str, str]):
-                The columns to import from the external file. If a list, the columns
-                will be imported as is. If a dict, the keys are the columns in the data
-                you want to import and the values are the columns you want to rename
-                them to.
-            date_column_name (str, optional):
-                The name of the date column in the external data. Defaults to "Date".
+            filepath: The path to the external file.
+            importing_columns: The columns to import from the external file.
+            date_column_name: The name of the date column in the external data.
         """
-        external_data = self.load_external_file(filepath)
-        if isinstance(importing_columns, dict):
-            external_data = external_data.select(
-                [date_column_name] + list(importing_columns.keys()),
-            )
-            external_data = external_data.rename(importing_columns)
-        elif isinstance(importing_columns, list):
-            external_data = external_data.select([date_column_name] + importing_columns)
-        self.add_new_data_columns(external_data, date_column_name)
+        self.add_data(filepath, date_column_name, importing_columns=importing_columns)
 
 
 class Experiment(RawData):
@@ -510,21 +529,6 @@ class Experiment(RawData):
             step_descriptions=step_descriptions,
         )
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
-        self._initialize_experiment()
-
-    def _initialize_experiment(self) -> None:
-        """Create an experiment class."""
-        self.zero_column(
-            "Time [s]",
-            "Experiment Time [s]",
-            "Time elapsed since beginning of experiment.",
-        )
-
-        self.zero_column(
-            "Capacity [Ah]",
-            "Experiment Capacity [Ah]",
-            "The net charge passed since beginning of experiment.",
-        )
 
     step = _step
     cycle = _cycle
@@ -570,21 +574,6 @@ class Cycle(RawData):
             step_descriptions=step_descriptions,
         )
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
-        self._initialize_cycle()
-
-    def _initialize_cycle(self) -> None:
-        """Create a cycle class."""
-        self.zero_column(
-            "Time [s]",
-            "Cycle Time [s]",
-            "Time elapsed since beginning of cycle.",
-        )
-
-        self.zero_column(
-            "Capacity [Ah]",
-            "Cycle Capacity [Ah]",
-            "The net charge passed since beginning of cycle.",
-        )
 
     step = _step
     charge = _charge
@@ -618,21 +607,6 @@ class Step(RawData):
             metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
-        )
-        self._initialize_step()
-
-    def _initialize_step(self) -> None:
-        """Create a step class."""
-        self.zero_column(
-            "Time [s]",
-            "Step Time [s]",
-            "Time elapsed since beginning of step.",
-        )
-
-        self.zero_column(
-            "Capacity [Ah]",
-            "Step Capacity [Ah]",
-            "The net charge passed since beginning of step.",
         )
 
     step = _step

@@ -5,57 +5,42 @@ from typing import Any, Optional
 import polars as pl
 from loguru import logger
 
+from pyprobe.column import BDF
 from pyprobe.result import Result
-from pyprobe.units import split_quantity_unit
 from pyprobe.utils import deprecated
 
-required_columns = [
-    "Time [s]",
-    "Step",
-    "Event",
-    "Current [A]",
-    "Voltage [V]",
-    "Capacity [Ah]",
-]
+_REQUIRED_BDF: list[BDF] = [BDF.TEST_TIME_SECOND, BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT]
+"""BDF columns that must be resolvable; RawData raises ValueError if not."""
 
-default_column_definitions = {
-    "Date": "The timestamp of the data point. Type: datetime.",
-    "Time": "The time passed from the start of the procedure.",
-    "Step": "The step number.",
-    "Cycle": "The cycle number.",
-    "Event": "The event number. Counts the changes in cycles and steps.",
-    "Current": "The current through the cell.",
-    "Voltage": "The terminal voltage.",
-    "Capacity": "The net charge passed since the start of the procedure.",
-    "Temperature": "The temperature of the cell.",
-}
+_OPTIONAL_BDF: list[BDF] = [BDF.NET_CAPACITY_AH, BDF.STEP_COUNT, BDF.STEP_INDEX]
+"""BDF columns included when available; warnings emitted on failure."""
 
 
 class RawData(Result):
-    """A class for holding data in the PyProBE format.
+    """A class for holding battery cycler data in BDF-standard column format.
 
     This is the default object returned when data is loaded into PyProBE with the
-    standard methods of the `pyprobe.cell.Cell` class. It is a subclass of the
-    `pyprobe.result.Result` class so can be used in the same way as other result
-    objects.
+    standard methods of the :class:`~pyprobe.cell.Cell` class. It is a subclass of
+    :class:`~pyprobe.result.Result` and can be used in the same way.
 
-    The RawData object is stricter than the `pyprobe.result.Result` object in that it
-    requires the presence of specific columns in the data. These columns are:
-        - `Time [s]`
-        - `Step`
-        - `Cycle`
-        - `Event`
-        - `Current [A]`
-        - `Voltage [V]`
-        - `Capacity [Ah]`
+    The RawData object validates that the three required BDF columns are resolvable
+    from the data via :class:`~pyprobe.column.ColumnSet`:
 
-    This defines the PyProBE format.
+    - ``Test Time / s``
+    - ``Current / A``
+    - ``Voltage / V``
+
+    The following BDF columns are optional but emit a warning if absent:
+
+    - ``Net Capacity / Ah``
+    - ``Step Count / 1``
+    - ``Step Index / 1``
     """
 
     step_descriptions: dict[str, list[str | int | None]]
     """A dictionary containing the fields 'Step' and 'Description'.
 
-    - 'Step' is a list of step numbers.
+    - 'Step' is a list of step numbers (from the README).
     - 'Description' is a list of corresponding descriptions in PyBaMM Experiment format.
     """
 
@@ -66,9 +51,7 @@ class RawData(Result):
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
     ) -> None:
-        """Create a RawData object with required-column validation."""
-        if column_definitions is None:
-            column_definitions = default_column_definitions.copy()
+        """Create a RawData object with BDF-column validation."""
         super().__init__(
             lf=lf, metadata=metadata, column_definitions=column_definitions
         )
@@ -83,55 +66,53 @@ class RawData(Result):
         self._check_required_columns()
 
     def _check_required_columns(self) -> None:
-        """Check if the required columns are present in the data."""
-        columns = self.lf.collect_schema().names()
-        missing_columns = [col for col in required_columns if col not in columns]
-        if missing_columns:
-            error_msg = f"Missing required columns: {missing_columns}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+        """Validate that required and optional BDF columns are resolvable.
 
-    @property
-    def data(self) -> pl.DataFrame:
-        """Return the data as a polars DataFrame.
-
-        Returns:
-            pl.DataFrame: The data as a polars DataFrame.
+        Required columns must be resolvable from the data (either as a direct
+        data column or via a recipe derivation). Optional columns emit a warning
+        if unavailable but do not raise an error.
 
         Raises:
-            ValueError: If no data exists for this filter.
+            ValueError: If any required BDF column (Test Time, Current, Voltage)
+                cannot be resolved from available data.
         """
-        dataframe = super().data
-        unsorted_columns = set(dataframe.collect_schema().names()) - set(
-            required_columns,
-        )
-        sorted_columns = list(required_columns) + list(unsorted_columns)
-        return dataframe.select(sorted_columns)
+        col_set = self.columns
+        for bdf_col in _REQUIRED_BDF:
+            if not col_set.can_resolve(bdf_col):
+                error_msg = (
+                    f"Required BDF column '{bdf_col.name}' is not resolvable "
+                    f"from available columns."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+        for bdf_col in _OPTIONAL_BDF:
+            if not col_set.can_resolve(bdf_col):
+                logger.warning(
+                    "Optional BDF column '%s' is not resolvable; some features may "
+                    "be unavailable.",
+                    bdf_col.name,
+                )
 
     def zero_column(
         self,
         column: str,
-        new_column_name: str,
-        new_column_definition: str | None = None,
+        definition: str | None = None,
     ) -> None:
-        """Set the first value of a column to zero.
+        """Zero a column relative to the start of this data slice.
+
+        Modifies *column* in-place so it starts at zero at the first row of
+        this slice.
 
         Args:
-            column (str): The column to zero.
-            new_column_name (str): The new column name.
-            new_column_definition (Optional[str]): The new column definition.
+            column: The column name to zero.
+            definition: Optional description for the column definition.
         """
         self.lf = self.lf.with_columns(
-            (pl.col(column) - pl.col(column).first()).alias(new_column_name),
+            (pl.col(column) - pl.col(column).first()).alias(column),
         )
-        new_column_quantity, _ = split_quantity_unit(new_column_name)
-        if new_column_definition is not None:
-            self.define_column(new_column_quantity, new_column_definition)
-        else:
-            self.define_column(
-                new_column_quantity,
-                f"{column} with first value zeroed.",
-            )
+        if definition is not None:
+            quantity = column.split(" / ")[0] if " / " in column else column
+            self.define_column(quantity, definition)
 
     @property
     def capacity(self) -> float:
@@ -140,7 +121,11 @@ class RawData(Result):
         Returns:
             float: The net capacity passed.
         """
-        return abs(self.data["Capacity [Ah]"].max() - self.data["Capacity [Ah]"].min())
+        col = BDF.NET_CAPACITY_AH.name
+        result = self.lf.select(
+            (pl.col(col).max() - pl.col(col).min()).abs().alias("_cap")
+        ).collect()
+        return float(result["_cap"][0])  # type: ignore[index]
 
     def set_soc(
         self,
@@ -149,9 +134,8 @@ class RawData(Result):
     ) -> None:
         """Add an SOC column to the data.
 
-        Apply this method on a filtered data object to add an `SOC` column to the data.
+        Apply this method on a filtered data object to add an ``SOC`` column.
         This column remains with the data if the object is filtered further.
-
 
         The SOC column is calculated either relative to a provided reference capacity
         value, a reference charge (provided as a RawData object), or the maximum
@@ -159,48 +143,42 @@ class RawData(Result):
         is called.
 
         Args:
-            reference_capacity (Optional[float]): The reference capacity value.
-            reference_charge (Optional[RawData]):
-                A RawData object containing a charge to use as a reference.
+            reference_capacity: The reference capacity value.
+            reference_charge: A RawData object containing a charge to use as a
+                reference.
         """
+        cap_col = BDF.NET_CAPACITY_AH.name
         if reference_capacity is None:
-            reference_capacity = (
-                pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
+            reference_capacity = float(
+                self.lf.select(
+                    (pl.col(cap_col).max() - pl.col(cap_col).min()).alias("_ref")
+                )
+                .collect()
+                .item()
             )
         if reference_charge is None:
             self.lf = self.lf.with_columns(
                 (
-                    (
-                        pl.col("Capacity [Ah]")
-                        - pl.col("Capacity [Ah]").max()
-                        + reference_capacity
-                    )
+                    (pl.col(cap_col) - pl.col(cap_col).max() + reference_capacity)
                     / reference_capacity
                 ).alias("SOC"),
             )
         else:
-            reference_charge_data = reference_charge.lf.select(
-                "Time [s]",
-                "Capacity [Ah]",
-            )
+            time_col = BDF.TEST_TIME_SECOND.name
+            reference_charge_data = reference_charge.lf.select(time_col, cap_col)
             self.lf = self.lf.join(
                 reference_charge_data,
-                on="Time [s]",
+                on=time_col,
                 how="left",
             )
-            self.lf = self.lf.with_columns(
-                pl.col("Capacity [Ah]_right")
-                .max()
-                .alias("Full charge reference capacity"),
-            ).drop("Capacity [Ah]_right")
-
+            right_col = cap_col + "_right"
+            full_ref = float(
+                self.lf.select(pl.col(right_col).max().alias("_fc")).collect().item()
+            )
+            self.lf = self.lf.drop(right_col)
             self.lf = self.lf.with_columns(
                 (
-                    (
-                        pl.col("Capacity [Ah]")
-                        - pl.col("Full charge reference capacity")
-                        + reference_capacity
-                    )
+                    (pl.col(cap_col) - full_ref + reference_capacity)
                     / reference_capacity
                 ).alias("SOC"),
             )
@@ -217,77 +195,67 @@ class RawData(Result):
     ) -> None:
         """Add an SOC column to the data.
 
-        Apply this method on a filtered data object to add an `SOC` column to the data.
-        This column remains with the data if the object is filtered further.
-
-
-        The SOC column is calculated either relative to a provided reference capacity
-        value, a reference charge (provided as a RawData object), or the maximum
-        capacity delta across the data in the RawData object upon which this method
-        is called.
-
         Args:
-            reference_capacity (Optional[float]): The reference capacity value.
-            reference_charge (Optional[RawData]):
-                A RawData object containing a charge to use as a reference.
+            reference_capacity: The reference capacity value.
+            reference_charge: A RawData object containing a charge to use as a
+                reference.
         """
         self.set_soc(reference_capacity, reference_charge)
 
     def set_reference_capacity(self, reference_capacity: float | None = None) -> None:
         """Fix the capacity to a reference value.
 
-        Apply this method on a filtered data object to fix the capacity to a reference.
-        This calculates a permanent column named `Capacity - Referenced [Ah]` in the
-        data, which remains if this object is filtered further.
-
-        The reference value is either the maximum capacity delta across the data in the
-        RawData object upon which this method is called or a user-specified value.
+        Apply this method on a filtered data object to fix the capacity to a
+        reference. This calculates a permanent column named
+        ``Capacity - Referenced / Ah`` in the data.
 
         Args:
-            reference_capacity (Optional[float]): The reference capacity value.
+            reference_capacity: The reference capacity value.
         """
+        cap_col = BDF.NET_CAPACITY_AH.name
         if reference_capacity is None:
-            reference_capacity = (
-                pl.col("Capacity [Ah]").max() - pl.col("Capacity [Ah]").min()
+            reference_capacity = float(
+                self.lf.select(
+                    (pl.col(cap_col).max() - pl.col(cap_col).min()).alias("_ref")
+                )
+                .collect()
+                .item()
             )
         self.lf = self.lf.with_columns(
-            (
-                pl.col("Capacity [Ah]")
-                - pl.col("Capacity [Ah]").max()
-                + reference_capacity
-            ).alias("Capacity - Referenced [Ah]"),
+            (pl.col(cap_col) - pl.col(cap_col).max() + reference_capacity).alias(
+                "Capacity - Referenced / Ah"
+            ),
         )
 
     @property
     def pybamm_experiment(self) -> list[str | tuple[str]]:
         """Return a list of operating conditions for a PyBaMM experiment object.
 
-        These can be passed directly to pybamm.Experiment() to create an experiment
-        for use with PyBaMM.
-
-        PyProBE does not check the validity of the operating condition strings. When
-        creating the Experiment object, PyBaMM will raise an error if the operating
-        conditions are not valid. The user should then modify the step descriptions
-        in the readme file accordingly.
+        These can be passed directly to ``pybamm.Experiment()`` to create an
+        experiment for use with PyBaMM.
 
         Returns:
             The PyBaMM operating conditions.
         """
-        # reduce the full dataframe to only the steps as they appear in order in
-        # the data
-        only_steps = (
+        step_index_col = BDF.STEP_INDEX.name
+        step_count_col = BDF.STEP_COUNT.name
+        only_steps: pl.DataFrame = (
             self.lf.with_row_index()
-            .group_by("Event", maintain_order=True)
-            .agg(pl.col("Step").first())
+            .group_by(step_count_col, maintain_order=True)
+            .agg(pl.col(step_index_col).first())
+            .collect()
         )
-        if isinstance(only_steps, pl.LazyFrame):
-            only_steps = only_steps.collect()
 
-        step_description_df = pl.DataFrame(self.step_descriptions)
+        step_description_df = pl.DataFrame(
+            {
+                step_index_col: self.step_descriptions.get("Step", []),
+                "Description": self.step_descriptions.get("Description", []),
+            }
+        )
         no_step_descriptions = step_description_df.filter(
             pl.col("Description").is_null(),
         )
-        missing_steps = no_step_descriptions.select("Step").to_numpy().flatten()
+        missing_steps = no_step_descriptions.select(step_index_col).to_numpy().flatten()
         if len(missing_steps) > 0:
             error_msg = (
                 f"Descriptions for steps {str(missing_steps)} are missing."
@@ -298,14 +266,16 @@ class RawData(Result):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # match the step with its description
-        all_steps_with_descriptions = only_steps.join(
-            step_description_df,
-            on="Step",
-            how="left",
-        ).select("Description")
-        # form a list of all the descriptions
-        all_steps_with_descriptions = all_steps_with_descriptions.to_numpy().flatten()
+        all_steps_with_descriptions = (
+            only_steps.join(
+                step_description_df,
+                on=step_index_col,
+                how="left",
+            )
+            .select("Description")
+            .to_numpy()
+            .flatten()
+        )
         description_list = []
         for description in all_steps_with_descriptions:
             line = description.split(",")
