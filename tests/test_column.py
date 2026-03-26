@@ -7,34 +7,28 @@ via ColumnSet.
 
 from __future__ import annotations
 
+from typing import cast
+
 import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from pyprobe.column import (
-    ALL_COLUMNS,
+    BDF,
     BDF_IRI_PREFIX,
     BDF_PATTERN,
     DEFAULT_COLUMNS,
     BDFColumn,
     Column,
+    ColumnResolutionError,
     ColumnSet,
     Recipe,
     _apply_conversion,
     _capacity_from_ch_dch,
     _resolve_unit,
     _split_quantity_unit,
-    _step_count_from_step_index,
-    charging_capacity_ah,
-    current_ampere,
-    cycle_count,
-    discharging_capacity_ah,
-    net_capacity_ah,
-    step_count,
-    step_index,
-    temperature_t1_celsius,
-    test_time_second,
-    unix_time_second,
-    voltage_volt,
+    column_factory,
+    column_factory_from_string,
 )
 
 
@@ -57,48 +51,49 @@ class TestColumnInit:
         col = Column(quantity, unit)
         assert col.quantity == quantity
         assert col.unit == unit
-        assert col.column_name == expected_name
+        assert col.name == expected_name
 
     def test_init_default_unit_is_dimensionless(self) -> None:
         """Column with no unit arg defaults to '1'."""
         col = Column("Step")
         assert col.unit == "1"
-        assert col.column_name == "Step / 1"
+        assert col.name == "Step / 1"
 
 
-class TestColumnFromString:
-    """Tests for Column.from_string factory method."""
+class TestColumnFactory:
+    """Tests for the column_factory function."""
 
-    @pytest.mark.parametrize(
-        "input_str,expected_quantity,expected_unit",
-        [
-            ("Current / A", "Current", "A"),
-            ("Step Count / 1", "Step Count", "1"),
-            ("Net Capacity / Ah", "Net Capacity", "Ah"),
-            ("Step", "Step", "1"),
-            ("Current  /  A", "Current", "A"),
-            ("Net Capacity / Ah", "Net Capacity", "Ah"),
-        ],
-    )
-    def test_from_string_parses_correctly(
-        self, input_str: str, expected_quantity: str, expected_unit: str
+    bdf_cases = [(column.quantity, column.unit, column) for column in BDF]
+
+    @pytest.mark.parametrize("quantity,unit,expected_col", bdf_cases)
+    def test_factory_returns_expected_column(
+        self, quantity: str, unit: str, expected_col: BDFColumn
     ) -> None:
-        """Parse 'Quantity / unit' string correctly."""
-        col = Column.from_string(input_str)
-        assert col.quantity == expected_quantity
-        assert col.unit == expected_unit
+        """column_factory returns the expected BDFColumn for given quantity/unit."""
+        col = column_factory(quantity, unit)
+        assert col == expected_col
 
-    def test_from_string_roundtrip(self) -> None:
-        """Parsing and str() should roundtrip the original name."""
-        original = "Net Capacity / Ah"
-        col = Column.from_string(original)
-        assert str(col) == original
+    @pytest.mark.parametrize("quantity,unit,expected_col", bdf_cases)
+    def test_factory_from_string_returns_expected_column(
+        self, quantity: str, unit: str, expected_col: BDFColumn
+    ) -> None:
+        """column_factory_from_string returns the expected BDFColumn."""
+        col = column_factory_from_string(f"{quantity} / {unit}")
+        assert col == expected_col
 
-    def test_from_string_invalid_unit_raises_on_conversion(self) -> None:
-        """Invalid unit strings raise ValueError at conversion_parameters time."""
-        col = Column.from_string("Current / InvalidUnit")
-        with pytest.raises(ValueError, match="could not be parsed"):
-            col.conversion_parameters("A")
+    non_bdf_cases = [
+        ("Custom Quantity", "Custom Unit"),
+        ("Temperature", "degC"),
+        ("Current", "mA"),
+    ]
+
+    @pytest.mark.parametrize("quantity,unit", non_bdf_cases)
+    def test_factory_non_bdf_columns(self, quantity: str, unit: str) -> None:
+        """column_factory can create Column instances for non-BDF quantities."""
+        col = column_factory(quantity, unit)
+        assert isinstance(col, Column)
+        assert col.quantity == quantity
+        assert col.unit == unit
 
 
 class TestConversionParameters:
@@ -125,21 +120,21 @@ class TestConversionParameters:
         expected_offset: float,
     ) -> None:
         """Test multiplicative conversions for different unit pairs."""
-        col = Column.from_string(f"Quantity / {source_unit}")
+        col = column_factory_from_string(f"Quantity / {source_unit}")
         factor, offset = col.conversion_parameters(target_unit)
         assert factor == pytest.approx(expected_factor, rel=1e-9)
         assert offset == pytest.approx(expected_offset, abs=1e-9)
 
     def test_conversion_celsius_to_kelvin(self) -> None:
         """Affine conversion degC to K: factor=1, offset=273.15."""
-        col = Column.from_string("Temperature / C")
+        col = column_factory_from_string("Temperature / C")
         factor, offset = col.conversion_parameters("K")
         assert factor == pytest.approx(1.0, rel=1e-9)
         assert offset == pytest.approx(273.15, abs=0.01)
 
     def test_conversion_incompatible_units_raises(self) -> None:
         """Converting between incompatible units raises ValueError."""
-        col = Column.from_string("Current / A")
+        col = column_factory_from_string("Current / A")
         with pytest.raises(ValueError, match="Cannot convert"):
             col.conversion_parameters("V")
 
@@ -156,12 +151,12 @@ class TestBDFColumnIRI:
     @pytest.mark.parametrize(
         "col_obj,expected_iri_suffix",
         [
-            (current_ampere, "current_ampere"),
-            (voltage_volt, "voltage_volt"),
-            (step_count, "step_count"),
-            (cycle_count, "cycle_count"),
-            (charging_capacity_ah, "charging_capacity_ampere_hour"),
-            (temperature_t1_celsius, "temperature_t1_degree_celsius"),
+            (BDF.CURRENT_AMPERE, "current_ampere"),
+            (BDF.VOLTAGE_VOLT, "voltage_volt"),
+            (BDF.STEP_COUNT, "step_count"),
+            (BDF.CYCLE_COUNT, "cycle_count"),
+            (BDF.CHARGING_CAPACITY_AH, "charging_capacity_ampere_hour"),
+            (BDF.TEMPERATURE_T1_CELCIUS, "temperature_t1_degree_celsius"),
         ],
     )
     def test_iri_computed_from_quantity_and_unit(
@@ -170,7 +165,7 @@ class TestBDFColumnIRI:
         """IRI is computed from quantity and pint long-form unit."""
         assert col_obj.iri == f"{BDF_IRI_PREFIX}{expected_iri_suffix}"
 
-    @pytest.mark.parametrize("col_obj", ALL_COLUMNS)
+    @pytest.mark.parametrize("col_obj", list(BDF))
     def test_all_bdf_column_iris_are_valid_urls(self, col_obj: BDFColumn) -> None:
         """All BDF column IRIs are complete and properly formatted."""
         iri = col_obj.iri
@@ -209,7 +204,7 @@ class TestRecipeComputation:
                 ]
             }
         )
-        result = df.select(cs.col(step_count))
+        result = df.select(cs.resolve(BDF.STEP_COUNT))
         expected = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7]
         assert result["Step Count / 1"].to_list() == expected
 
@@ -222,7 +217,7 @@ class TestRecipeComputation:
                 "Discharging Capacity / Ah": [0.0, 1.0, 2.0],
             }
         )
-        result = df.select(cs.col(net_capacity_ah))
+        result = df.select(cs.resolve(BDF.NET_CAPACITY_AH))
         expected = [1.0, 0.0, -1.0]
         assert result["Net Capacity / Ah"].to_list() == pytest.approx(expected)
 
@@ -234,7 +229,7 @@ class TestRecipeComputation:
                 "Unix Time / s": [1648864360.0, 1648864361.0, 1648864362.0],
             }
         )
-        result = df.select(cs.col(test_time_second))
+        result = df.select(cs.resolve(BDF.TEST_TIME_SECOND))
         expected = [0.0, 1.0, 2.0]
         assert result["Test Time / s"].to_list() == pytest.approx(expected)
 
@@ -344,283 +339,605 @@ class TestRecipeDataclass:
     def test_recipe_construction(self) -> None:
         """Recipe can be constructed with required BDFColumn list and compute."""
         recipe = Recipe(
-            required=[current_ampere],
-            compute=lambda cols: cols[current_ampere] * pl.lit(2),
+            required=[BDF.CURRENT_AMPERE],
+            compute=lambda cols: cols[BDF.CURRENT_AMPERE] * pl.lit(2),
         )
-        assert recipe.required == [current_ampere]
+        assert recipe.required == [BDF.CURRENT_AMPERE]
         assert callable(recipe.compute)
 
     def test_recipe_with_multiple_dependencies(self) -> None:
         """Recipe can require multiple BDFColumn instances."""
         recipe = Recipe(
-            required=[charging_capacity_ah, discharging_capacity_ah],
+            required=[BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH],
             compute=_capacity_from_ch_dch,
         )
         assert len(recipe.required) == 2
-        assert charging_capacity_ah in recipe.required
-        assert discharging_capacity_ah in recipe.required
-
-
-class TestBDFColumnInit:
-    """Tests for BDFColumn construction with recipes."""
-
-    def test_init_with_recipes(self) -> None:
-        """BDFColumn can be initialized with recipes list."""
-        recipe = Recipe(
-            required=[step_index],
-            compute=_step_count_from_step_index,
-        )
-        col = BDFColumn("Step Count", "1", recipes=[recipe])
-        assert len(col.recipes) == 1
-
-    def test_init_default_recipes_is_empty_list(self) -> None:
-        """Default recipes is an empty list."""
-        col = BDFColumn("Current", "A")
-        assert col.recipes == []
-
-    def test_recipes_are_public_attribute(self) -> None:
-        """Recipes is a public attribute, not private."""
-        col = BDFColumn("Current", "A")
-        assert hasattr(col, "recipes")
-        col.recipes = [
-            Recipe(required=[step_index], compute=_step_count_from_step_index)
-        ]
-        assert len(col.recipes) == 1
-
-
-class TestRecipeAttachment:
-    """Tests for post-definition recipe attachment pattern."""
-
-    def test_test_time_second_has_recipe(self) -> None:
-        """test_time_second has its Unix Time recipe attached."""
-        assert len(test_time_second.recipes) == 1
-        assert unix_time_second in test_time_second.recipes[0].required
-
-    def test_net_capacity_ah_has_recipe(self) -> None:
-        """net_capacity_ah has its Charging/Discharging recipe attached."""
-        assert len(net_capacity_ah.recipes) == 1
-        required_quantities = {
-            col.quantity for col in net_capacity_ah.recipes[0].required
-        }
-        assert "Charging Capacity" in required_quantities
-        assert "Discharging Capacity" in required_quantities
-
-    def test_step_count_has_recipe(self) -> None:
-        """step_count has its Step Index recipe attached."""
-        assert len(step_count.recipes) == 1
-        assert step_index in step_count.recipes[0].required
-
-
-class TestRecipeValidation:
-    """Tests for recipe validation at construction time."""
+        assert BDF.CHARGING_CAPACITY_AH in recipe.required
+        assert BDF.DISCHARGING_CAPACITY_AH in recipe.required
 
     def test_unused_required_column_raises(self) -> None:
         """Recipe raises ValueError if a required column is never accessed."""
-        col_a = BDFColumn("Level A", "1")
-        col_b = BDFColumn("Level B", "1")
+        col_a = cast(BDF, BDFColumn("Level A", "1"))
+        col_b = cast(BDF, BDFColumn("Level B", "1"))
 
-        def only_uses_a(cols: dict[BDFColumn, pl.Expr]) -> pl.Expr:
+        def only_uses_a(cols: dict[BDF, pl.Expr]) -> pl.Expr:
             return cols[col_a] + pl.lit(10)
 
         with pytest.raises(ValueError, match="unused required"):
-            Recipe(required=[col_a, col_b], compute=only_uses_a)
+            Recipe(required=cast(list[BDF], [col_a, col_b]), compute=only_uses_a)
 
     def test_undeclared_dependency_raises(self) -> None:
         """Recipe raises ValueError if compute accesses a column not in required."""
-        col_a = BDFColumn("Level A", "1")
-        col_b = BDFColumn("Level B", "1")
+        col_a = cast(BDF, BDFColumn("Level A", "1"))
+        col_b = cast(BDF, BDFColumn("Level B", "1"))
 
-        def uses_b(cols: dict[BDFColumn, pl.Expr]) -> pl.Expr:
+        def uses_b(cols: dict[BDF, pl.Expr]) -> pl.Expr:
             return cols[col_b] + pl.lit(10)
 
         with pytest.raises(ValueError, match="not in required"):
-            Recipe(required=[col_a], compute=uses_b)
+            Recipe(required=cast(list[BDF], [col_a]), compute=uses_b)
 
     def test_valid_recipe_construction_succeeds(self) -> None:
         """Recipe construction succeeds when all required columns are used."""
-        col_a = BDFColumn("Level A", "1")
+        col_a = cast(BDF, BDFColumn("Level A", "1"))
 
-        def uses_a(cols: dict[BDFColumn, pl.Expr]) -> pl.Expr:
+        def uses_a(cols: dict[BDF, pl.Expr]) -> pl.Expr:
             return cols[col_a] + pl.lit(10)
 
-        recipe = Recipe(required=[col_a], compute=uses_a)
+        recipe = Recipe(required=cast(list[BDF], [col_a]), compute=uses_a)
         assert len(recipe.required) == 1
 
 
-class TestColumnSet:
-    """Tests for ColumnSet column resolution and unit conversion."""
+class TestColumnSetResolve:
+    """Tests for ColumnSet.resolve() method."""
 
-    def test_col_with_string(self) -> None:
+    def test_resolve_with_string(self) -> None:
         """String input returns pl.col() for the parsed column name."""
         cs = ColumnSet(["Current / A"])
-        expr = cs.col("Current / A")
+        expr = cs.resolve("Current / A")
         df = pl.DataFrame({"Current / A": [1.0, 2.0]})
         result = df.select(expr).to_series().to_list()
         assert result == [1.0, 2.0]
 
-    def test_col_with_column_instance(self) -> None:
+    def test_resolve_with_column_instance(self) -> None:
         """Column descriptor input returns pl.col() expression."""
         cs = ColumnSet(["Current / A"])
-        col = Column.from_string("Current / A")
-        expr = cs.col(col)
+        col = column_factory_from_string("Current / A")
+        expr = cs.resolve(col)
         df = pl.DataFrame({"Current / A": [3.0]})
         result = df.select(expr).to_series().to_list()
         assert result == [3.0]
 
-    def test_col_with_bdf_column_exact_match(self) -> None:
+    def test_resolve_with_bdf_column_exact_match(self) -> None:
         """BDFColumn exact match returns pl.col() expression."""
         cs = ColumnSet(["Current / A"])
-        expr = cs.col(current_ampere)
+        expr = cs.resolve(BDF.CURRENT_AMPERE)
         df = pl.DataFrame({"Current / A": [5.0]})
         result = df.select(expr).to_series().to_list()
         assert result == [5.0]
 
-    @pytest.mark.parametrize(
-        "source_unit,target_unit,expected_conversion",
-        [
-            ("A", "mA", 1000.0),
-            ("V", "mV", 1000.0),
-        ],
-    )
-    def test_col_with_unit_conversion(
-        self, source_unit: str, target_unit: str, expected_conversion: float
-    ) -> None:
-        """Unit conversion scales values and aliases the result."""
-        col = BDFColumn("Quantity", source_unit)
-        cs = ColumnSet([f"Quantity / {source_unit}"])
-        expr = cs.col(col, unit=target_unit)
-        df = pl.DataFrame({f"Quantity / {source_unit}": [1.0, 2.0]})
+    def test_resolve_unit_conversion(self) -> None:
+        """Unit conversion with Column descriptor scales values."""
+        col = Column("Quantity", "mA")
+        cs = ColumnSet(["Quantity / A"])
+        expr = cs.resolve(col)
+        df = pl.DataFrame({"Quantity / A": [1.0, 2.0]})
         result_df = df.select(expr)
-        assert f"Quantity / {target_unit}" in result_df.columns
-        assert result_df[f"Quantity / {target_unit}"].to_list() == pytest.approx(
-            [expected_conversion, expected_conversion * 2], rel=1e-9
+        assert "Quantity / mA" in result_df.columns
+        assert result_df["Quantity / mA"].to_list() == pytest.approx(
+            [1000.0, 2000.0], rel=1e-9
         )
 
-    def test_col_identity_conversion(self) -> None:
+    def test_resolve_identity_conversion(self) -> None:
         """Same-unit conversion aliases without arithmetic."""
         cs = ColumnSet(["Current / A"])
-        expr = cs.col(current_ampere, unit="A")
+        expr = cs.resolve("Current / A")
         df = pl.DataFrame({"Current / A": [1.0, 2.0]})
         result_df = df.select(expr)
         assert "Current / A" in result_df.columns
         assert result_df["Current / A"].to_list() == [1.0, 2.0]
 
-    def test_col_celsius_to_kelvin(self) -> None:
-        """Affine conversion (degC to K) adds 273.15 offset."""
-        col = BDFColumn("Temperature", "degC")
-        cs = ColumnSet(["Temperature / degC"])
-        expr = cs.col(col, unit="K")
-        df = pl.DataFrame({"Temperature / degC": [0.0, 100.0]})
-        result = df.select(expr).to_series().to_list()
-        assert result == pytest.approx([273.15, 373.15], abs=0.01)
-
-    def test_col_not_found_raises(self) -> None:
-        """ValueError raised when column cannot be resolved."""
+    def test_resolve_not_found_raises(self) -> None:
+        """ColumnResolutionError raised when column cannot be resolved."""
         cs = ColumnSet(["Voltage / V"])
-        with pytest.raises(ValueError, match="Cannot resolve"):
-            cs.col(current_ampere)
+        with pytest.raises(ColumnResolutionError, match="Cannot resolve"):
+            cs.resolve(BDF.CURRENT_AMPERE)
 
-    def test_col_bdf_with_conversion(self) -> None:
-        """BDFColumn exact match combined with unit conversion."""
-        cs = ColumnSet(["Voltage / V"])
-        expr = cs.col(voltage_volt, unit="mV")
-        df = pl.DataFrame({"Voltage / V": [1.0, 2.0]})
-        result_df = df.select(expr)
-        assert "Voltage / mV" in result_df.columns
-        assert result_df["Voltage / mV"].to_list() == pytest.approx(
-            [1000.0, 2000.0], rel=1e-9
+    def test_resolve_empty_available_raises(self) -> None:
+        """Empty available_columns list raises ColumnResolutionError for BDFColumn."""
+        cs = ColumnSet([])
+        with pytest.raises(ColumnResolutionError, match="Cannot resolve"):
+            cs.resolve(BDF.CURRENT_AMPERE)
+
+    def test_resolve_recipe_with_unit_conversion(self) -> None:
+        """resolve() via recipe then converts the result to the requested unit."""
+        df = pl.DataFrame(
+            {
+                "Charging Capacity / Ah": [0.0, 0.0, 0.0],
+                "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+            }
+        )
+        cs = ColumnSet(df.columns)
+        expr = cs.resolve("Net Capacity / mAh")
+        base = _capacity_from_ch_dch(
+            {
+                BDF.CHARGING_CAPACITY_AH: pl.col("Charging Capacity / Ah"),
+                BDF.DISCHARGING_CAPACITY_AH: pl.col("Discharging Capacity / Ah"),
+            }
+        )
+        assert_frame_equal(
+            df.select(expr),
+            df.select((base * 1000).alias("Net Capacity / mAh")),
         )
 
-    def test_col_empty_available_raises(self) -> None:
-        """Empty available_columns list raises ValueError for BDFColumn."""
-        cs = ColumnSet([])
-        with pytest.raises(ValueError, match="Cannot resolve"):
-            cs.col(current_ampere)
+    def test_resolve_non_standard_unit_recipe_deps(self) -> None:
+        """resolve() works when recipe inputs are in non-standard units (mAh)."""
+        cs = ColumnSet(["Charging Capacity / mAh", "Discharging Capacity / mAh"])
+        expr = cs.resolve("Net Capacity / mAh")
+        df = pl.DataFrame(
+            {
+                "Charging Capacity / mAh": [500.0, 1000.0],
+                "Discharging Capacity / mAh": [0.0, 0.0],
+            }
+        )
+        result = df.select(expr)
+        assert "Net Capacity / mAh" in result.columns
+        assert len(result) == 2
 
-    def test_recursive_recipe(self) -> None:
-        """Recipe dependency resolved recursively via another recipe."""
-        level_a = BDFColumn("Level A", "1")
-        level_b = BDFColumn("Level B", "1")
-
-        def b_from_a(cols: dict[BDFColumn, pl.Expr]) -> pl.Expr:
-            return cols[level_a] + pl.lit(10)
-
-        level_b.recipes = [Recipe(required=[level_a], compute=b_from_a)]
-        level_c = BDFColumn("Level C", "1")
-
-        def c_from_b(cols: dict[BDFColumn, pl.Expr]) -> pl.Expr:
-            return cols[level_b] * pl.lit(2)
-
-        level_c.recipes = [Recipe(required=[level_b], compute=c_from_b)]
-
-        cs = ColumnSet(["Level A / 1"])
-        expr = cs.col(level_c)
-        df = pl.DataFrame({"Level A / 1": [5, 10, 15]})
-        result = df.select(expr).to_series().to_list()
-        assert result == [30, 40, 50]
-
-
-class TestEdgeCases:
-    """Tests for edge cases and boundary conditions."""
+    def test_resolve_alias_is_converted_name(self) -> None:
+        """resolve() aliases the output to the requested unit name, not the source."""
+        cs = ColumnSet(["Current / A"])
+        df = pl.DataFrame({"Current / A": [1.0]})
+        result = df.select(cs.resolve("Current / mA"))
+        assert "Current / mA" in result.columns
+        assert "Current / A" not in result.columns
 
     @pytest.mark.parametrize(
-        "values,target_unit,expected",
+        "values,expected",
         [
-            ([0.0, 1.0, -1.0], "mA", [0.0, 1000.0, -1000.0]),
-            ([1e6, 1e7], "mA", [1e9, 1e10]),
-            ([-5.0, -2.5], "mA", [-5000.0, -2500.0]),
+            ([0.0, 1.0, -1.0], [0.0, 1000.0, -1000.0]),
+            ([1e6, 1e7], [1e9, 1e10]),
+            ([-5.0, -2.5], [-5000.0, -2500.0]),
         ],
     )
-    def test_unit_conversion_edge_values(
-        self, values: list[float], target_unit: str, expected: list[float]
+    def test_resolve_unit_conversion_edge_values(
+        self, values: list[float], expected: list[float]
     ) -> None:
-        """Unit conversion handles zero, large, and negative values."""
+        """Unit conversion handles zero, large, and negative values correctly."""
         cs = ColumnSet(["Current / A"])
-        col = Column.from_string("Current / A")
         df = pl.DataFrame({"Current / A": values})
-        result = df.select(cs.col(col, unit=target_unit)).to_series().to_list()
+        result = df.select(cs.resolve(Column("Current", "mA"))).to_series().to_list()
         assert result == pytest.approx(expected, rel=1e-9)
 
-    def test_column_empty_dataframe(self) -> None:
-        """Empty DataFrame is handled correctly."""
+    def test_resolve_empty_dataframe(self) -> None:
+        """resolve() on an empty DataFrame returns an empty series."""
         cs = ColumnSet(["Current / A"])
-        col = Column.from_string("Current / A")
-        df = pl.DataFrame({"Current / A": []})
-        result = df.select(cs.col(col)).to_series().to_list()
+        df = pl.DataFrame({"Current / A": pl.Series([], dtype=pl.Float64)})
+        result = df.select(cs.resolve("Current / A")).to_series().to_list()
         assert result == []
 
-    def test_columnset_with_many_rows(self) -> None:
-        """Large DataFrames are processed correctly."""
+    def test_resolve_custom_column_exact_match(self) -> None:
+        """resolve() returns exact column when custom column matches."""
+        df = pl.DataFrame({"Custom Column / A": [10.0, 20.0, 30.0]})
+        column_set = ColumnSet(df.columns)
+        resolved_expr = column_set.resolve("Custom Column / A")
+        expected_expr = pl.col("Custom Column / A")
+        assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
+
+    def test_resolve_custom_column_with_unit_conversion(self) -> None:
+        """resolve() applies unit conversion for custom columns."""
+        df = pl.DataFrame({"Custom Column / A": [10.0, 20.0, 30.0]})
+        column_set = ColumnSet(df.columns)
+        resolved_expr = column_set.resolve("Custom Column / mA")
+        expected_expr = (pl.col("Custom Column / A") * 1000).alias("Custom Column / mA")
+        assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
+
+    def test_resolve_bdf_column_with_unit_conversion(self) -> None:
+        """resolve() applies unit conversion for BDF columns."""
+        df = pl.DataFrame({"Voltage / V": [3.7, 3.6, 3.5]})
+        column_set = ColumnSet(df.columns)
+        resolved_expr = column_set.resolve("Voltage / mV")
+        expected_expr = (pl.col("Voltage / V") * 1000).alias("Voltage / mV")
+        assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
+
+    def test_resolve_bdf_column_via_recipe(self) -> None:
+        """resolve() computes BDF column via recipe when not directly available."""
+        df = pl.DataFrame(
+            {
+                "Charging Capacity / Ah": [0.0, 0.0, 0.0],
+                "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+            }
+        )
+        column_set = ColumnSet(df.columns)
+        resolved_expr = column_set.resolve(BDF.NET_CAPACITY_AH)
+        expected_expr = _capacity_from_ch_dch(
+            {
+                BDF.CHARGING_CAPACITY_AH: pl.col("Charging Capacity / Ah"),
+                BDF.DISCHARGING_CAPACITY_AH: pl.col("Discharging Capacity / Ah"),
+            }
+        )
+        assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
+
+
+class TestColumnRelations:
+    """Tests for equality and identity between Column and BDFColumn instances."""
+
+    def test_equality_and_identity(self) -> None:
+        """BDFColumn instances with same quantity/unit are equal but not identical."""
+        col1 = BDFColumn("Current", "A")
+        col2 = BDFColumn("Current", "A")
+        assert col1 == col2
+        assert col1 is not col2
+
+    def test_equality_in_different_classes(self) -> None:
+        """BDFColumn and Column with same quantity/unit are not equal."""
+        assert BDFColumn("Voltage", "V") != Column("Voltage", "V")
+
+    def test_in_list_and_set(self) -> None:
+        """BDFColumn equality holds in lists and sets."""
+        col = BDFColumn("Voltage", "V")
+        pool = [col, BDFColumn("Current", "A")]
+        ref = BDFColumn("Voltage", "V")
+        assert ref in pool
+        assert ref in {col, BDFColumn("Current", "A")}
+
+    def test_as_dict_keys(self) -> None:
+        """BDFColumn instances hash and compare equal as dict keys."""
+        col = BDFColumn("Net Capacity", "Ah")
+        other = BDFColumn("Step Count", "1")
+        d = {col: "Net Capacity Data", other: "Step Count Data"}
+        assert BDFColumn("Net Capacity", "Ah") in d
+        assert d[BDFColumn("Net Capacity", "Ah")] == "Net Capacity Data"
+
+
+class TestBDFEnum:
+    """Tests for the BDF Enum and its 27 standard column members."""
+
+    def test_member_count(self) -> None:
+        """BDF contains exactly 27 members."""
+        assert len(list(BDF)) == 27
+
+    def test_all_members_are_bdf_columns(self) -> None:
+        """Every BDF member is a BDFColumn instance."""
+        for member in BDF:
+            assert isinstance(member, BDFColumn)
+
+    def test_default_columns_are_in_bdf(self) -> None:
+        """Every entry in DEFAULT_COLUMNS matches a BDF member name."""
+        bdf_names = {col.name for col in BDF}
+        for name in DEFAULT_COLUMNS:
+            assert name in bdf_names
+
+    @pytest.mark.parametrize(
+        "quantity,unit,expected",
+        [
+            ("Test Time", "s", BDF.TEST_TIME_SECOND),
+            ("Current", "A", BDF.CURRENT_AMPERE),
+            ("Voltage", "V", BDF.VOLTAGE_VOLT),
+        ],
+    )
+    def test_get(self, quantity: str, unit: str, expected: BDF) -> None:
+        """BDF.get() returns the correct member for quantity/unit pairs."""
+        assert BDF.get(quantity, unit) == expected
+
+    @pytest.mark.parametrize(
+        "quantity,unit",
+        [
+            ("Test Time", "s"),
+            ("Current", "A"),
+            ("Voltage", "V"),
+            ("Net Capacity", "Ah"),
+            ("Step Count", "1"),
+            ("Step Index", "1"),
+        ],
+    )
+    def test_bdf_column_membership(self, quantity: str, unit: str) -> None:
+        """BDFColumn instances for BDF quantities are found in the enum."""
+        assert BDFColumn(quantity, unit) in BDF
+
+
+class TestColumnResolvability:
+    """Tests for can_resolve and resolve on Column and BDFColumn."""
+
+    # ── can_resolve — positive cases ──────────────────────────────────────────
+
+    @pytest.mark.parametrize(
+        "target, available",
+        [
+            # exact same-unit match
+            (
+                Column("Column A", "s"),
+                {Column("Column A", "s"), Column("Column B", "A")},
+            ),
+            # exact match in larger set
+            (
+                Column("Column B", "mA"),
+                {Column("Column A", "s"), Column("Column B", "mA")},
+            ),
+            # BDFColumn exact equality
+            (BDFColumn("Net Capacity", "Ah"), {BDFColumn("Net Capacity", "Ah")}),
+            # BDFColumn in mixed set
+            (
+                BDFColumn("Net Capacity", "Ah"),
+                {BDFColumn("Net Capacity", "Ah"), Column("Net Capacity", "mAh")},
+            ),
+            # Column resolves from BDFColumn in available (compatible unit)
+            (
+                Column("Net Capacity", "mAh"),
+                {Column("Column A", "s"), BDFColumn("Net Capacity", "Ah")},
+            ),
+            # Column with compound pint unit resolves from BDFColumn
+            (
+                Column("Net Capacity", "mA.h"),
+                {Column("Column A", "s"), BDFColumn("Net Capacity", "Ah")},
+            ),
+            # case-insensitive quantity matching
+            (Column("current", "A"), {Column("CURRENT", "A")}),
+            # bidirectional: target A from available mA
+            (Column("Current", "A"), {Column("Current", "mA")}),
+            # bidirectional: target mA from available A
+            (Column("Current", "mA"), {Column("Current", "A")}),
+            # BDF member from plain Column (same unit)
+            (BDF.CURRENT_AMPERE, {Column("Current", "A")}),
+            # BDF member from plain Column (different compatible unit)
+            (BDF.CURRENT_AMPERE, {Column("Current", "mA")}),
+            # BDF member from BDFColumn in available (equality)
+            (BDF.CURRENT_AMPERE, {BDFColumn("Current", "A")}),
+            # BDF member from mixed available (BDF + plain Column)
+            (BDF.CURRENT_AMPERE, {BDFColumn("Voltage", "V"), Column("Current", "A")}),
+            # recipe: standard-unit deps
+            (
+                BDF.NET_CAPACITY_AH,
+                {
+                    Column("Charging Capacity", "Ah"),
+                    Column("Discharging Capacity", "Ah"),
+                },
+            ),
+            # recipe: non-standard-unit deps (mAh)
+            (
+                BDF.NET_CAPACITY_AH,
+                {
+                    Column("Charging Capacity", "mAh"),
+                    Column("Discharging Capacity", "mAh"),
+                },
+            ),
+        ],
+    )
+    def test_can_resolve(self, target: Column, available: object) -> None:
+        """can_resolve returns True for all resolvable combinations."""
+        assert target.can_resolve(available) is True  # type: ignore[arg-type]
+
+    # ── can_resolve — negative cases ──────────────────────────────────────────
+
+    @pytest.mark.parametrize(
+        "target, available",
+        [
+            # quantity absent
+            (
+                Column("Column A", "s"),
+                {Column("Column B", "A"), Column("Voltage", "V")},
+            ),
+            (
+                Column("Column B", "mA"),
+                {Column("Column A", "s"), Column("Voltage", "V")},
+            ),
+            (
+                Column("Net Capacity", "mAh"),
+                {Column("Column A", "s"), Column("Column B", "A")},
+            ),
+            # incompatible unit
+            (Column("Column A", "s"), {Column("Column A", "A")}),
+            (BDFColumn("Current", "V"), {Column("Current", "A")}),
+            # wrong quantity alongside BDFColumn
+            (Column("Voltage", "A"), {BDFColumn("Current", "A")}),
+            # BDF recipe with missing deps
+            (BDF.NET_CAPACITY_AH, {Column("Voltage", "V")}),
+        ],
+    )
+    def test_cannot_resolve(self, target: Column, available: object) -> None:
+        """can_resolve returns False for unresolvable combinations."""
+        assert target.can_resolve(available) is False  # type: ignore[arg-type]
+
+    # ── resolve — BDF recipe with exact value checks ───────────────────────────
+
+    @pytest.mark.parametrize(
+        "requested, available, expected_scale, df_data",
+        [
+            # BDF target, Ah deps → base unit (scale 1)
+            (
+                BDF.NET_CAPACITY_AH,
+                {BDF.DISCHARGING_CAPACITY_AH, BDF.CHARGING_CAPACITY_AH},
+                1.0,
+                {
+                    "Charging Capacity / Ah": [0, 0, 0],
+                    "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                },
+            ),
+            # Column("mAh") target, Ah deps → unit conversion on result
+            (
+                Column("Net Capacity", "mAh"),
+                {BDF.DISCHARGING_CAPACITY_AH, BDF.CHARGING_CAPACITY_AH},
+                1000.0,
+                {
+                    "Charging Capacity / Ah": [0, 0, 0],
+                    "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                },
+            ),
+            # BDF target, kAh deps → unit conversion of inputs (scale 1000)
+            (
+                BDF.NET_CAPACITY_AH,
+                {
+                    Column("Discharging Capacity", "kAh"),
+                    Column("Charging Capacity", "kAh"),
+                },
+                1000.0,
+                {
+                    "Charging Capacity / kAh": [0, 0, 0],
+                    "Discharging Capacity / kAh": [0.1, 0.2, 0.3],
+                },
+            ),
+        ],
+    )
+    def test_resolve_bdf_recipe(
+        self,
+        requested: Column,
+        available: object,
+        expected_scale: float,
+        df_data: dict[str, object],
+    ) -> None:
+        """resolve() via recipe returns correctly computed expression."""
+        df = pl.DataFrame(df_data)
+        expr = requested.resolve(available)  # type: ignore[arg-type]
+        base = pl.DataFrame({"Net Capacity / Ah": [0.0, -0.1, -0.2]})
+        expected = base.select(
+            (pl.col("Net Capacity / Ah") * expected_scale).alias(requested.name)
+        )
+        assert_frame_equal(df.select(expr), expected)
+
+    @pytest.mark.parametrize(
+        "bdf_column",
+        [
+            BDFColumn("Net Capacity", "Ah"),  # BDFColumn with no matching recipe key
+            BDF.TEMPERATURE_T1_CELCIUS,  # BDF member with no recipe defined
+        ],
+    )
+    def test_cannot_resolve_bdf_recipe(self, bdf_column: BDFColumn) -> None:
+        """resolve() raises ColumnResolutionError when no recipe matches."""
+        with pytest.raises(ColumnResolutionError):
+            bdf_column.resolve({BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH})
+
+    def test_resolve_raises_for_missing_quantity(self) -> None:
+        """resolve() raises ColumnResolutionError when quantity is absent."""
+        with pytest.raises(ColumnResolutionError, match="Cannot resolve"):
+            Column("Current", "A").resolve({Column("Voltage", "V")})
+
+    def test_resolve_raises_for_incompatible_unit(self) -> None:
+        """resolve() raises ColumnResolutionError for incompatible units."""
+        with pytest.raises(ColumnResolutionError):
+            Column("Current", "V").resolve({Column("Current", "A")})
+
+    def test_resolve_case_insensitive(self) -> None:
+        """resolve() matches quantity case-insensitively."""
+        expr = Column("current", "A").resolve({Column("CURRENT", "A")})
+        df = pl.DataFrame({"CURRENT / A": [3.0]})
+        assert df.select(expr).to_series().to_list() == [3.0]
+
+    def test_resolve_bdf_via_bdf_equality(self) -> None:
+        """BDF.resolve() with matching BDFColumn available."""
+        expr = BDF.CURRENT_AMPERE.resolve({BDFColumn("Current", "A")})
+        df = pl.DataFrame({"Current / A": [5.0]})
+        assert df.select(expr).to_series().to_list() == [5.0]
+
+    def test_resolve_bdf_non_standard_unit_deps_outputs_base_unit(self) -> None:
+        """Recipe with mAh deps still outputs Net Capacity / Ah (base unit)."""
+        available = {
+            Column("Charging Capacity", "mAh"),
+            Column("Discharging Capacity", "mAh"),
+        }
+        expr = BDF.NET_CAPACITY_AH.resolve(available)
+        df = pl.DataFrame(
+            {
+                "Charging Capacity / mAh": [1000.0, 2000.0],
+                "Discharging Capacity / mAh": [0.0, 0.0],
+            }
+        )
+        result = df.select(expr)
+        assert "Net Capacity / Ah" in result.columns
+        assert len(result) == 2
+
+
+class TestColumnSetInit:
+    """Tests for ColumnSet initialisation and introspection."""
+
+    @pytest.mark.parametrize(
+        "available, expected",
+        [
+            (["Column A / s"], {Column("Column A", "s")}),
+            (["Current / A", "Voltage / V"], {BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT}),
+            (["Current / mA"], {Column("Current", "mA")}),
+            (
+                ["Discharging Capacity / Ah", "Charging Capacity / Ah"],
+                {BDF.DISCHARGING_CAPACITY_AH, BDF.CHARGING_CAPACITY_AH},
+            ),
+            (
+                ["Discharging Capacity / mAh", "Charging Capacity / mAh"],
+                {
+                    Column("Discharging Capacity", "mAh"),
+                    Column("Charging Capacity", "mAh"),
+                },
+            ),
+            (
+                ["Discharging Capacity / Ah", "Charging Capacity / kAh"],
+                {BDF.DISCHARGING_CAPACITY_AH, Column("Charging Capacity", "kAh")},
+            ),
+        ],
+    )
+    def test_internal_columns(
+        self, available: list[str], expected: set[Column | BDFColumn]
+    ) -> None:
+        """_columns contains the expected Column/BDF instances after init."""
+        assert set(ColumnSet(available)._columns) == expected
+
+    def test_names_property(self) -> None:
+        """Names returns column name strings in order."""
+        cs = ColumnSet(["Current / A", "Voltage / V"])
+        assert cs.names == ["Current / A", "Voltage / V"]
+
+    def test_quantities_property(self) -> None:
+        """Quantities returns quantity strings in order."""
+        cs = ColumnSet(["Current / A", "Voltage / V"])
+        assert cs.quantities == ["Current", "Voltage"]
+
+    def test_contains(self) -> None:
+        """__contains__ checks by column name string."""
+        cs = ColumnSet(["Current / A", "Voltage / V"])
+        assert "Current / A" in cs
+        assert "Power / W" not in cs
+
+    @pytest.mark.parametrize(
+        "column, expected",
+        [
+            ("Current / A", True),  # string — direct hit
+            ("Current / mA", True),  # string — unit conversion
+            ("Voltage / V", False),  # string — missing
+            (Column("Current", "A"), True),  # Column — direct hit
+            (Column("Current", "mA"), True),  # Column — unit conversion
+            (Column("Voltage", "V"), False),  # Column — missing
+            (BDF.CURRENT_AMPERE, True),  # BDF member — via unit conversion
+        ],
+    )
+    def test_can_resolve(self, column: object, expected: bool) -> None:
+        """can_resolve returns correct boolean values."""
         cs = ColumnSet(["Current / A"])
-        col = Column.from_string("Current / A")
-        large_data = list(range(10000))
-        df = pl.DataFrame({"Current / A": large_data})
-        result = df.select(cs.col(col, unit="mA")).to_series().to_list()
-        assert len(result) == 10000
-        assert result[0] == 0.0
-        assert result[-1] == pytest.approx(9999000.0, rel=1e-9)
+        assert cs.can_resolve(column) is expected  # type: ignore[arg-type]
 
-
-class TestPublicBDFInstances:
-    """Tests for all 27 public BDFColumn instances."""
-
-    def test_all_columns_count(self) -> None:
-        """ALL_COLUMNS list contains exactly 27 entries."""
-        assert len(ALL_COLUMNS) == 27
-
-    def test_default_columns_is_subset(self) -> None:
-        """DEFAULT_COLUMNS are all present in ALL_COLUMNS."""
-        all_names = [col.column_name for col in ALL_COLUMNS]
-        for default_name in DEFAULT_COLUMNS:
-            assert default_name in all_names
-
-    @pytest.mark.parametrize("col_obj", ALL_COLUMNS)
-    def test_all_instances_in_all_columns_list(self, col_obj: BDFColumn) -> None:
-        """All exported instances appear in ALL_COLUMNS."""
-        assert col_obj in ALL_COLUMNS
-
-    @pytest.mark.parametrize("col_obj", ALL_COLUMNS)
-    def test_all_instances_have_iri(self, col_obj: BDFColumn) -> None:
-        """All BDF-standard instances have IRI URLs starting with BDF_IRI_PREFIX."""
-        assert col_obj.iri is not None
-        assert col_obj.iri.startswith(BDF_IRI_PREFIX)
+    @pytest.mark.parametrize(
+        "available, column, expected",
+        [
+            # recipe resolvable (standard units)
+            (
+                ["Charging Capacity / Ah", "Discharging Capacity / Ah"],
+                "Net Capacity / Ah",
+                True,
+            ),
+            # recipe resolvable (non-standard units)
+            (
+                ["Charging Capacity / mAh", "Discharging Capacity / mAh"],
+                "Net Capacity / Ah",
+                True,
+            ),
+            # recipe + unit conversion on result
+            (
+                ["Charging Capacity / mAh", "Discharging Capacity / mAh"],
+                "Net Capacity / mAh",
+                True,
+            ),
+            # recipe not resolvable (wrong deps)
+            (["Voltage / V"], "Net Capacity / Ah", False),
+        ],
+    )
+    def test_can_resolve_recipe(
+        self, available: list[str], column: str, expected: bool
+    ) -> None:
+        """can_resolve handles recipe-based BDF columns correctly."""
+        assert ColumnSet(available).can_resolve(column) is expected
