@@ -25,31 +25,25 @@ if TYPE_CHECKING:
     from pyprobe.filters import Procedure
 
 from pyprobe.column import (
-    BDFColumn,
-    Column,
+    BDF,
     ColumnSet,
-    current_ampere,
-    net_capacity_ah,
-    step_count,
-    step_index,
-    test_time_second,
-    voltage_volt,
+    column_factory_from_string,
 )
 
 _PARQUET_METADATA_KEY: bytes = b"bdx_metadata"
 """Key used to store user metadata in Parquet footer."""
 
-_REQUIRED_BDF_COLUMNS: list[BDFColumn] = [
-    test_time_second,
-    current_ampere,
-    voltage_volt,
+_REQUIRED_BDF_COLUMNS: list[BDF] = [
+    BDF.TEST_TIME_SECOND,
+    BDF.CURRENT_AMPERE,
+    BDF.VOLTAGE_VOLT,
 ]
 """BDF columns that must be resolvable; :func:`process_cycler` raises if not."""
 
-_OPTIONAL_BDF_COLUMNS: list[BDFColumn] = [
-    net_capacity_ah,
-    step_count,
-    step_index,
+_OPTIONAL_BDF_COLUMNS: list[BDF] = [
+    BDF.NET_CAPACITY_AH,
+    BDF.STEP_COUNT,
+    BDF.STEP_INDEX,
 ]
 """BDF columns included when available; warnings are emitted on failure."""
 
@@ -403,7 +397,7 @@ def process_cycler(
 
     for bdf_col in _REQUIRED_BDF_COLUMNS:
         try:
-            expressions.append(column_set.col(bdf_col))
+            expressions.append(column_set.resolve(bdf_col))
         except ValueError as exc:
             raise ValueError(
                 f"Required BDF column '{bdf_col.quantity}' could not be resolved "
@@ -412,7 +406,7 @@ def process_cycler(
 
     for bdf_col in _OPTIONAL_BDF_COLUMNS:
         try:
-            expressions.append(column_set.col(bdf_col))
+            expressions.append(column_set.resolve(bdf_col))
         except ValueError:
             logger.warning(
                 "Optional BDF column '{}' could not be resolved; skipping.",
@@ -427,7 +421,7 @@ def process_cycler(
         # Invalid: "InvalidNoUnit", "Pressure kPa", "/ kPa", "", "Quantity //"
         strict_pattern = r"^(.+?)\s*/\s*([^/]+(?:/[^/]+)*)$"
         for output_name in extra_columns:
-            Column.from_string(output_name, pattern=strict_pattern)
+            column_factory_from_string(output_name, pattern=strict_pattern)
 
         # Dual bdf.read() calls are necessary: the initial read (above) normalizes
         # column names to BDF standard, while this read with normalize=False
