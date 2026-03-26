@@ -1,7 +1,6 @@
 """Tests for the RawData class."""
 
 import copy
-import random
 
 import numpy as np
 import polars as pl
@@ -35,18 +34,10 @@ def test_init(RawData_fixture, step_descriptions_fixture):
 
 def test_data(RawData_fixture):
     """Test the data property."""
-    columns = copy.deepcopy(RawData_fixture.data.collect_schema().names())
-    random.shuffle(columns)
-    RawData_fixture.lf = RawData_fixture.lf.select(columns)
-    assert RawData_fixture.data.columns == [
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Date",
-    ]
+    data = RawData_fixture.data
+    assert "Test Time / s" in data.columns
+    assert "Current / A" in data.columns
+    assert "Voltage / V" in data.columns
 
 
 def test_capacity(BreakinCycles_fixture):
@@ -60,7 +51,7 @@ def test_set_SOC(BreakinCycles_fixture):
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
     assert isinstance(with_charge_specified.lf, pl.LazyFrame)
-    assert "Capacity [Ah]_right" not in with_charge_specified.data.columns
+    assert "Net Capacity / Ah_right" not in with_charge_specified.data.columns
     with_charge_specified = with_charge_specified.data["SOC"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
@@ -87,7 +78,7 @@ def test_SOC_with_base_as_dataframe(BreakinCycles_fixture):
     with_charge_specified = BreakinCycles_fixture
     with_charge_specified.data
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert "SOC" in with_charge_specified.columns
+    assert "SOC" in with_charge_specified.columns.quantities
 
 
 def test_deprecated_set_SOC(BreakinCycles_fixture, mocker):
@@ -101,53 +92,31 @@ def test_set_reference_capacity(BreakinCycles_fixture):
     """Test the set_reference_capacity method."""
     procedure1 = copy.deepcopy(BreakinCycles_fixture)
     procedure1.set_reference_capacity()
-    assert procedure1.get("Capacity - Referenced [Ah]").min() == 0
+    assert procedure1.get("Capacity - Referenced / Ah").min() == 0
     assert np.isclose(
-        procedure1.get("Capacity - Referenced [Ah]").max(),
+        procedure1.get("Capacity - Referenced / Ah").max(),
         procedure1.capacity,
     )
 
     procedure2 = copy.deepcopy(BreakinCycles_fixture)
     procedure2.set_reference_capacity(0.04)
     assert np.isclose(
-        procedure2.get("Capacity - Referenced [Ah]").min(),
+        procedure2.get("Capacity - Referenced / Ah").min(),
         0.04 - procedure2.capacity,
     )
-    assert procedure2.get("Capacity - Referenced [Ah]").max() == 0.04
+    assert procedure2.get("Capacity - Referenced / Ah").max() == 0.04
 
 
 def test_zero_column(RawData_fixture):
     """Test method for zeroing the first value of a selected column."""
     RawData_fixture.zero_column(
-        "Capacity [Ah]",
-        "Zeroed Capacity [Ah]",
+        "Net Capacity / Ah",
         "Capacity column with first value zeroed.",
     )
-    assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
-    assert RawData_fixture.column_definitions["Zeroed Capacity"] == (
+    assert RawData_fixture.data["Net Capacity / Ah"][0] == 0
+    assert RawData_fixture.column_definitions["Net Capacity"] == (
         "Capacity column with first value zeroed."
     )
-
-
-def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture):
-    """Test that the definitions have been correctly set."""
-    rawdata = RawData(
-        lf=lazyframe_fixture,
-        metadata=info_fixture,
-        step_descriptions=step_descriptions_fixture,
-    )
-    definition_keys = list(rawdata.column_definitions.keys())
-    assert set(definition_keys) == {
-        "Time",
-        "Current",
-        "Voltage",
-        "Capacity",
-        "Cycle",
-        "Step",
-        "Event",
-        "Date",
-        "Temperature",
-    }
 
 
 def test_pybamm_experiment():
@@ -155,12 +124,12 @@ def test_pybamm_experiment():
     # Create test data
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2, 3],
-            "Step": [1, 2, 2],
-            "Event": [1, 2, 2],
-            "Current [A]": [0.1, 0.2, 0.3],
-            "Voltage [V]": [3.0, 3.1, 3.2],
-            "Capacity [Ah]": [0.1, 0.2, 0.3],
+            "Test Time / s": [1, 2, 3],
+            "Step Count / 1": [1, 2, 2],
+            "Step Index / 1": [1, 2, 2],
+            "Current / A": [0.1, 0.2, 0.3],
+            "Voltage / V": [3.0, 3.1, 3.2],
+            "Net Capacity / Ah": [0.1, 0.2, 0.3],
         },
     )
 
@@ -186,12 +155,12 @@ def test_pybamm_experiment_missing_descriptions():
     """Test error handling when step descriptions are missing."""
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2, 3],
-            "Step": [1, 2, 3],
-            "Event": [1, 2, 3],
-            "Current [A]": [0.1, 0.2, 0.3],
-            "Voltage [V]": [3.0, 3.1, 3.2],
-            "Capacity [Ah]": [0.1, 0.2, 0.3],
+            "Test Time / s": [1, 2, 3],
+            "Step Count / 1": [1, 2, 3],
+            "Step Index / 1": [1, 2, 3],
+            "Current / A": [0.1, 0.2, 0.3],
+            "Voltage / V": [3.0, 3.1, 3.2],
+            "Net Capacity / Ah": [0.1, 0.2, 0.3],
         },
     )
 
@@ -214,12 +183,12 @@ def test_pybamm_experiment_multiple_conditions():
     """Test handling of steps with multiple comma-separated conditions."""
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2],
-            "Step": [1, 2],
-            "Event": [1, 2],
-            "Current [A]": [0.1, 0.2],
-            "Voltage [V]": [3.0, 3.1],
-            "Capacity [Ah]": [0.1, 0.2],
+            "Test Time / s": [1, 2],
+            "Step Count / 1": [1, 2],
+            "Step Index / 1": [1, 2],
+            "Current / A": [0.1, 0.2],
+            "Voltage / V": [3.0, 3.1],
+            "Net Capacity / Ah": [0.1, 0.2],
         },
     )
 
@@ -249,12 +218,12 @@ def test_pybamm_experiment_with_loops():
     # Create test data with repeated steps: 1->2->1->2
     base_df = pl.DataFrame(
         {
-            "Step": [1, 1, 1, 2, 2, 1, 1, 2, 2],
-            "Time [s]": range(9),
-            "Voltage [V]": [3.0] * 9,
-            "Current [A]": [0.1] * 9,
-            "Capacity [Ah]": [0.1] * 9,
-            "Event": [1, 1, 1, 2, 2, 3, 3, 4, 4],
+            "Step Index / 1": [1, 1, 1, 2, 2, 1, 1, 2, 2],
+            "Test Time / s": range(9),
+            "Voltage / V": [3.0] * 9,
+            "Current / A": [0.1] * 9,
+            "Net Capacity / Ah": [0.1] * 9,
+            "Step Count / 1": [1, 1, 1, 2, 2, 3, 3, 4, 4],
         },
     )
 

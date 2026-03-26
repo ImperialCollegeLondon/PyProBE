@@ -18,8 +18,7 @@ from numpy.typing import NDArray
 from scipy.io import savemat
 from tzlocal import get_localzone
 
-from pyprobe.plot import _retrieve_relevant_columns
-from pyprobe.units import get_unit_scaling, split_quantity_unit
+from pyprobe.column import ColumnSet
 from pyprobe.utils import catch_pydantic_validation, deprecated
 
 try:
@@ -66,15 +65,16 @@ class Result:
           data source.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
-        - :attr:`columns`: A list of column names.
+        - :attr:`columns`: A :class:`~pyprobe.column.ColumnSet` object providing
+          column name access (via ``.names``) and BDF-aware resolution (via
+          ``.resolve()`` and ``.can_resolve()``).
     """
 
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None] | None = None,
+        metadata: dict[str, Any | None] = {},
         column_definitions: dict[str, str] | None = None,
-        info: dict[str, Any | None] | None = None,
     ) -> None:
         """Create a Result with explicit constructor validation.
 
@@ -82,19 +82,10 @@ class Result:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
             metadata: Dictionary containing metadata about the result.
             column_definitions: Optional definitions for data columns.
-            info: Deprecated. Use metadata instead.
 
         Raises:
             ValueError: If constructor inputs do not match expected types.
         """
-        # Handle backward compatibility: accept both 'info' and 'metadata'
-        if info is not None and metadata is not None:
-            raise ValueError("Cannot specify both 'info' and 'metadata' parameters.")
-        if info is not None:
-            metadata = info
-        if metadata is None:
-            metadata = {}
-
         if isinstance(lf, str):
             lf = pl.scan_parquet(lf)
         if not isinstance(lf, pl.LazyFrame):
@@ -132,13 +123,32 @@ class Result:
         return lf
 
     @property
-    def columns(self) -> list[str]:
-        """The columns in the data.
+    def columns(self) -> ColumnSet:
+        """The columns in the data as a ColumnSet.
+
+        Returns a :class:`~pyprobe.column.ColumnSet` object that provides
+        both simple column name access and BDF-aware resolution:
+
+        - :attr:`~pyprobe.column.ColumnSet.names`: list of column name strings.
+        - :attr:`~pyprobe.column.ColumnSet.quantities`: list of quantity strings.
+        - :meth:`~pyprobe.column.ColumnSet.resolve`: resolve a column by name
+          or quantity, with optional unit conversion.
+        - :meth:`~pyprobe.column.ColumnSet.can_resolve`: check if a column
+          or BDF quantity is available.
 
         Returns:
-            List[str]: The columns in the data.
+            ColumnSet: A column introspection and resolution object.
+
+        Examples:
+            >>> import polars as pl
+            >>> from pyprobe.result import Result
+            >>> r = Result(lf=pl.LazyFrame({"Current / A": [1.0]}))
+            >>> r.columns.names
+            ['Current / A']
+            >>> r.columns.quantities
+            ['Current']
         """
-        return self.lf.collect_schema().names()
+        return ColumnSet(self.lf.collect_schema().names())
 
     @property
     def info(self) -> dict[str, Any | None]:
@@ -148,34 +158,6 @@ class Result:
             dict: The metadata dictionary.
         """
         return self.metadata
-
-    @staticmethod
-    def _get_quantities(columns: list[str]) -> list[str]:
-        """The quantities of the data, with unit information removed.
-
-        Args:
-            columns (List[str]): The columns to get the quantities of.
-
-        Returns:
-            List[str]: The quantities of the data.
-        """
-        _quantities: set[str] = set()
-        for _, column in enumerate(columns):
-            try:
-                quantity, _ = split_quantity_unit(column)
-                _quantities.add(quantity)
-            except ValueError:
-                continue
-        return list(_quantities)
-
-    @property
-    def quantities(self) -> list[str]:
-        """The quantities of the data, with unit information removed.
-
-        Returns:
-            List[str]: The quantities of the data.
-        """
-        return self._get_quantities(self.columns)
 
     @property
     def df(self) -> pl.DataFrame:
@@ -195,36 +177,6 @@ class Result:
         """
         self.lf = dataframe.lazy()
 
-    def check_columns(self, columns: list[str]) -> None:
-        """Check whether a column exists in the data.
-
-        Convert units if selected quantity exists in data with different unit.
-
-        Args:
-            columns (List[str]): The columns to check.
-
-        Raises:
-            ValueError: If a column does not exist in the data.
-        """
-        missing_columns = set(columns) - set(self.columns)
-        if missing_columns:
-            logger.info("Missing columns: {}", missing_columns)
-            # check if missing columns can be converted from existing quantities
-            quantities = set(self._get_quantities(list(missing_columns)))
-            missing_quantities = set(quantities) - set(self.quantities)
-            if missing_quantities:
-                raise ValueError(f"Quantities {missing_quantities} not in data.")
-            # convert missing columns to requested units
-            for col in missing_columns:
-                quantity, unit = split_quantity_unit(col)
-                if unit == "":
-                    continue
-                _, base_unit = get_unit_scaling(unit)
-                self.lf = self.lf.with_columns(
-                    (pl.col(f"{quantity} [{base_unit}]").units.to_unit(unit)),
-                )
-                logger.info(f"Converted column {col} from {base_unit} to {unit}.")
-
     @property
     def data(self) -> pl.DataFrame:
         """Return the data as a polars DataFrame.
@@ -243,7 +195,7 @@ class Result:
     @wraps(pd.DataFrame.plot)
     def plot(self, *args: Any, **kwargs: Any) -> Axes | NDArray[Axes]:
         """Wrapper for plotting using the pandas library."""
-        data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
+        data_to_plot = self.get_plotting_data(args, kwargs)
         return data_to_plot.to_pandas().plot(*args, **kwargs)
 
     plot.__doc__ = """Plot the data using the pandas plot method.
@@ -265,7 +217,7 @@ class Result:
         @wraps(hvplot.hvPlot)
         def hvplot(self, *args: Any, **kwargs: Any) -> Any:
             """Wrapper for plotting using the hvplot library."""
-            data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
+            data_to_plot = self.get_plotting_data(args, kwargs)
             return data_to_plot.hvplot(*args, **kwargs)
 
     else:
@@ -311,9 +263,10 @@ class Result:
         Returns:
             Result: A new result object with the specified columns.
         """
-        self.check_columns(list(column_names))
+        col_set = self.columns
+        exprs = [col_set.resolve(name) for name in column_names]
         return Result(
-            lf=self.lf.select(*column_names),
+            lf=self.lf.select(*exprs),
             metadata=self.metadata,
         )
 
@@ -338,8 +291,9 @@ class Result:
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)
             raise ValueError(error_msg)
-        self.check_columns(list(column_names))
-        array = self.lf.select(*column_names).collect().to_numpy()
+        col_set = self.columns
+        exprs = [col_set.resolve(name) for name in column_names]
+        array = self.lf.select(*exprs).collect().to_numpy()
         if len(column_names) == 1:
             return array.T[0]
         else:
@@ -368,6 +322,56 @@ class Result:
             logger.error(error_msg)
             raise ValueError(error_msg)
         return column
+
+    def get_plotting_data(
+        self,
+        args: tuple[Any, ...],
+        kwargs: dict[Any, Any],
+    ) -> pl.DataFrame:
+        """Extract and resolve columns for plotting from function arguments.
+
+        This method analyzes the arguments passed to a plotting function and
+        retrieves the used columns as a DataFrame. It extracts column names from
+        positional and keyword arguments, resolves them using the ColumnSet
+        (which handles unit conversions and BDF-aware resolution), and returns
+        a collected DataFrame suitable for passing to plotting libraries.
+
+        Args:
+            args: Positional arguments from the plotting function.
+            kwargs: Keyword arguments from the plotting function.
+
+        Returns:
+            pl.DataFrame: A collected DataFrame containing the requested columns.
+
+        Raises:
+            ValueError: If none of the requested columns are present in the data.
+
+        Examples:
+            >>> result = Result(lf=pl.LazyFrame({"Current / A": [1.0, 2.0]}))
+            >>> df = result.get_plotting_data(["Current / mA"], {})
+            >>> df.shape
+            (2, 1)
+        """
+        kwargs_values = [
+            v for k, v in kwargs.items() if isinstance(v, str) and k != "label"
+        ]
+        args_values = [v for v in args if isinstance(v, str)]
+        all_args = set(kwargs_values + args_values)
+        relevant_columns = []
+        col_set = self.columns
+
+        for arg in all_args:
+            if col_set.can_resolve(arg):
+                relevant_columns.append(arg)
+
+        if len(relevant_columns) == 0:
+            raise ValueError(
+                f"None of the columns in {all_args} are present in the Result object.",
+            )
+
+        # Resolve columns using ColumnSet to handle unit conversions
+        exprs = [col_set.resolve(col) for col in relevant_columns]
+        return self.lf.select(*exprs).collect()
 
     def define_column(self, column_name: str, definition: str) -> None:
         """Define a new column when it is added to the dataframe.
@@ -910,8 +914,8 @@ class Result:
     def export_to_mat(self, filename: str) -> None:
         """Export the data to a .mat file.
 
-        This method will export the data and info dictionary to a .mat file. The
-        variables in the .mat file will be named 'data' and 'info'. Column names and
+        This method will export the data and metadata dictionary to a .mat file. The
+        variables in the .mat file will be named 'data' and 'metadata'. Column names and
         dictionary keys will have any non-alphanumeric characters replaced with an
         underscore, to comply with MATLAB variable naming rules.
 
@@ -924,15 +928,15 @@ class Result:
             {col: re.sub(r"\W", "_", col) for col in self.data.columns},
         )
 
-        # Replace any non-alphanumeric character with an underscore in the info
+        # Replace any non-alphanumeric character with an underscore in the metadata
         # dictionary keys
-        renamed_info = {
+        renamed_metadata = {
             re.sub(r"\W", "_", key): value for key, value in self.metadata.items()
         }
 
         variable_dict = {
             "data": renamed_data.to_dict(),
-            "info": renamed_info,
+            "metadata": renamed_metadata,
         }
         savemat(filename, variable_dict, oned_as="column")
 
@@ -940,7 +944,7 @@ class Result:
     @staticmethod
     def from_polars_io(
         polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
-        info: dict[str, Any | None] = {},
+        metadata: dict[str, Any | None] = {},
         column_definitions: dict[str, str] = {},
         **kwargs: Any,
     ) -> "Result":
@@ -956,8 +960,8 @@ class Result:
         Args:
             polars_io_func (Callable[..., pl.DataFrame | pl.LazyFrame]):
                 The Polars IO function to use to create the data.
-            info (dict[str, Any | None]):
-                The info dictionary for the new Result object. Empty by default.
+            metadata (dict[str, Any | None]):
+                The metadata dictionary for the new Result object. Empty by default.
             column_definitions (dict[str, str]):
                 The column definitions for the new Result object. Empty by default.
             **kwargs: The keyword arguments to pass to the Polars IO function.
@@ -1004,7 +1008,7 @@ class Result:
         lf = polars_io_func(**kwargs)
         if isinstance(lf, pl.DataFrame):
             lf = lf.lazy()
-        return Result(lf=lf, metadata=info, column_definitions=column_definitions)
+        return Result(lf=lf, metadata=metadata, column_definitions=column_definitions)
 
     @property
     @deprecated(

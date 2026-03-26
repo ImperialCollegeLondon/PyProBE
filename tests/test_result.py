@@ -35,7 +35,7 @@ def test_init(Result_fixture):
     """Test the __init__ method."""
     assert isinstance(Result_fixture, Result)
     assert isinstance(Result_fixture.lf, pl.LazyFrame)
-    assert isinstance(Result_fixture.info, dict)
+    assert isinstance(Result_fixture.metadata, dict)
 
 
 def test_init_accepts_dataframe():
@@ -76,72 +76,96 @@ def test_collect(Result_fixture):
     assert isinstance(Result_fixture.lf, pl.LazyFrame)
 
 
-def test_check_columns_valid(Result_fixture):
-    """Test check_columns with valid columns."""
-    # Should not raise any exception
-    Result_fixture.check_columns(["Current [A]", "Voltage [V]"])
+def test_can_resolve_valid(Result_fixture):
+    """Test that known BDF columns are resolvable via ColumnSet."""
+    col_set = Result_fixture.columns
+    assert col_set.can_resolve("Current / A")
+    assert col_set.can_resolve("Voltage / V")
 
 
-def test_check_columns_missing(Result_fixture):
-    """Test check_columns with missing columns."""
-    with pytest.raises(ValueError, match="Quantities .* not in data"):
-        Result_fixture.check_columns(["NonExistent [A]"])
+def test_can_resolve_missing(Result_fixture):
+    """Test that an unknown column is not resolvable via ColumnSet."""
+    col_set = Result_fixture.columns
+    assert not col_set.can_resolve("NonExistent / A")
 
 
-def test_check_columns_unit_conversion(Result_fixture):
-    """Test check_columns with unit conversion."""
-    # Current [A] exists, so requesting Current [mA] should work via unit conversion
-    Result_fixture.check_columns(["Current [mA]"])
-    assert "Current [mA]" in Result_fixture.columns
+def test_get_unit_conversion(Result_fixture):
+    """Test that get() performs BDF-aware unit conversion."""
+    current_ma = Result_fixture.get("Current / mA")
+    np_testing.assert_allclose(
+        current_ma,
+        Result_fixture.data["Current / A"].to_numpy() * 1000,
+        rtol=1e-5,
+    )
+
+
+def test_get_missing_column_raises(Result_fixture):
+    """Test that get() raises ValueError for nonexistent columns."""
+    with pytest.raises(ValueError, match="Cannot resolve"):
+        Result_fixture.get("NonExistent / A")
+
+
+def test_getitem_unit_conversion(Result_fixture):
+    """Test that __getitem__() supports unit conversion via ColumnSet."""
+    current_ma = Result_fixture["Current / mA"]
+    assert isinstance(current_ma, Result)
+    assert "Current / mA" in current_ma.columns
+    np_testing.assert_allclose(
+        current_ma.data["Current / mA"].to_numpy(),
+        Result_fixture.data["Current / A"].to_numpy() * 1000,
+        rtol=1e-5,
+    )
+
+
+def test_getitem_missing_column_raises(Result_fixture):
+    """Test that __getitem__() raises ValueError for nonexistent columns."""
+    with pytest.raises(ValueError, match="Cannot resolve"):
+        _ = Result_fixture["NonExistent / A"]
+
+
+def test_getitem_does_not_mutate_columns(Result_fixture):
+    """Test that __getitem__() with unit conversion doesn't add column to result."""
+    original_columns = set(Result_fixture.data.columns)
+    _ = Result_fixture["Current / mA"]
+    assert set(Result_fixture.data.columns) == original_columns
 
 
 def test_get(Result_fixture):
     """Test the get method."""
-    current = Result_fixture.get("Current [A]")
+    current = Result_fixture.get("Current / A")
     np_testing.assert_array_equal(
         current,
-        Result_fixture.data["Current [A]"].to_numpy(),
+        Result_fixture.data["Current / A"].to_numpy(),
     )
-    current_mA = Result_fixture.get("Current [mA]")
-    np_testing.assert_array_equal(current_mA, current * 1000)
 
-    current, voltage = Result_fixture.get("Current [A]", "Voltage [V]")
+    current, voltage = Result_fixture.get("Current / A", "Voltage / V")
     np_testing.assert_array_equal(
         current,
-        Result_fixture.data["Current [A]"].to_numpy(),
+        Result_fixture.data["Current / A"].to_numpy(),
     )
     np_testing.assert_array_equal(
         voltage,
-        Result_fixture.data["Voltage [V]"].to_numpy(),
+        Result_fixture.data["Voltage / V"].to_numpy(),
     )
 
 
 def test_get_only(Result_fixture):
     """Test the get_only method."""
-    current = Result_fixture.get("Current [A]")
+    current = Result_fixture.get("Current / A")
     np_testing.assert_array_equal(
         current,
-        Result_fixture.data["Current [A]"].to_numpy(),
+        Result_fixture.data["Current / A"].to_numpy(),
     )
-    current_mA = Result_fixture.get("Current [mA]")
-    np_testing.assert_array_equal(current_mA, current * 1000)
 
 
 def test_getitem(Result_fixture):
     """Test the __getitem__ method."""
-    current = Result_fixture["Current [A]"]
-    assert "Current [A]" in current.columns
+    current = Result_fixture["Current / A"]
+    assert "Current / A" in current.columns
     assert isinstance(current, Result)
     pl_testing.assert_frame_equal(
         current.data,
-        Result_fixture.data.select("Current [A]"),
-    )
-    current_mA = Result_fixture["Current [mA]"]
-    assert "Current [mA]" in current_mA.columns
-    assert "Current [A]" not in current_mA.columns
-    np_testing.assert_allclose(
-        current_mA.get("Current [mA]"),
-        Result_fixture.get("Current [mA]"),
+        Result_fixture.data.select("Current / A"),
     )
 
 
@@ -154,14 +178,13 @@ def test_data(Result_fixture):
 
 def test_quantities(Result_fixture):
     """Test the quantities property."""
-    assert set(Result_fixture.quantities) == {
-        "Time",
+    assert set(Result_fixture.columns.quantities) == {
+        "Test Time",
         "Current",
         "Voltage",
-        "Capacity",
-        "Event",
-        "Date",
-        "Step",
+        "Net Capacity",
+        "Step Count",
+        "Step Index",
     }
 
 
@@ -183,8 +206,8 @@ def test_build():
     """Test the build method."""
     data1 = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
     data2 = pl.DataFrame({"x": [7, 8, 9], "y": [10, 11, 12]})
-    info = {"test": "info"}
-    result = Result.build([data1, data2], info)
+    metadata = {"test": "metadata"}
+    result = Result.build([data1, data2], metadata)
     assert isinstance(result, Result)
     expected_data = pl.DataFrame(
         {
@@ -980,7 +1003,7 @@ def reduced_result_fixture():
     )
     return Result(
         lf=data.lazy(),
-        info={"test": "info"},
+        metadata={"test": "metadata"},
         column_definitions={
             "Voltage": "Voltage definition",
             "Current": "Current definition",
@@ -1055,7 +1078,7 @@ def test_join_left(reduced_result_fixture):
     )
     other_result = Result(
         lf=other_data.lazy(),
-        info={"test": "info"},
+        metadata={"test": "metadata"},
         column_definitions={"Voltage": "Voltage definition"},
     )
     reduced_result_fixture.join(other_result, on="Current [A]", how="left")
@@ -1084,7 +1107,7 @@ def test_extend(reduced_result_fixture):
     )
     other_result = Result(
         lf=other_data.lazy(),
-        info={"test": "info"},
+        metadata={"test": "metadata"},
         column_definitions={"Voltage": "Voltage definition"},
     )
     reduced_result_fixture.extend(other_result)
@@ -1113,7 +1136,7 @@ def test_extend_with_new_columns(reduced_result_fixture):
     )
     other_result = Result(
         lf=other_data.lazy(),
-        info={"test": "info"},
+        metadata={"test": "metadata"},
         column_definitions={
             "Voltage": "New voltage definition",
             "Capacity": "Capacity definition",
@@ -1146,7 +1169,7 @@ def test_clean_copy(reduced_result_fixture):
     clean_result = reduced_result_fixture.clean_copy()
     assert isinstance(clean_result, Result)
     assert clean_result.lf.collect().is_empty()
-    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.metadata == reduced_result_fixture.metadata
     assert clean_result.column_definitions == {}
 
     # Test with new dataframe
@@ -1154,7 +1177,7 @@ def test_clean_copy(reduced_result_fixture):
     clean_result = reduced_result_fixture.clean_copy(dataframe=new_df)
     assert isinstance(clean_result, Result)
     pl_testing.assert_frame_equal(clean_result.data, new_df)
-    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.metadata == reduced_result_fixture.metadata
     assert clean_result.column_definitions == {}
 
     # Test with new column definitions
@@ -1162,7 +1185,7 @@ def test_clean_copy(reduced_result_fixture):
     clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
     assert isinstance(clean_result, Result)
     assert clean_result.lf.collect().is_empty()
-    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.metadata == reduced_result_fixture.metadata
     assert clean_result.column_definitions == new_defs
 
     # Test with both new dataframe and column definitions
@@ -1172,7 +1195,7 @@ def test_clean_copy(reduced_result_fixture):
     )
     assert isinstance(clean_result, Result)
     pl_testing.assert_frame_equal(clean_result.data, new_df)
-    assert clean_result.info == reduced_result_fixture.info
+    assert clean_result.metadata == reduced_result_fixture.metadata
     assert clean_result.column_definitions == new_defs
 
     # Test with LazyFrame
@@ -1187,11 +1210,11 @@ def test_combine_results():
     """Test the combine results method."""
     result1 = Result(
         lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).lazy(),
-        info={"test index": 1.0},
+        metadata={"test index": 1.0},
     )
     result2 = Result(
         lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}).lazy(),
-        info={"test index": 2.0},
+        metadata={"test index": 2.0},
     )
     combined_result = combine_results([result1, result2])
     expected_data = pl.DataFrame(
@@ -1214,15 +1237,14 @@ def test_export_to_mat(Result_fixture, tmp_path):
     Result_fixture.export_to_mat(str(mat_path))
     saved_data = loadmat(str(mat_path))
     assert "data" in saved_data
-    assert "info" in saved_data
+    assert "metadata" in saved_data
     expected_columns = {
-        "Current__A_",
-        "Step",
-        "Event",
-        "Time__s_",
-        "Capacity__Ah_",
-        "Voltage__V_",
-        "Date",
+        "Current___A",
+        "Voltage___V",
+        "Test_Time___s",
+        "Net_Capacity___Ah",
+        "Step_Count___1",
+        "Step_Index___1",
     }
     actual_columns = set(saved_data["data"].dtype.names)
     assert actual_columns == expected_columns
@@ -1237,19 +1259,19 @@ def test_from_polars_io(tmp_path):
 
     # Test with basic parameters
     result = Result.from_polars_io(
-        info={"test": "info"},
+        metadata={"test": "metadata"},
         column_definitions={"a": "Column A"},
         polars_io_func=pl.read_csv,
         source=str(csv_path),
     )
     assert isinstance(result, Result)
-    assert result.info == {"test": "info"}
+    assert result.metadata == {"test": "metadata"}
     assert result.column_definitions == {"a": "Column A"}
     pl_testing.assert_frame_equal(result.data, test_df)
 
     # Test with LazyFrame function
     result_lazy = Result.from_polars_io(
-        info={"test": "lazy"},
+        metadata={"test": "lazy"},
         column_definitions={},
         polars_io_func=pl.scan_csv,
         source=str(csv_path),
@@ -1259,7 +1281,7 @@ def test_from_polars_io(tmp_path):
 
     # Test with keyword arguments
     result_with_kwargs = Result.from_polars_io(
-        info={"test": "kwargs"},
+        metadata={"test": "kwargs"},
         column_definitions={"a": "Column A with kwargs"},
         polars_io_func=pl.read_csv,
         source=str(csv_path),
@@ -1292,18 +1314,21 @@ def test_from_polars_io_different_formats(io_function, expected_type, tmp_path):
         test_file = tmp_path / "test.parquet"
         test_df.write_parquet(test_file)
 
-    # Mock info for testing
-    info = {"source": io_function.__name__}
+    # Mock metadata for testing
+    metadata = {"source": io_function.__name__}
 
     # Create result using the function
     result = Result.from_polars_io(
-        polars_io_func=io_function, source=test_file, info=info, column_definitions={}
+        polars_io_func=io_function,
+        source=test_file,
+        metadata=metadata,
+        column_definitions={},
     )
 
     # Check the result
     assert isinstance(result, Result)
     assert isinstance(result.lf, pl.LazyFrame)
-    assert result.info == info
+    assert result.metadata == metadata
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
 
@@ -1312,35 +1337,35 @@ def test_from_polars_io_python_object():
     # Create a test DataFrame
     test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
-    # Mock info for testing
-    info = {"source": "python_object"}
+    # Mock metadata for testing
+    metadata = {"source": "python_object"}
 
     # Create result using the function
     result = Result.from_polars_io(
         polars_io_func=pl.from_pandas,
         data=test_df.to_pandas(),
-        info=info,
+        metadata=metadata,
         column_definitions={},
     )
 
     # Check the result
     assert isinstance(result, Result)
     assert isinstance(result.lf, pl.LazyFrame)
-    assert result.info == info
+    assert result.metadata == metadata
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
     result = Result.from_polars_io(
         polars_io_func=pl.from_numpy,
         schema=["a", "b"],
         data=test_df.to_numpy(),
-        info=info,
+        metadata=metadata,
         column_definitions={},
     )
 
     # Check the result
     assert isinstance(result, Result)
     assert isinstance(result.lf, pl.LazyFrame)
-    assert result.info == info
+    assert result.metadata == metadata
     pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
 

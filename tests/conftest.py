@@ -6,6 +6,7 @@ from _pytest.logging import LogCaptureFixture
 from loguru import logger
 
 from pyprobe.cell import Cell
+from pyprobe.filters import Procedure
 
 
 @pytest.fixture
@@ -31,7 +32,7 @@ def info_fixture():
 @pytest.fixture
 def lazyframe_fixture():
     """Pytest fixture for example lazyframe."""
-    return pl.scan_parquet("tests/sample_data/neware/sample_data_neware_ref.parquet")
+    return pl.scan_parquet("tests/sample_data/neware/sample_data_neware.bdx.parquet")
 
 
 @pytest.fixture
@@ -112,13 +113,10 @@ def cell_fixture(info_fixture):
 @pytest.fixture
 def procedure_fixture(info_fixture):
     """Pytest fixture for example procedure."""
-    cell = Cell(info=info_fixture)
-    cell.add_procedure(
-        "Sample",
-        "tests/sample_data/neware/",
-        "sample_data_neware.parquet",
+    return Procedure.load(
+        "tests/sample_data/neware/sample_data_neware.bdx.parquet",
+        "tests/sample_data/neware/README.yaml",
     )
-    return cell.procedure["Sample"]
 
 
 @pytest.fixture(scope="function")
