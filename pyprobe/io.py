@@ -4,13 +4,20 @@ Provides :func:`process_cycler` as the primary entry point for reading raw
 cycler files via the ``batterydf`` package, normalising them to BDF-standard
 column names, and persisting to Parquet with attached metadata.
 
+Also provides :func:`attach_metadata` for updating metadata on existing Parquet
+files, and :func:`process_generic` for normalising arbitrary DataFrames to BDF
+format without going through the cycler pipeline.
+
 Typical usage::
 
     from pyprobe.io import process_cycler
 
-    lf = process_cycler("path/to/data.xlsx")
+    path = process_cycler("path/to/data.xlsx")
 """
 
+from __future__ import annotations
+
+import glob
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -21,14 +28,14 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from loguru import logger
 
-if TYPE_CHECKING:
-    from pyprobe.filters import Procedure
-
 from pyprobe.column import (
     BDF,
     ColumnSet,
     column_factory_from_string,
 )
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 _PARQUET_METADATA_KEY: bytes = b"bdx_metadata"
 """Key used to store user metadata in Parquet footer."""
@@ -46,6 +53,15 @@ _OPTIONAL_BDF_COLUMNS: list[BDF] = [
     BDF.STEP_INDEX,
 ]
 """BDF columns included when available; warnings are emitted on failure."""
+
+_ParquetCompression = Literal["lz4", "uncompressed", "snappy", "gzip", "brotli", "zstd"]
+
+_COMPRESSION_MAP: dict[str, _ParquetCompression] = {
+    "performance": "lz4",
+    "file size": "zstd",
+    "uncompressed": "uncompressed",
+}
+"""Maps compression_priority literals to Parquet compression algorithm names."""
 
 
 class MetadataManager:
@@ -75,21 +91,25 @@ class MetadataManager:
         """Read metadata from the Parquet file footer.
 
         Returns:
-            Dictionary of metadata, or empty dict if missing or unreadable.
+            Dictionary of metadata, or empty dict if missing.
+
+        Raises:
+            ValueError: If metadata exists but is corrupted (invalid JSON or encoding).
         """
-        try:
-            pf = pq.ParquetFile(self.path)
-            raw: dict[bytes, bytes] = pf.schema_arrow.metadata or {}
-            if _PARQUET_METADATA_KEY not in raw:
-                return {}
-            return json.loads(raw[_PARQUET_METADATA_KEY].decode())
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            logger.warning(
-                "Failed to decode metadata from '{}': {}. Returning empty metadata.",
-                self.path,
-                exc,
-            )
+        pf = pq.ParquetFile(self.path)
+        raw: dict[bytes, bytes] = pf.schema_arrow.metadata or {}
+        if _PARQUET_METADATA_KEY not in raw:
             return {}
+        try:
+            return json.loads(raw[_PARQUET_METADATA_KEY].decode())
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Parquet metadata is corrupted (invalid JSON): {exc}"
+            ) from exc
+        except UnicodeDecodeError as exc:
+            raise ValueError(
+                f"Parquet metadata is corrupted (invalid UTF-8 encoding): {exc}"
+            ) from exc
 
     def read_json(self) -> dict[str, Any]:
         """Read metadata from the JSON sidecar file.
@@ -131,32 +151,46 @@ class MetadataManager:
     def read_both(
         self, prefer: Literal["parquet", "json"] = "parquet"
     ) -> dict[str, Any]:
-        """Read metadata from both sources with preference logic.
+        """Read metadata from both sources with preference and fallback logic.
 
-        When both sources have metadata, *prefer* controls which is returned.
-        When only one source has metadata, that source is returned regardless
-        of *prefer*. When neither has metadata, an empty dict is returned.
+        Tries to read the preferred source first. If the preferred source is
+        corrupted (raises ValueError), falls back to the alternative source.
+        If the alternative source is also unavailable, the error is re-raised.
+        If both sources are missing or empty, returns an empty dict.
 
         Args:
-            prefer: Which source to prefer when both exist.
+            prefer: Which source to prefer when both exist or when only one
+                has valid (non-corrupted) metadata.
 
         Returns:
-            Dictionary of metadata from the preferred source, or the only
-            source that has metadata, or an empty dict.
+            Dictionary of metadata from the preferred source, or the alternative
+            source if the preferred source is corrupted, or an empty dict if
+            both are missing.
+
+        Raises:
+            ValueError: If the preferred source is corrupted and the alternative
+                source is also unavailable.
         """
-        parquet_meta = self.read_parquet()
-        json_meta = self.read_json()
+        prefer_primary = prefer == "parquet"
+        primary_reader = self.read_parquet if prefer_primary else self.read_json
+        secondary_reader = self.read_json if prefer_primary else self.read_parquet
 
-        has_parquet = bool(parquet_meta)
-        has_json = bool(json_meta)
+        # Try preferred source first
+        try:
+            primary_meta = primary_reader()
+            if primary_meta:
+                return primary_meta
+        except ValueError:
+            # Preferred source is corrupted; try the alternative
+            secondary_meta = secondary_reader()
+            if secondary_meta:
+                return secondary_meta
+            # Both sources corrupted or missing; re-raise the original error
+            raise
 
-        if has_parquet and has_json:
-            return parquet_meta if prefer == "parquet" else json_meta
-        if has_parquet:
-            return parquet_meta
-        if has_json:
-            return json_meta
-        return {}
+        # Preferred source is empty; try secondary
+        secondary_meta = secondary_reader()
+        return secondary_meta if secondary_meta else {}
 
     def write(
         self,
@@ -244,153 +278,225 @@ class MetadataManager:
         pq.write_table(table, path)
 
 
-def _handle_existing_cached_file(
-    output_path: Path,
-    metadata: dict[str, Any] | None,
-    metadata_format: Literal["parquet", "json"],
-) -> pl.LazyFrame | None:
-    """Handle skip_if_exists logic for cached cycler output files.
-
-    Checks if a cached file exists and determines whether to use it or
-    reprocess. If the file exists and no metadata update is needed, returns
-    a lazy scan of the cached file. If metadata needs updating, updates it
-    in-place without reprocessing raw data.
+def _resolve_glob(source: str | Path) -> list[Path]:
+    """Expand a glob pattern or return a single path as a list.
 
     Args:
-        output_path: Path to the cached Parquet file.
-        metadata: Optional metadata to apply to the cached file. If provided
-            and differs from existing metadata, the cached file is updated
-            (without reprocessing raw data).
-        metadata_format: Format for storing/reading metadata.
+        source: A file path or a glob pattern containing ``"*"``.
 
     Returns:
-        A LazyFrame scanning the cached file if it exists and no reprocessing
-        is needed, or None if the file does not exist or reprocessing is required.
+        Sorted list of resolved paths.
+
+    Raises:
+        FileNotFoundError: If *source* is a glob pattern that matches no files.
+    """
+    source_str = str(source)
+    if "*" in source_str:
+        matches = sorted(glob.glob(source_str))
+        if not matches:
+            raise FileNotFoundError(f"No files found matching pattern: {source}")
+        return [Path(m) for m in matches]
+    return [Path(source)]
+
+
+def _load_raw_dataframes(
+    source: str | Path, plugin: str | None, normalize: bool = True
+) -> list[pl.DataFrame]:
+    """Load raw cycler files into Polars DataFrames.
+
+    Expands *source* via :func:`_resolve_glob`, then reads each file using
+    ``batterydf``, optionally normalising to BDF column names.
+
+    Args:
+        source: A file path or glob pattern.
+        plugin: BatteryDF plugin name. ``None`` triggers auto-detection.
+        normalize: When ``True`` (default), normalise to BDF column names.
+            When ``False``, preserve original source column names.
+
+    Returns:
+        One DataFrame per resolved file, in sorted order.
+    """
+    files = _resolve_glob(source)
+    return [
+        pl.from_pandas(bdf.read(str(f), plugin=plugin, normalize=normalize))
+        for f in files
+    ]
+
+
+def _concat_dataframes(dfs: list[pl.DataFrame]) -> pl.DataFrame:
+    """Concatenate a list of DataFrames using diagonal (schema-union) mode.
+
+    Args:
+        dfs: DataFrames to concatenate. Columns need not be identical; missing
+            columns are filled with ``null``.
+
+    Returns:
+        Single concatenated DataFrame.
+    """
+    return pl.concat(dfs, how="diagonal", rechunk=True)
+
+
+def _handle_existing_cached_file(output_path: Path) -> Path | None:
+    """Check if a cached output file exists and should be reused.
+
+    Args:
+        output_path: Path to the expected cached Parquet file.
+
+    Returns:
+        The cached file path if it exists, otherwise ``None``.
     """
     if not output_path.exists():
         return None
-
-    if metadata:
-        manager = MetadataManager(output_path)
-        existing_metadata = manager.read(metadata_format=metadata_format)
-        needs_update = any(
-            existing_metadata.get(str(k)) != v for k, v in metadata.items()
-        )
-        if needs_update:
-            logger.info(
-                "Updating metadata on cached file '{}' without reprocessing raw data.",
-                output_path,
-            )
-            manager.update(
-                metadata,
-                metadata_format=metadata_format,
-            )
-
     logger.info("Skipping processing; using cached file '{}'.", output_path)
-    return pl.scan_parquet(output_path)
+    return output_path
+
+
+def _build_column_map_exprs(
+    columns: list[str],
+    column_map: dict[str | BDF, str],
+) -> list[pl.Expr]:
+    """Validate a column map and build the corresponding Polars select expressions.
+
+    Args:
+        columns: Column names available in the source frame.
+        column_map: Mapping from BDF-format output names (e.g. ``"Current / A"``
+            or :attr:`BDF.CURRENT_AMPERE`) to source column names.
+
+    Returns:
+        A list of ``pl.col(src).alias(output)`` expressions ready for
+        ``.select()`` or ``.sink_parquet()``.
+
+    Raises:
+        ValueError: If an output name is not a valid BDF-format string, or if a
+            source column name is not present in *columns*.
+    """
+    strict_pattern = r"^(.+?)\s*/\s*([^/]+(?:/[^/]+)*)$"
+    exprs: list[pl.Expr] = []
+    for key, src_name in column_map.items():
+        if isinstance(key, BDF):
+            output_name = key.name
+        else:
+            column_factory_from_string(key, pattern=strict_pattern)
+            output_name = key
+        if src_name not in columns:
+            raise ValueError(
+                f"column_map source '{src_name}' not found in data. "
+                f"Available: {columns}"
+            )
+        exprs.append(pl.col(src_name).alias(output_name))
+    return exprs
+
+
+def _extract_column_map_columns(
+    df: pl.DataFrame,
+    column_map: dict[str | BDF, str],
+) -> pl.DataFrame:
+    """Extract and rename columns from a DataFrame using a BDF column map.
+
+    Args:
+        df: Source DataFrame to extract columns from.
+        column_map: Mapping from BDF-format output names (e.g. ``"Current / A"``
+            or :attr:`BDF.CURRENT_AMPERE`) to source column names in *df*.
+
+    Returns:
+        A new DataFrame with columns renamed per *column_map*, containing only
+        the mapped columns.
+
+    Raises:
+        ValueError: If an output name is not a valid BDF-format string, or if a
+            source column name is not found in *df*.
+    """
+    return df.select(_build_column_map_exprs(df.columns, column_map))
 
 
 def process_cycler(
     source: str | Path,
-    output_dir: str | Path | None = None,
-    metadata: dict[str, Any] | None = None,
+    output_path: str | Path | None = None,
     *,
     plugin: str | None = None,
-    write_parquet: bool = True,
     skip_if_exists: bool = True,
-    metadata_format: Literal["json", "parquet"] = "parquet",
-    extra_columns: dict[str, str] | None = None,
-) -> pl.LazyFrame:
-    """Read a cycler file, normalise to BDF columns, and optionally cache.
+    compression_priority: Literal[
+        "performance", "file size", "uncompressed"
+    ] = "performance",
+    column_map: dict[str | BDF, str] | None = None,
+) -> Path:
+    """Read cycler file(s), normalise to BDF columns, and write to Parquet.
 
-    By default the normalised data is written as ``{source_stem}.bdx.parquet``
-    in *output_dir* (defaulting to the same directory as *source*). Set
-    *write_parquet* to ``False`` to skip file writing and return an in-memory
-    LazyFrame instead.
+    Reads one or more raw cycler files (via a file path or glob pattern),
+    normalises columns to BDF standard using ``batterydf``, and writes the
+    result to a ``.bdx.parquet`` file.
 
     Args:
-        source: Path to the raw cycler file (any format supported by
-            ``batterydf``).
-        output_dir: Directory for the output Parquet file. Defaults to the
-            parent directory of *source*. Ignored when *write_parquet* is
-            ``False``.
-        metadata: Optional JSON-serializable key-value pairs to attach to the
-            output. Ignored when *write_parquet* is ``False``.
-        plugin: Optional BatteryDF plugin name to use for reading the file.
-            If ``None`` (default), BatteryDF auto-detects the format.
-        write_parquet: When ``True`` (default), write the normalised data to
-            a Parquet file and return a lazy scan. When ``False``, return an
-            in-memory LazyFrame without writing.
-        skip_if_exists: When ``True`` (default) and the output file already
-            exists, skip processing and return the cached file immediately.
-            If *metadata* is provided, requested keys are still written to the
-            cached output (without re-reading raw cycler data) when values are
-            missing or stale. Only applies when *write_parquet* is ``True``.
-        metadata_format: Controls how *metadata* is stored. ``"parquet"``
-            (default) embeds metadata in the Parquet footer. ``"json"`` writes
-            a ``.json`` sidecar file instead and does **not** embed metadata in
-            the Parquet footer. Ignored when *write_parquet* is ``False`` or
-            *metadata* is ``None``.
-        extra_columns: Optional mapping of BDF-format output names to source
-            column names. These columns are read from the raw source file
-            (before BDF normalisation) and appended to the output. Keys must
-            follow the ``"Quantity / unit"`` format. Example::
+        source: Path to the raw cycler file, or a glob pattern matching multiple
+            files (e.g. ``"data/session_*.csv"``).
+        output_path: Full destination path for the output Parquet file (must end
+            with ``.parquet``). When ``None``, defaults to
+            ``<source_parent>/<stem>.bdx.parquet`` where *stem* comes from
+            *source* (or the first sorted glob match for glob patterns).
+        plugin: BatteryDF plugin name for reading. ``None`` triggers auto-detection.
+        skip_if_exists: When ``True`` (default), return the cached Parquet path
+            immediately if it already exists without reprocessing raw data.
+        compression_priority: Controls the Parquet compression algorithm:
 
-                {"Pressure / kPa": "Pressure(kPa)", "Aux Temp / degC": "T_aux[C]"}
+            - ``"performance"`` (default) — uses ``lz4`` for fast read/write.
+            - ``"file size"`` — uses ``zstd`` for smaller files.
+            - ``"uncompressed"`` — no compression.
+
+        column_map: Mapping from BDF-format output names (e.g. ``"Pressure / kPa"``)
+            to source column names in the raw data. Keys must follow the
+            ``"Quantity / unit"`` format. Where a key matches an already-resolved
+            BDF column, the *column_map* entry overrides it.
 
     Returns:
-        A :class:`polars.LazyFrame` over the normalised BDF columns.
+        Path to the written ``.bdx.parquet`` file.
 
     Raises:
-        ValueError: If any required BDF column (test time, current, voltage)
-            cannot be resolved from the source data.
-        ValueError: If *metadata_format* is not ``"parquet"`` or ``"json"``.
+        FileNotFoundError: If *source* is a glob pattern that matches no files.
+        ValueError: If *output_path* is provided but does not end with ``.parquet``.
+        ValueError: If any required BDF column (test time, current, voltage) cannot
+            be resolved from the source data.
+        ValueError: If a *column_map* key does not follow the ``"Quantity / unit"``
+            format.
+        ValueError: If a *column_map* source column name is not present in the raw data.
 
-    Examples:
+    Example:
         Basic usage (writes ``data.bdx.parquet`` next to source)::
 
-            lf = process_cycler("data.xlsx")
+            path = process_cycler("data.xlsx")
 
-        Without writing to disk::
+        Output to a specific path::
 
-            lf = process_cycler("data.xlsx", write_parquet=False)
+            path = process_cycler("data.xlsx", output_path="cache/data.bdx.parquet")
 
-        Output to a different directory with metadata::
+        Override a resolved BDF column with a custom source column::
 
-            lf = process_cycler(
+            path = process_cycler(
                 "data.xlsx",
-                output_dir="cache/",
-                metadata={"cell_id": "C001"},
-            )
-
-        With extra columns from the raw file::
-
-            lf = process_cycler(
-                "data.xlsx",
-                extra_columns={"Pressure / kPa": "Pressure(kPa)"},
+                column_map={"Ambient Pressure / kPa": "Pressure(kPa)"},
             )
     """
-    if metadata_format not in ("parquet", "json"):
-        raise ValueError(
-            f"metadata_format must be 'parquet' or 'json', got '{metadata_format}'."
-        )
-
-    source_path = Path(source)
-    output_path: Path | None = None
-    if write_parquet:
-        if output_dir is None:
-            output_dir = source_path.parent
-        output_path = Path(output_dir) / (source_path.stem + ".bdx.parquet")
-        if skip_if_exists:
-            cached = _handle_existing_cached_file(
-                output_path, metadata, metadata_format
+    first_file = _resolve_glob(source)[0]
+    if output_path is not None:
+        candidate = Path(output_path)
+        if candidate.suffix == "":
+            # Treat as a directory; auto-generate the filename within it.
+            resolved_output_path = candidate / (first_file.stem + ".bdx.parquet")
+        elif candidate.suffix != ".parquet":
+            raise ValueError(
+                f"output_path must end with '.parquet', got: '{output_path}'"
             )
-            if cached is not None:
-                return cached
+        else:
+            resolved_output_path = candidate
+    else:
+        resolved_output_path = first_file.parent / (first_file.stem + ".bdx.parquet")
 
-    logger.info("Reading cycler file '{}'.", source)
-    pandas_df = bdf.read(source, plugin=plugin)
-    df: pl.DataFrame = pl.from_pandas(pandas_df)
+    if skip_if_exists:
+        cached = _handle_existing_cached_file(resolved_output_path)
+        if cached is not None:
+            return cached
+
+    dfs = _load_raw_dataframes(source, plugin)
+    df = _concat_dataframes(dfs)
 
     column_set = ColumnSet(df.columns)
     expressions: list[pl.Expr] = []
@@ -415,91 +521,22 @@ def process_cycler(
 
     normalised: pl.DataFrame = df.select(expressions)
 
-    if extra_columns:
-        # Validate all output_name formats upfront before reading raw data.
-        # Valid: "Channel", "Pressure / kPa", "Flow Rate / mL/min"
-        # Invalid: "InvalidNoUnit", "Pressure kPa", "/ kPa", "", "Quantity //"
-        strict_pattern = r"^(.+?)\s*/\s*([^/]+(?:/[^/]+)*)$"
-        for output_name in extra_columns:
-            column_factory_from_string(output_name, pattern=strict_pattern)
+    if column_map is not None:
+        raw_dfs = _load_raw_dataframes(source, plugin, normalize=False)
+        raw_df = _concat_dataframes(raw_dfs)
+        mapped = _extract_column_map_columns(raw_df, column_map)
+        for col_name in mapped.columns:
+            if col_name in normalised.columns:
+                normalised = normalised.with_columns(mapped[col_name])
+            else:
+                normalised = normalised.hstack([mapped[col_name]])
 
-        # Dual bdf.read() calls are necessary: the initial read (above) normalizes
-        # column names to BDF standard, while this read with normalize=False
-        # accesses original source column names for extra_columns mapping.
-        # This should be improved in future
-        # versions to provide a single-pass read supporting both operations.
-        raw_df = pl.from_pandas(bdf.read(source, plugin=plugin, normalize=False))
-        for output_name, source_name in extra_columns.items():
-            if source_name not in raw_df.columns:
-                raise ValueError(
-                    f"Extra column source '{source_name}' not found in data. "
-                    f"Available: {raw_df.columns}"
-                )
-        normalised = normalised.hstack(
-            [
-                raw_df[source_name].alias(output_name)
-                for output_name, source_name in extra_columns.items()
-            ]
-        )
-
-    if output_path is not None:
-        _write_parquet(
-            normalised, output_path, metadata, metadata_format=metadata_format
-        )
-        logger.info("Wrote normalised data to '{}'.", output_path)
-        return pl.scan_parquet(output_path)
-
-    return normalised.lazy()
-
-
-def _write_parquet(
-    df: pl.DataFrame,
-    path: Path,
-    metadata: dict[str, Any] | None = None,
-    *,
-    metadata_format: Literal["json", "parquet"] = "parquet",
-) -> None:
-    """Write a Polars DataFrame to Parquet, embedding optional metadata.
-
-    Converts *df* to an Arrow table and delegates to MetadataManager
-    for consistent metadata handling across parquet footer and JSON sidecar
-    formats.
-
-    Args:
-        df: The DataFrame to persist.
-        path: Destination file path. Parent directories must already exist.
-        metadata: Optional JSON-serializable key-value pairs to attach.
-        metadata_format: ``"parquet"`` (default) embeds metadata in the
-            Parquet footer. ``"json"`` writes a ``.json`` sidecar instead.
-    """
-    table = df.to_arrow()
-    MetadataManager.create(table, path, metadata, metadata_format)
-
-
-def read_parquet_metadata(path: str | Path) -> dict[str, Any]:
-    """Read key-value metadata from a Parquet file's footer.
-
-    Reads metadata from the "bdx_metadata" key in the Parquet footer, which
-    stores a JSON-encoded object of all user metadata.
-
-    Args:
-        path: Path to the Parquet file.
-
-    Returns:
-        A dictionary of metadata key-value pairs. Returns an empty dict if
-        the file has no metadata or the "bdx_metadata" key is missing.
-
-    Example:
-        Retrieve metadata from a cached battery parquet file::
-
-            from pyprobe.io import read_parquet_metadata
-
-            meta = read_parquet_metadata("data.bdx.parquet")
-            print(meta["cell_id"])       # 'C001'
-            print(meta["cycler"])        # 'neware'
-    """
-    manager = MetadataManager(Path(path))
-    return manager.read_parquet()
+    normalised.write_parquet(
+        str(resolved_output_path),
+        compression=_COMPRESSION_MAP[compression_priority],
+    )
+    logger.info("Wrote normalised data to '{}'.", resolved_output_path)
+    return resolved_output_path
 
 
 def read_metadata(
@@ -547,73 +584,98 @@ def read_metadata(
     return manager.read_both(prefer=prefer)
 
 
-def create_procedure_from_parquet(
-    parquet_path: str | Path,
-    readme_path: str | Path | None = None,
-    metadata: dict[str, Any | None] | None = None,
-    metadata_prefer: Literal["parquet", "json"] = "parquet",
-) -> "Procedure":
-    """Create a Procedure from a processed cycler parquet file with metadata.
+def attach_metadata(
+    path: str | Path,
+    metadata: dict[str, Any],
+    metadata_format: Literal["parquet", "json"] = "parquet",
+) -> None:
+    """Attach or update metadata on an existing Parquet file.
 
-    Loads metadata from the parquet footer or sidecar JSON, and optionally reads
-    experiment definitions from a README.yaml file.
+    Merges *metadata* with any existing metadata stored in the file, with
+    new values taking precedence.
 
     Args:
-        parquet_path: Path to the output parquet file (e.g., from process_cycler).
-        readme_path: Optional path to README.yaml for experiment definitions.
-            When None, an empty experiment dict is used.
-        metadata: Optional metadata dictionary to include. Merged with metadata
-            from parquet source. Defaults to empty dict.
-        metadata_prefer: Whether to prefer parquet footer or JSON sidecar metadata
-            when both exist. Defaults to "parquet".
-
-    Returns:
-        A Procedure object with loaded data, metadata, and experiment definitions.
+        path: Path to the existing Parquet file.
+        metadata: JSON-serializable key-value pairs to attach.
+        metadata_format: Where to store metadata. ``"parquet"`` (default) embeds
+            in the Parquet footer. ``"json"`` writes a ``.json`` sidecar file.
 
     Raises:
-        FileNotFoundError: If parquet file does not exist.
-        ValueError: If README exists but fails to parse.
-
-    Example:
-        Load a processed battery parquet file and optionally attach experiment
-        definitions from a README::
-
-            from pyprobe.io import create_procedure_from_parquet
-
-            # Load parquet with metadata from footer
-            procedure = create_procedure_from_parquet("data.bdx.parquet")
-
-            # Include experiment definitions from README.yaml
-            procedure = create_procedure_from_parquet(
-                "data.bdx.parquet",
-                readme_path="experiments.yaml",
-                metadata={"cell_id": "Cell1"},
-            )
+        FileNotFoundError: If *path* does not exist.
     """
-    from pyprobe.filters import Procedure
-    from pyprobe.readme_processor import process_readme
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Parquet file not found: {path}")
+    MetadataManager(path).update(metadata, metadata_format=metadata_format)
 
-    parquet_path = Path(parquet_path)
-    if not parquet_path.exists():
-        raise FileNotFoundError(f"Parquet file not found: {parquet_path}")
 
-    lf = pl.scan_parquet(parquet_path)
-    parquet_metadata = read_metadata(parquet_path, prefer=metadata_prefer)
+def process_generic(
+    data: pl.DataFrame | pl.LazyFrame | pd.DataFrame,
+    column_map: dict[str | BDF, str],
+    output_path: str | Path,
+    compression_priority: Literal[
+        "performance", "file size", "uncompressed"
+    ] = "performance",
+) -> Path:
+    """Normalise an arbitrary DataFrame to BDF format and write to Parquet.
 
-    # Merge provided metadata with parquet metadata (provided takes precedence)
-    merged_metadata = {**parquet_metadata, **(metadata or {})}
+    Accepts a polars DataFrame, polars LazyFrame, or pandas DataFrame, renames
+    columns per *column_map* (mapping BDF output name to source column name),
+    validates that required BDF columns are resolvable, and writes all mapped
+    columns to *output_path*.
 
-    readme_dict: dict[str, dict[str, Any]] = {}
-    if readme_path is not None:
-        readme_path = Path(readme_path)
-        if readme_path.exists():
-            readme_obj = process_readme(str(readme_path))
-            readme_dict = readme_obj.experiment_dict
-        else:
-            logger.warning("README path provided but not found: {}", readme_path)
+    Args:
+        data: Raw battery data. Accepts a polars DataFrame, polars LazyFrame,
+            or pandas DataFrame.
+        column_map: Mapping from BDF-format output name (e.g. ``"Current / A"``)
+            to the source column name in *data*.
+        output_path: Destination path for the output Parquet file.
+        compression_priority: Compression algorithm selection.
 
-    return Procedure(
-        lf=lf,
-        metadata=merged_metadata,
-        readme_dict=readme_dict,
-    )
+    Returns:
+        The resolved path of the written Parquet file.
+
+    Raises:
+        TypeError: If *data* cannot be converted to a Polars DataFrame.
+        ValueError: If any required BDF column cannot be resolved after
+            applying *column_map*.
+    """
+    output = Path(output_path)
+    compression = _COMPRESSION_MAP[compression_priority]
+
+    # Normalize input: convert to LazyFrame, tracking original type for output method
+    is_lazy = isinstance(data, pl.LazyFrame)
+    if not is_lazy:
+        if not isinstance(data, pl.DataFrame):
+            try:
+                data = pl.from_pandas(data)
+            except Exception as exc:
+                raise TypeError(
+                    f"Could not convert data to a Polars DataFrame: {exc}"
+                ) from exc
+        data = data.lazy()
+
+    # Build and apply column map expressions
+    exprs = _build_column_map_exprs(data.collect_schema().names(), column_map)
+    output_columns = [str(e.meta.output_name()) for e in exprs]
+    column_set = ColumnSet(output_columns)
+
+    # Validate required BDF columns
+    for bdf_col in _REQUIRED_BDF_COLUMNS:
+        try:
+            column_set.resolve(bdf_col)
+        except ValueError as exc:
+            raise ValueError(
+                f"Required BDF column '{bdf_col.quantity}' could not be resolved "
+                f"from the data: {exc}"
+            ) from exc
+
+    # Select mapped columns and write (method depends on original type)
+    selected = data.select(exprs)
+    if is_lazy:
+        selected.sink_parquet(str(output), compression=compression)
+    else:
+        selected.collect().write_parquet(str(output), compression=compression)
+
+    logger.info("Wrote generic data to '{}'.", output)
+    return output
