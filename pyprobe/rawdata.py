@@ -9,7 +9,10 @@ from pyprobe.column import BDF
 from pyprobe.result import Result
 from pyprobe.utils import deprecated
 
-_REQUIRED_BDF: list[BDF] = [BDF.TEST_TIME_SECOND, BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT]
+_REQUIRED_BDF_TIME: list[BDF] = [BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND]
+"""Time columns (at least one must be resolvable); Unix Time is preferred."""
+
+_REQUIRED_BDF: list[BDF] = [BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT]
 """BDF columns that must be resolvable; RawData raises ValueError if not."""
 
 _OPTIONAL_BDF: list[BDF] = [BDF.NET_CAPACITY_AH, BDF.STEP_COUNT, BDF.STEP_INDEX]
@@ -23,10 +26,10 @@ class RawData(Result):
     standard methods of the :class:`~pyprobe.cell.Cell` class. It is a subclass of
     :class:`~pyprobe.result.Result` and can be used in the same way.
 
-    The RawData object validates that the three required BDF columns are resolvable
+    The RawData object validates that the required BDF columns are resolvable
     from the data via :class:`~pyprobe.column.ColumnSet`:
 
-    - ``Test Time / s``
+    - At least one time column: ``Unix Time / s`` (preferred) or ``Test Time / s``
     - ``Current / A``
     - ``Voltage / V``
 
@@ -72,11 +75,26 @@ class RawData(Result):
         data column or via a recipe derivation). Optional columns emit a warning
         if unavailable but do not raise an error.
 
+        Time column validation: at least one of Unix Time or Test Time must be
+        resolvable (Unix Time is preferred).
+
         Raises:
-            ValueError: If any required BDF column (Test Time, Current, Voltage)
-                cannot be resolved from available data.
+            ValueError: If neither Unix Time nor Test Time can be resolved.
+            ValueError: If any required BDF column (Current, Voltage) cannot be
+                resolved from available data.
         """
         col_set = self.columns
+
+        # Validate time column (either Unix Time or Test Time must be resolvable)
+        if not any(col_set.can_resolve(time_col) for time_col in _REQUIRED_BDF_TIME):
+            error_msg = (
+                "Required time column: either 'Unix Time / s' or 'Test Time / s' "
+                "must be resolvable from available columns."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # Validate other required columns
         for bdf_col in _REQUIRED_BDF:
             if not col_set.can_resolve(bdf_col):
                 error_msg = (
@@ -85,6 +103,8 @@ class RawData(Result):
                 )
                 logger.error(error_msg)
                 raise ValueError(error_msg)
+
+        # Validate optional columns
         for bdf_col in _OPTIONAL_BDF:
             if not col_set.can_resolve(bdf_col):
                 logger.warning(
