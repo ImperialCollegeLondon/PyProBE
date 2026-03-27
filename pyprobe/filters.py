@@ -346,34 +346,42 @@ class Procedure(RawData):
         cls,
         parquet_path: str | Path,
         readme_path: str | Path | None = None,
-        metadata: dict[str, Any | None] | None = None,
         metadata_prefer: Literal["parquet", "json"] = "parquet",
     ) -> "Procedure":
-        """Load a Procedure from a processed .bdx.parquet file.
+        """Load a Procedure from a processed .parquet file.
+
+        Reads BDF-normalised data and any embedded metadata from *parquet_path*.
+        When *readme_path* is ``None``, the method auto-guesses by looking for
+        ``README.yaml`` in the same directory as *parquet_path*. If found it is
+        used; if not found a log message is emitted and the Procedure is returned
+        without experiment definitions.
 
         Args:
-            parquet_path: Path to a ``.bdx.parquet`` file (e.g. from
+            parquet_path: Path to a ``.parquet`` file (e.g. from
                 :func:`~pyprobe.io.process_cycler`).
-            readme_path: Optional path to a README.yaml for experiment definitions.
-                When None, no experiment filtering is available.
-            metadata: Optional metadata dict merged with parquet-stored metadata.
-                Provided values take precedence over parquet-stored values.
-            metadata_prefer: Whether to prefer ``"parquet"`` footer or ``"json"``
-                sidecar when both sources have metadata.
+            readme_path: Explicit path to a README.yaml for experiment definitions.
+                When ``None`` (default), the parent directory of *parquet_path* is
+                checked automatically.
+            metadata_prefer: Whether to prefer the Parquet footer (``"parquet"``,
+                default) or a JSON sidecar (``"json"``) when both metadata sources
+                exist.
 
         Returns:
-            Procedure with BDF-format columns and optional experiment definitions.
+            Procedure with BDF-format columns, metadata, and
+            optional experiment definitions from README.yaml.
 
         Raises:
             FileNotFoundError: If *parquet_path* does not exist.
 
-        Example::
+        Example:
+            Load a procedure from a processed parquet file::
 
-            from pyprobe.io import process_cycler
-            from pyprobe.filters import Procedure
+                from pyprobe.io import process_cycler
+                from pyprobe.filters import Procedure
 
-            path = process_cycler("data.xlsx")
-            procedure = Procedure.load(path, readme_path="README.yaml")
+                path = process_cycler("data.xlsx")
+                procedure = Procedure.load(path)
+                procedure = Procedure.load(path, readme_path="README.yaml")
         """
         from pyprobe.io import read_metadata
         from pyprobe.readme_processor import process_readme
@@ -384,7 +392,17 @@ class Procedure(RawData):
 
         lf = pl.scan_parquet(parquet_path)
         parquet_metadata = read_metadata(parquet_path, prefer=metadata_prefer)
-        merged: dict[str, Any | None] = {**parquet_metadata, **(metadata or {})}
+
+        if readme_path is None:
+            candidate = parquet_path.parent / "README.yaml"
+            if candidate.exists():
+                readme_path = candidate
+            else:
+                logger.info(
+                    "No README.yaml found in '{}'; proceeding without "
+                    "experiment definitions.",
+                    parquet_path.parent,
+                )
 
         readme_dict: dict[str, dict[str, Any]] = {}
         if readme_path is not None:
@@ -394,7 +412,7 @@ class Procedure(RawData):
             else:
                 logger.warning("README path provided but not found: {}", readme_path)
 
-        return cls(lf=lf, metadata=merged, readme_dict=readme_dict)
+        return cls(lf=lf, metadata=parquet_metadata, readme_dict=readme_dict)
 
     step = _step
     cycle = _cycle
