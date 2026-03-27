@@ -242,3 +242,78 @@ def test_pybamm_experiment_with_loops():
     ]
 
     assert data.pybamm_experiment == expected
+
+
+class TestRawDataColumnValidation:
+    """Tests for required column validation (time, current, voltage)."""
+
+    @pytest.mark.parametrize(
+        "columns,should_pass",
+        [
+            # Valid combinations: at least one time column + Current + Voltage
+            (
+                {
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                True,
+            ),
+            (
+                {
+                    "Unix Time / s": [1000.0, 2000.0, 3000.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                True,
+            ),
+            (
+                {
+                    "Unix Time / s": [1000.0, 2000.0, 3000.0],
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                True,
+            ),
+            # Invalid combinations: missing required columns
+            (
+                {
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                False,
+            ),
+            (
+                {
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                False,
+            ),
+            (
+                {
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                },
+                False,
+            ),
+        ],
+    )
+    def test_rawdata_column_validation(
+        self, columns: dict[str, list[float]], should_pass: bool
+    ) -> None:
+        """Test RawData validation with various column combinations.
+
+        Args:
+            columns: Dictionary of column names and values to test.
+            should_pass: Whether RawData should accept this column combination.
+        """
+        test_data = pl.DataFrame(columns)
+
+        if should_pass:
+            raw_data = RawData(lf=test_data.lazy(), metadata={})
+            assert isinstance(raw_data, RawData)
+        else:
+            with pytest.raises(ValueError, match="Required"):
+                RawData(lf=test_data.lazy(), metadata={})
