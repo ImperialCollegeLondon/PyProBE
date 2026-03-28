@@ -509,7 +509,9 @@ class Procedure(RawData):
             importing_columns: The columns to import from the external file.
             date_column_name: The name of the date column in the external data.
         """
-        self.add_data(filepath, date_column_name, importing_columns=importing_columns)
+        raise NotImplementedError(
+            "add_external_data is deprecated. Use add_data instead."
+        )
 
 
 class Experiment(RawData):

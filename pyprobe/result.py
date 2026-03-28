@@ -16,7 +16,6 @@ from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from scipy.io import savemat
-from tzlocal import get_localzone
 
 from pyprobe.column import ColumnSet
 from pyprobe.utils import catch_pydantic_validation, deprecated
@@ -478,11 +477,10 @@ class Result:
     def add_data(
         self,
         new_data: pl.DataFrame | pl.LazyFrame | str,
-        date_column_name: str,
+        time_column_name: str,
+        column_map: dict[str, str] | None = None,
         datetime_format: str | None = None,
-        importing_columns: list[str] | dict[str, str] | None = None,
-        existing_data_timezone: str | None = None,
-        new_data_timezone: str | None = None,
+        timezone: str | None = None,
         align_on: tuple[str, str] | None = None,
         join_strategy: Literal[
             "keep_existing", "keep_new", "keep_both"
@@ -490,33 +488,34 @@ class Result:
         fill_strategy: Literal["interpolate", "forward_fill", "backward_fill"]
         | None = "interpolate",
     ) -> None:
-        """Add new data columns to the result object.
+        """Add new data columns to the result object using Unix Time as the join key.
 
-        The data must be time series data with a date column. The new data is joined to
-        the base dataframe on the date column. Choose which dates to keep with the join
-        strategy, and how to fill missing values with the fill strategy.
+        The data must be time series data with a time column. The new data is joined to
+        the base dataframe on the "Unix Time / s" column. Choose which dates to keep
+        with the join strategy, and how to fill missing values with the fill strategy.
 
         Args:
             new_data:
                 The new data to add to the result object. Can be a DataFrame, LazyFrame,
                 or a path to a file (CSV, Parquet, Excel).
-            date_column_name:
-                The name of the column in the new data containing the date.
+            time_column_name:
+                The name of the column in the new data containing the time. Can be a
+                datetime column (which will be auto-converted to UTC unix seconds), a
+                numeric column (assumed to be UTC unix seconds), or a string column
+                (which will be parsed then converted).
+            column_map:
+                Mapping from output names to source column names:
+                {output_name: source_name}.
+                Only the columns in this dict will be imported. If None, all columns
+                (except time_column_name) will be imported. Output names do not need to
+                follow "Quantity / unit" format.
             datetime_format:
-                The format string for parsing the date column if it is a string.
-                Defaults to None.
-            importing_columns:
-                The columns to import from the external file. If a list, the columns
-                will be imported as is. If a dict, the keys are the columns in the data
-                you want to import and the values are the columns you want to rename
-                them to. If None, all columns will be imported. Defaults to None.
-            existing_data_timezone:
-                The timezone of the existing data. If None, the timezone is inferred
-                from the local machine. Defaults to None.
-            new_data_timezone:
-                The timezone of the new data. If None, and the new data is naive, it is
-                assumed to be in the same timezone as the existing data. Defaults to
-                None.
+                The format string for parsing the time column if it is a string.
+                Defaults to None (auto-detect).
+            timezone:
+                The timezone of the new data's time column, if it is a tz-naive
+                datetime. Only applied to tz-naive columns; tz-aware columns are
+                converted to UTC directly. Defaults to None (assumes UTC).
             align_on:
                 A tuple of column names to use for aligning the new data with the
                 existing data. The first element is the column name in the existing
@@ -524,44 +523,39 @@ class Result:
                 The new data will be shifted in time to maximize the cross-correlation
                 between the two columns. Defaults to None.
             join_strategy:
-                The strategy for which dates to keep in the result:
-                - "keep_existing": Keep only dates from existing data
-                - "keep_new": Keep only dates from new data
-                - "keep_both": Keep all dates from both datasets
+                The strategy for which times to keep in the result:
+                - "keep_existing": Keep only times from existing data
+                - "keep_new": Keep only times from new data
+                - "keep_both": Keep all times from both datasets
                 Defaults to "keep_existing".
             fill_strategy:
                 The strategy for filling missing values in the merged dataset columns
                 after applying the join strategy (this may affect both existing and
                 new columns):
-                - "interpolate": Interpolate missing values by date
+                - "interpolate": Interpolate missing values by unix time
                 - "forward_fill": Forward fill missing values
                 - "backward_fill": Backward fill missing values
                 - None: Don't fill missing values
                 Defaults to "interpolate".
 
         Raises:
-            ValueError: If the base dataframe has no date column.
+            ValueError: If the base dataframe has no "Unix Time / s" column.
             ValueError: If an invalid timezone string is provided.
         """
-        # Validate timezone inputs
-        if existing_data_timezone is not None:
-            _validate_timezone(existing_data_timezone)
-        if new_data_timezone is not None:
-            _validate_timezone(new_data_timezone)
-
+        # Load external file if needed
         if isinstance(new_data, str):
             new_data = self.load_external_file(new_data)
 
-        if isinstance(importing_columns, dict):
-            new_data = new_data.select(
-                [date_column_name] + list(importing_columns.keys()),
-            )
-            new_data = new_data.rename(importing_columns)
-        elif isinstance(importing_columns, list):
-            new_data = new_data.select([date_column_name] + importing_columns)
+        # Apply column_map (select and rename columns)
+        if column_map is not None:
+            cols_to_select = [time_column_name] + list(column_map.values())
+            new_data = new_data.select(cols_to_select)
+            rename_map = {src: dest for dest, src in column_map.items()}
+            new_data = new_data.rename(rename_map)
 
-        if "Date" not in self.columns:
-            error_msg = "No date column in the base dataframe."
+        # Validate base dataframe has Unix Time column
+        if "Unix Time / s" not in self.lf.collect_schema().names():
+            error_msg = "No 'Unix Time / s' column in the base dataframe."
             logger.error(error_msg)
             raise ValueError(error_msg)
 
@@ -572,69 +566,58 @@ class Result:
             mode="match 1",
         )
         new_data = new_data[0]
-        if not isinstance(
-            new_data.collect_schema().dtypes()[
-                new_data.collect_schema().names().index(date_column_name)
-            ],
-            pl.Datetime,
-        ):
+
+        # Convert time column to "Unix Time / s" Float64
+        schema = new_data.collect_schema()
+        time_dtype = schema[time_column_name]
+
+        # Handle String dtype: parse to datetime first
+        if isinstance(time_dtype, pl.String):
             new_data = new_data.with_columns(
-                pl.col(date_column_name).str.to_datetime(format=datetime_format),
+                pl.col(time_column_name).str.to_datetime(format=datetime_format)
             )
+            time_dtype = pl.Datetime(time_unit="us")  # Update dtype after conversion
 
-        # Ensure both DataFrames have DateTime columns in the same unit
-        new_data = new_data.with_columns(
-            pl.col(date_column_name).dt.cast_time_unit("us"),
-        )
-        self.lf = self.lf.with_columns(
-            pl.col("Date").dt.cast_time_unit("us"),
-        )
-
-        # Check for timezone mismatch and harmonize to self.lf's timezone
-        live_schema = self.lf.collect_schema()
-        new_schema = new_data.collect_schema()
-
-        live_dtype = live_schema["Date"]
-        new_dtype = new_schema[date_column_name]
-
-        if isinstance(live_dtype, pl.Datetime) and isinstance(new_dtype, pl.Datetime):
-            live_tz = live_dtype.time_zone
-            new_tz = new_dtype.time_zone
-
-            if live_tz is None:
-                if existing_data_timezone is not None:
-                    local_tz = existing_data_timezone
+        # Handle Datetime dtype: convert to UTC unix seconds
+        if isinstance(time_dtype, pl.Datetime):
+            col_tz = time_dtype.time_zone
+            if col_tz is None:
+                # Tz-naive: apply explicit timezone if provided, otherwise assume UTC
+                if timezone is not None:
+                    _validate_timezone(timezone)
+                    col = pl.col(time_column_name).dt.replace_time_zone(timezone)
                 else:
-                    local_tz = str(get_localzone())
-                self.lf = self.lf.with_columns(
-                    pl.col("Date").dt.replace_time_zone(local_tz),
-                )
-                live_tz = local_tz
+                    col = pl.col(time_column_name).dt.replace_time_zone("UTC")
+            else:
+                # Tz-aware: convert to UTC directly
+                col = pl.col(time_column_name).dt.convert_time_zone("UTC")
 
-            if new_tz is None and new_data_timezone is not None:
-                new_data = new_data.with_columns(
-                    pl.col(date_column_name).dt.replace_time_zone(new_data_timezone),
-                )
-                new_tz = new_data_timezone
+            new_data = new_data.with_columns(
+                col.dt.epoch(time_unit="s").cast(pl.Float64).alias(time_column_name)
+            )
+        # Handle numeric dtype: cast to Float64 (assumed UTC unix seconds)
+        elif isinstance(time_dtype, (pl.Float32, pl.Float64, pl.Int32, pl.Int64)):
+            new_data = new_data.with_columns(pl.col(time_column_name).cast(pl.Float64))
+        else:
+            error_msg = (
+                f"Unsupported dtype for time column: {time_dtype}. "
+                "Must be String, Datetime, or numeric."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
-            if live_tz != new_tz:
-                if new_tz is None:
-                    # New is naive, assume it is in live_tz
-                    new_data = new_data.with_columns(
-                        pl.col(date_column_name).dt.replace_time_zone(live_tz),
-                    )
-                else:
-                    # Both aware, convert new to live_tz
-                    new_data = new_data.with_columns(
-                        pl.col(date_column_name).dt.convert_time_zone(live_tz),
-                    )
-
-        # Rename date column to "Date"
-        new_data = new_data.rename({date_column_name: "Date"})
+        # Rename time column to "Unix Time / s"
+        new_data = new_data.rename({time_column_name: "Unix Time / s"})
         if isinstance(new_data, pl.DataFrame):
             new_data = new_data.lazy()
         new_result = Result(lf=new_data, metadata={})
 
+        # Collect new data column names (excluding unix time)
+        new_data_cols = [
+            col for col in new_data.collect_schema().names() if col != "Unix Time / s"
+        ]
+
+        # Optionally align the new data with existing data
         if align_on is not None:
             from pyprobe.analysis.time_series import align_data
 
@@ -642,33 +625,30 @@ class Result:
             _, new_result = align_data(self, new_result, col_existing, col_new)
 
         new_data = new_result.lf
-        new_data_cols = [
-            col for col in new_data.collect_schema().names() if col != "Date"
-        ]
 
         # Join all data to prepare for filling
         all_data = (
             self.lf.clone()
             .join(
                 new_data,
-                on="Date",
+                on="Unix Time / s",
                 how="full",
                 coalesce=True,
             )
-            .sort("Date")
+            .sort("Unix Time / s")
         )
 
-        # Get all non-Date columns for filling
-        all_cols_except_date = [
-            col for col in all_data.collect_schema().names() if col != "Date"
+        # Get all non-Unix Time columns for filling
+        all_cols_except_time = [
+            col for col in all_data.collect_schema().names() if col != "Unix Time / s"
         ]
         # Restrict interpolation to numeric columns only, since interpolate_by
         # is not supported for non-numeric dtypes.
         schema = all_data.collect_schema()
-        numeric_cols_except_date = [
+        numeric_cols_except_time = [
             name
             for name, dtype in zip(schema.names(), schema.dtypes())
-            if name != "Date" and dtype in pl.NUMERIC_DTYPES
+            if name != "Unix Time / s" and dtype in pl.NUMERIC_DTYPES
         ]
 
         # Apply fill strategy to all columns (both existing and new)
@@ -680,44 +660,44 @@ class Result:
                 "'backward_fill'."
             )
         if fill_strategy == "interpolate":
-            if numeric_cols_except_date:
+            if numeric_cols_except_time:
                 filled = all_data.with_columns(
-                    pl.col(numeric_cols_except_date).interpolate_by("Date"),
+                    pl.col(numeric_cols_except_time).interpolate_by("Unix Time / s"),
                 )
             else:
                 # No numeric columns to interpolate; leave data unchanged.
                 filled = all_data
         elif fill_strategy == "forward_fill":
             filled = all_data.with_columns(
-                pl.col(all_cols_except_date).forward_fill(),
+                pl.col(all_cols_except_time).forward_fill(),
             )
         elif fill_strategy == "backward_fill":
             filled = all_data.with_columns(
-                pl.col(all_cols_except_date).backward_fill(),
+                pl.col(all_cols_except_time).backward_fill(),
             )
         else:  # fill_strategy is None
             filled = all_data
 
         # Apply join strategy
         if join_strategy == "keep_existing":
-            # Keep only existing dates
-            filled_new_cols = filled.select(pl.col(["Date"] + new_data_cols))
+            # Keep only existing times
+            filled_new_cols = filled.select(pl.col(["Unix Time / s"] + new_data_cols))
             self.lf = self.lf.join(
                 filled_new_cols,
-                on="Date",
+                on="Unix Time / s",
                 how="left",
                 coalesce=True,
             )
         elif join_strategy == "keep_new":
-            # Keep only new dates
-            # Filter filled to only dates that exist in new_data
+            # Keep only new times
+            # Filter filled to only times that exist in new_data
             self.lf = filled.join(
-                new_data.select(["Date"]),
-                on="Date",
+                new_data.select(["Unix Time / s"]),
+                on="Unix Time / s",
                 how="inner",
             )
         elif join_strategy == "keep_both":
-            # Keep all dates from both datasets
+            # Keep all times from both datasets
             self.lf = filled
         else:
             raise ValueError(
@@ -749,50 +729,7 @@ class Result:
         Raises:
             ValueError: If the base dataframe has no date column.
         """
-        if "Date" not in self.columns:
-            error_msg = "No date column in the base dataframe."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        # get the columns of the new data
-        new_data_cols = new_data.collect_schema().names()
-        new_data_cols.remove(date_column_name)
-        # check if the new data is lazyframe or not
-        _, new_data = self._verify_compatible_frames(
-            self.lf,
-            [new_data],
-            mode="match 1",
-        )
-        new_data = new_data[0]
-        if (
-            new_data.dtypes[new_data.collect_schema().names().index(date_column_name)]
-            != pl.Datetime
-        ):
-            new_data = new_data.with_columns(pl.col(date_column_name).str.to_datetime())
-
-        # Ensure both DataFrames have DateTime columns in the same unit
-        new_data = new_data.with_columns(
-            pl.col(date_column_name).dt.cast_time_unit("us"),
-        )
-        self.lf = self.lf.with_columns(
-            pl.col("Date").dt.cast_time_unit("us"),
-        )
-
-        all_data = self.lf.clone().join(
-            new_data,
-            left_on="Date",
-            right_on=date_column_name,
-            how="full",
-            coalesce=True,
-        )
-        interpolated = all_data.with_columns(
-            pl.col(new_data_cols).interpolate_by("Date"),
-        ).select(pl.col(["Date"] + new_data_cols))
-        self.lf = self.lf.join(
-            interpolated,
-            on="Date",
-            how="left",
-            coalesce=True,
-        )
+        raise NotImplementedError("This method is deprecated. Use add_data instead.")
 
     def join(
         self,
