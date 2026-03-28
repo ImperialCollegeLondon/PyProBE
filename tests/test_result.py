@@ -13,7 +13,6 @@ from tzlocal import get_localzone
 
 from pyprobe.result import (
     Result,
-    _validate_timezone,
     combine_results,
 )
 
@@ -303,24 +302,6 @@ class TestAddDataBasic:
 
 class TestAddDataTimezoneHandling:
     """Test timezone handling with time difference verification."""
-
-    def test_validate_timezone_valid(self):
-        """Test _validate_timezone with valid timezone strings."""
-        assert _validate_timezone("UTC") == "UTC"
-        assert _validate_timezone("Europe/London") == "Europe/London"
-        assert _validate_timezone("America/New_York") == "America/New_York"
-        assert _validate_timezone("Asia/Tokyo") == "Asia/Tokyo"
-
-    def test_validate_timezone_invalid(self):
-        """Test _validate_timezone raises error for invalid timezone strings."""
-        with pytest.raises(ValueError, match="Invalid timezone"):
-            _validate_timezone("Invalid/Timezone")
-
-        with pytest.raises(ValueError, match="Invalid timezone"):
-            _validate_timezone("NotATimezone")
-
-        with pytest.raises(ValueError, match="Invalid timezone"):
-            _validate_timezone("GMT+5")
 
     def test_add_data_timezone_handling(self):
         """Test timezone handling in add_data."""

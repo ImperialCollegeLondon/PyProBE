@@ -7,7 +7,6 @@ from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
 from typing import Any, Literal, Union
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import numpy as np
 import pandas as pd
@@ -18,7 +17,7 @@ from numpy.typing import NDArray
 from scipy.io import savemat
 
 from pyprobe.column import ColumnSet
-from pyprobe.utils import catch_pydantic_validation, deprecated
+from pyprobe.utils import catch_pydantic_validation, deprecated, validate_timezone
 
 try:
     import hvplot.polars  # noqa: F401
@@ -26,27 +25,6 @@ try:
     hvplot_exists = True
 except ImportError:
     hvplot_exists = False
-
-
-def _validate_timezone(timezone: str) -> str:
-    """Validate that a timezone string is a valid IANA timezone.
-
-    Args:
-        timezone: The timezone string to validate.
-
-    Returns:
-        The validated timezone string.
-
-    Raises:
-        ValueError: If the timezone string is not valid.
-    """
-    try:
-        ZoneInfo(timezone)
-        return timezone
-    except ZoneInfoNotFoundError as e:
-        error_msg = f"Invalid timezone: '{timezone}'. Must be a valid IANA timezone."
-        logger.error(error_msg)
-        raise ValueError(error_msg) from e
 
 
 class Result:
@@ -480,7 +458,7 @@ class Result:
         time_column_name: str,
         column_map: dict[str, str] | None = None,
         datetime_format: str | None = None,
-        timezone: str | None = None,
+        timezone: str = "UTC",
         align_on: tuple[str, str] | None = None,
         join_strategy: Literal[
             "keep_existing", "keep_new", "keep_both"
@@ -513,9 +491,10 @@ class Result:
                 The format string for parsing the time column if it is a string.
                 Defaults to None (auto-detect).
             timezone:
-                The timezone of the new data's time column, if it is a tz-naive
-                datetime. Only applied to tz-naive columns; tz-aware columns are
-                converted to UTC directly. Defaults to None (assumes UTC).
+                The timezone of the new data's time column, as an IANA string
+                (e.g. ``"UTC"``, ``"Europe/Berlin"``).  Applied only to tz-naive
+                datetime columns; tz-aware columns are converted to UTC directly.
+                Defaults to ``"UTC"``.
             align_on:
                 A tuple of column names to use for aligning the new data with the
                 existing data. The first element is the column name in the existing
@@ -582,12 +561,9 @@ class Result:
         if isinstance(time_dtype, pl.Datetime):
             col_tz = time_dtype.time_zone
             if col_tz is None:
-                # Tz-naive: apply explicit timezone if provided, otherwise assume UTC
-                if timezone is not None:
-                    _validate_timezone(timezone)
-                    col = pl.col(time_column_name).dt.replace_time_zone(timezone)
-                else:
-                    col = pl.col(time_column_name).dt.replace_time_zone("UTC")
+                # Tz-naive: interpret as the specified timezone (default "UTC")
+                validate_timezone(timezone)
+                col = pl.col(time_column_name).dt.replace_time_zone(timezone)
             else:
                 # Tz-aware: convert to UTC directly
                 col = pl.col(time_column_name).dt.convert_time_zone("UTC")

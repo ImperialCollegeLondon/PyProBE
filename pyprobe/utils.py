@@ -3,9 +3,36 @@
 import functools
 import sys
 from typing import Any, Literal, Protocol
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from loguru import logger
 from pydantic import ValidationError
+
+
+def validate_timezone(timezone: str) -> str:
+    """Validate that a timezone string is a recognised IANA timezone name.
+
+    Pass ``"UTC"`` (the default throughout PyProBE) to keep data in UTC.
+
+    Args:
+        timezone:
+            An IANA timezone string, e.g. ``"UTC"``, ``"Europe/Berlin"``,
+            ``"America/New_York"``.  ``"UTC"`` is always valid and is the
+            recommended default when the source data is already in UTC.
+
+    Returns:
+        The validated timezone string, unchanged.
+
+    Raises:
+        ValueError: If *timezone* is not a recognised IANA timezone.
+    """
+    try:
+        ZoneInfo(timezone)
+        return timezone
+    except ZoneInfoNotFoundError as e:
+        error_msg = f"Invalid timezone: '{timezone}'. Must be a valid IANA timezone."
+        logger.error(error_msg)
+        raise ValueError(error_msg) from e
 
 
 def flatten_list(lst: int | list[Any]) -> list[int]:
