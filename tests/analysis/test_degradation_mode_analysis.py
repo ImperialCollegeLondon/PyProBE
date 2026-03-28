@@ -257,8 +257,8 @@ def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
     ocv_target = ocv_pe - ocv_ne
 
     input_data = Result(
-        lf=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
-        info={},
+        lf=pl.DataFrame({"Voltage / V": ocv_target, "Net Capacity / Ah": soc}),
+        metadata={},
     )
 
     d_ocv_target = np.gradient(ocv_target, soc)
@@ -329,8 +329,8 @@ def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
     dQdV_target = 1 / d_ocv_target
 
     input_data = Result(
-        lf=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
-        info={},
+        lf=pl.DataFrame({"Voltage / V": ocv_target, "Net Capacity / Ah": soc}),
+        metadata={},
     )
 
     limits, fit = dma.run_ocv_curve_fit(
@@ -409,8 +409,8 @@ def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
     dVdQ_target = d_ocv_target
 
     input_data = Result(
-        lf=pl.DataFrame({"Voltage [V]": ocv_target, "Capacity [Ah]": soc}),
-        info={},
+        lf=pl.DataFrame({"Voltage / V": ocv_target, "Net Capacity / Ah": soc}),
+        metadata={},
     )
 
     limits, fit = dma.run_ocv_curve_fit(
@@ -478,9 +478,9 @@ def test_run_batch_dma():
     input_data_list = [
         Result(
             lf=pl.DataFrame(
-                {"Voltage [V]": ocv_target, "Capacity [Ah]": soc},
+                {"Voltage / V": ocv_target, "Net Capacity / Ah": soc},
             ),
-            info={},
+            metadata={},
             column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
         )
         for ocv_target in ocv_target_list
@@ -548,7 +548,7 @@ def test_run_batch_dma():
     # test with invalid input
     with pytest.raises(ValueError):
         dma.run_batch_dma_parallel(
-            input_data_list=[Result(lf=pl.DataFrame({}), info={})],
+            input_data_list=[Result(lf=pl.DataFrame({}), metadata={})],
             ocp_ne=np.ones(10),
             ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
             fitting_target="OCV",
@@ -633,7 +633,7 @@ def bol_stoich_fixture(
                 "Li Inventory [Ah]": bol_capacity_fixture[3],
             },
         ),
-        info={},
+        metadata={},
     )
     return stoichiometry_limits
 
@@ -658,7 +658,7 @@ def eol_stoich_fixture(
                 "Li Inventory [Ah]": eol_capacity_fixture[3],
             },
         ),
-        info={},
+        metadata={},
     )
     return stoichiometry_limits
 
@@ -704,11 +704,11 @@ def test_quantify_degradation_modes(
     result = Result(
         lf=pl.DataFrame(
             {
-                "Voltage [V]": np.linspace(0, 1, 10),
-                "Capacity [Ah]": np.linspace(0, 1, 10),
+                "Voltage / V": np.linspace(0, 1, 10),
+                "Net Capacity / Ah": np.linspace(0, 1, 10),
             },
         ),
-        info={},
+        metadata={},
     )
 
     with pytest.raises(ValueError):
@@ -771,11 +771,11 @@ def test_average_ocvs(BreakinCycles_fixture):
     break_in = BreakinCycles_fixture.cycle(0)
     break_in.set_soc()
     corrected_r = dma.average_ocvs(break_in, charge_filter="constant_current(1)")
-    assert math.isclose(corrected_r.get("Voltage [V]")[0], 3.14476284763849)
-    assert math.isclose(corrected_r.get("Voltage [V]")[-1], 4.170649780122139)
+    assert math.isclose(corrected_r.get("Voltage / V")[0], 3.14476284763849)
+    assert math.isclose(corrected_r.get("Voltage / V")[-1], 4.170649780122139)
     np.testing.assert_allclose(
-        corrected_r.get("SOC"),
-        break_in.constant_current(1).get("SOC"),
+        corrected_r.get("SOC / %"),
+        break_in.constant_current(1).get("SOC / %"),
     )
 
     # test invalid input
@@ -794,8 +794,8 @@ def test_run_batch_dma_sequential_basic():
     ]
     input_data_list = [
         Result(
-            lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
-            info={},
+            lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
+            metadata={},
         )
         for ocv in ocv_target_list
     ]
@@ -834,8 +834,8 @@ def test_run_batch_dma_sequential_multiple_optimizers():
     ]
     input_data_list = [
         Result(
-            lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
-            info={},
+            lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
+            metadata={},
         )
         for ocv in ocv_target_list
     ]
@@ -868,8 +868,8 @@ def test_run_batch_dma_sequential_linked_results():
     ]
     input_data_list = [
         Result(
-            lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
-            info={},
+            lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
+            metadata={},
         )
         for ocv in ocv_target_list
     ]
@@ -893,8 +893,8 @@ def test_run_batch_dma_sequential_invalid_inputs():
     soc = np.linspace(0, 1, 1000)
     ocv = get_sample_ocv_data([0.83, 0.1, 0.1, 0.73])
     input_data = Result(
-        lf=pl.DataFrame({"Voltage [V]": ocv, "Capacity [Ah]": soc}),
-        info={},
+        lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
+        metadata={},
     )
 
     # Test empty input list

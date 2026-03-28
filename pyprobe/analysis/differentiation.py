@@ -2,7 +2,7 @@
 
 import numpy as np
 import polars as pl
-from pydantic import validate_call
+from pydantic import ConfigDict, validate_call
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import AnalysisValidator
@@ -11,7 +11,7 @@ from pyprobe.result import Result
 from pyprobe.utils import deprecated
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def gradient(  # 1. Define the method
     input_data: PyProBEDataType,
     x: str,
@@ -57,7 +57,7 @@ def gradient(  # 1. Define the method
     return gradient_result
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def differentiate_lean(
     input_data: PyProBEDataType,
     x: str,

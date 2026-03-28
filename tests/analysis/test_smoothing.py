@@ -18,7 +18,7 @@ def noisy_data():
 
     return Result(
         lf=pl.LazyFrame({"x": x, "y": y}),
-        info={},
+        metadata={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -33,7 +33,7 @@ def noisy_data_reversed():
     flipped_y = np.flip(y)
     return Result(
         lf=pl.LazyFrame({"x": flipped_x, "y": flipped_y}),
-        info={},
+        metadata={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -56,8 +56,8 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
 
     np.testing.assert_allclose(result.get("y"), expected_y, rtol=0.2)
 
-    input_data_columns = set(noisy_data.columns + ["d(y)/d(x)"])
-    result_columns = set(result.columns)
+    input_data_columns = set(noisy_data.columns.names + ["d(y)/d(x)"])
+    result_columns = set(result.columns.names)
     assert input_data_columns == result_columns
 
     expected_dydx = 2 * x
@@ -98,7 +98,7 @@ def test_savgol_smoothing(noisy_data, noisy_data_reversed, benchmark):
     expected_y = x**2
 
     np.testing.assert_allclose(result.get("y"), expected_y, rtol=0.2)
-    assert set(result.columns) == set(noisy_data.columns)
+    assert set(result.columns.names) == set(noisy_data.columns.names)
 
 
 def test_linear_interpolator():
@@ -286,7 +286,7 @@ def test_downsample_non_monotonic(benchmark):
 
     data = Result(
         lf=pl.LazyFrame({"x": x, "y": y}),
-        info={},
+        metadata={},
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -311,7 +311,7 @@ def test_downsample_intervals():
     values = times
     test_data = Result(
         lf=pl.LazyFrame({"Time [s]": times, "values": values}),
-        info={},
+        metadata={},
         column_definitions={"Time": "time", "values": "test values"},
     )
 
@@ -331,7 +331,7 @@ def test_downsample_metadata_preservation():
     values = np.array([0, 1, 2, 3, 4, 5])
     test_data = Result(
         lf=pl.LazyFrame({"Time [s]": times, "values": values}),
-        info={"test_info": "test"},
+        metadata={"test_info": "test"},
         column_definitions={"Time": "time", "values": "test values"},
     )
 

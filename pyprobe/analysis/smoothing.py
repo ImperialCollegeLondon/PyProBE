@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from loguru import logger
 from numpy.typing import NDArray
-from pydantic import validate_call
+from pydantic import ConfigDict, validate_call
 from scipy import interpolate
 from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter
@@ -18,7 +18,7 @@ from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def spline_smoothing(
     input_data: PyProBEDataType,
     target_column: str,
@@ -165,7 +165,7 @@ def _downsample_non_monotonic_data(
     return df.filter(pl.col("index").is_in(indices)).drop("index")
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def downsample(
     input_data: PyProBEDataType,
     target_column: str,
@@ -227,7 +227,7 @@ def downsample(
     return result
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def savgol_smoothing(
     input_data: PyProBEDataType,
     target_column: str,

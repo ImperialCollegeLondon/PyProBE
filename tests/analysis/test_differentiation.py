@@ -18,7 +18,7 @@ def differentiation_fixture():
     """Return a Differentiation instance."""
     input_data = Result(
         lf=pl.DataFrame({"x": x_data, "y": y_data}),
-        info={},
+        metadata={},
     )
     input_data.column_definitions = {"x": "The x data", "y": "The y data"}
     return input_data
