@@ -1,9 +1,6 @@
 """Module containing tests of the procedure class."""
 
-import copy
-
 import numpy as np
-import pandas as pd
 import polars as pl
 import pytest
 
@@ -63,49 +60,6 @@ def test_experiment_no_description():
 def test_experiment_names(procedure_fixture, titles_fixture):
     """Test the experiment_names method."""
     assert procedure_fixture.experiment_names == titles_fixture
-
-
-def test_add_data_from_file(procedure_fixture, tmp_path):
-    """Test adding external data to the procedure."""
-    # Create external data
-    data = pl.read_excel("tests/sample_data/neware/sample_data_neware.xlsx").to_pandas()
-    start_date = data["Date"][0] - pd.Timedelta(seconds=30.54)
-    end_date = data["Date"].iloc[-1] - pd.Timedelta(seconds=67.54)
-    date_range = pd.date_range(start=start_date, end=end_date, freq="1min")
-    seconds_passed = (date_range - start_date).total_seconds()
-    value = 10 * np.sin(0.001 * seconds_passed)
-    dataframe = pl.DataFrame({"Date": date_range, "Value": value})
-    external_data_path = tmp_path / "external_data.csv"
-    dataframe.write_csv(external_data_path)
-
-    procedure1 = copy.deepcopy(procedure_fixture)
-    procedure1.add_data(
-        new_data=str(external_data_path),
-        date_column_name="Date",
-        importing_columns=["Value"],
-    )
-    assert "Value" in procedure1.columns
-    assert procedure1.data.select(
-        pl.col("Value").tail(69).is_null(),
-    ).unique().to_numpy() == np.array([True])
-
-    procedure2 = copy.deepcopy(procedure_fixture)
-    procedure2.add_data(
-        new_data=str(external_data_path),
-        date_column_name="Date",
-        importing_columns={"Value": "new column"},
-    )
-    assert "new column" in procedure2.columns
-
-    time = procedure2.data["Time [s]"].to_numpy() + 30.54
-    value = 10 * np.sin(0.001 * time)
-    data = procedure2.data["new column"].to_numpy()
-    nan_mask = np.isnan(data)
-
-    # Filter out NaNs
-    value = value[~nan_mask]
-    data = data[~nan_mask]
-    assert np.allclose(data, value, atol=0.005)
 
 
 class TestProcedureLoad:

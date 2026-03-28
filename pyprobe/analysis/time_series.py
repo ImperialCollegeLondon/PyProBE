@@ -1,6 +1,5 @@
 """Analysis functions for manipulating time series data."""
 
-import datetime
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -73,8 +72,8 @@ def align_data(
 ) -> tuple["Result", "Result"]:
     """Align the data of two Result objects from the cross-correlation of two columns.
 
-    The date column of result2 is shifted to best align column2 with column1 from
-    result1.
+    The unix time column of result2 is shifted to best align column2 with column1
+    from result1.
 
     Args:
         result1 (Result): The first Result object (reference).
@@ -90,7 +89,7 @@ def align_data(
     # Get data from result1
     validator1 = AnalysisValidator(
         input_data=result1,
-        required_columns=["Date", column1],
+        required_columns=["Unix Time / s", column1],
     )
     date1, y1 = validator1.variables
     t1, y1 = _clean_data(date1, y1)
@@ -98,7 +97,7 @@ def align_data(
     # Get data from result2
     validator2 = AnalysisValidator(
         input_data=result2,
-        required_columns=["Date", column2],
+        required_columns=["Unix Time / s", column2],
     )
     date2, y2 = validator2.variables
     t2, y2 = _clean_data(date2, y2)
@@ -147,11 +146,10 @@ def align_data(
     lag = _parabolic_peak(correlation, peak_idx, lags.astype(float))
 
     time_shift = lag * dt
-    time_shift_duration = datetime.timedelta(microseconds=time_shift)
 
-    logger.info(f"Applying time shift of {time_shift_duration} to new data.")
+    logger.info(f"Applying time shift of {time_shift} seconds to new data.")
 
-    # Shift result2
-    result2.lf = result2.lf.with_columns(pl.col("Date") + time_shift_duration)
+    # Shift result2 (direct float addition since Unix Time is Float64 seconds)
+    result2.lf = result2.lf.with_columns(pl.col("Unix Time / s") + time_shift)
 
     return result1, result2
