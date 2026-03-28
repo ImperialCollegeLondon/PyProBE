@@ -35,7 +35,7 @@ def test_init(RawData_fixture, step_descriptions_fixture):
 def test_data(RawData_fixture):
     """Test the data property."""
     data = RawData_fixture.data
-    assert "Test Time / s" in data.columns
+    assert "Unix Time / s" in data.columns
     assert "Current / A" in data.columns
     assert "Voltage / V" in data.columns
 
