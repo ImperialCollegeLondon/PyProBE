@@ -797,6 +797,9 @@ class ColumnSet:
         'Expr'
     """
 
+    names: list[str]
+    """List of available column name strings, in the same order as the source."""
+
     def __init__(self, available_columns: list[str]) -> None:
         """Initialise a ColumnSet with the given available column names.
 
@@ -808,23 +811,10 @@ class ColumnSet:
             available_columns: Column name strings present in the source
                 DataFrame (in BDF format, e.g. "Current / A").
         """
+        self.names: list[str] = list(available_columns)
         self._columns: list[Column] = [
             column_factory_from_string(name) for name in available_columns
         ]
-
-    @property
-    def names(self) -> list[str]:
-        """Return the column names as a list of strings.
-
-        Returns:
-            List of column name strings.
-
-        Examples:
-            >>> cs = ColumnSet(["Current / A", "Voltage / V"])
-            >>> cs.names
-            ['Current / A', 'Voltage / V']
-        """
-        return [c.name for c in self._columns]
 
     @property
     def quantities(self) -> list[str]:
@@ -862,6 +852,8 @@ class ColumnSet:
             ColumnResolutionError: If no matching column can be resolved.
         """
         if isinstance(column, str):
+            if column in self.names:
+                return pl.col(column)
             column = column_factory_from_string(column)
         return column.resolve(set(self._columns))
 
@@ -881,6 +873,8 @@ class ColumnSet:
             True if :meth:`col` would succeed for this column.
         """
         if isinstance(column, str):
+            if column in self.names:
+                return True
             column = column_factory_from_string(column)
         return column.can_resolve(set(self._columns))
 
