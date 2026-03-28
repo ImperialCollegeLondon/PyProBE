@@ -52,16 +52,16 @@ def test_set_SOC(BreakinCycles_fixture):
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
     assert isinstance(with_charge_specified.lf, pl.LazyFrame)
     assert "Net Capacity / Ah_right" not in with_charge_specified.data.columns
-    with_charge_specified = with_charge_specified.data["SOC"]
+    with_charge_specified = with_charge_specified.data["SOC / %"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     without_charge_specified.set_soc(0.04)
     assert isinstance(without_charge_specified.lf, pl.LazyFrame)
-    without_charge_specified = without_charge_specified.data["SOC"]
+    without_charge_specified = without_charge_specified.data["SOC / %"]
 
     assert (with_charge_specified == without_charge_specified).all()
-    assert max(without_charge_specified) == 1
-    assert max(with_charge_specified) == 1
+    assert max(without_charge_specified) == 100
+    assert max(with_charge_specified) == 100
 
 
 def test_SOC_ref_as_dataframe(BreakinCycles_fixture):

@@ -181,14 +181,15 @@ class RawData(Result):
                 (
                     (pl.col(cap_col) - pl.col(cap_col).max() + reference_capacity)
                     / reference_capacity
-                ).alias("SOC"),
+                    * 100
+                ).alias("SOC / %"),
             )
         else:
-            time_col = BDF.TEST_TIME_SECOND.name
-            reference_charge_data = reference_charge.lf.select(time_col, cap_col)
+            unix_col = BDF.UNIX_TIME_SECOND.name
+            reference_charge_data = reference_charge.lf.select(unix_col, cap_col)
             self.lf = self.lf.join(
                 reference_charge_data,
-                on=time_col,
+                on=unix_col,
                 how="left",
             )
             right_col = cap_col + "_right"
@@ -200,9 +201,10 @@ class RawData(Result):
                 (
                     (pl.col(cap_col) - full_ref + reference_capacity)
                     / reference_capacity
-                ).alias("SOC"),
+                    * 100
+                ).alias("SOC / %"),
             )
-        self.define_column("SOC", "The full cell State-of-Charge.")
+        self.define_column("SOC / %", "The full cell State-of-Charge.")
 
     @deprecated(
         reason="Use set_soc instead.",
