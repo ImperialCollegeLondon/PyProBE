@@ -6,24 +6,25 @@ import shutil
 import warnings
 import zipfile
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import polars as pl
 from loguru import logger
-from pydantic import BaseModel, Field
 
 from pyprobe import io as _io
 from pyprobe._version import __version__
 from pyprobe.column import BDF
 from pyprobe.filters import Procedure
-from pyprobe.utils import PyBaMMSolution, catch_pydantic_validation, deprecated
+from pyprobe.utils import PyBaMMSolution, deprecated
 
 if TYPE_CHECKING:
     pass
 
 
-class Cell(BaseModel):
+@dataclass
+class Cell:
     """A class for a cell in a battery experiment."""
 
     info: dict[str, Any | None]
@@ -31,13 +32,8 @@ class Cell(BaseModel):
     The dictionary must contain a 'Name' field, other information may include
     channel number or other rig information.
     """
-    procedure: dict[str, Procedure] = Field(default_factory=dict)
+    procedure: dict[str, Procedure] = field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
 
     def add_procedure(
         self,
@@ -124,7 +120,6 @@ class Cell(BaseModel):
         _io.attach_metadata(path, combined_meta)
         self.procedure[procedure_name] = Procedure.load(path, readme_path=readme_path)
 
-    @catch_pydantic_validation
     def import_pybamm_solution(
         self,
         procedure_name: str,
@@ -439,7 +434,6 @@ class Cell(BaseModel):
         )
 
 
-@catch_pydantic_validation
 def load_archive(path: str) -> Cell:
     """Load a cell object from an archive.
 
@@ -518,7 +512,6 @@ def process_cycler_data(
     )
 
 
-@catch_pydantic_validation
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
