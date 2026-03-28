@@ -34,6 +34,7 @@ from pyprobe.column import (
     ColumnSet,
     column_factory_from_string,
 )
+from pyprobe.utils import validate_timezone
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -316,7 +317,7 @@ def _load_raw_dataframes(
     source: str | Path,
     plugin: str | None,
     normalize: bool = True,
-    timezone: str | None = None,
+    timezone: str = "UTC",
 ) -> list[pl.DataFrame]:
     """Load raw cycler files into Polars DataFrames.
 
@@ -328,9 +329,9 @@ def _load_raw_dataframes(
         plugin: BatteryDF plugin name. ``None`` triggers auto-detection.
         normalize: When ``True`` (default), normalise to BDF column names.
             When ``False``, preserve original source column names.
-        timezone: Optional timezone (IANA string) to apply to tz-naive datetime
-            columns in the raw data. Tz-aware columns are converted to UTC directly.
-            Defaults to None (assumes UTC for tz-naive columns).
+        timezone: IANA timezone string applied to tz-naive datetime columns in
+            the raw data.  Tz-aware columns are converted to UTC directly.
+            Defaults to ``"UTC"``.
 
     Returns:
         One DataFrame per resolved file, in sorted order.
@@ -471,7 +472,7 @@ def process_cycler(
         "performance", "file size", "uncompressed"
     ] = "performance",
     column_map: dict[str | BDF, str] | None = None,
-    timezone: str | None = None,
+    timezone: str = "UTC",
 ) -> Path:
     """Read cycler file(s), normalise to BDF columns, and write to Parquet.
 
@@ -499,15 +500,16 @@ def process_cycler(
             to source column names in the raw data. Keys must follow the
             ``"Quantity / unit"`` format. Where a key matches an already-resolved
             BDF column, the *column_map* entry overrides it.
-        timezone: Optional timezone (IANA string) to apply to tz-naive datetime
-            columns in the raw data. Tz-aware columns are converted to UTC directly.
-            Defaults to None (assumes UTC for tz-naive columns).
+        timezone: IANA timezone string applied to tz-naive datetime columns in
+            the raw data.  Tz-aware columns are converted to UTC directly.
+            Defaults to ``"UTC"``.
 
     Returns:
         Path to the written ``.bdx.parquet`` file.
 
     Raises:
         FileNotFoundError: If *source* is a glob pattern that matches no files.
+        ValueError: If *timezone* is not a recognised IANA timezone string.
         ValueError: If *output_path* is provided but does not end with ``.parquet``.
         ValueError: If any time column (Unix Time or Test Time) cannot be resolved
             from the source data.
@@ -533,6 +535,7 @@ def process_cycler(
                 column_map={"Ambient Pressure / kPa": "Pressure(kPa)"},
             )
     """
+    validate_timezone(timezone)
     first_file = _resolve_glob(source)[0]
     if output_path is not None:
         candidate = Path(output_path)
