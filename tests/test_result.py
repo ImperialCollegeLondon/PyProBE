@@ -180,7 +180,7 @@ class TestResultDataProperty:
     def test_quantities(self, Result_fixture):
         """Test the quantities property."""
         assert set(Result_fixture.columns.quantities) == {
-            "Test Time",
+            "Unix Time",
             "Current",
             "Voltage",
             "Net Capacity",
