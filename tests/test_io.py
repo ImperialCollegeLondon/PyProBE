@@ -247,7 +247,7 @@ class TestProcessCyclerMissingColumns:
 
     @pytest.mark.parametrize(
         "missing_column",
-        ["Test Time / s", "Current / A", "Voltage / V"],
+        ["Current / A", "Voltage / V"],
     )
     def test_process_cycler_missing_required_column_raises(
         self, tmp_path: Path, missing_column: str
@@ -265,6 +265,21 @@ class TestProcessCyclerMissingColumns:
         with (
             patch("bdf.read", return_value=fake_df),
             pytest.raises(ValueError, match="Required BDF column"),
+        ):
+            process_cycler("fake.csv", output_path=tmp_path)
+
+    def test_process_cycler_missing_time_column_raises(self, tmp_path: Path) -> None:
+        """Raise ValueError when both Unix Time and Test Time are missing."""
+        fake_df = pd.DataFrame(
+            {
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+
+        with (
+            patch("bdf.read", return_value=fake_df),
+            pytest.raises(ValueError, match="Required time column"),
         ):
             process_cycler("fake.csv", output_path=tmp_path)
 
@@ -337,8 +352,9 @@ class TestProcessCyclerIntegration:
 
     arbin_last_row = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2024, 9, 20, 8, 37, 5, 772000).timestamp()],
-            "Test Time / s": [301.214],
+            "Unix Time / s": [
+                datetime.datetime(2024, 9, 20, 8, 37, 5, 772000).timestamp()
+            ],
             "Step Index / 1": [3],
             "Step Count / 1": [2],
             "Current / A": [2.650138],
@@ -350,8 +366,9 @@ class TestProcessCyclerIntegration:
 
     basytec_last_row = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2023, 6, 19, 17, 58, 3, 235803).timestamp()],
-            "Test Time / s": [70.235804],
+            "Unix Time / s": [
+                datetime.datetime(2023, 6, 19, 17, 58, 3, 235803).timestamp()
+            ],
             "Step Index / 1": [4],
             "Step Count / 1": [1],
             "Current / A": [0.449602],
@@ -363,8 +380,9 @@ class TestProcessCyclerIntegration:
 
     biologic_last_row = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2024, 5, 13, 11, 19, 51, 602139).timestamp()],
-            "Test Time / s": [139.524007],
+            "Unix Time / s": [
+                datetime.datetime(2024, 5, 13, 11, 19, 51, 602139).timestamp()
+            ],
             "Step Index / 1": [1],
             "Step Count / 1": [1],
             "Current / A": [-0.899826],
@@ -388,8 +406,9 @@ class TestProcessCyclerIntegration:
 
     biologic_last_row_mb = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2024, 5, 13, 11, 19, 51, 858016).timestamp()],
-            "Test Time / s": [256016.11344],
+            "Unix Time / s": [
+                datetime.datetime(2024, 5, 13, 11, 19, 51, 858016).timestamp()
+            ],
             "Step Index / 1": [5],
             "Step Count / 1": [5],
             "Current / A": [0.450135],
@@ -401,8 +420,9 @@ class TestProcessCyclerIntegration:
 
     maccor_last_row = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2023, 11, 23, 15, 56, 24, 60000).timestamp()],
-            "Test Time / s": [13.06],
+            "Unix Time / s": [
+                datetime.datetime(2023, 11, 23, 15, 56, 24, 60000).timestamp()
+            ],
             "Step Index / 1": [2],
             "Step Count / 1": [1],
             "Current / A": [28.798],
@@ -414,8 +434,9 @@ class TestProcessCyclerIntegration:
 
     neware_last_row = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2024, 3, 6, 21, 39, 38, 591000).timestamp()],
-            "Test Time / s": [562749.497],
+            "Unix Time / s": [
+                datetime.datetime(2024, 3, 6, 21, 39, 38, 591000).timestamp()
+            ],
             "Step Index / 1": [12],
             "Step Count / 1": [61],
             "Current / A": [0.0],
@@ -426,8 +447,7 @@ class TestProcessCyclerIntegration:
 
     novonix_last_row = pl.DataFrame(
         {
-            "Date": [datetime.datetime(2025, 7, 19, 18, 51, 8).timestamp()],
-            "Test Time / s": [12287.48004],
+            "Unix Time / s": [datetime.datetime(2025, 7, 19, 18, 51, 8).timestamp()],
             "Step Index / 1": [1],
             "Step Count / 1": [0],
             "Current / A": [0.49999387],
@@ -437,79 +457,52 @@ class TestProcessCyclerIntegration:
         },
     )
 
-    def helper_process_cycler_integration(
-        self,
-        tmp_path: Path,
-        source_file: str | Path,
-        expected_final_row_bdf_format: pl.DataFrame | None = None,
-        plugin: str | None = None,
-    ) -> pl.LazyFrame:
-        """Helper function to test process_cycler against real cycler data files.
-
-        Similar to helper_read_and_process in test_basecycler.py, but adapted for
-        BDF column names and the process_cycler API.
-
-        Args:
-            tmp_path: Temporary directory for output Parquet files.
-            source_file: Path to the real cycler data file.
-            expected_final_row_bdf_format: Expected final row in BDF format
-                (with column names like "Test Time / s", "Unix Time / s", etc.).
-                The expected row should already be in the BDF format with timestamps
-                converted to seconds since epoch.
-            plugin: Optional batterydf plugin name.
-
-        Returns:
-            The collected LazyFrame result.
-        """
-        result = process_cycler(source_file, output_path=tmp_path, plugin=plugin)
-
-        assert isinstance(result, Path)
-        result = pl.scan_parquet(result).collect()
-
-        # Check data integrity if expected final row is provided
-        if expected_final_row_bdf_format is not None:
-            final_row = result.tail(1)
-
-            # Select only columns that exist in both dataframes
-            cols_in_both = [
-                c
-                for c in expected_final_row_bdf_format.columns
-                if c in final_row.columns
-            ]
-            if cols_in_both:
-                expected_subset = expected_final_row_bdf_format.select(cols_in_both)
-                final_subset = final_row.select(cols_in_both)
-
-                pl_testing.assert_frame_equal(
-                    expected_subset,
-                    final_subset,
-                    check_column_order=False,
-                    check_dtypes=False,
-                    abs_tol=1e-5,
-                )
-
-        return result
-
     @pytest.mark.parametrize(
-        "source_file, expected_final_row",
+        "source_file, plugin, expected_final_row",
         [
-            ("tests/sample_data/arbin/sample_data_arbin.csv", arbin_last_row),
-            ("tests/sample_data/basytec/sample_data_basytec.txt", basytec_last_row),
+            (
+                "tests/sample_data/arbin/sample_data_arbin.csv",
+                "arbin-csv",
+                arbin_last_row,
+            ),
+            (
+                "tests/sample_data/basytec/sample_data_basytec.txt",
+                "basytec-txt",
+                basytec_last_row,
+            ),
             (
                 "tests/sample_data/biologic/Sample_data_biologic_CA1.txt",
+                "biologic-mpt",
                 biologic_last_row,
             ),
             (
                 "tests/sample_data/biologic/Sample_data_biologic_no_header.mpt",
+                "biologic-mpt",
                 biologic_last_row_no_header,
             ),
-            ("tests/sample_data/maccor/sample_data_maccor.csv", maccor_last_row),
-            ("tests/sample_data/neware/sample_data_neware.xlsx", neware_last_row),
-            ("tests/sample_data/novonix/sample_data_novonix.csv", novonix_last_row),
+            (
+                "tests/sample_data/maccor/sample_data_maccor.csv",
+                "maccor-csv",
+                maccor_last_row,
+            ),
+            (
+                "tests/sample_data/neware/sample_data_neware.xlsx",
+                "neware-xlsx",
+                neware_last_row,
+            ),
+            (
+                "tests/sample_data/novonix/sample_data_novonix.csv",
+                "novonix-csv",
+                novonix_last_row,
+            ),
         ],
     )
     def test_read_and_process_sample_data(
-        self, tmp_path: Path, source_file: str, expected_final_row: pl.DataFrame
+        self,
+        tmp_path: Path,
+        source_file: str,
+        plugin: str,
+        expected_final_row: pl.DataFrame,
     ) -> None:
         """Test the full process of reading and processing real sample data files.
 
@@ -520,35 +513,67 @@ class TestProcessCyclerIntegration:
         Args:
             tmp_path: Temporary directory for output Parquet files.
             source_file: Path to the real cycler data file to test.
+            plugin: The cycler plugin name to use for parsing.
             expected_final_row: Expected final row in BDF format for validation.
         """
-        self.helper_process_cycler_integration(
-            tmp_path,
-            source_file,
-            expected_final_row_bdf_format=expected_final_row,
-        )
+        result = process_cycler(source_file, output_path=tmp_path, plugin=plugin)
 
-    def test_process_cycler_derived_step_count_integration(
-        self, tmp_path: Path
-    ) -> None:
-        """process_cycler derives Step Count from Step Index with real data.
+        assert isinstance(result, Path)
+        result = pl.scan_parquet(result).collect()
 
-        Replicates monotonicity and derivation logic from cycler tests.
+        # Check data integrity if expected final row is provided
+        if expected_final_row is not None:
+            final_row = result.tail(1)
+
+            pl_testing.assert_frame_equal(
+                expected_final_row,
+                final_row,
+                check_column_order=False,
+                check_dtypes=False,
+                abs_tol=1e-5,
+            )
+
+    def test_process_cycler_timezone_shifts_unix_time(self, tmp_path: Path) -> None:
+        """Test timezone parameter shifts Unix Time values when treating source.
+
+        The basytec sample file contains tz-naive timestamps recorded in local time.
+        Specifying timezone="Europe/Berlin" (CEST = UTC+2 in June 2023) causes those
+        timestamps to be interpreted as Berlin local time and converted to UTC,
+        producing Unix timestamps that are 7200 seconds earlier than when no
+        timezone is given (i.e. when the naive timestamps are assumed to be UTC).
         """
-        result = self.helper_process_cycler_integration(
-            tmp_path,
-            "tests/sample_data/neware/sample_data_neware.xlsx",
+        source = "tests/sample_data/basytec/sample_data_basytec.txt"
+        utc_dir = tmp_path / "utc"
+        berlin_dir = tmp_path / "berlin"
+        utc_dir.mkdir()
+        berlin_dir.mkdir()
+
+        result_utc_path = process_cycler(
+            source, output_path=utc_dir, plugin="basytec-txt"
         )
-        # If Step Count is derived, it should be monotonically non-decreasing
-        if "Step Count / 1" in result.columns:
-            step_index_diffs = result["Step Index / 1"].diff().drop_nulls()
-            step_count_diffs = result["Step Count / 1"].diff().drop_nulls()
-            # When Step Index changes, Step Count should increment
-            for i in range(len(step_index_diffs)):
-                if step_index_diffs[i] > 0:
-                    assert step_count_diffs[i] >= 0, (
-                        "Step Count should increment when Step Index changes"
-                    )
+        result_berlin_path = process_cycler(
+            source,
+            output_path=berlin_dir,
+            plugin="basytec-txt",
+            timezone="Europe/Berlin",
+        )
+
+        unix_utc = (
+            pl.scan_parquet(result_utc_path)
+            .select("Unix Time / s")
+            .collect()["Unix Time / s"]
+        )
+        unix_berlin = (
+            pl.scan_parquet(result_berlin_path)
+            .select("Unix Time / s")
+            .collect()["Unix Time / s"]
+        )
+
+        # June 2023: CEST is UTC+2, so Berlin-local times are 7200 s ahead of UTC.
+        # When the naive timestamps are reinterpreted as Berlin time, the resulting
+        # UTC Unix timestamps are 7200 s earlier.
+        offset = (unix_berlin - unix_utc).to_list()
+        assert all(abs(v - (-7200.0)) < 1e-3 for v in offset)
 
     def test_process_cycler_skip_if_exists_integration(self, tmp_path: Path) -> None:
         """With skip_if_exists=True, cached files are reused with real data.

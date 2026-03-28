@@ -17,6 +17,7 @@ Typical usage::
 
 from __future__ import annotations
 
+import contextlib
 import glob
 import json
 from pathlib import Path
@@ -40,8 +41,10 @@ if TYPE_CHECKING:
 _PARQUET_METADATA_KEY: bytes = b"bdx_metadata"
 """Key used to store user metadata in Parquet footer."""
 
+_REQUIRED_BDF_TIME: list[BDF] = [BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND]
+"""Time columns (at least one must be resolvable); Unix Time is preferred."""
+
 _REQUIRED_BDF_COLUMNS: list[BDF] = [
-    BDF.TEST_TIME_SECOND,
     BDF.CURRENT_AMPERE,
     BDF.VOLTAGE_VOLT,
 ]
@@ -53,6 +56,16 @@ _OPTIONAL_BDF_COLUMNS: list[BDF] = [
     BDF.STEP_INDEX,
 ]
 """BDF columns included when available; warnings are emitted on failure."""
+
+_SILENT_OPTIONAL_BDF_COLUMNS: list[BDF] = [
+    BDF.AMBIENT_TEMPERATURE_CELSIUS,
+    BDF.TEMPERATURE_T1_CELCIUS,
+    BDF.TEMPERATURE_T2_CELCIUS,
+    BDF.TEMPERATURE_T3_CELCIUS,
+    BDF.TEMPERATURE_T4_CELCIUS,
+    BDF.TEMPERATURE_T5_CELCIUS,
+]
+"""BDF columns included when available; no warning if missing."""
 
 _ParquetCompression = Literal["lz4", "uncompressed", "snappy", "gzip", "brotli", "zstd"]
 
@@ -300,7 +313,10 @@ def _resolve_glob(source: str | Path) -> list[Path]:
 
 
 def _load_raw_dataframes(
-    source: str | Path, plugin: str | None, normalize: bool = True
+    source: str | Path,
+    plugin: str | None,
+    normalize: bool = True,
+    timezone: str | None = None,
 ) -> list[pl.DataFrame]:
     """Load raw cycler files into Polars DataFrames.
 
@@ -312,13 +328,18 @@ def _load_raw_dataframes(
         plugin: BatteryDF plugin name. ``None`` triggers auto-detection.
         normalize: When ``True`` (default), normalise to BDF column names.
             When ``False``, preserve original source column names.
+        timezone: Optional timezone (IANA string) to apply to tz-naive datetime
+            columns in the raw data. Tz-aware columns are converted to UTC directly.
+            Defaults to None (assumes UTC for tz-naive columns).
 
     Returns:
         One DataFrame per resolved file, in sorted order.
     """
     files = _resolve_glob(source)
     return [
-        pl.from_pandas(bdf.read(str(f), plugin=plugin, normalize=normalize))
+        pl.from_pandas(
+            bdf.read(str(f), plugin=plugin, normalize=normalize, timezone=timezone)
+        )
         for f in files
     ]
 
@@ -409,6 +430,37 @@ def _extract_column_map_columns(
     return df.select(_build_column_map_exprs(df.columns, column_map))
 
 
+def _resolve_time_column(column_set: ColumnSet) -> pl.Expr:
+    """Resolve a time column, preferring Unix Time but falling back to Test Time.
+
+    Attempts to resolve Unix Time first; if unavailable, falls back to Test Time.
+    At least one of these must be resolvable.
+
+    Args:
+        column_set: ColumnSet with available columns.
+
+    Returns:
+        A Polars expression for the resolved time column.
+
+    Raises:
+        ValueError: If neither Unix Time nor Test Time can be resolved.
+    """
+    # Try Unix Time first (preferred)
+    try:
+        return column_set.resolve(BDF.UNIX_TIME_SECOND)
+    except ValueError:
+        pass
+
+    # Fall back to Test Time
+    try:
+        return column_set.resolve(BDF.TEST_TIME_SECOND)
+    except ValueError as exc:
+        raise ValueError(
+            "Required time column: either 'Unix Time / s' or 'Test Time / s' "
+            "must be available in the source data."
+        ) from exc
+
+
 def process_cycler(
     source: str | Path,
     output_path: str | Path | None = None,
@@ -419,6 +471,7 @@ def process_cycler(
         "performance", "file size", "uncompressed"
     ] = "performance",
     column_map: dict[str | BDF, str] | None = None,
+    timezone: str | None = None,
 ) -> Path:
     """Read cycler file(s), normalise to BDF columns, and write to Parquet.
 
@@ -446,6 +499,9 @@ def process_cycler(
             to source column names in the raw data. Keys must follow the
             ``"Quantity / unit"`` format. Where a key matches an already-resolved
             BDF column, the *column_map* entry overrides it.
+        timezone: Optional timezone (IANA string) to apply to tz-naive datetime
+            columns in the raw data. Tz-aware columns are converted to UTC directly.
+            Defaults to None (assumes UTC for tz-naive columns).
 
     Returns:
         Path to the written ``.bdx.parquet`` file.
@@ -453,8 +509,10 @@ def process_cycler(
     Raises:
         FileNotFoundError: If *source* is a glob pattern that matches no files.
         ValueError: If *output_path* is provided but does not end with ``.parquet``.
-        ValueError: If any required BDF column (test time, current, voltage) cannot
-            be resolved from the source data.
+        ValueError: If any time column (Unix Time or Test Time) cannot be resolved
+            from the source data.
+        ValueError: If any required BDF column (current, voltage) cannot be resolved
+            from the source data.
         ValueError: If a *column_map* key does not follow the ``"Quantity / unit"``
             format.
         ValueError: If a *column_map* source column name is not present in the raw data.
@@ -495,11 +553,13 @@ def process_cycler(
         if cached is not None:
             return cached
 
-    dfs = _load_raw_dataframes(source, plugin)
+    dfs = _load_raw_dataframes(source, plugin, timezone=timezone)
     df = _concat_dataframes(dfs)
-
     column_set = ColumnSet(df.columns)
     expressions: list[pl.Expr] = []
+
+    # Resolve time column (Unix Time preferred, Test Time fallback)
+    expressions.append(_resolve_time_column(column_set))
 
     for bdf_col in _REQUIRED_BDF_COLUMNS:
         try:
@@ -519,10 +579,16 @@ def process_cycler(
                 bdf_col.quantity,
             )
 
+    for bdf_col in _SILENT_OPTIONAL_BDF_COLUMNS:
+        with contextlib.suppress(ValueError):
+            expressions.append(column_set.resolve(bdf_col))
+
     normalised: pl.DataFrame = df.select(expressions)
 
     if column_map is not None:
-        raw_dfs = _load_raw_dataframes(source, plugin, normalize=False)
+        raw_dfs = _load_raw_dataframes(
+            source, plugin, normalize=False, timezone=timezone
+        )
         raw_df = _concat_dataframes(raw_dfs)
         mapped = _extract_column_map_columns(raw_df, column_map)
         for col_name in mapped.columns:
