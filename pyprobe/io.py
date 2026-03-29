@@ -29,7 +29,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from loguru import logger
 
-from pyprobe.column import (
+from pyprobe.columns import (
     BDF,
     ColumnSet,
     column_factory_from_string,

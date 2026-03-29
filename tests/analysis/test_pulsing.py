@@ -5,7 +5,7 @@ import pytest
 
 import pyprobe.analysis.pulsing as pulsing
 from pyprobe.analysis.pulsing import Pulsing
-from pyprobe.column import BDF
+from pyprobe.columns import BDF
 from pyprobe.result import Result
 
 

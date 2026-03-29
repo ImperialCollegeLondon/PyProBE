@@ -22,7 +22,7 @@ import polars.testing as pl_testing
 import pyarrow.parquet as pq
 import pytest
 
-from pyprobe.column import BDF
+from pyprobe.columns import BDF
 from pyprobe.io import (
     attach_metadata,
     process_cycler,

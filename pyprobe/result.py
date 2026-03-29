@@ -16,7 +16,7 @@ from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from scipy.io import savemat
 
-from pyprobe.column import ColumnSet
+from pyprobe.columns import ColumnSet
 from pyprobe.utils import catch_pydantic_validation, deprecated, validate_timezone
 
 try:
@@ -42,7 +42,7 @@ class Result:
           data source.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
-        - :attr:`columns`: A :class:`~pyprobe.column.ColumnSet` object providing
+        - :attr:`columns`: A :class:`~pyprobe.columns.ColumnSet` object providing
           column name access (via ``.names``) and BDF-aware resolution (via
           ``.resolve()`` and ``.can_resolve()``).
     """
@@ -103,14 +103,14 @@ class Result:
     def columns(self) -> ColumnSet:
         """The columns in the data as a ColumnSet.
 
-        Returns a :class:`~pyprobe.column.ColumnSet` object that provides
+        Returns a :class:`~pyprobe.columns.ColumnSet` object that provides
         both simple column name access and BDF-aware resolution:
 
-        - :attr:`~pyprobe.column.ColumnSet.names`: list of column name strings.
-        - :attr:`~pyprobe.column.ColumnSet.quantities`: list of quantity strings.
-        - :meth:`~pyprobe.column.ColumnSet.resolve`: resolve a column by name
+        - :attr:`~pyprobe.columns.ColumnSet.names`: list of column name strings.
+        - :attr:`~pyprobe.columns.ColumnSet.quantities`: list of quantity strings.
+        - :meth:`~pyprobe.columns.ColumnSet.resolve`: resolve a column by name
           or quantity, with optional unit conversion.
-        - :meth:`~pyprobe.column.ColumnSet.can_resolve`: check if a column
+        - :meth:`~pyprobe.columns.ColumnSet.can_resolve`: check if a column
           or BDF quantity is available.
 
         Returns:

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import polars as pl
 
 from pyprobe import utils
-from pyprobe.column import BDF, ColumnSet
+from pyprobe.columns import BDF, ColumnSet
 from pyprobe.rawdata import RawData
 
 if TYPE_CHECKING:

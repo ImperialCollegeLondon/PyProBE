@@ -18,7 +18,7 @@ from scipy.interpolate import PPoly
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import smoothing, utils
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.column import BDF
+from pyprobe.columns import BDF
 from pyprobe.pyprobe_types import FilterToCycleType, PyProBEDataType
 from pyprobe.result import Result
 
