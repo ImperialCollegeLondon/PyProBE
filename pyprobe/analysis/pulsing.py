@@ -4,7 +4,7 @@ import polars as pl
 from pydantic import BaseModel, ConfigDict, validate_call
 
 from pyprobe.analysis.utils import AnalysisValidator
-from pyprobe.column import BDF
+from pyprobe.columns import BDF
 from pyprobe.filters import Experiment, Step
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result

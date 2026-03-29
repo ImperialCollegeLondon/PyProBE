@@ -13,7 +13,7 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from pyprobe.column import (
+from pyprobe.columns import (
     BDF,
     BDF_IRI_PREFIX,
     BDF_PATTERN,

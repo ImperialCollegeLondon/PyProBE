@@ -15,7 +15,7 @@ from loguru import logger
 
 from pyprobe import io as _io
 from pyprobe._version import __version__
-from pyprobe.column import BDF
+from pyprobe.columns import BDF
 from pyprobe.filters import Procedure
 from pyprobe.utils import PyBaMMSolution, deprecated
 

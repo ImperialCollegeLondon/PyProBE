@@ -5,7 +5,7 @@ from typing import Any, Optional
 import polars as pl
 from loguru import logger
 
-from pyprobe.column import BDF
+from pyprobe.columns import BDF
 from pyprobe.result import Result
 from pyprobe.utils import deprecated
 
@@ -27,7 +27,7 @@ class RawData(Result):
     :class:`~pyprobe.result.Result` and can be used in the same way.
 
     The RawData object validates that the required BDF columns are resolvable
-    from the data via :class:`~pyprobe.column.ColumnSet`:
+    from the data via :class:`~pyprobe.columns.ColumnSet`:
 
     - At least one time column: ``Unix Time / s`` (preferred) or ``Test Time / s``
     - ``Current / A``

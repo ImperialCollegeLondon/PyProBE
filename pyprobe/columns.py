@@ -19,7 +19,7 @@ ingestion.
 
 Typical usage::
 
-    from pyprobe.column import BDF, DEFAULT_COLUMNS, ColumnSet
+    from pyprobe.columns import BDF, DEFAULT_COLUMNS, ColumnSet
 
     cs = ColumnSet(DEFAULT_COLUMNS)
     # Select Current in milliamps from a DataFrame that has "Current / A".
