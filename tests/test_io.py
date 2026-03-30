@@ -448,12 +448,13 @@ class TestProcessCyclerIntegration:
     novonix_last_row = pl.DataFrame(
         {
             "Unix Time / s": [datetime.datetime(2025, 7, 19, 18, 51, 8).timestamp()],
-            "Step Index / 1": [1],
-            "Step Count / 1": [0],
+            "Step Count / 1": [1],
+            "Step Index / 1": [0],
             "Current / A": [0.49999387],
             "Voltage / V": [4.12864581],
             "Net Capacity / Ah": [1.70652976],
-            "Surface Temperature T1 / degC": [24.792],
+            "Surface Temperature T1 / degC": [25.262],
+            "Ambient Temperature / degC": [24.792],
         },
     )
 
