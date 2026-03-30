@@ -29,7 +29,7 @@ def _create_capacity_throughput(
                 .fill_null(strategy="zero")
                 .abs()
                 .cum_sum()
-            ).alias("Capacity Throughput [Ah]"),
+            ).alias("Capacity Throughput / Ah"),
         ],
     )
 
@@ -56,12 +56,12 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
     lf_capacity_throughput = input_data.lf.group_by(
         BDF.CYCLE_COUNT.name,
         maintain_order=True,
-    ).agg(pl.col("Capacity Throughput [Ah]").first())
+    ).agg(pl.col("Capacity Throughput / Ah").first())
     time_expr = input_data.columns.resolve(BDF.TEST_TIME_SECOND)
     lf_time = (
         input_data.lf.with_columns(time_expr)
         .group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
-        .agg(pl.col(BDF.TEST_TIME_SECOND.name).first().alias("Time [s]"))
+        .agg(pl.col(BDF.TEST_TIME_SECOND.name).first().alias("Time / s"))
     )
 
     lf_charge = (
@@ -71,7 +71,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
             pl.col(BDF.NET_CAPACITY_AH.name).max()
             - pl.col(BDF.NET_CAPACITY_AH.name).min()
         )
-        .rename({BDF.NET_CAPACITY_AH.name: "Charge Capacity [Ah]"})
+        .rename({BDF.NET_CAPACITY_AH.name: "Charge Capacity / Ah"})
     )
     lf_discharge = (
         input_data.discharge()
@@ -80,7 +80,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
             pl.col(BDF.NET_CAPACITY_AH.name).max()
             - pl.col(BDF.NET_CAPACITY_AH.name).min()
         )
-        .rename({BDF.NET_CAPACITY_AH.name: "Discharge Capacity [Ah]"})
+        .rename({BDF.NET_CAPACITY_AH.name: "Discharge Capacity / Ah"})
     )
 
     lf = (
@@ -92,28 +92,28 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
     )
 
     lf = lf.with_columns(
-        (pl.col("Charge Capacity [Ah]") / pl.first("Charge Capacity [Ah]") * 100).alias(
-            "SOH Charge [%]",
+        (pl.col("Charge Capacity / Ah") / pl.first("Charge Capacity / Ah") * 100).alias(
+            "SOH Charge / %",
         ),
     )
     lf = lf.with_columns(
         (
-            pl.col("Discharge Capacity [Ah]")
-            / pl.first("Discharge Capacity [Ah]")
+            pl.col("Discharge Capacity / Ah")
+            / pl.first("Discharge Capacity / Ah")
             * 100
-        ).alias("SOH Discharge [%]"),
+        ).alias("SOH Discharge / %"),
     )
 
     if dchg_before_chg:
         lf = lf.with_columns(
             (
-                pl.col("Discharge Capacity [Ah]")
-                / pl.col("Charge Capacity [Ah]").shift()
+                pl.col("Discharge Capacity / Ah")
+                / pl.col("Charge Capacity / Ah").shift()
             ).alias("Coulombic Efficiency"),
         )
     else:
         (
-            pl.col("Discharge Capacity [Ah]").shift() / pl.col("Charge Capacity [Ah]")
+            pl.col("Discharge Capacity / Ah").shift() / pl.col("Charge Capacity / Ah")
         ).alias("Coulombic Efficiency")
     column_definitions = {
         "Cycle": "The cycle number.",
@@ -132,7 +132,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         ),
     }
     return Result(
-        lf=lf,
+        lf=lf.sort(BDF.CYCLE_COUNT.name),
         metadata=input_data.metadata,
         column_definitions=column_definitions,
     )
