@@ -16,6 +16,13 @@ def test_step(BreakinCycles_fixture, benchmark):
     data = benchmark(step)
     assert (data["Step Index / 1"] == 5).all()
 
+    # Verify on the full multi-cycle experiment (no cycle pre-filter).
+    # With Step Count, step(1) returns exactly one step group (one unique Step
+    # Count value). With Step Index, rank 2 would match the same index value
+    # across all cycles, yielding multiple Step Count values.
+    multi_cycle_data = BreakinCycles_fixture.step(1).data
+    assert multi_cycle_data["Step Count / 1"].n_unique() == 1
+
 
 def test_multi_step(BreakinCycles_fixture, benchmark):
     """Test the step method."""
