@@ -108,9 +108,8 @@ class RawData(Result):
         for bdf_col in _OPTIONAL_BDF:
             if not col_set.can_resolve(bdf_col):
                 logger.warning(
-                    "Optional BDF column '%s' is not resolvable; some features may "
-                    "be unavailable.",
-                    bdf_col.name,
+                    f"Optional BDF column '{bdf_col.name}' is not resolvable; some "
+                    "features may be unavailable."
                 )
 
     def zero_column(

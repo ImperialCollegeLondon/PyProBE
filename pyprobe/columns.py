@@ -566,9 +566,8 @@ class BDFColumn(Column):
                         req: req.resolve(available) for req in recipe.required
                     }
                     logger.debug(
-                        "Resolved '%s' via recipe with dependencies %s.",
-                        self.quantity,
-                        [c.quantity for c in expr_map],
+                        f"Resolved '{self.quantity}' via recipe with dependencies "
+                        f"{{c.quantity for c in expr_map}}."
                     )
                     return recipe.compute(expr_map).alias(self.name)
             raise ColumnResolutionError(
