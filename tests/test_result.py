@@ -11,6 +11,7 @@ import pytest
 from scipy.io import loadmat
 from tzlocal import get_localzone
 
+from pyprobe.columns import BDF, Column
 from pyprobe.result import (
     Result,
     combine_results,
@@ -139,6 +140,20 @@ class TestResultColumnResolution:
         _ = Result_fixture["Current / mA"]
         assert set(Result_fixture.data.columns) == original_columns
 
+    def test_get_with_column_instance(self, Result_fixture):
+        """Test that get() accepts Column and BDF instances."""
+        current_str = Result_fixture.get("Current / A")
+        current_bdf = Result_fixture.get(BDF.CURRENT_AMPERE)
+        current_col = Result_fixture.get(Column("Current", "A"))
+        np_testing.assert_array_equal(current_bdf, current_str)
+        np_testing.assert_array_equal(current_col, current_str)
+
+    def test_getitem_with_column_instance(self, Result_fixture):
+        """Test that __getitem__() accepts Column and BDF instances."""
+        by_str = Result_fixture["Current / A"]
+        by_bdf = Result_fixture[BDF.CURRENT_AMPERE]
+        pl_testing.assert_frame_equal(by_bdf.data, by_str.data)
+
     def test_get(self, Result_fixture):
         """Test the get method."""
         current = Result_fixture.get("Current / A")
@@ -181,6 +196,7 @@ class TestResultDataProperty:
         """Test the quantities property."""
         assert set(Result_fixture.columns.quantities) == {
             "Unix Time",
+            "Test Time",
             "Current",
             "Voltage",
             "Net Capacity",

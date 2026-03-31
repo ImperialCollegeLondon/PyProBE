@@ -16,7 +16,7 @@ from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from scipy.io import savemat
 
-from pyprobe.columns import ColumnSet
+from pyprobe.columns import Column, ColumnSet
 from pyprobe.utils import catch_pydantic_validation, deprecated, validate_timezone
 
 try:
@@ -106,8 +106,8 @@ class Result:
         Returns a :class:`~pyprobe.columns.ColumnSet` object that provides
         both simple column name access and BDF-aware resolution:
 
-        - :attr:`~pyprobe.columns.ColumnSet.names`: list of column name strings.
-        - :attr:`~pyprobe.columns.ColumnSet.quantities`: list of quantity strings.
+        - :attr:`~pyprobe.columns.ColumnSet.names`: tuple of column name strings.
+        - :attr:`~pyprobe.columns.ColumnSet.quantities`: tuple of quantity strings.
         - :meth:`~pyprobe.columns.ColumnSet.resolve`: resolve a column by name
           or quantity, with optional unit conversion.
         - :meth:`~pyprobe.columns.ColumnSet.can_resolve`: check if a column
@@ -121,9 +121,9 @@ class Result:
             >>> from pyprobe.result import Result
             >>> r = Result(lf=pl.LazyFrame({"Current / A": [1.0]}))
             >>> r.columns.names
-            ['Current / A']
+            ('Current / A',)
             >>> r.columns.quantities
-            ['Current']
+            ('Current',)
         """
         return ColumnSet(self.lf.collect_schema().names())
 
@@ -231,11 +231,12 @@ class Result:
         and examples.
         """
 
-    def __getitem__(self, *column_names: str) -> "Result":
+    def __getitem__(self, *column_names: str | Column) -> "Result":
         """Return a new result object with the specified columns.
 
         Args:
-            *column_names (str): The columns to include in the new result object.
+            *column_names (str | Column):
+                The columns to include in the new result object.
 
         Returns:
             Result: A new result object with the specified columns.
@@ -249,12 +250,12 @@ class Result:
 
     def get(
         self,
-        *column_names: str,
+        *column_names: str | Column,
     ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         """Return one or more columns of the data as separate 1D numpy arrays.
 
         Args:
-            column_names (str): The column name(s) to return.
+            column_names (str | Column): The column name(s) to return.
 
         Returns:
             Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
@@ -280,11 +281,11 @@ class Result:
         reason="The get_only method is deprecated. Use the get method instead.",
         version="1.2.0",
     )
-    def get_only(self, column_name: str) -> NDArray[np.float64]:
+    def get_only(self, column_name: str | Column) -> NDArray[np.float64]:
         """Return a single column of the data as a numpy array.
 
         Args:
-            column_name (str): The column name to return.
+            column_name (str | Column): The column name to return.
 
         Returns:
             NDArray[np.float64]: The column as a numpy array.
@@ -330,9 +331,11 @@ class Result:
             (2, 1)
         """
         kwargs_values = [
-            v for k, v in kwargs.items() if isinstance(v, str) and k != "label"
+            v
+            for k, v in kwargs.items()
+            if isinstance(v, (str, Column)) and k != "label"
         ]
-        args_values = [v for v in args if isinstance(v, str)]
+        args_values = [v for v in args if isinstance(v, (str, Column))]
         all_args = set(kwargs_values + args_values)
         relevant_columns = []
         col_set = self.columns
