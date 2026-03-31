@@ -119,20 +119,33 @@ class RawData(Result):
     ) -> "RawData":
         """Zero a column relative to the start of this data slice.
 
-        Modifies *column* in-place so it starts at zero at the first row of
-        this slice.
+        Returns a new RawData object with *column* shifted so its first row is
+        zero. The original object is not modified.
 
         Args:
-            column: The column name to zero.
-            definition: Optional description for the column definition.
+            column: A BDF column string resolvable via
+                :meth:`~pyprobe.columns.ColumnSet.resolve` (e.g.
+                ``"Net Capacity / Ah"`` or ``"Net Capacity / mAh"``).
+            definition: Optional description stored in ``column_definitions``
+                on the returned object.
+
+        Returns:
+            A new RawData with the zeroed column.
         """
-        self.lf = self.lf.with_columns(
-            (pl.col(column) - pl.col(column).first()).alias(column),
+        expr = self.columns.resolve(column)
+        new_lf = self.lf.with_columns(
+            (expr - expr.first()).alias(column),
         )
+        new_column_definitions = dict(self.column_definitions)
         if definition is not None:
             quantity = column.split(" / ")[0] if " / " in column else column
-            self.define_column(quantity, definition)
-        return self
+            new_column_definitions[quantity] = definition
+        return RawData(
+            lf=new_lf,
+            metadata=self.metadata,
+            column_definitions=new_column_definitions or None,
+            step_descriptions=self.step_descriptions,
+        )
 
     @property
     def capacity(self) -> float:

@@ -109,14 +109,62 @@ def test_set_reference_capacity(BreakinCycles_fixture):
 
 def test_zero_column(RawData_fixture):
     """Test method for zeroing the first value of a selected column."""
-    RawData_fixture.zero_column(
+    original_first = RawData_fixture.data["Net Capacity / Ah"][0]
+    result = RawData_fixture.zero_column(
         "Net Capacity / Ah",
         "Capacity column with first value zeroed.",
     )
-    assert RawData_fixture.data["Net Capacity / Ah"][0] == 0
-    assert RawData_fixture.column_definitions["Net Capacity"] == (
+    assert result.data["Net Capacity / Ah"][0] == 0
+    assert result.column_definitions["Net Capacity"] == (
         "Capacity column with first value zeroed."
     )
+    # Original object is not mutated
+    assert RawData_fixture.data["Net Capacity / Ah"][0] == original_first
+
+
+def test_zero_column_shift(RawData_fixture):
+    """All values are shifted by the original first value, preserving deltas."""
+    original = RawData_fixture.data["Net Capacity / Ah"].to_numpy()
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    zeroed = result.data["Net Capacity / Ah"].to_numpy()
+    np.testing.assert_array_almost_equal(zeroed, original - original[0])
+
+
+def test_zero_column_no_definition(RawData_fixture):
+    """Omitting definition leaves column_definitions unchanged."""
+    original_defs = dict(RawData_fixture.column_definitions)
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    assert result.column_definitions == original_defs
+
+
+def test_zero_column_unit_conversion(RawData_fixture):
+    """Passing a unit-converted column string creates a zeroed derived column."""
+    original_ah = RawData_fixture.data["Net Capacity / Ah"].to_numpy()
+    result = RawData_fixture.zero_column("Net Capacity / mAh")
+    zeroed_mah = result.data["Net Capacity / mAh"].to_numpy()
+    np.testing.assert_array_almost_equal(
+        zeroed_mah, (original_ah - original_ah[0]) * 1000
+    )
+
+
+def test_zero_column_other_columns_unchanged(RawData_fixture):
+    """Columns other than the one being zeroed are not modified."""
+    original_voltage = RawData_fixture.data["Voltage / V"].to_numpy()
+    original_current = RawData_fixture.data["Current / A"].to_numpy()
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    np.testing.assert_array_equal(
+        result.data["Voltage / V"].to_numpy(), original_voltage
+    )
+    np.testing.assert_array_equal(
+        result.data["Current / A"].to_numpy(), original_current
+    )
+
+
+def test_zero_column_preserves_metadata(RawData_fixture, step_descriptions_fixture):
+    """Returned object carries the same metadata and step_descriptions."""
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    assert result.metadata == RawData_fixture.metadata
+    assert result.step_descriptions == step_descriptions_fixture
 
 
 def test_pybamm_experiment():
