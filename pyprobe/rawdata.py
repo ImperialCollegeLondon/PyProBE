@@ -117,7 +117,7 @@ class RawData(Result):
         self,
         column: str,
         definition: str | None = None,
-    ) -> None:
+    ) -> "RawData":
         """Zero a column relative to the start of this data slice.
 
         Modifies *column* in-place so it starts at zero at the first row of
@@ -133,6 +133,7 @@ class RawData(Result):
         if definition is not None:
             quantity = column.split(" / ")[0] if " / " in column else column
             self.define_column(quantity, definition)
+        return self
 
     @property
     def capacity(self) -> float:
