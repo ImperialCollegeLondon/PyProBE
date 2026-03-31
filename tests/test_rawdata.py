@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+from pyprobe.columns import BDF, Column
 from pyprobe.rawdata import RawData
 
 
@@ -110,14 +111,8 @@ def test_set_reference_capacity(BreakinCycles_fixture):
 def test_zero_column(RawData_fixture):
     """Test method for zeroing the first value of a selected column."""
     original_first = RawData_fixture.data["Net Capacity / Ah"][0]
-    result = RawData_fixture.zero_column(
-        "Net Capacity / Ah",
-        "Capacity column with first value zeroed.",
-    )
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
     assert result.data["Net Capacity / Ah"][0] == 0
-    assert result.column_definitions["Net Capacity"] == (
-        "Capacity column with first value zeroed."
-    )
     # Original object is not mutated
     assert RawData_fixture.data["Net Capacity / Ah"][0] == original_first
 
@@ -128,13 +123,6 @@ def test_zero_column_shift(RawData_fixture):
     result = RawData_fixture.zero_column("Net Capacity / Ah")
     zeroed = result.data["Net Capacity / Ah"].to_numpy()
     np.testing.assert_array_almost_equal(zeroed, original - original[0])
-
-
-def test_zero_column_no_definition(RawData_fixture):
-    """Omitting definition leaves column_definitions unchanged."""
-    original_defs = dict(RawData_fixture.column_definitions)
-    result = RawData_fixture.zero_column("Net Capacity / Ah")
-    assert result.column_definitions == original_defs
 
 
 def test_zero_column_unit_conversion(RawData_fixture):
@@ -157,6 +145,19 @@ def test_zero_column_other_columns_unchanged(RawData_fixture):
     )
     np.testing.assert_array_equal(
         result.data["Current / A"].to_numpy(), original_current
+    )
+
+
+def test_zero_column_with_column_instance(RawData_fixture):
+    """Test that zero_column() accepts BDF and Column instances."""
+    original = RawData_fixture.data["Net Capacity / Ah"].to_numpy()
+    result_bdf = RawData_fixture.zero_column(BDF.NET_CAPACITY_AH)
+    result_col = RawData_fixture.zero_column(Column("Net Capacity", "Ah"))
+    np.testing.assert_array_almost_equal(
+        result_bdf.data["Net Capacity / Ah"].to_numpy(), original - original[0]
+    )
+    np.testing.assert_array_almost_equal(
+        result_col.data["Net Capacity / Ah"].to_numpy(), original - original[0]
     )
 
 

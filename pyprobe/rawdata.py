@@ -5,7 +5,7 @@ from typing import Any, Optional
 import polars as pl
 from loguru import logger
 
-from pyprobe.columns import BDF
+from pyprobe.columns import BDF, Column
 from pyprobe.result import Result
 from pyprobe.utils import deprecated
 
@@ -114,8 +114,7 @@ class RawData(Result):
 
     def zero_column(
         self,
-        column: str,
-        definition: str | None = None,
+        column: str | Column,
     ) -> "RawData":
         """Zero a column relative to the start of this data slice.
 
@@ -123,27 +122,23 @@ class RawData(Result):
         zero. The original object is not modified.
 
         Args:
-            column: A BDF column string resolvable via
+            column: A BDF column string or :class:`~pyprobe.columns.Column`
+                instance resolvable via
                 :meth:`~pyprobe.columns.ColumnSet.resolve` (e.g.
-                ``"Net Capacity / Ah"`` or ``"Net Capacity / mAh"``).
-            definition: Optional description stored in ``column_definitions``
-                on the returned object.
+                ``"Net Capacity / Ah"`` or ``BDF.NET_CAPACITY_AH``).
 
         Returns:
             A new RawData with the zeroed column.
         """
+        column_str = str(column)
         expr = self.columns.resolve(column)
         new_lf = self.lf.with_columns(
-            (expr - expr.first()).alias(column),
+            (expr - expr.first()).alias(column_str),
         )
-        new_column_definitions = dict(self.column_definitions)
-        if definition is not None:
-            quantity = column.split(" / ")[0] if " / " in column else column
-            new_column_definitions[quantity] = definition
         return RawData(
             lf=new_lf,
             metadata=self.metadata,
-            column_definitions=new_column_definitions or None,
+            column_definitions=self.column_definitions,
             step_descriptions=self.step_descriptions,
         )
 

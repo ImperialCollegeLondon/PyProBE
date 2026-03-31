@@ -459,7 +459,7 @@ class Column:
                     f"'{self.unit}': {exc}"
                 ) from exc
 
-        msg = f"Cannot resolve '{self.quantity}' from available columns"
+        msg = f"Cannot resolve '{self.name}' from available columns"
         raise ColumnResolutionError(msg)
 
 
@@ -571,7 +571,7 @@ class BDFColumn(Column):
                     )
                     return recipe.compute(expr_map).alias(self.name)
             raise ColumnResolutionError(
-                f"Cannot resolve '{self.quantity}' from available columns, "
+                f"Cannot resolve '{self.name}' from available columns, "
                 f"even via recipes with dependencies "
                 f"{[c.quantity for recipe in recipes for c in recipe.required]}."
             ) from None
@@ -607,6 +607,20 @@ class BDF(BDFColumn, Enum):
     TEMPERATURE_T3_CELCIUS = "Surface Temperature T3", "degC"
     TEMPERATURE_T4_CELCIUS = "Surface Temperature T4", "degC"
     TEMPERATURE_T5_CELCIUS = "Surface Temperature T5", "degC"
+
+    def __str__(self) -> str:
+        """Return the BDF column name string.
+
+        Returns:
+            The BDF ``"Quantity / unit"`` column name (e.g. ``'Current / A'``).
+
+        Examples:
+            >>> str(BDF.CURRENT_AMPERE)
+            'Current / A'
+            >>> print(BDF.CURRENT_AMPERE)
+            Current / A
+        """
+        return f"{self.quantity} / {self.unit}"
 
     @classmethod
     @cache
@@ -783,8 +797,8 @@ class ColumnSet:
 
     - :meth:`resolve` — select a Polars expression with optional unit conversion.
     - :meth:`can_resolve` — check whether a column can be resolved.
-    - :attr:`names` — list of available column name strings.
-    - :attr:`quantities` — list of available quantity strings.
+    - :attr:`names` — tuple of available column name strings.
+    - :attr:`quantities` — tuple of available quantity strings.
 
     Args:
         available_columns: Column name strings present in the source DataFrame.
@@ -796,38 +810,27 @@ class ColumnSet:
         'Expr'
     """
 
-    names: list[str]
-    """List of available column name strings, in the same order as the source."""
+    names: tuple[str, ...]
+    """Tuple of available column name strings, in the same order as the source."""
+
+    quantities: tuple[str, ...]
+    """Tuple of available quantity strings, in the same order as the source."""
 
     def __init__(self, available_columns: list[str]) -> None:
         """Initialise a ColumnSet with the given available column names.
 
         Parses each column name string into a :class:`Column` or :class:`BDF`
-        enum member (if a BDF-standard column). The ``_columns`` list contains
+        enum member (if a BDF-standard column). The ``_columns`` set contains
         the parsed descriptors used for resolution and unit conversion.
 
         Args:
             available_columns: Column name strings present in the source
                 DataFrame (in BDF format, e.g. "Current / A").
         """
-        self.names: list[str] = list(available_columns)
-        self._columns: list[Column] = [
-            column_factory_from_string(name) for name in available_columns
-        ]
-
-    @property
-    def quantities(self) -> list[str]:
-        """Return the column quantities as a list of strings.
-
-        Returns:
-            List of column quantity strings.
-
-        Examples:
-            >>> cs = ColumnSet(["Current / A", "Voltage / V"])
-            >>> cs.quantities
-            ['Current', 'Voltage']
-        """
-        return [c.quantity for c in self._columns]
+        parsed = [column_factory_from_string(name) for name in available_columns]
+        self.names: tuple[str, ...] = tuple(available_columns)
+        self.quantities: tuple[str, ...] = tuple(c.quantity for c in parsed)
+        self._columns: set[Column] = set(parsed)
 
     def resolve(self, column: str | Column) -> pl.Expr:
         """Select a column expression, optionally converting units.
@@ -854,7 +857,7 @@ class ColumnSet:
             if column in self.names:
                 return pl.col(column)
             column = column_factory_from_string(column)
-        return column.resolve(set(self._columns))
+        return column.resolve(self._columns)
 
     def can_resolve(self, column: str | Column) -> bool:
         """Check whether a column can be resolved from available data.
@@ -875,7 +878,7 @@ class ColumnSet:
             if column in self.names:
                 return True
             column = column_factory_from_string(column)
-        return column.can_resolve(set(self._columns))
+        return column.can_resolve(self._columns)
 
     def __contains__(self, item: object) -> bool:
         """Check whether a column name is available.
@@ -894,3 +897,16 @@ class ColumnSet:
             False
         """
         return item in self.names
+
+    def __repr__(self) -> str:
+        """Return a readable representation of the available columns.
+
+        Returns:
+            A string listing all available column names as a set.
+
+        Examples:
+            >>> cs = ColumnSet(["Current / A"])
+            >>> repr(cs)
+            "ColumnSet({'Current / A'})"
+        """
+        return f"ColumnSet({set(self.names)!r})"

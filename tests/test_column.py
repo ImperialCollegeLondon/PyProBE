@@ -876,17 +876,17 @@ class TestColumnSetInit:
         self, available: list[str], expected: set[Column | BDFColumn]
     ) -> None:
         """_columns contains the expected Column/BDF instances after init."""
-        assert set(ColumnSet(available)._columns) == expected
+        assert ColumnSet(available)._columns == expected
 
     def test_names_property(self) -> None:
         """Names returns column name strings in order."""
         cs = ColumnSet(["Current / A", "Voltage / V"])
-        assert cs.names == ["Current / A", "Voltage / V"]
+        assert cs.names == ("Current / A", "Voltage / V")
 
     def test_quantities_property(self) -> None:
         """Quantities returns quantity strings in order."""
         cs = ColumnSet(["Current / A", "Voltage / V"])
-        assert cs.quantities == ["Current", "Voltage"]
+        assert cs.quantities == ("Current", "Voltage")
 
     def test_contains(self) -> None:
         """__contains__ checks by column name string."""
