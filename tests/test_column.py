@@ -828,6 +828,19 @@ class TestColumnResolvability:
         df = pl.DataFrame({"Current / A": [5.0]})
         assert df.select(expr).to_series().to_list() == [5.0]
 
+    def test_resolve_accepts_column_set(self) -> None:
+        """resolve() accepts a ColumnSet directly."""
+        cs = ColumnSet(["Current / A"])
+        expr = Column("Current", "mA").resolve(cs)
+        df = pl.DataFrame({"Current / A": [1.0]})
+        assert df.select(expr).to_series().to_list() == [1000.0]
+
+    def test_can_resolve_accepts_column_set(self) -> None:
+        """can_resolve() accepts a ColumnSet directly."""
+        cs = ColumnSet(["Current / A"])
+        assert Column("Current", "mA").can_resolve(cs) is True
+        assert Column("Voltage", "V").can_resolve(cs) is False
+
     def test_resolve_bdf_non_standard_unit_deps_outputs_base_unit(self) -> None:
         """Recipe with mAh deps still outputs Net Capacity / Ah (base unit)."""
         available = {
