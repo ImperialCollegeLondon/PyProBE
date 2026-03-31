@@ -382,11 +382,12 @@ class Column:
         offset = zero
         return factor, offset
 
-    def can_resolve(self, available: "set[Column]") -> bool:
+    def can_resolve(self, available: "set[Column] | ColumnSet") -> bool:
         """Check whether this column can be resolved from available columns.
 
         Args:
-            available: Set of available Column and/or BDFColumn objects.
+            available: Set of available Column and/or BDFColumn objects,
+                or a :class:`ColumnSet`.
 
         Returns:
             True if the column can be resolved, False otherwise.
@@ -405,7 +406,7 @@ class Column:
         factor, offset = source_col.conversion_parameters(self.unit)
         return _apply_conversion(source_expr, factor, offset, self.name)
 
-    def resolve(self, available: "set[Column]") -> pl.Expr:
+    def resolve(self, available: "set[Column] | ColumnSet") -> pl.Expr:
         """Resolve this column to a Polars expression from available columns.
 
         Resolution strategy:
@@ -417,7 +418,7 @@ class Column:
 
         Args:
             available: Set of available :class:`Column` and/or
-                :class:`BDFColumn` objects.
+                :class:`BDFColumn` objects, or a :class:`ColumnSet`.
 
         Returns:
             A Polars expression that evaluates to this column's values,
@@ -433,7 +434,10 @@ class Column:
             >>> type(expr).__name__
             'Expr'
         """
-        if self in available:
+        cols: set[Column] = (
+            available._columns if isinstance(available, ColumnSet) else available
+        )
+        if self in cols:
             return pl.col(self.name)
         q = self.quantity.lower()
         col: Column | BDF | None = None
@@ -444,7 +448,7 @@ class Column:
                 base_expr = col.resolve(available)
             except (KeyError, ColumnResolutionError):
                 pass
-        for c in available:
+        for c in cols:
             if c.quantity.lower() == q:
                 col = c
                 base_expr = pl.col(c.name)
@@ -529,7 +533,7 @@ class BDFColumn(Column):
         )
         return f"{BDF_IRI_PREFIX}{slug}_{unit_long}"
 
-    def resolve(self, available: "set[Column]") -> pl.Expr:
+    def resolve(self, available: "set[Column] | ColumnSet") -> pl.Expr:
         """Resolve this BDF column to a Polars expression.
 
         Searches available data columns (skipping other :class:`BDFColumn`
@@ -538,8 +542,8 @@ class BDFColumn(Column):
         required columns resolvable.
 
         Args:
-            available: List of available :class:`Column` and/or
-                :class:`BDFColumn` objects.
+            available: Set of available :class:`Column` and/or
+                :class:`BDFColumn` objects, or a :class:`ColumnSet`.
 
         Returns:
             A Polars expression that evaluates to this column's values.
@@ -857,7 +861,7 @@ class ColumnSet:
             if column in self.names:
                 return pl.col(column)
             column = column_factory_from_string(column)
-        return column.resolve(self._columns)
+        return column.resolve(self)
 
     def can_resolve(self, column: str | Column) -> bool:
         """Check whether a column can be resolved from available data.
@@ -878,7 +882,7 @@ class ColumnSet:
             if column in self.names:
                 return True
             column = column_factory_from_string(column)
-        return column.can_resolve(self._columns)
+        return column.can_resolve(self)
 
     def __contains__(self, item: object) -> bool:
         """Check whether a column name is available.
@@ -901,12 +905,21 @@ class ColumnSet:
     def __repr__(self) -> str:
         """Return a readable representation of the available columns.
 
+        BDF-standard columns are annotated with ``(BDF)``.
+
         Returns:
-            A string listing all available column names as a set.
+            A string listing all available column names.
 
         Examples:
-            >>> cs = ColumnSet(["Current / A"])
+            >>> cs = ColumnSet(["Current / A", "Custom / 1"])
             >>> repr(cs)
-            "ColumnSet({'Current / A'})"
+            "ColumnSet(['Current / A' (BDF), 'Custom / 1'])"
         """
-        return f"ColumnSet({set(self.names)!r})"
+        parts = []
+        for name in self.names:
+            col = column_factory_from_string(name)
+            if isinstance(col, BDF):
+                parts.append(f"'{name}' (BDF)")
+            else:
+                parts.append(f"'{name}'")
+        return f"ColumnSet([{', '.join(parts)}])"
