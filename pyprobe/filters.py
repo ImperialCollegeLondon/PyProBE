@@ -79,7 +79,7 @@ def _step(
     Returns:
         Step: A step object.
     """
-    step_index_expr = filtered_object.columns.resolve(BDF.STEP_INDEX)
+    step_index_expr = filtered_object.columns.resolve(BDF.STEP_COUNT)
     if condition is not None:
         lf = _filter_numerical(
             filtered_object.lf.filter(condition),
