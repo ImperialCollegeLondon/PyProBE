@@ -27,7 +27,7 @@ class RawData(Result):
     :class:`~pyprobe.result.Result` and can be used in the same way.
 
     The RawData object validates that the required BDF columns are resolvable
-    from the data via :class:`~pyprobe.columns.ColumnSet`:
+    from the data via :class:`~pyprobe.columns.ColumnDict`:
 
     - At least one time column: ``Unix Time / s`` (preferred) or ``Test Time / s``
     - ``Current / A``
@@ -124,7 +124,7 @@ class RawData(Result):
         Args:
             column: A BDF column string or :class:`~pyprobe.columns.Column`
                 instance resolvable via
-                :meth:`~pyprobe.columns.ColumnSet.resolve` (e.g.
+                :meth:`~pyprobe.columns.ColumnDict.resolve` (e.g.
                 ``"Net Capacity / Ah"`` or ``BDF.NET_CAPACITY_AH``).
 
         Returns:

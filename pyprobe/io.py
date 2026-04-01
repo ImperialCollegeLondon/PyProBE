@@ -31,7 +31,7 @@ from loguru import logger
 
 from pyprobe.columns import (
     BDF,
-    ColumnSet,
+    ColumnDict,
     column_factory_from_string,
 )
 from pyprobe.utils import validate_timezone
@@ -431,14 +431,14 @@ def _extract_column_map_columns(
     return df.select(_build_column_map_exprs(df.columns, column_map))
 
 
-def _resolve_time_column(column_set: ColumnSet) -> pl.Expr:
+def _resolve_time_column(column_set: ColumnDict) -> pl.Expr:
     """Resolve a time column, preferring Unix Time but falling back to Test Time.
 
     Attempts to resolve Unix Time first; if unavailable, falls back to Test Time.
     At least one of these must be resolvable.
 
     Args:
-        column_set: ColumnSet with available columns.
+        column_set: ColumnDict with available columns.
 
     Returns:
         A Polars expression for the resolved time column.
@@ -558,7 +558,7 @@ def process_cycler(
 
     dfs = _load_raw_dataframes(source, plugin, timezone=timezone)
     df = _concat_dataframes(dfs)
-    column_set = ColumnSet(df.columns)
+    column_set = ColumnDict(df.columns)
     expressions: list[pl.Expr] = []
 
     # Resolve time column (Unix Time preferred, Test Time fallback)
@@ -727,7 +727,7 @@ def process_generic(
     # Build and apply column map expressions
     exprs = _build_column_map_exprs(data.collect_schema().names(), column_map)
     output_columns = [str(e.meta.output_name()) for e in exprs]
-    column_set = ColumnSet(output_columns)
+    column_set = ColumnDict(output_columns)
 
     # Validate required BDF columns
     for bdf_col in _REQUIRED_BDF_COLUMNS:

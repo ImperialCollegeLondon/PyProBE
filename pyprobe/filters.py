@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import polars as pl
 
 from pyprobe import utils
-from pyprobe.columns import BDF, ColumnSet
+from pyprobe.columns import BDF, ColumnDict
 from pyprobe.rawdata import RawData
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cy
     else:
         next_cycle_info = []
 
-    df_column_set = ColumnSet(df.collect_schema().names())
+    df_column_set = ColumnDict(df.collect_schema().names())
     cycle_expr = df_column_set.resolve(BDF.CYCLE_COUNT)
     lf_filtered = _filter_numerical(df, cycle_expr, cycle_numbers)
 
