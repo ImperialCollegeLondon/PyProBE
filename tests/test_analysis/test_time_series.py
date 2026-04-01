@@ -1,7 +1,5 @@
 """Analysis tests for time series functions."""
 
-from datetime import datetime, timedelta
-
 import numpy as np
 import polars as pl
 
@@ -34,34 +32,35 @@ def test_align_data():
     y1 = np.interp(t, t_continuous, y1_continuous)
     y2 = np.interp(t, t_continuous, y2_continuous)
 
-    start_time = datetime(2023, 1, 1, 10, 0, 0)
+    # Unix timestamps (seconds since epoch)
+    base_unix_time = 1672574400.0  # 2023-01-01 10:00:00 UTC
 
     df1 = pl.DataFrame(
         {
-            "Date": [start_time + timedelta(seconds=float(val)) for val in t],
-            "Signal": y1,
+            "Unix Time / s": t + base_unix_time,
+            "Signal / 1": y1,
         }
     ).lazy()
 
     df2 = pl.DataFrame(
         {
-            "Date": [start_time + timedelta(seconds=float(val)) for val in t],
-            "Signal": y2,
+            "Unix Time / s": t + base_unix_time,
+            "Signal 2 / 1": y2,
         }
     ).lazy()
 
-    result1 = Result(lf=df1, info={})
-    result2 = Result(lf=df2, info={})
+    result1 = Result(lf=df1, metadata={})
+    result2 = Result(lf=df2, metadata={})
 
-    r1, r2 = align_data(result1, result2, "Signal", "Signal")
+    r1, r2 = align_data(result1, result2, "Signal / 1", "Signal 2 / 1")
 
     # Trigger collection
     r2_df = r2.lf.collect()
 
-    original_date = start_time
-    new_date = r2_df["Date"][0]
+    original_time = base_unix_time
+    new_time = r2_df["Unix Time / s"][0]
 
-    diff = (new_date - original_date).total_seconds()
+    diff = new_time - original_time
     # The shift applied to result2 should be negative of the delay to align it back
     # y2 is delayed by 2.35s, so we need to shift it by -2.35s to match y1
     # Tolerance of 0.01s accounts for sub-sample precision of the alignment algorithm

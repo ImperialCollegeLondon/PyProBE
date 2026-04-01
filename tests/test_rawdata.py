@@ -1,12 +1,12 @@
 """Tests for the RawData class."""
 
 import copy
-import random
 
 import numpy as np
 import polars as pl
 import pytest
 
+from pyprobe.columns import BDF, Column
 from pyprobe.rawdata import RawData
 
 
@@ -15,7 +15,7 @@ def RawData_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Result instance."""
     return RawData(
         lf=lazyframe_fixture,
-        info=info_fixture,
+        metadata=info_fixture,
         step_descriptions=step_descriptions_fixture,
     )
 
@@ -30,23 +30,15 @@ def test_init(RawData_fixture, step_descriptions_fixture):
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
-        RawData(lf=data, info={"test": 1})
+        RawData(lf=data.lazy(), metadata={"test": 1})
 
 
 def test_data(RawData_fixture):
     """Test the data property."""
-    columns = copy.deepcopy(RawData_fixture.data.collect_schema().names())
-    random.shuffle(columns)
-    RawData_fixture.lf = RawData_fixture.lf.select(columns)
-    assert RawData_fixture.data.columns == [
-        "Time [s]",
-        "Step",
-        "Event",
-        "Current [A]",
-        "Voltage [V]",
-        "Capacity [Ah]",
-        "Date",
-    ]
+    data = RawData_fixture.data
+    assert "Unix Time / s" in data.columns
+    assert "Current / A" in data.columns
+    assert "Voltage / V" in data.columns
 
 
 def test_capacity(BreakinCycles_fixture):
@@ -60,17 +52,17 @@ def test_set_SOC(BreakinCycles_fixture):
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
     assert isinstance(with_charge_specified.lf, pl.LazyFrame)
-    assert "Capacity [Ah]_right" not in with_charge_specified.data.columns
-    with_charge_specified = with_charge_specified.data["SOC"]
+    assert "Net Capacity / Ah_right" not in with_charge_specified.data.columns
+    with_charge_specified = with_charge_specified.data["SOC / %"]
 
     without_charge_specified = copy.deepcopy(BreakinCycles_fixture)
     without_charge_specified.set_soc(0.04)
     assert isinstance(without_charge_specified.lf, pl.LazyFrame)
-    without_charge_specified = without_charge_specified.data["SOC"]
+    without_charge_specified = without_charge_specified.data["SOC / %"]
 
     assert (with_charge_specified == without_charge_specified).all()
-    assert max(without_charge_specified) == 1
-    assert max(with_charge_specified) == 1
+    assert max(without_charge_specified) == 100
+    assert max(with_charge_specified) == 100
 
 
 def test_SOC_ref_as_dataframe(BreakinCycles_fixture):
@@ -87,7 +79,7 @@ def test_SOC_with_base_as_dataframe(BreakinCycles_fixture):
     with_charge_specified = BreakinCycles_fixture
     with_charge_specified.data
     with_charge_specified.set_soc(0.04, BreakinCycles_fixture.cycle(-1).charge(-1))
-    assert "SOC" in with_charge_specified.columns
+    assert "SOC" in with_charge_specified.columns.quantities
 
 
 def test_deprecated_set_SOC(BreakinCycles_fixture, mocker):
@@ -101,53 +93,79 @@ def test_set_reference_capacity(BreakinCycles_fixture):
     """Test the set_reference_capacity method."""
     procedure1 = copy.deepcopy(BreakinCycles_fixture)
     procedure1.set_reference_capacity()
-    assert procedure1.get("Capacity - Referenced [Ah]").min() == 0
+    assert procedure1.get("Capacity - Referenced / Ah").min() == 0
     assert np.isclose(
-        procedure1.get("Capacity - Referenced [Ah]").max(),
+        procedure1.get("Capacity - Referenced / Ah").max(),
         procedure1.capacity,
     )
 
     procedure2 = copy.deepcopy(BreakinCycles_fixture)
     procedure2.set_reference_capacity(0.04)
     assert np.isclose(
-        procedure2.get("Capacity - Referenced [Ah]").min(),
+        procedure2.get("Capacity - Referenced / Ah").min(),
         0.04 - procedure2.capacity,
     )
-    assert procedure2.get("Capacity - Referenced [Ah]").max() == 0.04
+    assert procedure2.get("Capacity - Referenced / Ah").max() == 0.04
 
 
 def test_zero_column(RawData_fixture):
     """Test method for zeroing the first value of a selected column."""
-    RawData_fixture.zero_column(
-        "Capacity [Ah]",
-        "Zeroed Capacity [Ah]",
-        "Capacity column with first value zeroed.",
-    )
-    assert RawData_fixture.data["Zeroed Capacity [Ah]"][0] == 0
-    assert RawData_fixture.column_definitions["Zeroed Capacity"] == (
-        "Capacity column with first value zeroed."
+    original_first = RawData_fixture.data["Net Capacity / Ah"][0]
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    assert result.data["Net Capacity / Ah"][0] == 0
+    # Original object is not mutated
+    assert RawData_fixture.data["Net Capacity / Ah"][0] == original_first
+
+
+def test_zero_column_shift(RawData_fixture):
+    """All values are shifted by the original first value, preserving deltas."""
+    original = RawData_fixture.data["Net Capacity / Ah"].to_numpy()
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    zeroed = result.data["Net Capacity / Ah"].to_numpy()
+    np.testing.assert_array_almost_equal(zeroed, original - original[0])
+
+
+def test_zero_column_unit_conversion(RawData_fixture):
+    """Passing a unit-converted column string creates a zeroed derived column."""
+    original_ah = RawData_fixture.data["Net Capacity / Ah"].to_numpy()
+    result = RawData_fixture.zero_column("Net Capacity / mAh")
+    zeroed_mah = result.data["Net Capacity / mAh"].to_numpy()
+    np.testing.assert_array_almost_equal(
+        zeroed_mah, (original_ah - original_ah[0]) * 1000
     )
 
 
-def test_definitions(lazyframe_fixture, info_fixture, step_descriptions_fixture):
-    """Test that the definitions have been correctly set."""
-    rawdata = RawData(
-        lf=lazyframe_fixture,
-        info=info_fixture,
-        step_descriptions=step_descriptions_fixture,
+def test_zero_column_other_columns_unchanged(RawData_fixture):
+    """Columns other than the one being zeroed are not modified."""
+    original_voltage = RawData_fixture.data["Voltage / V"].to_numpy()
+    original_current = RawData_fixture.data["Current / A"].to_numpy()
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    np.testing.assert_array_equal(
+        result.data["Voltage / V"].to_numpy(), original_voltage
     )
-    definition_keys = list(rawdata.column_definitions.keys())
-    assert set(definition_keys) == {
-        "Time",
-        "Current",
-        "Voltage",
-        "Capacity",
-        "Cycle",
-        "Step",
-        "Event",
-        "Date",
-        "Temperature",
-    }
+    np.testing.assert_array_equal(
+        result.data["Current / A"].to_numpy(), original_current
+    )
+
+
+def test_zero_column_with_column_instance(RawData_fixture):
+    """Test that zero_column() accepts BDF and Column instances."""
+    original = RawData_fixture.data["Net Capacity / Ah"].to_numpy()
+    result_bdf = RawData_fixture.zero_column(BDF.NET_CAPACITY_AH)
+    result_col = RawData_fixture.zero_column(Column("Net Capacity", "Ah"))
+    np.testing.assert_array_almost_equal(
+        result_bdf.data["Net Capacity / Ah"].to_numpy(), original - original[0]
+    )
+    np.testing.assert_array_almost_equal(
+        result_col.data["Net Capacity / Ah"].to_numpy(), original - original[0]
+    )
+
+
+def test_zero_column_preserves_metadata(RawData_fixture, step_descriptions_fixture):
+    """Returned object carries the same metadata and step_descriptions."""
+    result = RawData_fixture.zero_column("Net Capacity / Ah")
+    assert result.metadata == RawData_fixture.metadata
+    assert result.step_descriptions == step_descriptions_fixture
 
 
 def test_pybamm_experiment():
@@ -155,12 +173,12 @@ def test_pybamm_experiment():
     # Create test data
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2, 3],
-            "Step": [1, 2, 2],
-            "Event": [1, 2, 2],
-            "Current [A]": [0.1, 0.2, 0.3],
-            "Voltage [V]": [3.0, 3.1, 3.2],
-            "Capacity [Ah]": [0.1, 0.2, 0.3],
+            "Test Time / s": [1, 2, 3],
+            "Step Count / 1": [1, 2, 2],
+            "Step Index / 1": [1, 2, 2],
+            "Current / A": [0.1, 0.2, 0.3],
+            "Voltage / V": [3.0, 3.1, 3.2],
+            "Net Capacity / Ah": [0.1, 0.2, 0.3],
         },
     )
 
@@ -170,8 +188,8 @@ def test_pybamm_experiment():
     }
 
     raw_data = RawData(
-        lf=test_data,
-        info={},
+        lf=test_data.lazy(),
+        metadata={},
         step_descriptions=step_descriptions,
     )
 
@@ -186,12 +204,12 @@ def test_pybamm_experiment_missing_descriptions():
     """Test error handling when step descriptions are missing."""
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2, 3],
-            "Step": [1, 2, 3],
-            "Event": [1, 2, 3],
-            "Current [A]": [0.1, 0.2, 0.3],
-            "Voltage [V]": [3.0, 3.1, 3.2],
-            "Capacity [Ah]": [0.1, 0.2, 0.3],
+            "Test Time / s": [1, 2, 3],
+            "Step Count / 1": [1, 2, 3],
+            "Step Index / 1": [1, 2, 3],
+            "Current / A": [0.1, 0.2, 0.3],
+            "Voltage / V": [3.0, 3.1, 3.2],
+            "Net Capacity / Ah": [0.1, 0.2, 0.3],
         },
     )
 
@@ -201,8 +219,8 @@ def test_pybamm_experiment_missing_descriptions():
     }
 
     raw_data = RawData(
-        lf=test_data,
-        info={},
+        lf=test_data.lazy(),
+        metadata={},
         step_descriptions=step_descriptions,
     )
 
@@ -214,12 +232,12 @@ def test_pybamm_experiment_multiple_conditions():
     """Test handling of steps with multiple comma-separated conditions."""
     test_data = pl.DataFrame(
         {
-            "Time [s]": [1, 2],
-            "Step": [1, 2],
-            "Event": [1, 2],
-            "Current [A]": [0.1, 0.2],
-            "Voltage [V]": [3.0, 3.1],
-            "Capacity [Ah]": [0.1, 0.2],
+            "Test Time / s": [1, 2],
+            "Step Count / 1": [1, 2],
+            "Step Index / 1": [1, 2],
+            "Current / A": [0.1, 0.2],
+            "Voltage / V": [3.0, 3.1],
+            "Net Capacity / Ah": [0.1, 0.2],
         },
     )
 
@@ -232,8 +250,8 @@ def test_pybamm_experiment_multiple_conditions():
     }
 
     raw_data = RawData(
-        lf=test_data,
-        info={},
+        lf=test_data.lazy(),
+        metadata={},
         step_descriptions=step_descriptions,
     )
 
@@ -249,12 +267,12 @@ def test_pybamm_experiment_with_loops():
     # Create test data with repeated steps: 1->2->1->2
     base_df = pl.DataFrame(
         {
-            "Step": [1, 1, 1, 2, 2, 1, 1, 2, 2],
-            "Time [s]": range(9),
-            "Voltage [V]": [3.0] * 9,
-            "Current [A]": [0.1] * 9,
-            "Capacity [Ah]": [0.1] * 9,
-            "Event": [1, 1, 1, 2, 2, 3, 3, 4, 4],
+            "Step Index / 1": [1, 1, 1, 2, 2, 1, 1, 2, 2],
+            "Test Time / s": range(9),
+            "Voltage / V": [3.0] * 9,
+            "Current / A": [0.1] * 9,
+            "Net Capacity / Ah": [0.1] * 9,
+            "Step Count / 1": [1, 1, 1, 2, 2, 3, 3, 4, 4],
         },
     )
 
@@ -263,7 +281,7 @@ def test_pybamm_experiment_with_loops():
         "Description": ["Discharge at C/10", "Rest for 1 hour"],
     }
 
-    data = RawData(lf=base_df, info={}, step_descriptions=step_descriptions)
+    data = RawData(lf=base_df.lazy(), metadata={}, step_descriptions=step_descriptions)
 
     expected = [
         "Discharge at C/10",  # Step 1
@@ -273,3 +291,78 @@ def test_pybamm_experiment_with_loops():
     ]
 
     assert data.pybamm_experiment == expected
+
+
+class TestRawDataColumnValidation:
+    """Tests for required column validation (time, current, voltage)."""
+
+    @pytest.mark.parametrize(
+        "columns,should_pass",
+        [
+            # Valid combinations: at least one time column + Current + Voltage
+            (
+                {
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                True,
+            ),
+            (
+                {
+                    "Unix Time / s": [1000.0, 2000.0, 3000.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                True,
+            ),
+            (
+                {
+                    "Unix Time / s": [1000.0, 2000.0, 3000.0],
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                True,
+            ),
+            # Invalid combinations: missing required columns
+            (
+                {
+                    "Current / A": [0.1, 0.2, 0.3],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                False,
+            ),
+            (
+                {
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Voltage / V": [3.0, 3.1, 3.2],
+                },
+                False,
+            ),
+            (
+                {
+                    "Test Time / s": [1.0, 2.0, 3.0],
+                    "Current / A": [0.1, 0.2, 0.3],
+                },
+                False,
+            ),
+        ],
+    )
+    def test_rawdata_column_validation(
+        self, columns: dict[str, list[float]], should_pass: bool
+    ) -> None:
+        """Test RawData validation with various column combinations.
+
+        Args:
+            columns: Dictionary of column names and values to test.
+            should_pass: Whether RawData should accept this column combination.
+        """
+        test_data = pl.DataFrame(columns)
+
+        if should_pass:
+            raw_data = RawData(lf=test_data.lazy(), metadata={})
+            assert isinstance(raw_data, RawData)
+        else:
+            with pytest.raises(ValueError, match="Required"):
+                RawData(lf=test_data.lazy(), metadata={})

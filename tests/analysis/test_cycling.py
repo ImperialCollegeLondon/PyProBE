@@ -14,7 +14,7 @@ def Cycling_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
     """Return a Cycling instance."""
     input_data = Experiment(
         lf=lazyframe_fixture,
-        info=info_fixture,
+        metadata=info_fixture,
         step_descriptions=step_descriptions_fixture,
         cycle_info=[],
     )

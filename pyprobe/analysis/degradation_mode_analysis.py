@@ -18,6 +18,7 @@ from scipy.interpolate import PPoly
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import smoothing, utils
 from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.columns import BDF
 from pyprobe.pyprobe_types import FilterToCycleType, PyProBEDataType
 from pyprobe.result import Result
 
@@ -542,8 +543,8 @@ def run_ocv_curve_fit(
         - The stoichiometry limits and electrode capacities.
         - The fitted OCV data.
     """
-    if "SOC" in input_data.columns:
-        required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC"]
+    if input_data.columns.can_resolve("SOC / %"):
+        required_columns = [BDF.VOLTAGE_VOLT.name, BDF.NET_CAPACITY_AH.name, "SOC / %"]
         validator = AnalysisValidator(
             input_data=input_data,
             required_columns=required_columns,
@@ -551,7 +552,7 @@ def run_ocv_curve_fit(
         voltage, capacity, SOC = validator.variables
         cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
     else:
-        required_columns = ["Voltage [V]", "Capacity [Ah]"]
+        required_columns = [BDF.VOLTAGE_VOLT.name, BDF.NET_CAPACITY_AH.name]
         validator = AnalysisValidator(
             input_data=input_data,
             required_columns=required_columns,
@@ -669,8 +670,8 @@ def run_ocv_curve_fit(
     fitted_OCV = input_data.clean_copy(
         pl.DataFrame(
             {
-                "Capacity [Ah]": capacity,
-                "SOC": SOC,
+                BDF.NET_CAPACITY_AH.name: capacity,
+                "SOC / %": SOC,
                 "Input Voltage [V]": voltage,
                 "Fitted Voltage [V]": fitted_voltage,
                 "Input dSOCdV [1/V]": dSOCdV,
@@ -681,14 +682,14 @@ def run_ocv_curve_fit(
         ),
     )
     fitted_OCV.column_definitions = {
-        "SOC": "Cell state of charge.",
+        "SOC / %": "Cell state of charge.",
         "Voltage": "Fitted OCV values.",
     }
 
     return input_stoichiometry_limits, fitted_OCV
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def quantify_degradation_modes(
     stoichiometry_limits_list: list[Result],
 ) -> Result:
@@ -933,7 +934,7 @@ def run_batch_dma_sequential(
     return dma_results, fitted_OCVs
 
 
-@validate_call
+@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def average_ocvs(
     input_data: FilterToCycleType,
     discharge_filter: str | None = None,
@@ -954,7 +955,12 @@ def average_ocvs(
     Returns:
         A Result object containing the averaged OCV curve.
     """
-    required_columns = ["Voltage [V]", "Capacity [Ah]", "SOC", "Current [A]"]
+    required_columns = [
+        BDF.VOLTAGE_VOLT.name,
+        BDF.NET_CAPACITY_AH.name,
+        "SOC / %",
+        BDF.CURRENT_AMPERE.name,
+    ]
 
     AnalysisValidator(
         input_data=input_data,
@@ -969,14 +975,14 @@ def average_ocvs(
     else:
         charge_result = eval(f"input_data.{charge_filter}")
     charge_SOC, charge_OCV, charge_current = charge_result.get(
-        "SOC",
-        "Voltage [V]",
-        "Current [A]",
+        "SOC / %",
+        BDF.VOLTAGE_VOLT.name,
+        BDF.CURRENT_AMPERE.name,
     )
     discharge_SOC, discharge_OCV, discharge_current = discharge_result.get(
-        "SOC",
-        "Voltage [V]",
-        "Current [A]",
+        "SOC / %",
+        BDF.VOLTAGE_VOLT.name,
+        BDF.CURRENT_AMPERE.name,
     )
 
     average_OCV = dma_functions.average_OCV_curves(
@@ -991,9 +997,9 @@ def average_ocvs(
     return charge_result.clean_copy(
         pl.DataFrame(
             {
-                "Voltage [V]": average_OCV,
-                "Capacity [Ah]": charge_result.get("Capacity [Ah]"),
-                "SOC": charge_SOC,
+                BDF.VOLTAGE_VOLT.name: average_OCV,
+                BDF.NET_CAPACITY_AH.name: charge_result.get(BDF.NET_CAPACITY_AH.name),
+                "SOC / %": charge_SOC,
             },
         ),
     )

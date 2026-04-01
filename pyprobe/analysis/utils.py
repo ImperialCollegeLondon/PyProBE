@@ -46,14 +46,20 @@ class AnalysisValidator(BaseModel):
         Raises:
             ValueError: If any of the required columns are missing.
         """
-        self.input_data.check_columns(list(self.required_columns))
+        columns = self.input_data.columns
+        for col_name in self.required_columns:
+            if not columns.can_resolve(col_name):
+                raise ValueError(f"Required column '{col_name}' could not be resolved")
         return self
 
     @property
-    def variables(self) -> tuple[NDArray[np.float64], ...]:
+    def variables(
+        self,
+    ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         """Return the required columns in the input data as NDArrays.
 
         Returns:
-            Tuple[NDArray[np.float64], ...]: The required columns as NDArrays.
+            Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
+                The column(s) as numpy array(s).
         """
         return self.input_data.get(*self.required_columns)

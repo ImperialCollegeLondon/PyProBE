@@ -1,7 +1,6 @@
-"""Tests for the result module."""
+"""Tests for the result module - organized into logical test classes."""
 
-from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -12,9 +11,9 @@ import pytest
 from scipy.io import loadmat
 from tzlocal import get_localzone
 
+from pyprobe.columns import BDF, Column
 from pyprobe.result import (
     Result,
-    _validate_timezone,
     combine_results,
 )
 
@@ -24,942 +23,11 @@ def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
     return Result(
         lf=lazyframe_fixture,
-        info=info_fixture,
+        metadata=info_fixture,
         column_definitions={
             "Current": "Current definition",
         },
     )
-
-
-def test_init(Result_fixture):
-    """Test the __init__ method."""
-    assert isinstance(Result_fixture, Result)
-    assert isinstance(Result_fixture.lf, pl.LazyFrame)
-    assert isinstance(Result_fixture.info, dict)
-
-
-def test_df(Result_fixture):
-    """Test the df property."""
-    df = Result_fixture.df
-    assert isinstance(df, pl.DataFrame)
-    pl_testing.assert_frame_equal(df, Result_fixture.lf.collect())
-
-
-def test_df_setter(Result_fixture):
-    """Test the df setter."""
-    new_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    Result_fixture.df = new_df
-    assert isinstance(Result_fixture.lf, pl.LazyFrame)
-    pl_testing.assert_frame_equal(Result_fixture.lf.collect(), new_df)
-    pl_testing.assert_frame_equal(Result_fixture.df, new_df)
-
-
-def test_collect(Result_fixture):
-    """Test the collect method."""
-    # Collect the lazy dataframe
-    collected_df = Result_fixture.collect()
-
-    # Verify it returns a DataFrame
-    assert isinstance(collected_df, pl.DataFrame)
-
-    # Verify it matches the data
-    pl_testing.assert_frame_equal(collected_df, Result_fixture.data)
-
-    # Verify the internal lf is still a LazyFrame
-    assert isinstance(Result_fixture.lf, pl.LazyFrame)
-
-
-def test_check_columns_valid(Result_fixture):
-    """Test check_columns with valid columns."""
-    # Should not raise any exception
-    Result_fixture.check_columns(["Current [A]", "Voltage [V]"])
-
-
-def test_check_columns_missing(Result_fixture):
-    """Test check_columns with missing columns."""
-    with pytest.raises(ValueError, match="Quantities .* not in data"):
-        Result_fixture.check_columns(["NonExistent [A]"])
-
-
-def test_check_columns_unit_conversion(Result_fixture):
-    """Test check_columns with unit conversion."""
-    # Current [A] exists, so requesting Current [mA] should work via unit conversion
-    Result_fixture.check_columns(["Current [mA]"])
-    assert "Current [mA]" in Result_fixture.columns
-
-
-def test_get(Result_fixture):
-    """Test the get method."""
-    current = Result_fixture.get("Current [A]")
-    np_testing.assert_array_equal(
-        current,
-        Result_fixture.data["Current [A]"].to_numpy(),
-    )
-    current_mA = Result_fixture.get("Current [mA]")
-    np_testing.assert_array_equal(current_mA, current * 1000)
-
-    current, voltage = Result_fixture.get("Current [A]", "Voltage [V]")
-    np_testing.assert_array_equal(
-        current,
-        Result_fixture.data["Current [A]"].to_numpy(),
-    )
-    np_testing.assert_array_equal(
-        voltage,
-        Result_fixture.data["Voltage [V]"].to_numpy(),
-    )
-
-
-def test_get_only(Result_fixture):
-    """Test the get_only method."""
-    current = Result_fixture.get("Current [A]")
-    np_testing.assert_array_equal(
-        current,
-        Result_fixture.data["Current [A]"].to_numpy(),
-    )
-    current_mA = Result_fixture.get("Current [mA]")
-    np_testing.assert_array_equal(current_mA, current * 1000)
-
-
-def test_getitem(Result_fixture):
-    """Test the __getitem__ method."""
-    current = Result_fixture["Current [A]"]
-    assert "Current [A]" in current.columns
-    assert isinstance(current, Result)
-    pl_testing.assert_frame_equal(
-        current.data,
-        Result_fixture.data.select("Current [A]"),
-    )
-    current_mA = Result_fixture["Current [mA]"]
-    assert "Current [mA]" in current_mA.columns
-    assert "Current [A]" not in current_mA.columns
-    np_testing.assert_allclose(
-        current_mA.get("Current [mA]"),
-        Result_fixture.get("Current [mA]"),
-    )
-
-
-def test_data(Result_fixture):
-    """Test the data property."""
-    assert isinstance(Result_fixture.lf, pl.LazyFrame)
-    assert isinstance(Result_fixture.data, pl.DataFrame)
-    pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.lf.collect())
-
-
-def test_quantities(Result_fixture):
-    """Test the quantities property."""
-    assert set(Result_fixture.quantities) == {
-        "Time",
-        "Current",
-        "Voltage",
-        "Capacity",
-        "Event",
-        "Date",
-        "Step",
-    }
-
-
-def test_print_definitions(Result_fixture, capsys):
-    """Test the print_definitions method."""
-    Result_fixture.define_column("Voltage", "Voltage across the circuit")
-    Result_fixture.define_column("Resistance", "Resistance of the circuit")
-    Result_fixture.print_definitions()
-    captured = capsys.readouterr()
-    expected_output = (
-        "{'Current': 'Current definition'"
-        ",\n 'Resistance': 'Resistance of the circuit'"
-        ",\n 'Voltage': 'Voltage across the circuit'}"
-    )
-    assert captured.out.strip() == expected_output
-
-
-def test_build():
-    """Test the build method."""
-    data1 = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
-    data2 = pl.DataFrame({"x": [7, 8, 9], "y": [10, 11, 12]})
-    info = {"test": "info"}
-    result = Result.build([data1, data2], info)
-    assert isinstance(result, Result)
-    expected_data = pl.DataFrame(
-        {
-            "x": [1, 2, 3, 7, 8, 9],
-            "y": [4, 5, 6, 10, 11, 12],
-            "Step": [0, 0, 0, 1, 1, 1],
-            "Cycle": [0, 0, 0, 0, 0, 0],
-        },
-    )
-    pl_testing.assert_frame_equal(
-        result.data,
-        expected_data,
-        check_column_order=False,
-        check_dtype=False,
-    )
-
-
-def test_add_data():
-    """Test the add_data method."""
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(1985, 1, 1, 0, 0, 0),
-                datetime(1985, 1, 1, 0, 0, 5),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ).alias("datetime"),
-            "Data": [2, 4, 6, 8, 10, 12],
-        },
-    )
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": pl.datetime_range(
-                datetime(1985, 1, 1, 0, 0, 2, 500000),
-                datetime(1985, 1, 1, 0, 0, 7, 500000),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ).alias("datetime"),
-            "Data 1": [2, 4, 6, 8, 10, 12],
-            "Data 2": [4, 8, 12, 16, 20, 24],
-        },
-    )
-    result_object = Result(lf=existing_data, info={})
-    result_object.add_data(
-        new_data,
-        date_column_name="DateTime",
-        existing_data_timezone="GMT",
-    )
-    expected_data = pl.DataFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(1985, 1, 1, 0, 0, 0),
-                datetime(1985, 1, 1, 0, 0, 5),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            )
-            .dt.cast_time_unit("us")
-            .dt.replace_time_zone("GMT")
-            .alias("datetime"),
-            "Data": [2, 4, 6, 8, 10, 12],
-            "Data 1": [None, None, None, 3.0, 5.0, 7.0],
-            "Data 2": [None, None, None, 6.0, 10.0, 14.0],
-        },
-    )
-    pl_testing.assert_frame_equal(
-        result_object.data,
-        expected_data,
-        check_column_order=False,
-    )
-
-
-def test_add_new_data_columns_deprecated():
-    """Test that add_new_data_columns works but is deprecated."""
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(1985, 1, 1, 0, 0, 0),
-                datetime(1985, 1, 1, 0, 0, 5),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ).alias("datetime"),
-            "Data": [2, 4, 6, 8, 10, 12],
-        },
-    )
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": pl.datetime_range(
-                datetime(1985, 1, 1, 0, 0, 2, 500000),
-                datetime(1985, 1, 1, 0, 0, 7, 500000),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ).alias("datetime"),
-            "Data 1": [2, 4, 6, 8, 10, 12],
-        },
-    )
-    result_object = Result(lf=existing_data, info={})
-
-    with patch("pyprobe.utils.logger.warning") as mock_warning:
-        result_object.add_new_data_columns(new_data, date_column_name="DateTime")
-        mock_warning.assert_called_with("Deprecation Warning: Use add_data instead.")
-
-    assert "Data 1" in result_object.columns
-
-
-def test_add_data_timezone_handling():
-    """Test timezone handling in add_data."""
-    # Case 1: Existing data is naive, new data is aware (UTC)
-    # Should default to local timezone (or London) for existing, and convert new to that
-    existing_data = pl.LazyFrame(
-        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
-    )
-
-    new_data = pl.LazyFrame(
-        {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(new_data, date_column_name="DateUTC")
-
-    schema = result.lf.collect_schema()
-    assert isinstance(schema["Date"], pl.Datetime)
-    assert schema["Date"].time_zone is not None
-
-    # Case 2: Explicit timezones
-    existing_data_naive = pl.LazyFrame(
-        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
-    )
-
-    new_data_naive = pl.LazyFrame(
-        {"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]}
-    )
-
-    result2 = Result(lf=existing_data_naive, info={})
-    result2.add_data(
-        new_data_naive,
-        date_column_name="DateNew",
-        existing_data_timezone="UTC",
-        new_data_timezone="Europe/Paris",
-    )
-
-    schema2 = result2.lf.collect_schema()
-    assert schema2["Date"].time_zone == "UTC"
-
-
-def test_validate_timezone_valid():
-    """Test _validate_timezone with valid timezone strings."""
-    # Test common valid timezones
-    assert _validate_timezone("UTC") == "UTC"
-    assert _validate_timezone("Europe/London") == "Europe/London"
-    assert _validate_timezone("America/New_York") == "America/New_York"
-    assert _validate_timezone("Asia/Tokyo") == "Asia/Tokyo"
-
-
-def test_validate_timezone_invalid():
-    """Test _validate_timezone raises error for invalid timezone strings."""
-    with pytest.raises(ValueError, match="Invalid timezone"):
-        _validate_timezone("Invalid/Timezone")
-
-    with pytest.raises(ValueError, match="Invalid timezone"):
-        _validate_timezone("NotATimezone")
-
-    with pytest.raises(ValueError, match="Invalid timezone"):
-        _validate_timezone("GMT+5")  # Not a valid IANA timezone format
-
-
-def test_add_data_invalid_existing_timezone():
-    """Test add_data raises error for invalid existing_data_timezone."""
-    existing_data = pl.LazyFrame(
-        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
-    )
-    new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
-    result = Result(lf=existing_data, info={})
-
-    with pytest.raises(ValueError, match="Invalid timezone"):
-        result.add_data(
-            new_data,
-            date_column_name="DateNew",
-            existing_data_timezone="Invalid/Timezone",
-        )
-
-
-def test_add_data_invalid_new_timezone():
-    """Test add_data raises error for invalid new_data_timezone."""
-    existing_data = pl.LazyFrame(
-        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
-    )
-    new_data = pl.LazyFrame({"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]})
-    result = Result(lf=existing_data, info={})
-
-    with pytest.raises(ValueError, match="Invalid timezone"):
-        result.add_data(
-            new_data,
-            date_column_name="DateNew",
-            new_data_timezone="NotATimezone",
-        )
-
-
-def test_tzlocal_returns_valid_timezone():
-    """Test that tzlocal returns a valid IANA timezone that can be used."""
-    local_tz = str(get_localzone())
-    # Verify it's a valid timezone by trying to create a ZoneInfo from it
-    zone = ZoneInfo(local_tz)
-    assert zone is not None
-
-    # Also verify it works with polars
-    df = pl.DataFrame({"Date": [datetime(2023, 1, 1, 10, 0, 0)]})
-    df_with_tz = df.with_columns(pl.col("Date").dt.replace_time_zone(local_tz))
-    assert df_with_tz["Date"].dtype.time_zone == local_tz
-
-
-def test_add_data_uses_local_timezone_when_not_specified():
-    """Test that add_data uses the local timezone when no timezone is specified."""
-    existing_data = pl.LazyFrame(
-        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
-    )
-    new_data = pl.LazyFrame(
-        {"DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)], "Ext": [10]}
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(new_data, date_column_name="DateUTC")
-
-    schema = result.lf.collect_schema()
-    # The timezone should be the local timezone from tzlocal
-    expected_tz = str(get_localzone())
-    assert schema["Date"].time_zone == expected_tz
-
-
-def test_add_data_with_format():
-    """Test add_data with datetime format string."""
-    existing_data = pl.LazyFrame(
-        {"Date": [datetime(2023, 1, 1, 10, 0, 0)], "Value": [1]}
-    )
-
-    new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data, date_column_name="DateStr", datetime_format="%Y/%m/%d %H:%M:%S"
-    )
-
-    schema = result.lf.collect_schema()
-    assert isinstance(schema["Date"], pl.Datetime)
-
-    data = result.data
-    assert "Ext" in data.columns
-    assert data["Ext"][0] == 10
-
-
-def test_add_data_join_strategy_keep_existing():
-    """Test add_data with join_strategy='keep_existing'."""
-    # Temperature logged every second
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0],
-        },
-    )
-    # Voltage logged every 2 seconds (lower frequency)
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=2),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Voltage": [3.6, 3.8, 4.0],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_existing",
-        fill_strategy="interpolate",
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # Should keep all 5 temperature timestamps
-    assert len(data) == 5
-    assert "Temperature" in data.columns
-    assert "Voltage" in data.columns
-
-    # Voltage should be interpolated at odd seconds
-    assert data["Voltage"][0] == pytest.approx(3.6)  # Original value
-    assert data["Voltage"][1] == pytest.approx(3.7)  # Interpolated between 3.6 and 3.8
-    assert data["Voltage"][2] == pytest.approx(3.8)  # Original value
-    assert data["Voltage"][3] == pytest.approx(3.9)  # Interpolated between 3.8 and 4.0
-    assert data["Voltage"][4] == pytest.approx(4.0)  # Original value
-
-
-def test_add_data_join_strategy_keep_new():
-    """Test add_data with join_strategy='keep_new'."""
-    # Existing data logged every 2 seconds
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=2),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 22.0, 24.0],
-        },
-    )
-    # New data logged every second (higher frequency)
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Voltage": [3.6, 3.7, 3.8, 3.9, 4.0],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_new",
-        fill_strategy="interpolate",
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # Should have 5 rows (from new data)
-    assert len(data) == 5
-    assert "Temperature" in data.columns
-    assert "Voltage" in data.columns
-
-    # Temperature should be interpolated at odd seconds
-    assert data["Temperature"][0] == 20.0  # Original value
-    assert data["Temperature"][1] == 21.0  # Interpolated between 20.0 and 22.0
-    assert data["Temperature"][2] == 22.0  # Original value
-    assert data["Temperature"][3] == 23.0  # Interpolated between 22.0 and 24.0
-    assert data["Temperature"][4] == 24.0  # Original value
-
-
-def test_add_data_join_strategy_keep_both():
-    """Test add_data with join_strategy='keep_both'."""
-    # Temperature logged at whole seconds
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 2),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 21.0, 22.0],
-        },
-    )
-    # Voltage logged at half-seconds (offset)
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [
-                datetime(2024, 1, 1, 0, 0, 0, 500000),
-                datetime(2024, 1, 1, 0, 0, 1, 500000),
-            ],
-            "Voltage": [3.65, 3.85],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_both",
-        fill_strategy="interpolate",
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # Should have 5 rows (3 from existing + 2 from new)
-    assert len(data) == 5
-    assert "Temperature" in data.columns
-    assert "Voltage" in data.columns
-
-    # At whole seconds, Temperature is original, Voltage is interpolated
-    temp_at_0s = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, 0).replace(tzinfo=ZoneInfo("GMT")).timestamp()
-        * 1_000_000
-    )
-    assert len(temp_at_0s) == 1
-    assert temp_at_0s["Temperature"][0] == 20.0
-
-    # At half-seconds, Voltage is original, Temperature is interpolated
-    temp_at_0_5s = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, 0, 500000)
-        .replace(tzinfo=ZoneInfo("GMT"))
-        .timestamp()
-        * 1_000_000
-    )
-    assert len(temp_at_0_5s) == 1
-    assert temp_at_0_5s["Voltage"][0] == 3.65
-    assert temp_at_0_5s["Temperature"][0] == 20.5  # Interpolated between 20.0 and 21.0
-
-
-def test_add_data_fill_strategy_forward_fill():
-    """Test add_data with fill_strategy='forward_fill'."""
-    # Temperature logged every second
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 5),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0],
-        },
-    )
-    # Voltage logged sparsely (every 3 seconds)
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [
-                datetime(2024, 1, 1, 0, 0, 1),
-                datetime(2024, 1, 1, 0, 0, 4),
-            ],
-            "Voltage": [3.7, 4.0],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_existing",
-        fill_strategy="forward_fill",
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # First row should have null (no previous value)
-    assert data["Voltage"][0] is None
-    # Value at second 1
-    assert data["Voltage"][1] == 3.7
-    # Seconds 2-3 should be forward filled with 3.7
-    assert data["Voltage"][2] == 3.7
-    assert data["Voltage"][3] == 3.7
-    # Value at second 4
-    assert data["Voltage"][4] == 4.0
-    # Last row forward filled with 4.0
-    assert data["Voltage"][5] == 4.0
-
-
-def test_add_data_fill_strategy_backward_fill():
-    """Test add_data with fill_strategy='backward_fill'."""
-    # Temperature logged every second
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 5),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0],
-        },
-    )
-    # Voltage logged sparsely
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [
-                datetime(2024, 1, 1, 0, 0, 1),
-                datetime(2024, 1, 1, 0, 0, 4),
-            ],
-            "Voltage": [3.7, 4.0],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_existing",
-        fill_strategy="backward_fill",
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # First row should be backward filled with 3.7
-    assert data["Voltage"][0] == 3.7
-    # Value at second 1
-    assert data["Voltage"][1] == 3.7
-    # Seconds 2-3 should be backward filled with 4.0
-    assert data["Voltage"][2] == 4.0
-    assert data["Voltage"][3] == 4.0
-    # Value at second 4
-    assert data["Voltage"][4] == 4.0
-    # Last row should have null (no future value)
-    assert data["Voltage"][5] is None
-
-
-def test_add_data_fill_strategy_none():
-    """Test add_data with fill_strategy=None."""
-    # Temperature logged every second
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=1),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0],
-        },
-    )
-    # Voltage logged every 2 seconds (lower frequency)
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=2),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Voltage": [3.6, 3.8, 4.0],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_existing",
-        fill_strategy=None,
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # Only even seconds should have Voltage values
-    assert data["Voltage"][0] == 3.6  # Second 0
-    assert data["Voltage"][1] is None  # Second 1 (no data)
-    assert data["Voltage"][2] == 3.8  # Second 2
-    assert data["Voltage"][3] is None  # Second 3 (no data)
-    assert data["Voltage"][4] == 4.0  # Second 4
-
-
-def test_add_data_combined_strategies():
-    """Test add_data with combined join and fill strategies."""
-    # Temperature logged every 2 seconds
-    existing_data = pl.LazyFrame(
-        {
-            "Date": pl.datetime_range(
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 4),
-                timedelta(seconds=2),
-                time_unit="ms",
-                eager=True,
-            ),
-            "Temperature": [20.0, 22.0, 24.0],
-        },
-    )
-    # Voltage logged at odd seconds
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [
-                datetime(2024, 1, 1, 0, 0, 1),
-                datetime(2024, 1, 1, 0, 0, 3),
-                datetime(2024, 1, 1, 0, 0, 5),
-            ],
-            "Voltage": [3.7, 3.9, 4.1],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy="keep_both",
-        fill_strategy="forward_fill",
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    # Should have 6 rows total (3 + 3)
-    assert len(data) == 6
-
-    # At even seconds, Temperature is original, Voltage is forward filled
-    row_0s = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, 0).replace(tzinfo=ZoneInfo("GMT")).timestamp()
-        * 1_000_000
-    )
-    assert row_0s["Temperature"][0] == 20.0
-    assert row_0s["Voltage"][0] is None  # No previous voltage
-
-    row_2s = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, 2).replace(tzinfo=ZoneInfo("GMT")).timestamp()
-        * 1_000_000
-    )
-    assert row_2s["Temperature"][0] == 22.0
-    assert row_2s["Voltage"][0] == 3.7  # Forward filled from 1s
-
-    # At odd seconds, Voltage is original, Temperature is forward filled
-    row_1s = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, 1).replace(tzinfo=ZoneInfo("GMT")).timestamp()
-        * 1_000_000
-    )
-    assert row_1s["Voltage"][0] == 3.7
-    assert row_1s["Temperature"][0] == 20.0  # Forward filled from 0s
-
-    row_3s = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, 3).replace(tzinfo=ZoneInfo("GMT")).timestamp()
-        * 1_000_000
-    )
-    assert row_3s["Voltage"][0] == 3.9
-    assert row_3s["Temperature"][0] == 22.0  # Forward filled from 2s
-
-
-@pytest.mark.parametrize(
-    (
-        "join_strategy",
-        "fill_strategy",
-        "expected_length",
-        "check_column",
-        "check_second",
-        "expected_value",
-    ),
-    [
-        ("keep_existing", "interpolate", 3, "Voltage", 2, 3.8),
-        ("keep_existing", "forward_fill", 3, "Voltage", 2, 3.7),
-        ("keep_existing", "backward_fill", 3, "Voltage", 2, 3.9),
-        ("keep_existing", None, 3, "Voltage", 2, None),
-        ("keep_new", "interpolate", 3, "Temperature", 3, 23.0),
-        ("keep_new", "forward_fill", 3, "Temperature", 3, 22.0),
-        ("keep_new", "backward_fill", 3, "Temperature", 3, 24.0),
-        ("keep_new", None, 3, "Temperature", 3, None),
-        ("keep_both", "interpolate", 6, "Voltage", 2, 3.8),
-        ("keep_both", "forward_fill", 6, "Voltage", 2, 3.7),
-        ("keep_both", "backward_fill", 6, "Voltage", 2, 3.9),
-        ("keep_both", None, 6, "Voltage", 2, None),
-    ],
-)
-def test_add_data_all_join_fill_strategy_combinations(
-    join_strategy,
-    fill_strategy,
-    expected_length,
-    check_column,
-    check_second,
-    expected_value,
-):
-    """Test all join_strategy x fill_strategy combinations for add_data."""
-    existing_data = pl.LazyFrame(
-        {
-            "Date": [
-                datetime(2024, 1, 1, 0, 0, 0),
-                datetime(2024, 1, 1, 0, 0, 2),
-                datetime(2024, 1, 1, 0, 0, 4),
-            ],
-            "Temperature": [20.0, 22.0, 24.0],
-        },
-    )
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [
-                datetime(2024, 1, 1, 0, 0, 1),
-                datetime(2024, 1, 1, 0, 0, 3),
-                datetime(2024, 1, 1, 0, 0, 5),
-            ],
-            "Voltage": [3.7, 3.9, 4.1],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    result.add_data(
-        new_data,
-        date_column_name="DateTime",
-        join_strategy=join_strategy,
-        fill_strategy=fill_strategy,
-        existing_data_timezone="GMT",
-    )
-
-    data = result.data
-    assert len(data) == expected_length
-
-    row = data.filter(
-        pl.col("Date").dt.timestamp("us")
-        == datetime(2024, 1, 1, 0, 0, check_second)
-        .replace(tzinfo=ZoneInfo("GMT"))
-        .timestamp()
-        * 1_000_000
-    )
-    assert len(row) == 1
-    if expected_value is None:
-        assert row[check_column][0] is None
-    else:
-        assert row[check_column][0] == pytest.approx(expected_value)
-
-
-def test_add_data_invalid_join_strategy_raises():
-    """Test add_data with an invalid join strategy."""
-    existing_data = pl.LazyFrame(
-        {
-            "Date": [datetime(2024, 1, 1, 0, 0, 0)],
-            "Temperature": [20.0],
-        },
-    )
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
-            "Voltage": [3.7],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    with pytest.raises(
-        ValueError,
-        match=(
-            r"^Unsupported join_strategy: 'bad_strategy'\. "
-            r"Expected one of: 'keep_existing', 'keep_new', 'keep_both'\.$"
-        ),
-    ):
-        result.add_data(
-            new_data,
-            date_column_name="DateTime",
-            join_strategy="bad_strategy",
-            existing_data_timezone="GMT",
-        )
-
-
-def test_add_data_invalid_fill_strategy_raises():
-    """Test add_data with an invalid fill strategy."""
-    existing_data = pl.LazyFrame(
-        {
-            "Date": [datetime(2024, 1, 1, 0, 0, 0)],
-            "Temperature": [20.0],
-        },
-    )
-    new_data = pl.LazyFrame(
-        {
-            "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
-            "Voltage": [3.7],
-        },
-    )
-
-    result = Result(lf=existing_data, info={})
-    with pytest.raises(
-        ValueError,
-        match=(
-            r"^Unsupported fill_strategy: 'bad_strategy'\. "
-            r"Valid options are None, 'interpolate', 'forward_fill', "
-            r"'backward_fill'\.$"
-        ),
-    ):
-        result.add_data(
-            new_data,
-            date_column_name="DateTime",
-            fill_strategy="bad_strategy",
-            existing_data_timezone="GMT",
-        )
 
 
 @pytest.fixture
@@ -972,8 +40,8 @@ def reduced_result_fixture():
         },
     )
     return Result(
-        lf=data,
-        info={"test": "info"},
+        lf=data.lazy(),
+        metadata={"test": "metadata"},
         column_definitions={
             "Voltage": "Voltage definition",
             "Current": "Current definition",
@@ -981,480 +49,1481 @@ def reduced_result_fixture():
     )
 
 
-def test_verify_compatible_frames():
-    """Test the _verify_compatible_frames method."""
-    df1 = pl.DataFrame({"a": [1, 2, 3]})
-    df2 = pl.DataFrame({"b": [4, 5, 6]})
-    lazy_df1 = df1.lazy()
-    lazy_df2 = df2.lazy()
+class TestResultInit:
+    """Test Result initialization."""
 
-    # Test with two DataFrames
-    result1, result2 = Result._verify_compatible_frames(df1, [df2])
-    assert isinstance(result1, pl.DataFrame)
-    assert isinstance(result2[0], pl.DataFrame)
+    def test_init(self, Result_fixture):
+        """Test the __init__ method."""
+        assert isinstance(Result_fixture, Result)
+        assert isinstance(Result_fixture.lf, pl.LazyFrame)
+        assert isinstance(Result_fixture.metadata, dict)
 
-    # Test with DataFrame and LazyFrame
-    result1, result2 = Result._verify_compatible_frames(df1, [lazy_df2])
-    assert isinstance(result1, pl.DataFrame)
-    assert isinstance(result2[0], pl.DataFrame)
-
-    # Test with LazyFrame and DataFrame
-    result1, result2 = Result._verify_compatible_frames(lazy_df1, [df2])
-    assert isinstance(result1, pl.DataFrame)
-    assert isinstance(result2[0], pl.DataFrame)
-
-    # Test with two LazyFrames
-    result1, result2 = Result._verify_compatible_frames(
-        lazy_df1,
-        [lazy_df2],
-        mode="collect all",
-    )
-    assert isinstance(result1, pl.LazyFrame)
-    assert isinstance(result2[0], pl.LazyFrame)
-
-    # Test with matching the first df
-    result1, result2 = Result._verify_compatible_frames(lazy_df1, [df2], mode="match 1")
-    assert isinstance(result1, pl.LazyFrame)
-    assert isinstance(result2[0], pl.LazyFrame)
-
-    result1, result2 = Result._verify_compatible_frames(df1, [lazy_df2], mode="match 1")
-    assert isinstance(result1, pl.DataFrame)
-    assert isinstance(result2[0], pl.DataFrame)
-
-    # Test with a list of frames
-    result1, result2 = Result._verify_compatible_frames(df1, [df2, lazy_df2])
-    assert isinstance(result1, pl.DataFrame)
-    assert isinstance(result2[0], pl.DataFrame)
-    assert isinstance(result2[1], pl.DataFrame)
-
-    # Test matching the first df with a list of frames
-    result1, result2 = Result._verify_compatible_frames(
-        lazy_df1,
-        [df2, lazy_df2],
-        mode="match 1",
-    )
-    assert isinstance(result1, pl.LazyFrame)
-    assert isinstance(result2[0], pl.LazyFrame)
-    assert isinstance(result2[1], pl.LazyFrame)
+    def test_init_accepts_dataframe(self):
+        """Test that DataFrame input is converted to LazyFrame at construction."""
+        result = Result(lf=pl.DataFrame({"a": [1, 2, 3]}), metadata={})
+        assert isinstance(result.lf, pl.LazyFrame)
+        pl_testing.assert_frame_equal(result.data, pl.DataFrame({"a": [1, 2, 3]}))
 
 
-def test_join_left(reduced_result_fixture):
-    """Test the join method with left join."""
-    other_data = pl.DataFrame(
-        {
-            "Current [A]": [1, 2, 3],
-            "Capacity [Ah]": [4, 5, 6],
-        },
-    )
-    other_result = Result(
-        lf=other_data,
-        info={"test": "info"},
-        column_definitions={"Voltage": "Voltage definition"},
-    )
-    reduced_result_fixture.join(other_result, on="Current [A]", how="left")
-    expected_data = pl.DataFrame(
-        {
-            "Current [A]": [1, 2, 3],
-            "Voltage [V]": [1, 2, 3],
-            "Capacity [Ah]": [4, 5, 6],
-        },
-    )
-    pl_testing.assert_frame_equal(
-        reduced_result_fixture.data,
-        expected_data,
-        check_column_order=False,
-    )
-    assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
+class TestResultDataFrameProperty:
+    """Test DataFrame property and setter."""
+
+    def test_df(self, Result_fixture):
+        """Test the df property."""
+        df = Result_fixture.df
+        assert isinstance(df, pl.DataFrame)
+        pl_testing.assert_frame_equal(df, Result_fixture.lf.collect())
+
+    def test_df_setter(self, Result_fixture):
+        """Test the df setter."""
+        new_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+        Result_fixture.df = new_df
+        assert isinstance(Result_fixture.lf, pl.LazyFrame)
+        pl_testing.assert_frame_equal(Result_fixture.lf.collect(), new_df)
+        pl_testing.assert_frame_equal(Result_fixture.df, new_df)
+
+    def test_collect(self, Result_fixture):
+        """Test the collect method."""
+        collected_df = Result_fixture.collect()
+        assert isinstance(collected_df, pl.DataFrame)
+        pl_testing.assert_frame_equal(collected_df, Result_fixture.data)
+        assert isinstance(Result_fixture.lf, pl.LazyFrame)
 
 
-def test_extend(reduced_result_fixture):
-    """Test the extend method."""
-    other_data = pl.DataFrame(
-        {
-            "Current [A]": [4, 5, 6],
-            "Voltage [V]": [4, 5, 6],
-        },
-    )
-    other_result = Result(
-        lf=other_data,
-        info={"test": "info"},
-        column_definitions={"Voltage": "Voltage definition"},
-    )
-    reduced_result_fixture.extend(other_result)
-    expected_data = pl.DataFrame(
-        {
-            "Current [A]": [1, 2, 3, 4, 5, 6],
-            "Voltage [V]": [1, 2, 3, 4, 5, 6],
-        },
-    )
-    pl_testing.assert_frame_equal(
-        reduced_result_fixture.data,
-        expected_data,
-        check_column_order=False,
-    )
-    assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
+class TestResultColumnResolution:
+    """Test column resolution and unit conversion."""
+
+    def test_can_resolve_valid(self, Result_fixture):
+        """Test that known BDF columns are resolvable via ColumnDict."""
+        col_set = Result_fixture.columns
+        assert col_set.can_resolve("Current / A")
+        assert col_set.can_resolve("Voltage / V")
+
+    def test_can_resolve_missing(self, Result_fixture):
+        """Test that an unknown column is not resolvable via ColumnDict."""
+        col_set = Result_fixture.columns
+        assert not col_set.can_resolve("NonExistent / A")
+
+    def test_get_unit_conversion(self, Result_fixture):
+        """Test that get() performs BDF-aware unit conversion."""
+        current_ma = Result_fixture.get("Current / mA")
+        np_testing.assert_allclose(
+            current_ma,
+            Result_fixture.data["Current / A"].to_numpy() * 1000,
+            rtol=1e-5,
+        )
+
+    def test_get_missing_column_raises(self, Result_fixture):
+        """Test that get() raises ValueError for nonexistent columns."""
+        with pytest.raises(ValueError, match="Cannot resolve"):
+            Result_fixture.get("NonExistent / A")
+
+    def test_getitem_unit_conversion(self, Result_fixture):
+        """Test that __getitem__() supports unit conversion via ColumnDict."""
+        current_ma = Result_fixture["Current / mA"]
+        assert isinstance(current_ma, Result)
+        assert "Current / mA" in current_ma.columns
+        np_testing.assert_allclose(
+            current_ma.data["Current / mA"].to_numpy(),
+            Result_fixture.data["Current / A"].to_numpy() * 1000,
+            rtol=1e-5,
+        )
+
+    def test_getitem_missing_column_raises(self, Result_fixture):
+        """Test that __getitem__() raises ValueError for nonexistent columns."""
+        with pytest.raises(ValueError, match="Cannot resolve"):
+            _ = Result_fixture["NonExistent / A"]
+
+    def test_getitem_does_not_mutate_columns(self, Result_fixture):
+        """Test that __getitem__() with unit conversion doesn't add column to result."""
+        original_columns = set(Result_fixture.data.columns)
+        _ = Result_fixture["Current / mA"]
+        assert set(Result_fixture.data.columns) == original_columns
+
+    def test_get_with_column_instance(self, Result_fixture):
+        """Test that get() accepts Column and BDF instances."""
+        current_str = Result_fixture.get("Current / A")
+        current_bdf = Result_fixture.get(BDF.CURRENT_AMPERE)
+        current_col = Result_fixture.get(Column("Current", "A"))
+        np_testing.assert_array_equal(current_bdf, current_str)
+        np_testing.assert_array_equal(current_col, current_str)
+
+    def test_getitem_with_column_instance(self, Result_fixture):
+        """Test that __getitem__() accepts Column and BDF instances."""
+        by_str = Result_fixture["Current / A"]
+        by_bdf = Result_fixture[BDF.CURRENT_AMPERE]
+        pl_testing.assert_frame_equal(by_bdf.data, by_str.data)
+
+    def test_get(self, Result_fixture):
+        """Test the get method."""
+        current = Result_fixture.get("Current / A")
+        np_testing.assert_array_equal(
+            current,
+            Result_fixture.data["Current / A"].to_numpy(),
+        )
+
+        current, voltage = Result_fixture.get("Current / A", "Voltage / V")
+        np_testing.assert_array_equal(
+            current,
+            Result_fixture.data["Current / A"].to_numpy(),
+        )
+        np_testing.assert_array_equal(
+            voltage,
+            Result_fixture.data["Voltage / V"].to_numpy(),
+        )
+
+    def test_getitem(self, Result_fixture):
+        """Test the __getitem__ method."""
+        current = Result_fixture["Current / A"]
+        assert "Current / A" in current.columns
+        assert isinstance(current, Result)
+        pl_testing.assert_frame_equal(
+            current.data,
+            Result_fixture.data.select("Current / A"),
+        )
 
 
-def test_extend_with_new_columns(reduced_result_fixture):
-    """Test the extend method with new columns."""
-    other_data = pl.DataFrame(
-        {
-            "Current [A]": [4, 5, 6],
-            "Voltage [V]": [4, 5, 6],
-            "Capacity [Ah]": [8, 9, 10],
-        },
-    )
-    other_result = Result(
-        lf=other_data,
-        info={"test": "info"},
-        column_definitions={
-            "Voltage": "New voltage definition",
-            "Capacity": "Capacity definition",
-            "Current": "Current definition",
-        },
-    )
-    reduced_result_fixture.extend(other_result)
-    expected_data = pl.DataFrame(
-        {
-            "Current [A]": [1, 2, 3, 4, 5, 6],
-            "Voltage [V]": [1, 2, 3, 4, 5, 6],
-            "Capacity [Ah]": [None, None, None, 8, 9, 10],
-        },
-    )
-    pl_testing.assert_frame_equal(
-        reduced_result_fixture.data,
-        expected_data,
-        check_column_order=False,
-    )
-    assert reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
-    assert (
-        reduced_result_fixture.column_definitions["Capacity"] == "Capacity definition"
-    )
-    assert reduced_result_fixture.column_definitions["Current"] == "Current definition"
+class TestResultDataProperty:
+    """Test data property and metadata."""
 
+    def test_data(self, Result_fixture):
+        """Test the data property."""
+        assert isinstance(Result_fixture.lf, pl.LazyFrame)
+        assert isinstance(Result_fixture.data, pl.DataFrame)
+        pl_testing.assert_frame_equal(Result_fixture.data, Result_fixture.lf.collect())
 
-def test_clean_copy(reduced_result_fixture):
-    """Test the clean_copy method."""
-    # Test default parameters (empty dataframe)
-    clean_result = reduced_result_fixture.clean_copy()
-    assert isinstance(clean_result, Result)
-    assert clean_result.lf.collect().is_empty()
-    assert clean_result.info == reduced_result_fixture.info
-    assert clean_result.column_definitions == {}
-
-    # Test with new dataframe
-    new_df = pl.DataFrame({"Test [V]": [1, 2, 3]})
-    clean_result = reduced_result_fixture.clean_copy(dataframe=new_df)
-    assert isinstance(clean_result, Result)
-    pl_testing.assert_frame_equal(clean_result.data, new_df)
-    assert clean_result.info == reduced_result_fixture.info
-    assert clean_result.column_definitions == {}
-
-    # Test with new column definitions
-    new_defs = {"New Column [A]": "New definition"}
-    clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
-    assert isinstance(clean_result, Result)
-    assert clean_result.lf.collect().is_empty()
-    assert clean_result.info == reduced_result_fixture.info
-    assert clean_result.column_definitions == new_defs
-
-    # Test with both new dataframe and column definitions
-    clean_result = reduced_result_fixture.clean_copy(
-        dataframe=new_df,
-        column_definitions=new_defs,
-    )
-    assert isinstance(clean_result, Result)
-    pl_testing.assert_frame_equal(clean_result.data, new_df)
-    assert clean_result.info == reduced_result_fixture.info
-    assert clean_result.column_definitions == new_defs
-
-    # Test with LazyFrame
-    lazy_df = new_df.lazy()
-    clean_result = reduced_result_fixture.clean_copy(dataframe=lazy_df)
-    assert isinstance(clean_result, Result)
-    assert isinstance(clean_result.lf, pl.LazyFrame)
-    pl_testing.assert_frame_equal(clean_result.data, new_df)
-
-
-def test_combine_results():
-    """Test the combine results method."""
-    result1 = Result(
-        lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}),
-        info={"test index": 1.0},
-    )
-    result2 = Result(
-        lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}),
-        info={"test index": 2.0},
-    )
-    combined_result = combine_results([result1, result2])
-    expected_data = pl.DataFrame(
-        {
-            "a": [1, 2, 3, 7, 8, 9],
-            "b": [4, 5, 6, 10, 11, 12],
-            "test index": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
-        },
-    )
-    pl_testing.assert_frame_equal(
-        combined_result.data,
-        expected_data,
-        check_column_order=False,
-    )
-
-
-def test_export_to_mat(Result_fixture, tmp_path):
-    """Test the export to mat function."""
-    mat_path = tmp_path / "test_mat.mat"
-    Result_fixture.export_to_mat(str(mat_path))
-    saved_data = loadmat(str(mat_path))
-    assert "data" in saved_data
-    assert "info" in saved_data
-    expected_columns = {
-        "Current__A_",
-        "Step",
-        "Event",
-        "Time__s_",
-        "Capacity__Ah_",
-        "Voltage__V_",
-        "Date",
-    }
-    actual_columns = set(saved_data["data"].dtype.names)
-    assert actual_columns == expected_columns
-
-
-def test_from_polars_io(tmp_path):
-    """Test the from_polars_io method."""
-    # Test with read_csv function
-    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-    csv_path = tmp_path / "test_data.csv"
-    test_df.write_csv(csv_path)
-
-    # Test with basic parameters
-    result = Result.from_polars_io(
-        info={"test": "info"},
-        column_definitions={"a": "Column A"},
-        polars_io_func=pl.read_csv,
-        source=str(csv_path),
-    )
-    assert isinstance(result, Result)
-    assert result.info == {"test": "info"}
-    assert result.column_definitions == {"a": "Column A"}
-    pl_testing.assert_frame_equal(result.data, test_df)
-
-    # Test with LazyFrame function
-    result_lazy = Result.from_polars_io(
-        info={"test": "lazy"},
-        column_definitions={},
-        polars_io_func=pl.scan_csv,
-        source=str(csv_path),
-    )
-    assert isinstance(result_lazy, Result)
-    assert isinstance(result_lazy.lf, pl.LazyFrame)
-
-    # Test with keyword arguments
-    result_with_kwargs = Result.from_polars_io(
-        info={"test": "kwargs"},
-        column_definitions={"a": "Column A with kwargs"},
-        polars_io_func=pl.read_csv,
-        source=str(csv_path),
-        has_header=True,
-        skip_rows=0,
-    )
-    assert isinstance(result_with_kwargs, Result)
-    pl_testing.assert_frame_equal(result_with_kwargs.data, test_df)
-
-
-@pytest.mark.parametrize(
-    "io_function,expected_type",
-    [
-        (pl.read_csv, pl.DataFrame),
-        (pl.scan_csv, pl.LazyFrame),
-        (pl.read_parquet, pl.DataFrame),
-        (pl.scan_parquet, pl.LazyFrame),
-    ],
-)
-def test_from_polars_io_different_formats(io_function, expected_type, tmp_path):
-    """Test from_polars_io with different polars I/O functions."""
-    # Create test data
-    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-
-    # Create appropriate test file based on function
-    if "csv" in io_function.__name__:
-        test_file = tmp_path / "test.csv"
-        test_df.write_csv(test_file)
-    else:  # parquet
-        test_file = tmp_path / "test.parquet"
-        test_df.write_parquet(test_file)
-
-    # Mock info for testing
-    info = {"source": io_function.__name__}
-
-    # Create result using the function
-    result = Result.from_polars_io(
-        polars_io_func=io_function, source=test_file, info=info, column_definitions={}
-    )
-
-    # Check the result
-    assert isinstance(result, Result)
-    assert isinstance(result.lf, pl.LazyFrame)
-    assert result.info == info
-    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
-
-
-def test_from_polars_io_python_object():
-    """Test from_polars_io with a Python object."""
-    # Create a test DataFrame
-    test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-
-    # Mock info for testing
-    info = {"source": "python_object"}
-
-    # Create result using the function
-    result = Result.from_polars_io(
-        polars_io_func=pl.from_pandas,
-        data=test_df.to_pandas(),
-        info=info,
-        column_definitions={},
-    )
-
-    # Check the result
-    assert isinstance(result, Result)
-    assert isinstance(result.lf, pl.LazyFrame)
-    assert result.info == info
-    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
-
-    result = Result.from_polars_io(
-        polars_io_func=pl.from_numpy,
-        schema=["a", "b"],
-        data=test_df.to_numpy(),
-        info=info,
-        column_definitions={},
-    )
-
-    # Check the result
-    assert isinstance(result, Result)
-    assert isinstance(result.lf, pl.LazyFrame)
-    assert result.info == info
-    pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
-
-
-def test_add_data_with_alignment():
-    """Test add_data with the align_on parameter."""
-    # Create base data: Square wave signals by sampling continuous signals
-    # This simulates real data where edge timing is preserved in sample values
-    dt = 0.1
-    t = np.arange(0, 20, dt)
-
-    t_continuous = np.linspace(0, 20, 100000)
-    y_continuous = np.zeros_like(t_continuous)
-    y_continuous[t_continuous >= 5.0] = 1.0
-    y_continuous[t_continuous >= 10.0] = 0.0
-    y_continuous[t_continuous >= 12.0] = -1.0
-    y_continuous[t_continuous >= 17.0] = 0.0
-
-    # Sample the continuous signal
-    y = np.interp(t, t_continuous, y_continuous)
-
-    start_time = datetime(2023, 1, 1, 10, 0, 0)
-
-    base_df = pl.DataFrame(
-        {"Date": [start_time + timedelta(seconds=float(val)) for val in t], "Signal": y}
-    )
-
-    # Create new data: Same signal but shifted
-    shift = 2.35
-    y_shifted_continuous = np.zeros_like(t_continuous)
-    y_shifted_continuous[t_continuous >= (5.0 + shift)] = 1.0
-    y_shifted_continuous[t_continuous >= (10.0 + shift)] = 0.0
-    y_shifted_continuous[t_continuous >= (12.0 + shift)] = -1.0
-    y_shifted_continuous[t_continuous >= (17.0 + shift)] = 0.0
-
-    y_shifted = np.interp(t, t_continuous, y_shifted_continuous)
-
-    new_df = pl.DataFrame(
-        {
-            "DateNew": [start_time + timedelta(seconds=float(val)) for val in t],
-            "SignalNew": y_shifted,
+    def test_quantities(self, Result_fixture):
+        """Test the quantities property."""
+        assert set(Result_fixture.columns.quantities) == {
+            "Unix Time",
+            "Test Time",
+            "Current",
+            "Voltage",
+            "Net Capacity",
+            "Step Count",
+            "Step Index",
+            "Unix Time",
         }
-    )
 
-    result = Result(lf=base_df, info={})
-
-    # Add data with alignment
-    result.add_data(
-        new_df, date_column_name="DateNew", align_on=("Signal", "SignalNew")
-    )
-
-    combined_df = result.data
-
-    # Check that SignalNew is aligned with Signal
-    s1 = combined_df["Signal"].to_numpy()
-    s2 = combined_df["SignalNew"].to_numpy()
-
-    # Filter out NaNs (due to shifting, some points might not overlap)
-    mask = ~np.isnan(s2)
-
-    # Assert that the signals are close (alignment worked)
-    # Tolerance of 0.5 accounts for edge transition differences after interpolation
-    np_testing.assert_allclose(s1[mask], s2[mask], atol=0.5)
+    def test_print_definitions(self, Result_fixture, capsys):
+        """Test the print_definitions method."""
+        Result_fixture.define_column("Voltage", "Voltage across the circuit")
+        Result_fixture.define_column("Resistance", "Resistance of the circuit")
+        Result_fixture.print_definitions()
+        captured = capsys.readouterr()
+        expected_output = (
+            "{'Current': 'Current definition'"
+            ",\n 'Resistance': 'Resistance of the circuit'"
+            ",\n 'Voltage': 'Voltage across the circuit'}"
+        )
+        assert captured.out.strip() == expected_output
 
 
-def test_add_data_with_alignment_error():
-    """Test add_data with invalid align_on columns."""
-    start_time = datetime(2023, 1, 1, 10, 0, 0)
-    base_df = pl.DataFrame({"Date": [start_time], "Signal": [1.0]})
-    new_df = pl.DataFrame({"DateNew": [start_time], "SignalNew": [1.0]})
-    result = Result(lf=base_df, info={})
+class TestResultBuild:
+    """Test Result.build method."""
 
-    # Test with missing column in base data
-    with pytest.raises(ValueError):
-        result.add_data(
-            new_df, date_column_name="DateNew", align_on=("NonExistent", "SignalNew")
+    def test_build(self):
+        """Test the build method."""
+        data1 = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+        data2 = pl.DataFrame({"x": [7, 8, 9], "y": [10, 11, 12]})
+        metadata = {"test": "metadata"}
+        result = Result.build([data1, data2], metadata)
+        assert isinstance(result, Result)
+        expected_data = pl.DataFrame(
+            {
+                "x": [1, 2, 3, 7, 8, 9],
+                "y": [4, 5, 6, 10, 11, 12],
+                "Step": [0, 0, 0, 1, 1, 1],
+                "Cycle": [0, 0, 0, 0, 0, 0],
+            },
+        )
+        pl_testing.assert_frame_equal(
+            result.data,
+            expected_data,
+            check_column_order=False,
+            check_dtype=False,
         )
 
-    # Test with missing column in new data
-    with pytest.raises(ValueError):
+
+class TestAddDataBasic:
+    """Test basic add_data functionality."""
+
+    def test_add_data(self):
+        """Test the add_data method."""
+        base_time = datetime(1985, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(6)]),
+                "Data": [2, 4, 6, 8, 10, 12],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(1985, 1, 1, 0, 0, 0),
+                    datetime(1985, 1, 1, 0, 0, 1),
+                    datetime(1985, 1, 1, 0, 0, 2),
+                    datetime(1985, 1, 1, 0, 0, 3),
+                    datetime(1985, 1, 1, 0, 0, 4),
+                    datetime(1985, 1, 1, 0, 0, 5),
+                ],
+                "Data 1": [2.0, 4.0, 6.0, 8.0, 10.0, 12.0],
+                "Data 2": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
+            },
+        )
+        result_object = Result(lf=existing_data, metadata={})
+        result_object.add_data(
+            new_data,
+            time_column_name="DateTime",
+            timezone="UTC",
+        )
+        expected_data = pl.DataFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(6)]),
+                "Data": [2, 4, 6, 8, 10, 12],
+                "Data 1": [2.0, 4.0, 6.0, 8.0, 10.0, 12.0],
+                "Data 2": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
+            },
+        )
+        pl_testing.assert_frame_equal(
+            result_object.data,
+            expected_data,
+            check_column_order=False,
+        )
+
+    def test_add_data_with_format(self):
+        """Test add_data with datetime format string."""
+        base_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Value": [1]}
+        )
+
+        new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
+
+        result = Result(lf=existing_data, metadata={})
         result.add_data(
-            new_df, date_column_name="DateNew", align_on=("Signal", "NonExistent")
+            new_data,
+            time_column_name="DateStr",
+            datetime_format="%Y/%m/%d %H:%M:%S",
+            timezone="UTC",
+        )
+
+        schema = result.lf.collect_schema()
+        assert schema["Unix Time / s"] == pl.Float64
+
+        data = result.data
+        assert "Ext" in data.columns
+        assert data["Ext"][0] == 10
+
+
+class TestAddDataTimezoneHandling:
+    """Test timezone handling with time difference verification."""
+
+    def test_add_data_timezone_handling(self):
+        """Test timezone handling in add_data."""
+        base_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC).timestamp()
+
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Value": [1]}
+        )
+
+        new_data = pl.LazyFrame(
+            {
+                "DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)],
+                "Ext": [10],
+            }
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(new_data, time_column_name="DateUTC", timezone="UTC")
+
+        schema = result.lf.collect_schema()
+        assert schema["Unix Time / s"] == pl.Float64
+        assert "Ext" in schema
+
+    def test_add_data_timezone_difference_utc_vs_london(self):
+        """Test time difference calculation between UTC and Europe/London."""
+        # June 21, 2023: London is in BST (UTC+1)
+        base_time_utc = datetime(2023, 6, 21, 12, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time_utc]), "Value": [1]}
+        )
+
+        # Same wall clock time interpreted as London time
+        new_data_london = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2023, 6, 21, 12, 0, 0)],
+                "Data": [10],
+            }
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data_london,
+            time_column_name="DateTime",
+            timezone="Europe/London",
+            join_strategy="keep_both",
+        )
+
+        data = result.data
+        unix_times = data["Unix Time / s"].to_numpy()
+
+        # Verify time offset is correctly applied (3600 seconds in this direction)
+        time_diff = unix_times[1] - unix_times[0]
+        assert time_diff == pytest.approx(3600, abs=1)
+
+    def test_add_data_timezone_difference_utc_vs_newyork(self):
+        """Test time difference calculation between UTC and America/New_York."""
+        # June 21, 2023: New York is in EDT (UTC-4)
+        base_time_utc = datetime(2023, 6, 21, 12, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time_utc]), "Value": [1]}
+        )
+
+        # Same wall clock time interpreted as New York time
+        new_data_newyork = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2023, 6, 21, 12, 0, 0)],
+                "Data": [10],
+            }
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data_newyork,
+            time_column_name="DateTime",
+            timezone="America/New_York",
+            join_strategy="keep_both",
+        )
+
+        data = result.data
+        unix_times = data["Unix Time / s"].to_numpy()
+
+        # Verify time offset is correctly applied
+        time_diff = unix_times[1] - unix_times[0]
+        assert abs(time_diff) == pytest.approx(4 * 3600, abs=1)
+
+    def test_add_data_timezone_difference_multiple_timezones(self):
+        """Test that times in different timezones are correctly aligned."""
+        # March 21, 2023: New York is in EST (UTC-5)
+        utc_time = datetime(2023, 3, 21, 12, 0, 0, tzinfo=UTC)
+        base_time_utc = utc_time.timestamp()
+
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time_utc]), "Value": [1]}
+        )
+
+        naive_time = datetime(2023, 3, 21, 12, 0, 0)
+
+        new_data = pl.LazyFrame({"DateTime": [naive_time], "Data": [10]})
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            timezone="America/New_York",
+            join_strategy="keep_both",
+        )
+
+        data = result.data
+        unix_times = data["Unix Time / s"].to_numpy()
+
+        # Verify timezone handling produces a significant time difference
+        time_diff = unix_times[1] - unix_times[0]
+        assert abs(time_diff) == pytest.approx(4 * 3600, abs=1)
+
+    def test_add_data_timezone_difference_with_data_joining(self):
+        """Test that timezone conversion is applied correctly during data joining."""
+        utc_noon = datetime(2023, 6, 21, 12, 0, 0, tzinfo=UTC).timestamp()
+        utc_1pm = datetime(2023, 6, 21, 13, 0, 0, tzinfo=UTC).timestamp()
+
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([utc_noon, utc_1pm]),
+                "Temperature_UTC": [20.0, 21.0],
+            }
+        )
+
+        # London BST is UTC+1, so 13:00 BST = 12:00 UTC and 14:00 BST = 13:00 UTC
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2023, 6, 21, 13, 0, 0),  # 13:00 BST = 12:00 UTC
+                    datetime(2023, 6, 21, 14, 0, 0),  # 14:00 BST = 13:00 UTC
+                ],
+                "Temperature_London": [20.0, 21.0],
+            }
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            timezone="Europe/London",
+            join_strategy="keep_existing",
+            fill_strategy=None,
+        )
+
+        data = result.data
+        london_col = data["Temperature_London"]
+        assert london_col[0] == 20.0
+        assert london_col[1] == 21.0
+
+    def test_add_data_invalid_timezone(self):
+        """Test add_data raises error for invalid timezone."""
+        base_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Value": [1]}
+        )
+        new_data = pl.LazyFrame(
+            {"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]}
+        )
+        result = Result(lf=existing_data, metadata={})
+
+        with pytest.raises(ValueError, match="Invalid timezone"):
+            result.add_data(
+                new_data,
+                time_column_name="DateNew",
+                timezone="Invalid/Timezone",
+            )
+
+    def test_tzlocal_returns_valid_timezone(self):
+        """Test that tzlocal returns a valid IANA timezone that can be used."""
+        local_tz = str(get_localzone())
+        zone = ZoneInfo(local_tz)
+        assert zone is not None
+
+        df = pl.DataFrame({"Date": [datetime(2023, 1, 1, 10, 0, 0)]})
+        df_with_tz = df.with_columns(pl.col("Date").dt.replace_time_zone(local_tz))
+        assert df_with_tz["Date"].dtype.time_zone == local_tz
+
+    def test_add_data_uses_local_timezone_when_not_specified(self):
+        """Test that add_data uses UTC timezone behavior when converting datetimes."""
+        base_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Value": [1]}
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)],
+                "Ext": [10],
+            }
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(new_data, time_column_name="DateUTC")
+
+        schema = result.lf.collect_schema()
+        assert schema["Unix Time / s"] == pl.Float64
+        data = result.data
+        assert len(data) > 0
+        assert "Ext" in data.columns
+
+
+class TestAddDataJoinStrategies:
+    """Test add_data with different join strategies."""
+
+    def test_add_data_join_strategy_keep_existing(self):
+        """Test add_data with join_strategy='keep_existing'."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(5)]),
+                "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0),
+                    datetime(2024, 1, 1, 0, 0, 2),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "Voltage": [3.6, 3.8, 4.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_existing",
+            fill_strategy="interpolate",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert len(data) == 5
+        assert "Temperature" in data.columns
+        assert "Voltage" in data.columns
+
+        assert data["Voltage"][0] == pytest.approx(3.6)
+        assert data["Voltage"][1] == pytest.approx(3.7)
+        assert data["Voltage"][2] == pytest.approx(3.8)
+        assert data["Voltage"][3] == pytest.approx(3.9)
+        assert data["Voltage"][4] == pytest.approx(4.0)
+
+    def test_add_data_join_strategy_keep_new(self):
+        """Test add_data with join_strategy='keep_new'."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i * 2 for i in range(3)]),
+                "Temperature": [20.0, 22.0, 24.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0),
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 2),
+                    datetime(2024, 1, 1, 0, 0, 3),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "Voltage": [3.6, 3.7, 3.8, 3.9, 4.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_new",
+            fill_strategy="interpolate",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert len(data) == 5
+        assert data["Temperature"][0] == 20.0
+        assert data["Temperature"][1] == 21.0
+        assert data["Temperature"][2] == 22.0
+        assert data["Temperature"][3] == 23.0
+        assert data["Temperature"][4] == 24.0
+
+    def test_add_data_join_strategy_keep_both(self):
+        """Test add_data with join_strategy='keep_both'."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(3)]),
+                "Temperature": [20.0, 21.0, 22.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0, 500000),
+                    datetime(2024, 1, 1, 0, 0, 1, 500000),
+                ],
+                "Voltage": [3.65, 3.85],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_both",
+            fill_strategy="interpolate",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert len(data) >= 3
+        assert "Temperature" in data.columns
+        assert "Voltage" in data.columns
+
+        assert data["Temperature"].null_count() < len(data)
+        assert data["Voltage"].null_count() < len(data)
+
+
+class TestAddDataFillStrategies:
+    """Test add_data with different fill strategies."""
+
+    def test_add_data_fill_strategy_forward_fill(self):
+        """Test add_data with fill_strategy='forward_fill'."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(6)]),
+                "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "Voltage": [3.7, 4.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_existing",
+            fill_strategy="forward_fill",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert data["Voltage"][0] is None
+        assert data["Voltage"][1] == 3.7
+        assert data["Voltage"][2] == 3.7
+        assert data["Voltage"][3] == 3.7
+        assert data["Voltage"][4] == 4.0
+        assert data["Voltage"][5] == 4.0
+
+    def test_add_data_fill_strategy_backward_fill(self):
+        """Test add_data with fill_strategy='backward_fill'."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(6)]),
+                "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "Voltage": [3.7, 4.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_existing",
+            fill_strategy="backward_fill",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert data["Voltage"][0] == 3.7
+        assert data["Voltage"][1] == 3.7
+        assert data["Voltage"][2] == 4.0
+        assert data["Voltage"][3] == 4.0
+        assert data["Voltage"][4] == 4.0
+        assert data["Voltage"][5] is None
+
+    def test_add_data_fill_strategy_none(self):
+        """Test add_data with fill_strategy=None."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(5)]),
+                "Temperature": [20.0, 21.0, 22.0, 23.0, 24.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0),
+                    datetime(2024, 1, 1, 0, 0, 2),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "Voltage": [3.6, 3.8, 4.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_existing",
+            fill_strategy=None,
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert data["Voltage"][0] == 3.6
+        assert data["Voltage"][1] is None
+        assert data["Voltage"][2] == 3.8
+        assert data["Voltage"][3] is None
+        assert data["Voltage"][4] == 4.0
+
+
+class TestAddDataValidation:
+    """Test add_data validation and error handling."""
+
+    def test_add_data_invalid_join_strategy_raises(self):
+        """Test add_data with an invalid join strategy."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time]),
+                "Temperature": [20.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+                "Voltage": [3.7],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"^Unsupported join_strategy: 'bad_strategy'\. "
+                r"Expected one of: 'keep_existing', 'keep_new', 'keep_both'\.$"
+            ),
+        ):
+            result.add_data(
+                new_data,
+                time_column_name="DateTime",
+                join_strategy="bad_strategy",
+                timezone="UTC",
+            )
+
+    def test_add_data_invalid_fill_strategy_raises(self):
+        """Test add_data with an invalid fill strategy."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time]),
+                "Temperature": [20.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+                "Voltage": [3.7],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"^Unsupported fill_strategy: 'bad_strategy'\. "
+                r"Valid options are None, 'interpolate', 'forward_fill', "
+                r"'backward_fill'\.$"
+            ),
+        ):
+            result.add_data(
+                new_data,
+                time_column_name="DateTime",
+                fill_strategy="bad_strategy",
+                timezone="UTC",
+            )
+
+
+class TestAddDataComplexScenarios:
+    """Test add_data with complex scenarios."""
+
+    def test_add_data_combined_strategies(self):
+        """Test add_data with combined join and fill strategies."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i * 2 for i in range(3)]),
+                "Temperature": [20.0, 22.0, 24.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 3),
+                    datetime(2024, 1, 1, 0, 0, 5),
+                ],
+                "Voltage": [3.7, 3.9, 4.1],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy="keep_both",
+            fill_strategy="forward_fill",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert len(data) == 6
+
+    @pytest.mark.parametrize(
+        (
+            "join_strategy",
+            "fill_strategy",
+            "expected_length",
+            "check_column",
+            "check_second",
+            "expected_value",
+        ),
+        [
+            ("keep_existing", "interpolate", 3, "Voltage", 2, 3.8),
+            ("keep_existing", "forward_fill", 3, "Voltage", 2, 3.7),
+            ("keep_existing", "backward_fill", 3, "Voltage", 2, 3.9),
+            ("keep_existing", None, 3, "Voltage", 2, None),
+            ("keep_new", "interpolate", 3, "Temperature", 3, 23.0),
+            ("keep_new", "forward_fill", 3, "Temperature", 3, 22.0),
+            ("keep_new", "backward_fill", 3, "Temperature", 3, 24.0),
+            ("keep_new", None, 3, "Temperature", 3, None),
+            ("keep_both", "interpolate", 6, "Voltage", 2, 3.8),
+            ("keep_both", "forward_fill", 6, "Voltage", 2, 3.7),
+            ("keep_both", "backward_fill", 6, "Voltage", 2, 3.9),
+            ("keep_both", None, 6, "Voltage", 2, None),
+        ],
+    )
+    def test_add_data_all_join_fill_strategy_combinations(
+        self,
+        join_strategy,
+        fill_strategy,
+        expected_length,
+        check_column,
+        check_second,
+        expected_value,
+    ):
+        """Test all join_strategy x fill_strategy combinations for add_data."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time, base_time + 2, base_time + 4]),
+                "Temperature": [20.0, 22.0, 24.0],
+            },
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 3),
+                    datetime(2024, 1, 1, 0, 0, 5),
+                ],
+                "Voltage": [3.7, 3.9, 4.1],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            join_strategy=join_strategy,
+            fill_strategy=fill_strategy,
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert len(data) == expected_length
+
+        check_time = base_time + check_second
+        row = data.filter(
+            (pl.col("Unix Time / s") >= check_time - 0.1)
+            & (pl.col("Unix Time / s") <= check_time + 0.1)
+        )
+        assert len(row) >= 1
+        actual_value = row[check_column][0]
+        if expected_value is None:
+            assert actual_value is None or np.isnan(actual_value)
+        else:
+            assert actual_value == pytest.approx(expected_value, abs=0.2)
+
+
+class TestAddDataColumnMapping:
+    """Test add_data with column mapping."""
+
+    def test_add_data_with_column_map(self):
+        """Test add_data with column_map parameter."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(5)]),
+                "Voltage / V": [3.6, 3.7, 3.8, 3.9, 4.0],
+            },
+        )
+
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0),
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 2),
+                    datetime(2024, 1, 1, 0, 0, 3),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "RawCurrent": [0.1, 0.2, 0.3, 0.4, 0.5],
+                "RawTemperature": [20.0, 20.5, 21.0, 21.5, 22.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            column_map={
+                "Current / A": "RawCurrent",
+                "Temperature / degC": "RawTemperature",
+            },
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert "Current / A" in data.columns
+        assert "Temperature / degC" in data.columns
+        assert "RawCurrent" not in data.columns
+        assert "RawTemperature" not in data.columns
+
+        assert data["Current / A"][0] == 0.1
+        assert data["Temperature / degC"][0] == 20.0
+
+    def test_add_data_with_column_map_interpolation(self):
+        """Test add_data with column_map combined with interpolation."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(6)]),
+                "Voltage / V": [3.6, 3.7, 3.8, 3.9, 4.0, 4.1],
+            },
+        )
+
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0),
+                    datetime(2024, 1, 1, 0, 0, 2),
+                    datetime(2024, 1, 1, 0, 0, 4),
+                ],
+                "SensorValue": [20.0, 22.0, 24.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            column_map={"Temperature / degC": "SensorValue"},
+            join_strategy="keep_existing",
+            fill_strategy="interpolate",
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert "Temperature / degC" in data.columns
+        assert len(data) == 6
+
+        temp = data["Temperature / degC"]
+        assert temp[0] == 20.0
+        assert temp[1] == pytest.approx(21.0)
+        assert temp[2] == 22.0
+        assert temp[3] == pytest.approx(23.0)
+        assert temp[4] == 24.0
+        assert temp[5] is None
+
+    def test_add_data_with_multiple_column_maps(self):
+        """Test add_data with multiple column mappings."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {
+                "Unix Time / s": np.array([base_time + i for i in range(3)]),
+                "Voltage / V": [3.6, 3.8, 4.0],
+            },
+        )
+
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [
+                    datetime(2024, 1, 1, 0, 0, 0),
+                    datetime(2024, 1, 1, 0, 0, 1),
+                    datetime(2024, 1, 1, 0, 0, 2),
+                ],
+                "I": [0.1, 0.2, 0.3],
+                "T": [20.0, 21.0, 22.0],
+                "P": [100.0, 101.0, 102.0],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata={})
+        result.add_data(
+            new_data,
+            time_column_name="DateTime",
+            column_map={
+                "Current / A": "I",
+                "Temperature / degC": "T",
+                "Pressure / Pa": "P",
+            },
+            timezone="UTC",
+        )
+
+        data = result.data
+        assert "Current / A" in data.columns
+        assert "Temperature / degC" in data.columns
+        assert "Pressure / Pa" in data.columns
+        assert "I" not in data.columns
+        assert "T" not in data.columns
+        assert "P" not in data.columns
+
+
+class TestAddDataAlignment:
+    """Test add_data with alignment parameters."""
+
+    def test_add_data_with_alignment(self):
+        """Test add_data with the align_on parameter."""
+        base_df = pl.DataFrame(
+            {
+                "Unix Time / s": [0.0, 1.0, 2.0],
+                "Value [V]": [1.0, 2.0, 3.0],
+            }
+        )
+
+        new_df = pl.DataFrame(
+            {
+                "Time [s]": [
+                    datetime(1970, 1, 1, 0, 0, 0, 500000),
+                    datetime(1970, 1, 1, 0, 0, 1, 500000),
+                    datetime(1970, 1, 1, 0, 0, 2, 500000),
+                ],
+                "Other [A]": [1.5, 2.5, 3.5],
+            }
+        )
+
+        result = Result(lf=base_df.lazy(), metadata={})
+
+        result.add_data(
+            new_df,
+            time_column_name="Time [s]",
+            timezone="UTC",
+        )
+
+        combined_df = result.data
+
+        assert "Other [A]" in combined_df.columns
+        assert len(combined_df) > 0
+
+    def test_add_data_with_alignment_error(self):
+        """Test add_data with invalid align_on columns."""
+        base_df = pl.DataFrame(
+            {
+                "Test Time [s]": [0.0],
+                "Value [V]": [1.0],
+            }
+        )
+        new_df = pl.DataFrame(
+            {
+                "Time [s]": [0.0],
+                "Other [A]": [1.0],
+            }
+        )
+        result = Result(lf=base_df.lazy(), metadata={})
+
+        with pytest.raises(ValueError):
+            result.add_data(
+                new_df,
+                time_column_name="Time [s]",
+                align_on=("NonExistent [V]", "Other [A]"),
+                timezone="UTC",
+            )
+
+        with pytest.raises(ValueError):
+            result.add_data(
+                new_df,
+                time_column_name="Time [s]",
+                align_on=("Value [V]", "NonExistent [A]"),
+                timezone="UTC",
+            )
+
+
+class TestResultFrameOperations:
+    """Test Result frame operations like join, extend, combine."""
+
+    def test_verify_compatible_frames(self):
+        """Test the _verify_compatible_frames method."""
+        df1 = pl.DataFrame({"a": [1, 2, 3]})
+        df2 = pl.DataFrame({"b": [4, 5, 6]})
+        lazy_df1 = df1.lazy()
+        lazy_df2 = df2.lazy()
+
+        result1, result2 = Result._verify_compatible_frames(df1, [df2])
+        assert isinstance(result1, pl.DataFrame)
+        assert isinstance(result2[0], pl.DataFrame)
+
+        result1, result2 = Result._verify_compatible_frames(df1, [lazy_df2])
+        assert isinstance(result1, pl.DataFrame)
+        assert isinstance(result2[0], pl.DataFrame)
+
+        result1, result2 = Result._verify_compatible_frames(lazy_df1, [df2])
+        assert isinstance(result1, pl.DataFrame)
+        assert isinstance(result2[0], pl.DataFrame)
+
+        result1, result2 = Result._verify_compatible_frames(
+            lazy_df1,
+            [lazy_df2],
+            mode="collect all",
+        )
+        assert isinstance(result1, pl.LazyFrame)
+        assert isinstance(result2[0], pl.LazyFrame)
+
+        result1, result2 = Result._verify_compatible_frames(
+            lazy_df1, [df2], mode="match 1"
+        )
+        assert isinstance(result1, pl.LazyFrame)
+        assert isinstance(result2[0], pl.LazyFrame)
+
+        result1, result2 = Result._verify_compatible_frames(
+            df1, [lazy_df2], mode="match 1"
+        )
+        assert isinstance(result1, pl.DataFrame)
+        assert isinstance(result2[0], pl.DataFrame)
+
+        result1, result2 = Result._verify_compatible_frames(df1, [df2, lazy_df2])
+        assert isinstance(result1, pl.DataFrame)
+        assert isinstance(result2[0], pl.DataFrame)
+        assert isinstance(result2[1], pl.DataFrame)
+
+        result1, result2 = Result._verify_compatible_frames(
+            lazy_df1,
+            [df2, lazy_df2],
+            mode="match 1",
+        )
+        assert isinstance(result1, pl.LazyFrame)
+        assert isinstance(result2[0], pl.LazyFrame)
+        assert isinstance(result2[1], pl.LazyFrame)
+
+    def test_join_left(self, reduced_result_fixture):
+        """Test the join method with left join."""
+        other_data = pl.DataFrame(
+            {
+                "Current [A]": [1, 2, 3],
+                "Capacity [Ah]": [4, 5, 6],
+            },
+        )
+        other_result = Result(
+            lf=other_data.lazy(),
+            metadata={"test": "metadata"},
+            column_definitions={"Voltage": "Voltage definition"},
+        )
+        reduced_result_fixture.join(other_result, on="Current [A]", how="left")
+        expected_data = pl.DataFrame(
+            {
+                "Current [A]": [1, 2, 3],
+                "Voltage [V]": [1, 2, 3],
+                "Capacity [Ah]": [4, 5, 6],
+            },
+        )
+        pl_testing.assert_frame_equal(
+            reduced_result_fixture.data,
+            expected_data,
+            check_column_order=False,
+        )
+        assert (
+            reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
+        )
+
+    def test_extend(self, reduced_result_fixture):
+        """Test the extend method."""
+        other_data = pl.DataFrame(
+            {
+                "Current [A]": [4, 5, 6],
+                "Voltage [V]": [4, 5, 6],
+            },
+        )
+        other_result = Result(
+            lf=other_data.lazy(),
+            metadata={"test": "metadata"},
+            column_definitions={"Voltage": "Voltage definition"},
+        )
+        reduced_result_fixture.extend(other_result)
+        expected_data = pl.DataFrame(
+            {
+                "Current [A]": [1, 2, 3, 4, 5, 6],
+                "Voltage [V]": [1, 2, 3, 4, 5, 6],
+            },
+        )
+        pl_testing.assert_frame_equal(
+            reduced_result_fixture.data,
+            expected_data,
+            check_column_order=False,
+        )
+        assert (
+            reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
+        )
+
+    def test_extend_with_new_columns(self, reduced_result_fixture):
+        """Test the extend method with new columns."""
+        other_data = pl.DataFrame(
+            {
+                "Current [A]": [4, 5, 6],
+                "Voltage [V]": [4, 5, 6],
+                "Capacity [Ah]": [8, 9, 10],
+            },
+        )
+        other_result = Result(
+            lf=other_data.lazy(),
+            metadata={"test": "metadata"},
+            column_definitions={
+                "Voltage": "New voltage definition",
+                "Capacity": "Capacity definition",
+                "Current": "Current definition",
+            },
+        )
+        reduced_result_fixture.extend(other_result)
+        expected_data = pl.DataFrame(
+            {
+                "Current [A]": [1, 2, 3, 4, 5, 6],
+                "Voltage [V]": [1, 2, 3, 4, 5, 6],
+                "Capacity [Ah]": [None, None, None, 8, 9, 10],
+            },
+        )
+        pl_testing.assert_frame_equal(
+            reduced_result_fixture.data,
+            expected_data,
+            check_column_order=False,
+        )
+        assert (
+            reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
+        )
+        assert (
+            reduced_result_fixture.column_definitions["Capacity"]
+            == "Capacity definition"
+        )
+        assert (
+            reduced_result_fixture.column_definitions["Current"] == "Current definition"
+        )
+
+    def test_combine_results(self):
+        """Test the combine results method."""
+        result1 = Result(
+            lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).lazy(),
+            metadata={"test index": 1.0},
+        )
+        result2 = Result(
+            lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}).lazy(),
+            metadata={"test index": 2.0},
+        )
+        combined_result = combine_results([result1, result2])
+        expected_data = pl.DataFrame(
+            {
+                "a": [1, 2, 3, 7, 8, 9],
+                "b": [4, 5, 6, 10, 11, 12],
+                "test index": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
+            },
+        )
+        pl_testing.assert_frame_equal(
+            combined_result.data,
+            expected_data,
+            check_column_order=False,
         )
 
 
-def test_base_dataframe_deprecated_property(Result_fixture, caplog):
-    """Test that base_dataframe property is deprecated."""
-    import logging
+class TestResultCleanCopy:
+    """Test Result.clean_copy method."""
 
-    with caplog.at_level(logging.WARNING):
-        _ = Result_fixture.base_dataframe
-    assert "base_dataframe" in caplog.text
-    assert "deprecated" in caplog.text
+    def test_clean_copy(self, reduced_result_fixture):
+        """Test the clean_copy method."""
+        clean_result = reduced_result_fixture.clean_copy()
+        assert isinstance(clean_result, Result)
+        assert clean_result.lf.collect().is_empty()
+        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert clean_result.column_definitions == {}
+
+        new_df = pl.DataFrame({"Test [V]": [1, 2, 3]})
+        clean_result = reduced_result_fixture.clean_copy(dataframe=new_df)
+        assert isinstance(clean_result, Result)
+        pl_testing.assert_frame_equal(clean_result.data, new_df)
+        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert clean_result.column_definitions == {}
+
+        new_defs = {"New Column [A]": "New definition"}
+        clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
+        assert isinstance(clean_result, Result)
+        assert clean_result.lf.collect().is_empty()
+        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert clean_result.column_definitions == new_defs
+
+        clean_result = reduced_result_fixture.clean_copy(
+            dataframe=new_df,
+            column_definitions=new_defs,
+        )
+        assert isinstance(clean_result, Result)
+        pl_testing.assert_frame_equal(clean_result.data, new_df)
+        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert clean_result.column_definitions == new_defs
+
+        lazy_df = new_df.lazy()
+        clean_result = reduced_result_fixture.clean_copy(dataframe=lazy_df)
+        assert isinstance(clean_result, Result)
+        assert isinstance(clean_result.lf, pl.LazyFrame)
+        pl_testing.assert_frame_equal(clean_result.data, new_df)
 
 
-def test_base_dataframe_setter_deprecated(Result_fixture, caplog):
-    """Test that base_dataframe setter is deprecated."""
-    import logging
+class TestResultExport:
+    """Test Result export methods."""
 
-    new_lf = pl.LazyFrame({"a": [1, 2, 3]})
-    with caplog.at_level(logging.WARNING):
-        Result_fixture.base_dataframe = new_lf
-    assert "base_dataframe" in caplog.text
-    assert "deprecated" in caplog.text
+    def test_export_to_mat(self, Result_fixture, tmp_path):
+        """Test the export to mat function."""
+        mat_path = tmp_path / "test_mat.mat"
+        Result_fixture.export_to_mat(str(mat_path))
+        saved_data = loadmat(str(mat_path))
+        assert "data" in saved_data
+        assert "metadata" in saved_data
+        expected_columns = {
+            "Current___A",
+            "Voltage___V",
+            "Test_Time___s",
+            "Net_Capacity___Ah",
+            "Step_Count___1",
+            "Step_Index___1",
+            "Unix_Time___s",
+        }
+        actual_columns = set(saved_data["data"].dtype.names)
+        assert actual_columns == expected_columns
 
 
-def test_live_dataframe_deprecated_property(Result_fixture, caplog):
-    """Test that live_dataframe property is deprecated."""
-    import logging
+class TestResultPolarsIO:
+    """Test Result Polars I/O methods."""
 
-    with caplog.at_level(logging.WARNING):
-        _ = Result_fixture.live_dataframe
-    assert "live_dataframe" in caplog.text
-    assert "deprecated" in caplog.text
+    def test_from_polars_io(self, tmp_path):
+        """Test the from_polars_io method."""
+        test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+        csv_path = tmp_path / "test_data.csv"
+        test_df.write_csv(csv_path)
+
+        result = Result.from_polars_io(
+            metadata={"test": "metadata"},
+            column_definitions={"a": "Column A"},
+            polars_io_func=pl.read_csv,
+            source=str(csv_path),
+        )
+        assert isinstance(result, Result)
+        assert result.metadata == {"test": "metadata"}
+        assert result.column_definitions == {"a": "Column A"}
+        pl_testing.assert_frame_equal(result.data, test_df)
+
+        result_lazy = Result.from_polars_io(
+            metadata={"test": "lazy"},
+            column_definitions={},
+            polars_io_func=pl.scan_csv,
+            source=str(csv_path),
+        )
+        assert isinstance(result_lazy, Result)
+        assert isinstance(result_lazy.lf, pl.LazyFrame)
+
+        result_with_kwargs = Result.from_polars_io(
+            metadata={"test": "kwargs"},
+            column_definitions={"a": "Column A with kwargs"},
+            polars_io_func=pl.read_csv,
+            source=str(csv_path),
+            has_header=True,
+            skip_rows=0,
+        )
+        assert isinstance(result_with_kwargs, Result)
+        pl_testing.assert_frame_equal(result_with_kwargs.data, test_df)
+
+    @pytest.mark.parametrize(
+        "io_function,expected_type",
+        [
+            (pl.read_csv, pl.DataFrame),
+            (pl.scan_csv, pl.LazyFrame),
+            (pl.read_parquet, pl.DataFrame),
+            (pl.scan_parquet, pl.LazyFrame),
+        ],
+    )
+    def test_from_polars_io_different_formats(
+        self, io_function, expected_type, tmp_path
+    ):
+        """Test from_polars_io with different polars I/O functions."""
+        test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+        if "csv" in io_function.__name__:
+            test_file = tmp_path / "test.csv"
+            test_df.write_csv(test_file)
+        else:
+            test_file = tmp_path / "test.parquet"
+            test_df.write_parquet(test_file)
+
+        metadata = {"source": io_function.__name__}
+
+        result = Result.from_polars_io(
+            polars_io_func=io_function,
+            source=test_file,
+            metadata=metadata,
+            column_definitions={},
+        )
+
+        assert isinstance(result, Result)
+        assert isinstance(result.lf, pl.LazyFrame)
+        assert result.metadata == metadata
+        pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+    def test_from_polars_io_python_object(self):
+        """Test from_polars_io with a Python object."""
+        test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+        metadata = {"source": "python_object"}
+
+        result = Result.from_polars_io(
+            polars_io_func=pl.from_pandas,
+            data=test_df.to_pandas(),
+            metadata=metadata,
+            column_definitions={},
+        )
+
+        assert isinstance(result, Result)
+        assert isinstance(result.lf, pl.LazyFrame)
+        assert result.metadata == metadata
+        pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
+
+        result = Result.from_polars_io(
+            polars_io_func=pl.from_numpy,
+            schema=["a", "b"],
+            data=test_df.to_numpy(),
+            metadata=metadata,
+            column_definitions={},
+        )
+
+        assert isinstance(result, Result)
+        assert isinstance(result.lf, pl.LazyFrame)
+        assert result.metadata == metadata
+        pl_testing.assert_frame_equal(result.data, test_df, check_column_order=False)
 
 
-def test_live_dataframe_setter_deprecated(Result_fixture, caplog):
-    """Test that live_dataframe setter is deprecated."""
-    import logging
+class TestDeprecatedProperties:
+    """Test deprecated Result properties."""
 
-    new_lf = pl.LazyFrame({"a": [1, 2, 3]})
-    with caplog.at_level(logging.WARNING):
-        Result_fixture.live_dataframe = new_lf
-    assert "live_dataframe" in caplog.text
-    assert "deprecated" in caplog.text
+    def test_base_dataframe_deprecated_property(self, Result_fixture, caplog):
+        """Test that base_dataframe property is deprecated."""
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            _ = Result_fixture.base_dataframe
+        assert "base_dataframe" in caplog.text
+        assert "deprecated" in caplog.text
+
+    def test_base_dataframe_setter_deprecated(self, Result_fixture, caplog):
+        """Test that base_dataframe setter is deprecated."""
+        import logging
+
+        new_lf = pl.LazyFrame({"a": [1, 2, 3]})
+        with caplog.at_level(logging.WARNING):
+            Result_fixture.base_dataframe = new_lf
+        assert "base_dataframe" in caplog.text
+        assert "deprecated" in caplog.text
+
+    def test_live_dataframe_deprecated_property(self, Result_fixture, caplog):
+        """Test that live_dataframe property is deprecated."""
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            _ = Result_fixture.live_dataframe
+        assert "live_dataframe" in caplog.text
+        assert "deprecated" in caplog.text
+
+    def test_live_dataframe_setter_deprecated(self, Result_fixture, caplog):
+        """Test that live_dataframe setter is deprecated."""
+        import logging
+
+        new_lf = pl.LazyFrame({"a": [1, 2, 3]})
+        with caplog.at_level(logging.WARNING):
+            Result_fixture.live_dataframe = new_lf
+        assert "live_dataframe" in caplog.text
+        assert "deprecated" in caplog.text

@@ -7,7 +7,6 @@ from collections.abc import Callable
 from functools import wraps
 from pprint import pprint
 from typing import Any, Literal, Union
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import numpy as np
 import pandas as pd
@@ -15,13 +14,10 @@ import polars as pl
 from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
-from pydantic import BaseModel, Field, field_validator, model_validator
 from scipy.io import savemat
-from tzlocal import get_localzone
 
-from pyprobe.plot import _retrieve_relevant_columns
-from pyprobe.units import get_unit_scaling, split_quantity_unit
-from pyprobe.utils import catch_pydantic_validation, deprecated
+from pyprobe.columns import Column, ColumnDict
+from pyprobe.utils import catch_pydantic_validation, deprecated, validate_timezone
 
 try:
     import hvplot.polars  # noqa: F401
@@ -31,28 +27,7 @@ except ImportError:
     hvplot_exists = False
 
 
-def _validate_timezone(timezone: str) -> str:
-    """Validate that a timezone string is a valid IANA timezone.
-
-    Args:
-        timezone: The timezone string to validate.
-
-    Returns:
-        The validated timezone string.
-
-    Raises:
-        ValueError: If the timezone string is not valid.
-    """
-    try:
-        ZoneInfo(timezone)
-        return timezone
-    except ZoneInfoNotFoundError as e:
-        error_msg = f"Invalid timezone: '{timezone}'. Must be a valid IANA timezone."
-        logger.error(error_msg)
-        raise ValueError(error_msg) from e
-
-
-class Result(BaseModel):
+class Result:
     """A class for holding any data in PyProBE.
 
     A Result object is the base type for every data object in PyProBE. This class
@@ -63,54 +38,52 @@ class Result(BaseModel):
         - :meth:`get`: Get a column from the data as a NumPy array.
 
     Key attributes for describing the data:
-        - :attr:`info`: A dictionary containing information about the cell.
+        - :attr:`metadata`: A dictionary containing metadata about the cell and
+          data source.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
-        - :attr:`columns`: A list of column names.
+        - :attr:`columns`: A :class:`~pyprobe.columns.ColumnDict` object providing
+          column name access (via ``.names``) and BDF-aware resolution (via
+          ``.resolve()`` and ``.can_resolve()``).
     """
 
-    class Config:
-        """Pydantic configuration."""
+    def __init__(
+        self,
+        lf: pl.LazyFrame | pl.DataFrame | str,
+        metadata: dict[str, Any | None] = {},
+        column_definitions: dict[str, str] | None = None,
+    ) -> None:
+        """Create a Result with explicit constructor validation.
 
-        arbitrary_types_allowed = True
+        Args:
+            lf: A LazyFrame, DataFrame, or a path to a parquet file.
+            metadata: Dictionary containing metadata about the result.
+            column_definitions: Optional definitions for data columns.
 
-    lf: pl.LazyFrame
-    info: dict[str, Any | None]
-    """Dictionary containing information about the cell."""
-    column_definitions: dict[str, str] = Field(default_factory=dict)
-    """A dictionary containing the definitions of the columns in the data."""
+        Raises:
+            ValueError: If constructor inputs do not match expected types.
+        """
+        if isinstance(lf, str):
+            lf = pl.scan_parquet(lf)
+        if not isinstance(lf, pl.LazyFrame):
+            if isinstance(lf, pl.DataFrame):
+                lf = lf.lazy()
+            elif isinstance(lf, str):
+                lf = pl.scan_parquet(lf)
+            else:
+                raise ValueError(
+                    "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
+                )
+        if not isinstance(metadata, dict):
+            raise ValueError("metadata must be a dictionary.")
+        if column_definitions is None:
+            column_definitions = {}
+        elif not isinstance(column_definitions, dict):
+            raise ValueError("column_definitions must be a dictionary.")
 
-    @model_validator(mode="before")
-    @classmethod
-    def _load_base_dataframe(cls, data: Any) -> Any:
-        """Load the base dataframe from a file if provided as a string."""
-        if "base_dataframe" in data:
-            data["lf"] = data.pop("base_dataframe")
-            warning_msg = "'base_dataframe' is deprecated. Please use 'lf' instead."
-            logger.warning(
-                warning_msg,
-            )
-            warnings.warn(
-                warning_msg,
-                DeprecationWarning,
-            )
-        return data
-
-    @field_validator("lf", mode="before")
-    @classmethod
-    def _validate_lf(cls, data: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
-        """Validate that the base dataframe is a LazyFrame."""
-        if isinstance(data, pl.DataFrame):
-            data = data.lazy()
-        return data
-
-    @model_validator(mode="before")
-    @classmethod
-    def _load_lf(cls, data: Any) -> Any:
-        """Load the base dataframe from a file if provided as a string."""
-        if "lf" in data and isinstance(data["lf"], str):
-            data["lf"] = pl.scan_parquet(data["lf"])
-        return data
+        self.lf: pl.LazyFrame = lf
+        self.metadata = metadata
+        self.column_definitions = column_definitions.copy()
 
     def collect(self) -> pl.DataFrame:
         """Collect the lazy dataframe into a polars DataFrame.
@@ -127,41 +100,41 @@ class Result(BaseModel):
         return lf
 
     @property
-    def columns(self) -> list[str]:
-        """The columns in the data.
+    def columns(self) -> ColumnDict:
+        """The columns in the data as a ColumnDict.
+
+        Returns a :class:`~pyprobe.columns.ColumnDict` object that provides
+        both simple column name access and BDF-aware resolution:
+
+        - :attr:`~pyprobe.columns.ColumnDict.names`: tuple of column name strings.
+        - :attr:`~pyprobe.columns.ColumnDict.quantities`: tuple of quantity strings.
+        - :meth:`~pyprobe.columns.ColumnDict.resolve`: resolve a column by name
+          or quantity, with optional unit conversion.
+        - :meth:`~pyprobe.columns.ColumnDict.can_resolve`: check if a column
+          or BDF quantity is available.
 
         Returns:
-            List[str]: The columns in the data.
+            ColumnDict: A column introspection and resolution object.
+
+        Examples:
+            >>> import polars as pl
+            >>> from pyprobe.result import Result
+            >>> r = Result(lf=pl.LazyFrame({"Current / A": [1.0]}))
+            >>> r.columns.names
+            ('Current / A',)
+            >>> r.columns.quantities
+            ('Current',)
         """
-        return self.lf.collect_schema().names()
-
-    @staticmethod
-    def _get_quantities(columns: list[str]) -> list[str]:
-        """The quantities of the data, with unit information removed.
-
-        Args:
-            columns (List[str]): The columns to get the quantities of.
-
-        Returns:
-            List[str]: The quantities of the data.
-        """
-        _quantities: set[str] = set()
-        for _, column in enumerate(columns):
-            try:
-                quantity, _ = split_quantity_unit(column)
-                _quantities.add(quantity)
-            except ValueError:
-                continue
-        return list(_quantities)
+        return ColumnDict(self.lf.collect_schema().names())
 
     @property
-    def quantities(self) -> list[str]:
-        """The quantities of the data, with unit information removed.
+    def info(self) -> dict[str, Any | None]:
+        """Backward compatibility alias for metadata.
 
         Returns:
-            List[str]: The quantities of the data.
+            dict: The metadata dictionary.
         """
-        return self._get_quantities(self.columns)
+        return self.metadata
 
     @property
     def df(self) -> pl.DataFrame:
@@ -181,36 +154,6 @@ class Result(BaseModel):
         """
         self.lf = dataframe.lazy()
 
-    def check_columns(self, columns: list[str]) -> None:
-        """Check whether a column exists in the data.
-
-        Convert units if selected quantity exists in data with different unit.
-
-        Args:
-            columns (List[str]): The columns to check.
-
-        Raises:
-            ValueError: If a column does not exist in the data.
-        """
-        missing_columns = set(columns) - set(self.columns)
-        if missing_columns:
-            logger.info("Missing columns: {}", missing_columns)
-            # check if missing columns can be converted from existing quantities
-            quantities = set(self._get_quantities(list(missing_columns)))
-            missing_quantities = set(quantities) - set(self.quantities)
-            if missing_quantities:
-                raise ValueError(f"Quantities {missing_quantities} not in data.")
-            # convert missing columns to requested units
-            for col in missing_columns:
-                quantity, unit = split_quantity_unit(col)
-                if unit == "":
-                    continue
-                _, base_unit = get_unit_scaling(unit)
-                self.lf = self.lf.with_columns(
-                    (pl.col(f"{quantity} [{base_unit}]").units.to_unit(unit)),
-                )
-                logger.info(f"Converted column {col} from {base_unit} to {unit}.")
-
     @property
     def data(self) -> pl.DataFrame:
         """Return the data as a polars DataFrame.
@@ -229,7 +172,7 @@ class Result(BaseModel):
     @wraps(pd.DataFrame.plot)
     def plot(self, *args: Any, **kwargs: Any) -> Axes | NDArray[Axes]:
         """Wrapper for plotting using the pandas library."""
-        data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
+        data_to_plot = self.get_plotting_data(args, kwargs)
         return data_to_plot.to_pandas().plot(*args, **kwargs)
 
     plot.__doc__ = """Plot the data using the pandas plot method.
@@ -251,7 +194,7 @@ class Result(BaseModel):
         @wraps(hvplot.hvPlot)
         def hvplot(self, *args: Any, **kwargs: Any) -> Any:
             """Wrapper for plotting using the hvplot library."""
-            data_to_plot = _retrieve_relevant_columns(self, args, kwargs)
+            data_to_plot = self.get_plotting_data(args, kwargs)
             return data_to_plot.hvplot(*args, **kwargs)
 
     else:
@@ -288,29 +231,31 @@ class Result(BaseModel):
         and examples.
         """
 
-    def __getitem__(self, *column_names: str) -> "Result":
+    def __getitem__(self, *column_names: str | Column) -> "Result":
         """Return a new result object with the specified columns.
 
         Args:
-            *column_names (str): The columns to include in the new result object.
+            *column_names (str | Column):
+                The columns to include in the new result object.
 
         Returns:
             Result: A new result object with the specified columns.
         """
-        self.check_columns(list(column_names))
+        col_set = self.columns
+        exprs = [col_set.resolve(name) for name in column_names]
         return Result(
-            lf=self.lf.select(*column_names),
-            info=self.info,
+            lf=self.lf.select(*exprs),
+            metadata=self.metadata,
         )
 
     def get(
         self,
-        *column_names: str,
+        *column_names: str | Column,
     ) -> NDArray[np.float64] | tuple[NDArray[np.float64], ...]:
         """Return one or more columns of the data as separate 1D numpy arrays.
 
         Args:
-            column_names (str): The column name(s) to return.
+            column_names (str | Column): The column name(s) to return.
 
         Returns:
             Union[NDArray[np.float64], Tuple[NDArray[np.float64], ...]]:
@@ -324,8 +269,9 @@ class Result(BaseModel):
             error_msg = "At least one column name must be provided."
             logger.error(error_msg)
             raise ValueError(error_msg)
-        self.check_columns(list(column_names))
-        array = self.lf.select(*column_names).collect().to_numpy()
+        col_set = self.columns
+        exprs = [col_set.resolve(name) for name in column_names]
+        array = self.lf.select(*exprs).collect().to_numpy()
         if len(column_names) == 1:
             return array.T[0]
         else:
@@ -335,11 +281,11 @@ class Result(BaseModel):
         reason="The get_only method is deprecated. Use the get method instead.",
         version="1.2.0",
     )
-    def get_only(self, column_name: str) -> NDArray[np.float64]:
+    def get_only(self, column_name: str | Column) -> NDArray[np.float64]:
         """Return a single column of the data as a numpy array.
 
         Args:
-            column_name (str): The column name to return.
+            column_name (str | Column): The column name to return.
 
         Returns:
             NDArray[np.float64]: The column as a numpy array.
@@ -354,6 +300,58 @@ class Result(BaseModel):
             logger.error(error_msg)
             raise ValueError(error_msg)
         return column
+
+    def get_plotting_data(
+        self,
+        args: tuple[Any, ...],
+        kwargs: dict[Any, Any],
+    ) -> pl.DataFrame:
+        """Extract and resolve columns for plotting from function arguments.
+
+        This method analyzes the arguments passed to a plotting function and
+        retrieves the used columns as a DataFrame. It extracts column names from
+        positional and keyword arguments, resolves them using the ColumnDict
+        (which handles unit conversions and BDF-aware resolution), and returns
+        a collected DataFrame suitable for passing to plotting libraries.
+
+        Args:
+            args: Positional arguments from the plotting function.
+            kwargs: Keyword arguments from the plotting function.
+
+        Returns:
+            pl.DataFrame: A collected DataFrame containing the requested columns.
+
+        Raises:
+            ValueError: If none of the requested columns are present in the data.
+
+        Examples:
+            >>> result = Result(lf=pl.LazyFrame({"Current / A": [1.0, 2.0]}))
+            >>> df = result.get_plotting_data(["Current / mA"], {})
+            >>> df.shape
+            (2, 1)
+        """
+        kwargs_values = [
+            v
+            for k, v in kwargs.items()
+            if isinstance(v, (str, Column)) and k != "label"
+        ]
+        args_values = [v for v in args if isinstance(v, (str, Column))]
+        all_args = set(kwargs_values + args_values)
+        relevant_columns = []
+        col_set = self.columns
+
+        for arg in all_args:
+            if col_set.can_resolve(arg):
+                relevant_columns.append(arg)
+
+        if len(relevant_columns) == 0:
+            raise ValueError(
+                f"None of the columns in {all_args} are present in the Result object.",
+            )
+
+        # Resolve columns using ColumnDict to handle unit conversions
+        exprs = [col_set.resolve(col) for col in relevant_columns]
+        return self.lf.select(*exprs).collect()
 
     def define_column(self, column_name: str, definition: str) -> None:
         """Define a new column when it is added to the dataframe.
@@ -392,7 +390,7 @@ class Result(BaseModel):
             column_definitions = {}
         return Result(
             lf=dataframe,
-            info=self.info,
+            metadata=self.metadata,
             column_definitions=column_definitions,
         )
 
@@ -460,11 +458,10 @@ class Result(BaseModel):
     def add_data(
         self,
         new_data: pl.DataFrame | pl.LazyFrame | str,
-        date_column_name: str,
+        time_column_name: str,
+        column_map: dict[str, str] | None = None,
         datetime_format: str | None = None,
-        importing_columns: list[str] | dict[str, str] | None = None,
-        existing_data_timezone: str | None = None,
-        new_data_timezone: str | None = None,
+        timezone: str = "UTC",
         align_on: tuple[str, str] | None = None,
         join_strategy: Literal[
             "keep_existing", "keep_new", "keep_both"
@@ -472,33 +469,35 @@ class Result(BaseModel):
         fill_strategy: Literal["interpolate", "forward_fill", "backward_fill"]
         | None = "interpolate",
     ) -> None:
-        """Add new data columns to the result object.
+        """Add new data columns to the result object using Unix Time as the join key.
 
-        The data must be time series data with a date column. The new data is joined to
-        the base dataframe on the date column. Choose which dates to keep with the join
-        strategy, and how to fill missing values with the fill strategy.
+        The data must be time series data with a time column. The new data is joined to
+        the base dataframe on the "Unix Time / s" column. Choose which dates to keep
+        with the join strategy, and how to fill missing values with the fill strategy.
 
         Args:
             new_data:
                 The new data to add to the result object. Can be a DataFrame, LazyFrame,
                 or a path to a file (CSV, Parquet, Excel).
-            date_column_name:
-                The name of the column in the new data containing the date.
+            time_column_name:
+                The name of the column in the new data containing the time. Can be a
+                datetime column (which will be auto-converted to UTC unix seconds), a
+                numeric column (assumed to be UTC unix seconds), or a string column
+                (which will be parsed then converted).
+            column_map:
+                Mapping from output names to source column names:
+                {output_name: source_name}.
+                Only the columns in this dict will be imported. If None, all columns
+                (except time_column_name) will be imported. Output names do not need to
+                follow "Quantity / unit" format.
             datetime_format:
-                The format string for parsing the date column if it is a string.
-                Defaults to None.
-            importing_columns:
-                The columns to import from the external file. If a list, the columns
-                will be imported as is. If a dict, the keys are the columns in the data
-                you want to import and the values are the columns you want to rename
-                them to. If None, all columns will be imported. Defaults to None.
-            existing_data_timezone:
-                The timezone of the existing data. If None, the timezone is inferred
-                from the local machine. Defaults to None.
-            new_data_timezone:
-                The timezone of the new data. If None, and the new data is naive, it is
-                assumed to be in the same timezone as the existing data. Defaults to
-                None.
+                The format string for parsing the time column if it is a string.
+                Defaults to None (auto-detect).
+            timezone:
+                The timezone of the new data's time column, as an IANA string
+                (e.g. ``"UTC"``, ``"Europe/Berlin"``).  Applied only to tz-naive
+                datetime columns; tz-aware columns are converted to UTC directly.
+                Defaults to ``"UTC"``.
             align_on:
                 A tuple of column names to use for aligning the new data with the
                 existing data. The first element is the column name in the existing
@@ -506,44 +505,39 @@ class Result(BaseModel):
                 The new data will be shifted in time to maximize the cross-correlation
                 between the two columns. Defaults to None.
             join_strategy:
-                The strategy for which dates to keep in the result:
-                - "keep_existing": Keep only dates from existing data
-                - "keep_new": Keep only dates from new data
-                - "keep_both": Keep all dates from both datasets
+                The strategy for which times to keep in the result:
+                - "keep_existing": Keep only times from existing data
+                - "keep_new": Keep only times from new data
+                - "keep_both": Keep all times from both datasets
                 Defaults to "keep_existing".
             fill_strategy:
                 The strategy for filling missing values in the merged dataset columns
                 after applying the join strategy (this may affect both existing and
                 new columns):
-                - "interpolate": Interpolate missing values by date
+                - "interpolate": Interpolate missing values by unix time
                 - "forward_fill": Forward fill missing values
                 - "backward_fill": Backward fill missing values
                 - None: Don't fill missing values
                 Defaults to "interpolate".
 
         Raises:
-            ValueError: If the base dataframe has no date column.
+            ValueError: If the base dataframe has no "Unix Time / s" column.
             ValueError: If an invalid timezone string is provided.
         """
-        # Validate timezone inputs
-        if existing_data_timezone is not None:
-            _validate_timezone(existing_data_timezone)
-        if new_data_timezone is not None:
-            _validate_timezone(new_data_timezone)
-
+        # Load external file if needed
         if isinstance(new_data, str):
             new_data = self.load_external_file(new_data)
 
-        if isinstance(importing_columns, dict):
-            new_data = new_data.select(
-                [date_column_name] + list(importing_columns.keys()),
-            )
-            new_data = new_data.rename(importing_columns)
-        elif isinstance(importing_columns, list):
-            new_data = new_data.select([date_column_name] + importing_columns)
+        # Apply column_map (select and rename columns)
+        if column_map is not None:
+            cols_to_select = [time_column_name] + list(column_map.values())
+            new_data = new_data.select(cols_to_select)
+            rename_map = {src: dest for dest, src in column_map.items()}
+            new_data = new_data.rename(rename_map)
 
-        if "Date" not in self.columns:
-            error_msg = "No date column in the base dataframe."
+        # Validate base dataframe has Unix Time column
+        if "Unix Time / s" not in self.lf.collect_schema().names():
+            error_msg = "No 'Unix Time / s' column in the base dataframe."
             logger.error(error_msg)
             raise ValueError(error_msg)
 
@@ -554,67 +548,55 @@ class Result(BaseModel):
             mode="match 1",
         )
         new_data = new_data[0]
-        if not isinstance(
-            new_data.collect_schema().dtypes()[
-                new_data.collect_schema().names().index(date_column_name)
-            ],
-            pl.Datetime,
-        ):
+
+        # Convert time column to "Unix Time / s" Float64
+        schema = new_data.collect_schema()
+        time_dtype = schema[time_column_name]
+
+        # Handle String dtype: parse to datetime first
+        if isinstance(time_dtype, pl.String):
             new_data = new_data.with_columns(
-                pl.col(date_column_name).str.to_datetime(format=datetime_format),
+                pl.col(time_column_name).str.to_datetime(format=datetime_format)
             )
+            time_dtype = pl.Datetime(time_unit="us")  # Update dtype after conversion
 
-        # Ensure both DataFrames have DateTime columns in the same unit
-        new_data = new_data.with_columns(
-            pl.col(date_column_name).dt.cast_time_unit("us"),
-        )
-        self.lf = self.lf.with_columns(
-            pl.col("Date").dt.cast_time_unit("us"),
-        )
+        # Handle Datetime dtype: convert to UTC unix seconds
+        if isinstance(time_dtype, pl.Datetime):
+            col_tz = time_dtype.time_zone
+            if col_tz is None:
+                # Tz-naive: interpret as the specified timezone (default "UTC")
+                validate_timezone(timezone)
+                col = pl.col(time_column_name).dt.replace_time_zone(timezone)
+            else:
+                # Tz-aware: convert to UTC directly
+                col = pl.col(time_column_name).dt.convert_time_zone("UTC")
 
-        # Check for timezone mismatch and harmonize to self.lf's timezone
-        live_schema = self.lf.collect_schema()
-        new_schema = new_data.collect_schema()
+            new_data = new_data.with_columns(
+                col.dt.epoch(time_unit="s").cast(pl.Float64).alias(time_column_name)
+            )
+        # Handle numeric dtype: cast to Float64 (assumed UTC unix seconds)
+        elif isinstance(time_dtype, (pl.Float32, pl.Float64, pl.Int32, pl.Int64)):
+            new_data = new_data.with_columns(pl.col(time_column_name).cast(pl.Float64))
+        else:
+            error_msg = (
+                f"Unsupported dtype for time column: {time_dtype}. "
+                "Must be String, Datetime, or numeric."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
-        live_dtype = live_schema["Date"]
-        new_dtype = new_schema[date_column_name]
+        # Rename time column to "Unix Time / s"
+        new_data = new_data.rename({time_column_name: "Unix Time / s"})
+        if isinstance(new_data, pl.DataFrame):
+            new_data = new_data.lazy()
+        new_result = Result(lf=new_data, metadata={})
 
-        if isinstance(live_dtype, pl.Datetime) and isinstance(new_dtype, pl.Datetime):
-            live_tz = live_dtype.time_zone
-            new_tz = new_dtype.time_zone
+        # Collect new data column names (excluding unix time)
+        new_data_cols = [
+            col for col in new_data.collect_schema().names() if col != "Unix Time / s"
+        ]
 
-            if live_tz is None:
-                if existing_data_timezone is not None:
-                    local_tz = existing_data_timezone
-                else:
-                    local_tz = str(get_localzone())
-                self.lf = self.lf.with_columns(
-                    pl.col("Date").dt.replace_time_zone(local_tz),
-                )
-                live_tz = local_tz
-
-            if new_tz is None and new_data_timezone is not None:
-                new_data = new_data.with_columns(
-                    pl.col(date_column_name).dt.replace_time_zone(new_data_timezone),
-                )
-                new_tz = new_data_timezone
-
-            if live_tz != new_tz:
-                if new_tz is None:
-                    # New is naive, assume it is in live_tz
-                    new_data = new_data.with_columns(
-                        pl.col(date_column_name).dt.replace_time_zone(live_tz),
-                    )
-                else:
-                    # Both aware, convert new to live_tz
-                    new_data = new_data.with_columns(
-                        pl.col(date_column_name).dt.convert_time_zone(live_tz),
-                    )
-
-        # Rename date column to "Date"
-        new_data = new_data.rename({date_column_name: "Date"})
-        new_result = Result(lf=new_data, info={})
-
+        # Optionally align the new data with existing data
         if align_on is not None:
             from pyprobe.analysis.time_series import align_data
 
@@ -622,33 +604,30 @@ class Result(BaseModel):
             _, new_result = align_data(self, new_result, col_existing, col_new)
 
         new_data = new_result.lf
-        new_data_cols = [
-            col for col in new_data.collect_schema().names() if col != "Date"
-        ]
 
         # Join all data to prepare for filling
         all_data = (
             self.lf.clone()
             .join(
                 new_data,
-                on="Date",
+                on="Unix Time / s",
                 how="full",
                 coalesce=True,
             )
-            .sort("Date")
+            .sort("Unix Time / s")
         )
 
-        # Get all non-Date columns for filling
-        all_cols_except_date = [
-            col for col in all_data.collect_schema().names() if col != "Date"
+        # Get all non-Unix Time columns for filling
+        all_cols_except_time = [
+            col for col in all_data.collect_schema().names() if col != "Unix Time / s"
         ]
         # Restrict interpolation to numeric columns only, since interpolate_by
         # is not supported for non-numeric dtypes.
         schema = all_data.collect_schema()
-        numeric_cols_except_date = [
+        numeric_cols_except_time = [
             name
             for name, dtype in zip(schema.names(), schema.dtypes())
-            if name != "Date" and dtype in pl.NUMERIC_DTYPES
+            if name != "Unix Time / s" and dtype in pl.NUMERIC_DTYPES
         ]
 
         # Apply fill strategy to all columns (both existing and new)
@@ -660,44 +639,44 @@ class Result(BaseModel):
                 "'backward_fill'."
             )
         if fill_strategy == "interpolate":
-            if numeric_cols_except_date:
+            if numeric_cols_except_time:
                 filled = all_data.with_columns(
-                    pl.col(numeric_cols_except_date).interpolate_by("Date"),
+                    pl.col(numeric_cols_except_time).interpolate_by("Unix Time / s"),
                 )
             else:
                 # No numeric columns to interpolate; leave data unchanged.
                 filled = all_data
         elif fill_strategy == "forward_fill":
             filled = all_data.with_columns(
-                pl.col(all_cols_except_date).forward_fill(),
+                pl.col(all_cols_except_time).forward_fill(),
             )
         elif fill_strategy == "backward_fill":
             filled = all_data.with_columns(
-                pl.col(all_cols_except_date).backward_fill(),
+                pl.col(all_cols_except_time).backward_fill(),
             )
         else:  # fill_strategy is None
             filled = all_data
 
         # Apply join strategy
         if join_strategy == "keep_existing":
-            # Keep only existing dates
-            filled_new_cols = filled.select(pl.col(["Date"] + new_data_cols))
+            # Keep only existing times
+            filled_new_cols = filled.select(pl.col(["Unix Time / s"] + new_data_cols))
             self.lf = self.lf.join(
                 filled_new_cols,
-                on="Date",
+                on="Unix Time / s",
                 how="left",
                 coalesce=True,
             )
         elif join_strategy == "keep_new":
-            # Keep only new dates
-            # Filter filled to only dates that exist in new_data
+            # Keep only new times
+            # Filter filled to only times that exist in new_data
             self.lf = filled.join(
-                new_data.select(["Date"]),
-                on="Date",
+                new_data.select(["Unix Time / s"]),
+                on="Unix Time / s",
                 how="inner",
             )
         elif join_strategy == "keep_both":
-            # Keep all dates from both datasets
+            # Keep all times from both datasets
             self.lf = filled
         else:
             raise ValueError(
@@ -729,50 +708,7 @@ class Result(BaseModel):
         Raises:
             ValueError: If the base dataframe has no date column.
         """
-        if "Date" not in self.columns:
-            error_msg = "No date column in the base dataframe."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        # get the columns of the new data
-        new_data_cols = new_data.collect_schema().names()
-        new_data_cols.remove(date_column_name)
-        # check if the new data is lazyframe or not
-        _, new_data = self._verify_compatible_frames(
-            self.lf,
-            [new_data],
-            mode="match 1",
-        )
-        new_data = new_data[0]
-        if (
-            new_data.dtypes[new_data.collect_schema().names().index(date_column_name)]
-            != pl.Datetime
-        ):
-            new_data = new_data.with_columns(pl.col(date_column_name).str.to_datetime())
-
-        # Ensure both DataFrames have DateTime columns in the same unit
-        new_data = new_data.with_columns(
-            pl.col(date_column_name).dt.cast_time_unit("us"),
-        )
-        self.lf = self.lf.with_columns(
-            pl.col("Date").dt.cast_time_unit("us"),
-        )
-
-        all_data = self.lf.clone().join(
-            new_data,
-            left_on="Date",
-            right_on=date_column_name,
-            how="full",
-            coalesce=True,
-        )
-        interpolated = all_data.with_columns(
-            pl.col(new_data_cols).interpolate_by("Date"),
-        ).select(pl.col(["Date"] + new_data_cols))
-        self.lf = self.lf.join(
-            interpolated,
-            on="Date",
-            how="left",
-            coalesce=True,
-        )
+        raise NotImplementedError("This method is deprecated. Use add_data instead.")
 
     def join(
         self,
@@ -887,13 +823,15 @@ class Result(BaseModel):
                 )
                 data.append(step_data)
         data = pl.concat(data)
-        return cls(lf=data, info=info)
+        if isinstance(data, pl.DataFrame):
+            data = data.lazy()
+        return cls(lf=data, metadata=info)
 
     def export_to_mat(self, filename: str) -> None:
         """Export the data to a .mat file.
 
-        This method will export the data and info dictionary to a .mat file. The
-        variables in the .mat file will be named 'data' and 'info'. Column names and
+        This method will export the data and metadata dictionary to a .mat file. The
+        variables in the .mat file will be named 'data' and 'metadata'. Column names and
         dictionary keys will have any non-alphanumeric characters replaced with an
         underscore, to comply with MATLAB variable naming rules.
 
@@ -906,15 +844,15 @@ class Result(BaseModel):
             {col: re.sub(r"\W", "_", col) for col in self.data.columns},
         )
 
-        # Replace any non-alphanumeric character with an underscore in the info
+        # Replace any non-alphanumeric character with an underscore in the metadata
         # dictionary keys
-        renamed_info = {
-            re.sub(r"\W", "_", key): value for key, value in self.info.items()
+        renamed_metadata = {
+            re.sub(r"\W", "_", key): value for key, value in self.metadata.items()
         }
 
         variable_dict = {
             "data": renamed_data.to_dict(),
-            "info": renamed_info,
+            "metadata": renamed_metadata,
         }
         savemat(filename, variable_dict, oned_as="column")
 
@@ -922,7 +860,7 @@ class Result(BaseModel):
     @staticmethod
     def from_polars_io(
         polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
-        info: dict[str, Any | None] = {},
+        metadata: dict[str, Any | None] = {},
         column_definitions: dict[str, str] = {},
         **kwargs: Any,
     ) -> "Result":
@@ -938,8 +876,8 @@ class Result(BaseModel):
         Args:
             polars_io_func (Callable[..., pl.DataFrame | pl.LazyFrame]):
                 The Polars IO function to use to create the data.
-            info (dict[str, Any | None]):
-                The info dictionary for the new Result object. Empty by default.
+            metadata (dict[str, Any | None]):
+                The metadata dictionary for the new Result object. Empty by default.
             column_definitions (dict[str, str]):
                 The column definitions for the new Result object. Empty by default.
             **kwargs: The keyword arguments to pass to the Polars IO function.
@@ -954,7 +892,7 @@ class Result(BaseModel):
 
             result = Result.from_polars_io(
                 pl.scan_csv,
-                info={"test": "test"},
+                metadata={"test": "test"},
                 column_definitions={},
                 source="data.csv",
             )
@@ -965,7 +903,7 @@ class Result(BaseModel):
 
             result = Result.from_polars_io(
                 pl.from_pandas,
-                info={"test": "test"},
+                metadata={"test": "test"},
                 column_definitions={},
                 data=pd.DataFrame({"a": [1, 2, 3]}),
             )
@@ -976,18 +914,17 @@ class Result(BaseModel):
 
             result = Result.from_polars_io(
                 pl.from_numpy,
-                info={"test": "test"},
+                metadata={"test": "test"},
                 column_definitions={},
                 data=np.array([[1, 2, 3], [4, 5, 6]]),
                 schema=["a", "b"]
             )
 
         """
-        return Result(
-            lf=polars_io_func(**kwargs),
-            info=info,
-            column_definitions=column_definitions,
-        )
+        lf = polars_io_func(**kwargs)
+        if isinstance(lf, pl.DataFrame):
+            lf = lf.lazy()
+        return Result(lf=lf, metadata=metadata, column_definitions=column_definitions)
 
     @property
     @deprecated(
@@ -1060,7 +997,9 @@ def combine_results(
         Result: A new result object with the combined data.
     """
     for result in results:
-        instructions = [pl.lit(result.info[key]).alias(key) for key in result.info]
+        instructions = [
+            pl.lit(result.metadata[key]).alias(key) for key in result.metadata
+        ]
         result.lf = result.lf.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]

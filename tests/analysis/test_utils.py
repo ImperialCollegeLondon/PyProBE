@@ -13,9 +13,9 @@ def input_data_fixture():
     """Return a Result instance."""
     return Result(
         lf=pl.LazyFrame(
-            {"x": [1, 2, 3], "y": [4, 5, 6], "Units [Ah]": [7, 8, 9]},
+            {"x": [1, 2, 3], "y": [4, 5, 6], "Units / Ah": [7, 8, 9]},
         ),
-        info={},
+        metadata={},
         column_definitions={
             "x": "x definition",
             "y": "y definition",
@@ -53,6 +53,6 @@ def test_base_analysis(input_data_fixture):
 
     analysis = utils.AnalysisValidator(
         input_data=input_data_fixture,
-        required_columns=["Units [mAh]"],
+        required_columns=["Units / mAh"],
     )
     np.testing.assert_array_equal(analysis.variables, np.array([7, 8, 9]) * 1000)

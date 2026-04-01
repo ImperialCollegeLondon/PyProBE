@@ -7,7 +7,11 @@ import pytest
 from pydantic import BaseModel, Field
 
 from pyprobe import utils
-from pyprobe.utils import PyProBEValidationError, catch_pydantic_validation
+from pyprobe.utils import (
+    PyProBEValidationError,
+    catch_pydantic_validation,
+    validate_timezone,
+)
 
 
 def test_flatten():
@@ -119,6 +123,28 @@ def test_set_log_level_case_insensitive(mocker):
     # Check the level parameter is correctly uppercased
     _, kwargs = mock_add.call_args
     assert kwargs["level"] == "DEBUG"
+
+
+class TestValidateTimezone:
+    """Tests for validate_timezone."""
+
+    def test_valid_timezones(self):
+        """validate_timezone returns the string unchanged for valid IANA names."""
+        assert validate_timezone("UTC") == "UTC"
+        assert validate_timezone("Europe/London") == "Europe/London"
+        assert validate_timezone("America/New_York") == "America/New_York"
+        assert validate_timezone("Asia/Tokyo") == "Asia/Tokyo"
+
+    def test_invalid_timezones_raise(self):
+        """validate_timezone raises ValueError for unrecognised timezone strings."""
+        with pytest.raises(ValueError, match="Invalid timezone"):
+            validate_timezone("Invalid/Timezone")
+
+        with pytest.raises(ValueError, match="Invalid timezone"):
+            validate_timezone("NotATimezone")
+
+        with pytest.raises(ValueError, match="Invalid timezone"):
+            validate_timezone("GMT+5")
 
 
 def test_set_log_level_format(mocker):
