@@ -6,6 +6,7 @@ Examples
 
    getting-started
    filtering-data
+   column-schema-and-the-bdf
    plotting
    maximising-performance
    sharing-data
