@@ -2,7 +2,7 @@
 
 This module provides tests for BDF column abstractions, including parsing,
 unit conversion, and Polars expression generation with recipe-based fallbacks
-via ColumnSet.
+via ColumnDict.
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ from pyprobe.columns import (
     DEFAULT_COLUMNS,
     BDFColumn,
     Column,
+    ColumnDict,
     ColumnResolutionError,
-    ColumnSet,
     Recipe,
     _apply_conversion,
     _capacity_from_ch_dch,
@@ -179,7 +179,7 @@ class TestRecipeComputation:
 
     def test_step_count_from_step_index_recipe(self) -> None:
         """_step_count_from_step_index increments on step changes."""
-        cs = ColumnSet(["Step Index / 1"])
+        cs = ColumnDict(["Step Index / 1"])
         df = pl.DataFrame(
             {
                 "Step Index / 1": [
@@ -210,7 +210,7 @@ class TestRecipeComputation:
 
     def test_col_recipe_net_capacity(self) -> None:
         """Recipe resolves Net Capacity from Charging and Discharging Capacity."""
-        cs = ColumnSet(["Charging Capacity / Ah", "Discharging Capacity / Ah"])
+        cs = ColumnDict(["Charging Capacity / Ah", "Discharging Capacity / Ah"])
         df = pl.DataFrame(
             {
                 "Charging Capacity / Ah": [1.0, 0.0, 0.0],
@@ -223,7 +223,7 @@ class TestRecipeComputation:
 
     def test_col_recipe_time_from_unix_time(self) -> None:
         """Recipe resolves Test Time from Unix epoch time in seconds."""
-        cs = ColumnSet(["Unix Time / s"])
+        cs = ColumnDict(["Unix Time / s"])
         df = pl.DataFrame(
             {
                 "Unix Time / s": [1648864360.0, 1648864361.0, 1648864362.0],
@@ -389,11 +389,11 @@ class TestRecipeDataclass:
 
 
 class TestColumnSetResolve:
-    """Tests for ColumnSet.resolve() method."""
+    """Tests for ColumnDict.resolve() method."""
 
     def test_resolve_with_string(self) -> None:
         """String input returns pl.col() for the parsed column name."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         expr = cs.resolve("Current / A")
         df = pl.DataFrame({"Current / A": [1.0, 2.0]})
         result = df.select(expr).to_series().to_list()
@@ -401,7 +401,7 @@ class TestColumnSetResolve:
 
     def test_resolve_with_column_instance(self) -> None:
         """Column descriptor input returns pl.col() expression."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         col = column_factory_from_string("Current / A")
         expr = cs.resolve(col)
         df = pl.DataFrame({"Current / A": [3.0]})
@@ -410,7 +410,7 @@ class TestColumnSetResolve:
 
     def test_resolve_with_bdf_column_exact_match(self) -> None:
         """BDFColumn exact match returns pl.col() expression."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         expr = cs.resolve(BDF.CURRENT_AMPERE)
         df = pl.DataFrame({"Current / A": [5.0]})
         result = df.select(expr).to_series().to_list()
@@ -419,7 +419,7 @@ class TestColumnSetResolve:
     def test_resolve_unit_conversion(self) -> None:
         """Unit conversion with Column descriptor scales values."""
         col = Column("Quantity", "mA")
-        cs = ColumnSet(["Quantity / A"])
+        cs = ColumnDict(["Quantity / A"])
         expr = cs.resolve(col)
         df = pl.DataFrame({"Quantity / A": [1.0, 2.0]})
         result_df = df.select(expr)
@@ -430,7 +430,7 @@ class TestColumnSetResolve:
 
     def test_resolve_identity_conversion(self) -> None:
         """Same-unit conversion aliases without arithmetic."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         expr = cs.resolve("Current / A")
         df = pl.DataFrame({"Current / A": [1.0, 2.0]})
         result_df = df.select(expr)
@@ -439,13 +439,13 @@ class TestColumnSetResolve:
 
     def test_resolve_not_found_raises(self) -> None:
         """ColumnResolutionError raised when column cannot be resolved."""
-        cs = ColumnSet(["Voltage / V"])
+        cs = ColumnDict(["Voltage / V"])
         with pytest.raises(ColumnResolutionError, match="Cannot resolve"):
             cs.resolve(BDF.CURRENT_AMPERE)
 
     def test_resolve_empty_available_raises(self) -> None:
         """Empty available_columns list raises ColumnResolutionError for BDFColumn."""
-        cs = ColumnSet([])
+        cs = ColumnDict([])
         with pytest.raises(ColumnResolutionError, match="Cannot resolve"):
             cs.resolve(BDF.CURRENT_AMPERE)
 
@@ -457,7 +457,7 @@ class TestColumnSetResolve:
                 "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
             }
         )
-        cs = ColumnSet(df.columns)
+        cs = ColumnDict(df.columns)
         expr = cs.resolve("Net Capacity / mAh")
         base = _capacity_from_ch_dch(
             {
@@ -472,7 +472,7 @@ class TestColumnSetResolve:
 
     def test_resolve_non_standard_unit_recipe_deps(self) -> None:
         """resolve() works when recipe inputs are in non-standard units (mAh)."""
-        cs = ColumnSet(["Charging Capacity / mAh", "Discharging Capacity / mAh"])
+        cs = ColumnDict(["Charging Capacity / mAh", "Discharging Capacity / mAh"])
         expr = cs.resolve("Net Capacity / mAh")
         df = pl.DataFrame(
             {
@@ -486,7 +486,7 @@ class TestColumnSetResolve:
 
     def test_resolve_alias_is_converted_name(self) -> None:
         """resolve() aliases the output to the requested unit name, not the source."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         df = pl.DataFrame({"Current / A": [1.0]})
         result = df.select(cs.resolve("Current / mA"))
         assert "Current / mA" in result.columns
@@ -504,14 +504,14 @@ class TestColumnSetResolve:
         self, values: list[float], expected: list[float]
     ) -> None:
         """Unit conversion handles zero, large, and negative values correctly."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         df = pl.DataFrame({"Current / A": values})
         result = df.select(cs.resolve(Column("Current", "mA"))).to_series().to_list()
         assert result == pytest.approx(expected, rel=1e-9)
 
     def test_resolve_empty_dataframe(self) -> None:
         """resolve() on an empty DataFrame returns an empty series."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         df = pl.DataFrame({"Current / A": pl.Series([], dtype=pl.Float64)})
         result = df.select(cs.resolve("Current / A")).to_series().to_list()
         assert result == []
@@ -519,7 +519,7 @@ class TestColumnSetResolve:
     def test_resolve_custom_column_exact_match(self) -> None:
         """resolve() returns exact column when custom column matches."""
         df = pl.DataFrame({"Custom Column / A": [10.0, 20.0, 30.0]})
-        column_set = ColumnSet(df.columns)
+        column_set = ColumnDict(df.columns)
         resolved_expr = column_set.resolve("Custom Column / A")
         expected_expr = pl.col("Custom Column / A")
         assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
@@ -527,7 +527,7 @@ class TestColumnSetResolve:
     def test_resolve_custom_column_with_unit_conversion(self) -> None:
         """resolve() applies unit conversion for custom columns."""
         df = pl.DataFrame({"Custom Column / A": [10.0, 20.0, 30.0]})
-        column_set = ColumnSet(df.columns)
+        column_set = ColumnDict(df.columns)
         resolved_expr = column_set.resolve("Custom Column / mA")
         expected_expr = (pl.col("Custom Column / A") * 1000).alias("Custom Column / mA")
         assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
@@ -535,7 +535,7 @@ class TestColumnSetResolve:
     def test_resolve_bdf_column_with_unit_conversion(self) -> None:
         """resolve() applies unit conversion for BDF columns."""
         df = pl.DataFrame({"Voltage / V": [3.7, 3.6, 3.5]})
-        column_set = ColumnSet(df.columns)
+        column_set = ColumnDict(df.columns)
         resolved_expr = column_set.resolve("Voltage / mV")
         expected_expr = (pl.col("Voltage / V") * 1000).alias("Voltage / mV")
         assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
@@ -548,7 +548,7 @@ class TestColumnSetResolve:
                 "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
             }
         )
-        column_set = ColumnSet(df.columns)
+        column_set = ColumnDict(df.columns)
         resolved_expr = column_set.resolve(BDF.NET_CAPACITY_AH)
         expected_expr = _capacity_from_ch_dch(
             {
@@ -829,15 +829,15 @@ class TestColumnResolvability:
         assert df.select(expr).to_series().to_list() == [5.0]
 
     def test_resolve_accepts_column_set(self) -> None:
-        """resolve() accepts a ColumnSet directly."""
-        cs = ColumnSet(["Current / A"])
+        """resolve() accepts a ColumnDict directly."""
+        cs = ColumnDict(["Current / A"])
         expr = Column("Current", "mA").resolve(cs)
         df = pl.DataFrame({"Current / A": [1.0]})
         assert df.select(expr).to_series().to_list() == [1000.0]
 
     def test_can_resolve_accepts_column_set(self) -> None:
-        """can_resolve() accepts a ColumnSet directly."""
-        cs = ColumnSet(["Current / A"])
+        """can_resolve() accepts a ColumnDict directly."""
+        cs = ColumnDict(["Current / A"])
         assert Column("Current", "mA").can_resolve(cs) is True
         assert Column("Voltage", "V").can_resolve(cs) is False
 
@@ -859,8 +859,16 @@ class TestColumnResolvability:
         assert len(result) == 2
 
 
-class TestColumnSetInit:
-    """Tests for ColumnSet initialisation and introspection."""
+class TestColumnDictInit:
+    """Tests for ColumnDict initialisation and introspection."""
+
+    def test_columndict_repr_uses_new_class_name(self) -> None:
+        """repr() uses ColumnDict to reflect mapping-style semantics."""
+        cs = ColumnDict(["Current / A", "Custom / 1"])
+        assert (
+            repr(cs) == "ColumnDict({'Current / A': BDF.CURRENT_AMPERE, "
+            "'Custom / 1': Column(quantity='Custom', unit='1')})"
+        )
 
     @pytest.mark.parametrize(
         "available, expected",
@@ -888,24 +896,66 @@ class TestColumnSetInit:
     def test_internal_columns(
         self, available: list[str], expected: set[Column | BDFColumn]
     ) -> None:
-        """_columns contains the expected Column/BDF instances after init."""
-        assert ColumnSet(available)._columns == expected
+        """values() contains expected Column/BDF instances after init."""
+        assert set(ColumnDict(available).values()) == expected
+
+    def test_mapping_getitem(self) -> None:
+        """__getitem__ returns parsed descriptors for exact name keys."""
+        cs = ColumnDict(["Current / A", "Custom / 1"])
+        assert cs["Current / A"] == BDF.CURRENT_AMPERE
+        assert cs["Custom / 1"] == Column("Custom", "1")
+
+    def test_mapping_iteration_and_len(self) -> None:
+        """Mapping iteration and len operate on column-name keys."""
+        cs = ColumnDict(["Current / A", "Voltage / V"])
+        assert list(cs) == ["Current / A", "Voltage / V"]
+        assert len(cs) == 2
+        assert list(cs.keys()) == ["Current / A", "Voltage / V"]
 
     def test_names_property(self) -> None:
         """Names returns column name strings in order."""
-        cs = ColumnSet(["Current / A", "Voltage / V"])
+        cs = ColumnDict(["Current / A", "Voltage / V"])
         assert cs.names == ("Current / A", "Voltage / V")
 
     def test_quantities_property(self) -> None:
         """Quantities returns quantity strings in order."""
-        cs = ColumnSet(["Current / A", "Voltage / V"])
+        cs = ColumnDict(["Current / A", "Voltage / V"])
         assert cs.quantities == ("Current", "Voltage")
 
     def test_contains(self) -> None:
         """__contains__ checks by column name string."""
-        cs = ColumnSet(["Current / A", "Voltage / V"])
+        cs = ColumnDict(["Current / A", "Voltage / V"])
         assert "Current / A" in cs
         assert "Power / W" not in cs
+
+    def test_contains_non_string_returns_false(self) -> None:
+        """__contains__ returns False for non-string objects."""
+        cs = ColumnDict(["Current / A"])
+        assert 42 not in cs
+        assert BDF.CURRENT_AMPERE not in cs
+
+    def test_columns_for_quantity_hit(self) -> None:
+        """columns_for_quantity returns matching Column descriptors."""
+        cs = ColumnDict(["Current / A", "Voltage / V"])
+        assert cs.columns_for_quantity("current") == (BDF.CURRENT_AMPERE,)
+
+    def test_columns_for_quantity_case_insensitive(self) -> None:
+        """columns_for_quantity is case-insensitive."""
+        cs = ColumnDict(["Current / A"])
+        assert cs.columns_for_quantity("Current") == (BDF.CURRENT_AMPERE,)
+        assert cs.columns_for_quantity("current") == (BDF.CURRENT_AMPERE,)
+
+    def test_columns_for_quantity_multiple(self) -> None:
+        """columns_for_quantity returns all columns sharing a quantity."""
+        cs = ColumnDict(["Current / A", "Current / mA"])
+        result = cs.columns_for_quantity("current")
+        assert len(result) == 2
+        assert set(result) == {BDF.CURRENT_AMPERE, Column("Current", "mA")}
+
+    def test_columns_for_quantity_missing(self) -> None:
+        """columns_for_quantity returns empty tuple for unknown quantity."""
+        cs = ColumnDict(["Current / A"])
+        assert cs.columns_for_quantity("Voltage") == ()
 
     @pytest.mark.parametrize(
         "column, expected",
@@ -921,7 +971,7 @@ class TestColumnSetInit:
     )
     def test_can_resolve(self, column: object, expected: bool) -> None:
         """can_resolve returns correct boolean values."""
-        cs = ColumnSet(["Current / A"])
+        cs = ColumnDict(["Current / A"])
         assert cs.can_resolve(column) is expected  # type: ignore[arg-type]
 
     @pytest.mark.parametrize(
@@ -953,4 +1003,4 @@ class TestColumnSetInit:
         self, available: list[str], column: str, expected: bool
     ) -> None:
         """can_resolve handles recipe-based BDF columns correctly."""
-        assert ColumnSet(available).can_resolve(column) is expected
+        assert ColumnDict(available).can_resolve(column) is expected

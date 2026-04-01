@@ -94,13 +94,13 @@ class TestResultColumnResolution:
     """Test column resolution and unit conversion."""
 
     def test_can_resolve_valid(self, Result_fixture):
-        """Test that known BDF columns are resolvable via ColumnSet."""
+        """Test that known BDF columns are resolvable via ColumnDict."""
         col_set = Result_fixture.columns
         assert col_set.can_resolve("Current / A")
         assert col_set.can_resolve("Voltage / V")
 
     def test_can_resolve_missing(self, Result_fixture):
-        """Test that an unknown column is not resolvable via ColumnSet."""
+        """Test that an unknown column is not resolvable via ColumnDict."""
         col_set = Result_fixture.columns
         assert not col_set.can_resolve("NonExistent / A")
 
@@ -119,7 +119,7 @@ class TestResultColumnResolution:
             Result_fixture.get("NonExistent / A")
 
     def test_getitem_unit_conversion(self, Result_fixture):
-        """Test that __getitem__() supports unit conversion via ColumnSet."""
+        """Test that __getitem__() supports unit conversion via ColumnDict."""
         current_ma = Result_fixture["Current / mA"]
         assert isinstance(current_ma, Result)
         assert "Current / mA" in current_ma.columns

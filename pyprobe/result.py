@@ -16,7 +16,7 @@ from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from scipy.io import savemat
 
-from pyprobe.columns import Column, ColumnSet
+from pyprobe.columns import Column, ColumnDict
 from pyprobe.utils import catch_pydantic_validation, deprecated, validate_timezone
 
 try:
@@ -42,7 +42,7 @@ class Result:
           data source.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
-        - :attr:`columns`: A :class:`~pyprobe.columns.ColumnSet` object providing
+        - :attr:`columns`: A :class:`~pyprobe.columns.ColumnDict` object providing
           column name access (via ``.names``) and BDF-aware resolution (via
           ``.resolve()`` and ``.can_resolve()``).
     """
@@ -100,21 +100,21 @@ class Result:
         return lf
 
     @property
-    def columns(self) -> ColumnSet:
-        """The columns in the data as a ColumnSet.
+    def columns(self) -> ColumnDict:
+        """The columns in the data as a ColumnDict.
 
-        Returns a :class:`~pyprobe.columns.ColumnSet` object that provides
+        Returns a :class:`~pyprobe.columns.ColumnDict` object that provides
         both simple column name access and BDF-aware resolution:
 
-        - :attr:`~pyprobe.columns.ColumnSet.names`: tuple of column name strings.
-        - :attr:`~pyprobe.columns.ColumnSet.quantities`: tuple of quantity strings.
-        - :meth:`~pyprobe.columns.ColumnSet.resolve`: resolve a column by name
+        - :attr:`~pyprobe.columns.ColumnDict.names`: tuple of column name strings.
+        - :attr:`~pyprobe.columns.ColumnDict.quantities`: tuple of quantity strings.
+        - :meth:`~pyprobe.columns.ColumnDict.resolve`: resolve a column by name
           or quantity, with optional unit conversion.
-        - :meth:`~pyprobe.columns.ColumnSet.can_resolve`: check if a column
+        - :meth:`~pyprobe.columns.ColumnDict.can_resolve`: check if a column
           or BDF quantity is available.
 
         Returns:
-            ColumnSet: A column introspection and resolution object.
+            ColumnDict: A column introspection and resolution object.
 
         Examples:
             >>> import polars as pl
@@ -125,7 +125,7 @@ class Result:
             >>> r.columns.quantities
             ('Current',)
         """
-        return ColumnSet(self.lf.collect_schema().names())
+        return ColumnDict(self.lf.collect_schema().names())
 
     @property
     def info(self) -> dict[str, Any | None]:
@@ -310,7 +310,7 @@ class Result:
 
         This method analyzes the arguments passed to a plotting function and
         retrieves the used columns as a DataFrame. It extracts column names from
-        positional and keyword arguments, resolves them using the ColumnSet
+        positional and keyword arguments, resolves them using the ColumnDict
         (which handles unit conversions and BDF-aware resolution), and returns
         a collected DataFrame suitable for passing to plotting libraries.
 
@@ -349,7 +349,7 @@ class Result:
                 f"None of the columns in {all_args} are present in the Result object.",
             )
 
-        # Resolve columns using ColumnSet to handle unit conversions
+        # Resolve columns using ColumnDict to handle unit conversions
         exprs = [col_set.resolve(col) for col in relevant_columns]
         return self.lf.select(*exprs).collect()
 

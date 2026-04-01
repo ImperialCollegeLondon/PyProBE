@@ -9,7 +9,7 @@ column names and Polars expressions:
 - :class:`BDFColumn` — subclass that adds recipe-based derivation metadata
   and a linked-data IRI. Extends resolution to cover recipe derivation via
   :meth:`~BDFColumn.can_resolve` and :meth:`~BDFColumn.resolve`.
-- :class:`ColumnSet` — thin per-DataFrame wrapper that delegates resolution
+- :class:`ColumnDict` — thin per-DataFrame wrapper that delegates resolution
   to :class:`Column` / :class:`BDFColumn` methods.
 
 The :class:`BDF` enum provides all 27 BDF-standard quantities as members
@@ -19,18 +19,19 @@ ingestion.
 
 Typical usage::
 
-    from pyprobe.columns import BDF, DEFAULT_COLUMNS, ColumnSet
+    from pyprobe.columns import BDF, DEFAULT_COLUMNS, ColumnDict
 
-    cs = ColumnSet(DEFAULT_COLUMNS)
+    cs = ColumnDict(DEFAULT_COLUMNS)
     # Select Current in milliamps from a DataFrame that has "Current / A".
     expr = cs.resolve("Current / mA")
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from functools import cache
+from types import MappingProxyType
 from typing import Any, cast
 
 import pint
@@ -382,12 +383,12 @@ class Column:
         offset = zero
         return factor, offset
 
-    def can_resolve(self, available: "set[Column] | ColumnSet") -> bool:
+    def can_resolve(self, available: "set[Column] | ColumnDict") -> bool:
         """Check whether this column can be resolved from available columns.
 
         Args:
             available: Set of available Column and/or BDFColumn objects,
-                or a :class:`ColumnSet`.
+                or a :class:`ColumnDict`.
 
         Returns:
             True if the column can be resolved, False otherwise.
@@ -406,7 +407,7 @@ class Column:
         factor, offset = source_col.conversion_parameters(self.unit)
         return _apply_conversion(source_expr, factor, offset, self.name)
 
-    def resolve(self, available: "set[Column] | ColumnSet") -> pl.Expr:
+    def resolve(self, available: "set[Column] | ColumnDict") -> pl.Expr:
         """Resolve this column to a Polars expression from available columns.
 
         Resolution strategy:
@@ -418,7 +419,7 @@ class Column:
 
         Args:
             available: Set of available :class:`Column` and/or
-                :class:`BDFColumn` objects, or a :class:`ColumnSet`.
+                :class:`BDFColumn` objects, or a :class:`ColumnDict`.
 
         Returns:
             A Polars expression that evaluates to this column's values,
@@ -434,32 +435,35 @@ class Column:
             >>> type(expr).__name__
             'Expr'
         """
-        cols: set[Column] = (
-            available._columns if isinstance(available, ColumnSet) else available
-        )
-        if self in cols:
-            return pl.col(self.name)
         q = self.quantity.lower()
-        col: Column | BDF | None = None
-        base_expr = None
+        if isinstance(available, ColumnDict):
+            if self.name in available:
+                return pl.col(self.name)
+            quantity_matches = available.columns_for_quantity(self.quantity)
+        else:
+            if self in available:
+                return pl.col(self.name)
+            quantity_matches = tuple(c for c in available if c.quantity.lower() == q)
+        resolved_col: Column | BDF | None = None
+        base_expr: pl.Expr | None = None
         if not isinstance(self, BDFColumn):
             try:
-                col = BDF.lookup_by_quantity(self.quantity)
-                base_expr = col.resolve(available)
+                resolved_col = BDF.lookup_by_quantity(self.quantity)
+                base_expr = resolved_col.resolve(available)
             except (KeyError, ColumnResolutionError):
                 pass
-        for c in cols:
-            if c.quantity.lower() == q:
-                col = c
-                base_expr = pl.col(c.name)
+        for c in quantity_matches:
+            resolved_col = c
+            base_expr = pl.col(c.name)
 
-        if col is not None and base_expr is not None:
+        if resolved_col is not None and base_expr is not None:
             try:
-                return self._apply_unit_conversion(base_expr, col.unit)
+                return self._apply_unit_conversion(base_expr, resolved_col.unit)
             except UnitsError as exc:
                 raise ColumnResolutionError(
-                    f"Found column '{c.name}' for quantity '{self.quantity}', "
-                    f"but unit '{c.unit}' is incompatible with target unit "
+                    f"Found column '{resolved_col.name}' "
+                    f"for quantity '{self.quantity}', "
+                    f"but unit '{resolved_col.unit}' is incompatible with target unit "
                     f"'{self.unit}': {exc}"
                 ) from exc
 
@@ -533,7 +537,7 @@ class BDFColumn(Column):
         )
         return f"{BDF_IRI_PREFIX}{slug}_{unit_long}"
 
-    def resolve(self, available: "set[Column] | ColumnSet") -> pl.Expr:
+    def resolve(self, available: "set[Column] | ColumnDict") -> pl.Expr:
         """Resolve this BDF column to a Polars expression.
 
         Searches available data columns (skipping other :class:`BDFColumn`
@@ -543,7 +547,7 @@ class BDFColumn(Column):
 
         Args:
             available: Set of available :class:`Column` and/or
-                :class:`BDFColumn` objects, or a :class:`ColumnSet`.
+                :class:`BDFColumn` objects, or a :class:`ColumnDict`.
 
         Returns:
             A Polars expression that evaluates to this column's values.
@@ -790,12 +794,15 @@ def column_factory_from_string(name: str, pattern: str = BDF_PATTERN) -> "Column
     return column_factory(quantity, unit or "1")
 
 
-class ColumnSet:
+class ColumnDict(Mapping[str, Column]):
     """Per-DataFrame resolved column context.
 
     Thin wrapper around a list of available column names. Resolution is
     delegated to :meth:`Column.can_resolve`, :meth:`Column.resolve`,
     :meth:`BDFColumn.can_resolve`, and :meth:`BDFColumn.resolve`.
+
+    Implements :class:`collections.abc.Mapping` for direct lookup by
+    raw column-name key.
 
     Provides:
 
@@ -808,7 +815,7 @@ class ColumnSet:
         available_columns: Column name strings present in the source DataFrame.
 
     Examples:
-        >>> cs = ColumnSet(["Current / A", "Voltage / V"])
+        >>> cs = ColumnDict(["Current / A", "Voltage / V"])
         >>> expr = cs.resolve("Current / A")
         >>> type(expr).__name__
         'Expr'
@@ -821,20 +828,45 @@ class ColumnSet:
     """Tuple of available quantity strings, in the same order as the source."""
 
     def __init__(self, available_columns: list[str]) -> None:
-        """Initialise a ColumnSet with the given available column names.
+        """Initialise a ColumnDict with the given available column names.
 
         Parses each column name string into a :class:`Column` or :class:`BDF`
-        enum member (if a BDF-standard column). The ``_columns`` set contains
-        the parsed descriptors used for resolution and unit conversion.
+        enum member (if a BDF-standard column).
 
         Args:
             available_columns: Column name strings present in the source
                 DataFrame (in BDF format, e.g. "Current / A").
         """
-        parsed = [column_factory_from_string(name) for name in available_columns]
-        self.names: tuple[str, ...] = tuple(available_columns)
+        self.names = tuple(available_columns)
+        parsed = [column_factory_from_string(name) for name in self.names]
         self.quantities: tuple[str, ...] = tuple(c.quantity for c in parsed)
-        self._columns: set[Column] = set(parsed)
+        by_name: dict[str, Column] = dict(zip(self.names, parsed, strict=False))
+        quantity_index: dict[str, list[Column]] = {}
+        for col in parsed:
+            quantity_index.setdefault(col.quantity.lower(), []).append(col)
+        by_quantity: dict[str, tuple[Column, ...]] = {
+            quantity: tuple(cols) for quantity, cols in quantity_index.items()
+        }
+        self._columns_by_name: Mapping[str, Column] = MappingProxyType(by_name)
+        self._columns_by_quantity: Mapping[str, tuple[Column, ...]] = MappingProxyType(
+            by_quantity
+        )
+
+    def columns_for_quantity(self, quantity: str) -> tuple[Column, ...]:
+        """Return parsed columns that match quantity, ignoring case."""
+        return self._columns_by_quantity.get(quantity.lower(), ())
+
+    def __getitem__(self, key: str) -> Column:
+        """Return the parsed Column descriptor for an exact column-name key."""
+        return self._columns_by_name[key]
+
+    def __iter__(self) -> Iterator[str]:
+        """Iterate available raw column names in insertion order."""
+        return iter(self._columns_by_name)
+
+    def __len__(self) -> int:
+        """Return number of available raw column names."""
+        return len(self._columns_by_name)
 
     def resolve(self, column: str | Column) -> pl.Expr:
         """Select a column expression, optionally converting units.
@@ -858,7 +890,7 @@ class ColumnSet:
             ColumnResolutionError: If no matching column can be resolved.
         """
         if isinstance(column, str):
-            if column in self.names:
+            if column in self:
                 return pl.col(column)
             column = column_factory_from_string(column)
         return column.resolve(self)
@@ -879,7 +911,7 @@ class ColumnSet:
             True if :meth:`col` would succeed for this column.
         """
         if isinstance(column, str):
-            if column in self.names:
+            if column in self:
                 return True
             column = column_factory_from_string(column)
         return column.can_resolve(self)
@@ -894,32 +926,32 @@ class ColumnSet:
             True if the column name is present.
 
         Examples:
-            >>> cs = ColumnSet(["Current / A", "Voltage / V"])
+            >>> cs = ColumnDict(["Current / A", "Voltage / V"])
             >>> "Current / A" in cs
             True
             >>> "Step Count / 1" in cs
             False
         """
-        return item in self.names
+        return isinstance(item, str) and item in self._columns_by_name
 
     def __repr__(self) -> str:
-        """Return a readable representation of the available columns.
+        """Return a mapping-style representation of available columns.
 
-        BDF-standard columns are annotated with ``(BDF)``.
+        Keys are raw column-name strings and values are parsed descriptors.
+        BDF values are shown as enum references (for example,
+        ``BDF.CURRENT_AMPERE``) to make the structure explicit while staying
+        compact.
 
         Returns:
-            A string listing all available column names.
+            A string describing the column-name-to-descriptor mapping.
 
         Examples:
-            >>> cs = ColumnSet(["Current / A", "Custom / 1"])
-            >>> repr(cs)
-            "ColumnSet(['Current / A' (BDF), 'Custom / 1'])"
+            >>> cs = ColumnDict(["Current / A", "Custom / 1"])
+            >>> repr(cs)  # doctest: +ELLIPSIS
+            "ColumnDict({'Current / A': BDF.CURRENT_AMPERE, ...})"
         """
         parts = []
-        for name in self.names:
-            col = column_factory_from_string(name)
-            if isinstance(col, BDF):
-                parts.append(f"'{name}' (BDF)")
-            else:
-                parts.append(f"'{name}'")
-        return f"ColumnSet([{', '.join(parts)}])"
+        for name, col in self.items():
+            value_repr = f"BDF.{col._name_}" if isinstance(col, BDF) else repr(col)
+            parts.append(f"{name!r}: {value_repr}")
+        return f"{self.__class__.__name__}({{{', '.join(parts)}}})"
