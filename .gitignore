@@ -145,4 +145,4 @@ tests/sample_data/test_data.csv
 **/agents/
 
 # Git worktrees
-**/worktrees/
+**/.worktrees/
