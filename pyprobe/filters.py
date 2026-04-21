@@ -424,29 +424,36 @@ _chargeordischarge_f = Filter(
     "Event", pl.col("Current [A]").abs() > pl.col("Current [A]").abs().max() / 10e4
 )
 _rest_f = Filter("Event", pl.col("Current [A]") == 0)
-_cc_f = Filter(
-    "Event",
-    (pl.col("Current [A]") != 0)
-    & (
-        pl.col("Current [A]").abs()
-        > 0.999 * pl.col("Current [A]").abs().round_sig_figs(4).mode().first()
-    )
-    & (
-        pl.col("Current [A]").abs()
-        < 1.001 * pl.col("Current [A]").abs().round_sig_figs(4).mode().first()
-    ),
-)
-_cv_f = Filter(
-    "Event",
-    (
-        pl.col("Voltage [V]").abs()
-        > 0.999 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode().first()
-    )
-    & (
-        pl.col("Voltage [V]").abs()
-        < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode().first()
-    ),
-)
+
+
+def _make_constant_condition(
+    col: str,
+    target: float | None = None,
+    rtol: float = 0.001,
+    mask: pl.Expr | None = None,
+) -> pl.Expr:
+    """Return a polars expression selecting rows in a constant-value section.
+
+    Args:
+        col: Column name to evaluate (e.g. ``"Current [A]"`` or ``"Voltage [V]"``).
+        target: When supplied, selects rows where ``col`` lies within
+            ``target ± |target| * rtol``. Sign is preserved: a positive target
+            only matches positive values; a negative target only matches negative
+            values. When ``None``, the global mode of ``col`` (filtered by
+            ``mask`` if given) is used as the target.
+        rtol: Relative tolerance (dimensionless). The acceptance band around
+            the target is ``|target| * rtol``. Defaults to ``0.001`` (0.1%).
+        mask: Optional polars expression used to filter ``col`` before computing
+            the global mode (only used when ``target`` is ``None``).
+
+    Returns:
+        pl.Expr: Boolean expression that is True for rows in constant sections.
+    """
+    if target is not None:
+        return (pl.col(col) - target).abs() <= abs(target) * rtol
+    mode_expr = pl.col(col).filter(mask) if mask is not None else pl.col(col)
+    t = mode_expr.mode().first()
+    return (pl.col(col) - t).abs() <= t.abs() * rtol
 
 
 class StepFiltersMixin:
@@ -507,6 +514,8 @@ class StepFiltersMixin:
     def constant_current(
         self,
         *indices: int | range | slice,
+        target: float | None = None,
+        rtol: float = 0.001,
         include_preceding_point: bool = False,
     ) -> "Step":
         """Filter constant-current events selected by positional indices.
@@ -515,15 +524,29 @@ class StepFiltersMixin:
             *indices (int | range | slice): Positional selectors for groups.
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
+            target (float | None): When supplied, select only rows where
+                ``Current [A]`` lies within ``target ± |target| * rtol``. Sign
+                is preserved: ``target=1.0`` matches only positive (charge)
+                values; ``target=-1.0`` matches only negative (discharge)
+                values. When ``None``, the global mode of non-zero
+                ``Current [A]`` values is used as the target (backward-
+                compatible behaviour).
+            rtol (float): Relative tolerance (dimensionless) controlling the
+                acceptance band as a fraction of ``|target|``. Defaults to
+                ``0.001`` (0.1%). Near-zero targets collapse the band; use a
+                dedicated filter for rest steps instead.
             include_preceding_point (bool): When ``True``, include the data
                 row immediately before the first selected row.
 
         Returns:
             Step: Filtered result for the selected groups.
         """
+        mask = pl.col("Current [A]") != 0 if target is None else None
+        condition = _make_constant_condition("Current [A]", target, rtol, mask=mask)
+        f = Filter("Event", condition)
         return cast(
             "Step",
-            _cc_f.singular(
+            f.singular(
                 cast("FilterToCycleType", self),
                 *indices,
                 include_preceding_point=include_preceding_point,
@@ -533,6 +556,8 @@ class StepFiltersMixin:
     def iter_constant_current(
         self,
         *indices: int | range | slice,
+        target: float | None = None,
+        rtol: float = 0.001,
         include_preceding_point: bool = False,
     ) -> Iterator["Step"]:
         """Iterate over constant-current events selected by positional indices.
@@ -541,15 +566,29 @@ class StepFiltersMixin:
             *indices (int | range | slice): Positional selectors for groups.
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
+            target (float | None): When supplied, select only rows where
+                ``Current [A]`` lies within ``target ± |target| * rtol``. Sign
+                is preserved: ``target=1.0`` matches only positive (charge)
+                values; ``target=-1.0`` matches only negative (discharge)
+                values. When ``None``, the global mode of non-zero
+                ``Current [A]`` values is used as the target (backward-
+                compatible behaviour).
+            rtol (float): Relative tolerance (dimensionless) controlling the
+                acceptance band as a fraction of ``|target|``. Defaults to
+                ``0.001`` (0.1%). Near-zero targets collapse the band; use a
+                dedicated filter for rest steps instead.
             include_preceding_point (bool): When ``True``, include the data
                 row immediately before the first selected row.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
         """
+        mask = pl.col("Current [A]") != 0 if target is None else None
+        condition = _make_constant_condition("Current [A]", target, rtol, mask=mask)
+        f = Filter("Event", condition)
         return cast(
             Iterator["Step"],
-            _cc_f.plural(
+            f.plural(
                 cast("FilterToCycleType", self),
                 *indices,
                 include_preceding_point=include_preceding_point,
@@ -559,6 +598,8 @@ class StepFiltersMixin:
     def constant_voltage(
         self,
         *indices: int | range | slice,
+        target: float | None = None,
+        rtol: float = 0.001,
         include_preceding_point: bool = False,
     ) -> "Step":
         """Filter constant-voltage events selected by positional indices.
@@ -567,15 +608,27 @@ class StepFiltersMixin:
             *indices (int | range | slice): Positional selectors for groups.
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
+            target (float | None): When supplied, select only rows where
+                ``Voltage [V]`` lies within ``target ± |target| * rtol``. Sign
+                is preserved: a positive target only matches positive voltages.
+                When ``None``, the global mode of ``Voltage [V]`` is used as
+                the target (backward-compatible behaviour). Note: 0 V is a
+                valid CV target; the band collapses if ``target`` is exactly
+                zero — use a rest filter instead.
+            rtol (float): Relative tolerance (dimensionless) controlling the
+                acceptance band as a fraction of ``|target|``. Defaults to
+                ``0.001`` (0.1%).
             include_preceding_point (bool): When ``True``, include the data
                 row immediately before the first selected row.
 
         Returns:
             Step: Filtered result for the selected groups.
         """
+        condition = _make_constant_condition("Voltage [V]", target, rtol)
+        f = Filter("Event", condition)
         return cast(
             "Step",
-            _cv_f.singular(
+            f.singular(
                 cast("FilterToCycleType", self),
                 *indices,
                 include_preceding_point=include_preceding_point,
@@ -585,6 +638,8 @@ class StepFiltersMixin:
     def iter_constant_voltage(
         self,
         *indices: int | range | slice,
+        target: float | None = None,
+        rtol: float = 0.001,
         include_preceding_point: bool = False,
     ) -> Iterator["Step"]:
         """Iterate over constant-voltage events selected by positional indices.
@@ -593,15 +648,27 @@ class StepFiltersMixin:
             *indices (int | range | slice): Positional selectors for groups.
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
+            target (float | None): When supplied, select only rows where
+                ``Voltage [V]`` lies within ``target ± |target| * rtol``. Sign
+                is preserved: a positive target only matches positive voltages.
+                When ``None``, the global mode of ``Voltage [V]`` is used as
+                the target (backward-compatible behaviour). Note: 0 V is a
+                valid CV target; the band collapses if ``target`` is exactly
+                zero — use a rest filter instead.
+            rtol (float): Relative tolerance (dimensionless) controlling the
+                acceptance band as a fraction of ``|target|``. Defaults to
+                ``0.001`` (0.1%).
             include_preceding_point (bool): When ``True``, include the data
                 row immediately before the first selected row.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
         """
+        condition = _make_constant_condition("Voltage [V]", target, rtol)
+        f = Filter("Event", condition)
         return cast(
             Iterator["Step"],
-            _cv_f.plural(
+            f.plural(
                 cast("FilterToCycleType", self),
                 *indices,
                 include_preceding_point=include_preceding_point,
