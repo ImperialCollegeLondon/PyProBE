@@ -142,7 +142,13 @@ tests/sample_data/test_data_2.csv
 tests/sample_data/test_data.csv
 
 # coding agents
-**/agents/
+*claude*
+*gemini*
+*agents*
+openspec
 
-# Git worktrees
-**/.worktrees/
+# Git/GitHub
+.worktrees
+.github
+# Include GitHub Actions workflows
+!.github/workflows
