@@ -77,7 +77,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         lf_capacity_throughput.join(lf_time, on="Cycle", how="outer_coalesce")
         .join(lf_charge, on="Cycle", how="outer_coalesce")
         .join(lf_discharge, on="Cycle", how="outer_coalesce")
-    )
+    ).sort("Cycle")
 
     lf = lf.with_columns(
         (pl.col("Charge Capacity [Ah]") / pl.first("Charge Capacity [Ah]") * 100).alias(
@@ -120,7 +120,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         ),
     }
     return Result(
-        lf=lf.sort("Cycle"),
+        lf=lf,
         info=input_data.info,
         column_definitions=column_definitions,
     )
