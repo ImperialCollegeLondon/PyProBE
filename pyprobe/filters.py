@@ -19,13 +19,14 @@ from loguru import logger
 
 
 def _extend_mask_with_preceding_point(mask: pl.Expr) -> pl.Expr:
-    """Extend a boolean mask to include the row immediately before the first True row.
+    """Extend a boolean mask to include the row preceding each contiguous True run.
 
     Args:
         mask: A boolean polars expression.
 
     Returns:
-        pl.Expr: The mask OR'd with itself shifted up by one position.
+        pl.Expr: A boolean expression that is True for every originally selected
+            row plus the row immediately before each run of selected rows.
     """
     return mask | mask.shift(-1).fill_null(False)
 
@@ -41,10 +42,10 @@ def _make_group_marker_expr(column: str, condition: pl.Expr) -> pl.Expr:
         pl.Expr: Boolean expression True at the start of each matching group.
     """
     event_rank = pl.col(column).rank("dense")
-    last_matching_event_rank = (
-        pl.when(condition).then(event_rank).otherwise(None).forward_fill()
+    prev_matching_rank = (
+        pl.when(condition).then(event_rank).otherwise(None).forward_fill().shift()
     )
-    return condition & (event_rank != last_matching_event_rank.shift().fill_null(-1))
+    return condition & (event_rank != prev_matching_rank.fill_null(-1))
 
 
 def _count_condition_groups(
@@ -67,11 +68,12 @@ def _count_condition_groups(
         int: Number of distinct groups.
     """
     lazy = lf.lazy() if isinstance(lf, pl.DataFrame) else lf
-    if condition is None:
-        return lazy.select(pl.col(column).n_unique()).collect().item()
-
-    is_new_matching_event = _make_group_marker_expr(column, condition)
-    return lazy.select(is_new_matching_event.cast(pl.Int32).sum()).collect().item()
+    count_expr = (
+        pl.col(column).n_unique()
+        if condition is None
+        else _make_group_marker_expr(column, condition).cast(pl.Int32).sum()
+    )
+    return lazy.select(count_expr).collect().item()
 
 
 class Filter:
@@ -227,7 +229,7 @@ class Filter:
             lf: The polars LazyFrame or DataFrame to filter.
             mask: Boolean expression selecting rows to include.
             include_preceding_point: When ``True``, include the row immediately
-                before the first selected row in the result.
+                before each contiguous block of selected rows.
 
         Returns:
             Cycle | Step: A new Cycle or Step object containing the filtered data.
@@ -264,7 +266,7 @@ class Filter:
             obj: The source object to filter.
             *indices: Positional selectors (int, range, or slice).
             include_preceding_point: When ``True``, include the row immediately
-                before the first selected row.
+                before each contiguous block of selected rows.
 
         Returns:
             Cycle | Step: A single filtered result object.
@@ -288,7 +290,7 @@ class Filter:
             obj: The source object to filter.
             *indices: Positional selectors (int, range, or slice).
             include_preceding_point: When ``True``, include the row immediately
-                before the first selected row in each result.
+                before the selected row in each result.
 
         Yields:
             Cycle | Step: Filtered result objects, one per selected position.
@@ -331,7 +333,9 @@ def _slice_to_mask_expr(
             parts.append(asc_rank >= s.start + 1)
         else:
             if desc_rank is None:
-                raise ValueError("Negative slice start requires a descending rank.")
+                error_msg = "Negative slice start requires a descending rank."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             parts.append(desc_rank <= -s.start)
 
     if s.stop is not None:
@@ -339,7 +343,9 @@ def _slice_to_mask_expr(
             parts.append(asc_rank <= s.stop)
         elif s.stop < 0:
             if desc_rank is None:
-                raise ValueError("Negative slice stop requires a descending rank.")
+                error_msg = "Negative slice stop requires a descending rank."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             parts.append(desc_rank > -s.stop)
         else:  # s.stop == 0
             if s.start is not None and s.start < 0:
@@ -360,7 +366,9 @@ def _slice_to_mask_expr(
             parts.append((asc_rank - anchor) % step_val == 0)
         else:
             if desc_rank is None:
-                raise ValueError("Negative slice start requires a descending rank.")
+                error_msg = "Negative slice start requires a descending rank."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             anchor = -effective_start
             parts.append((anchor - desc_rank) % step_val == 0)
 
@@ -471,7 +479,7 @@ class StepFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -497,7 +505,7 @@ class StepFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
@@ -536,7 +544,7 @@ class StepFiltersMixin:
                 ``0.001`` (0.1%). Near-zero targets collapse the band; use a
                 dedicated filter for rest steps instead.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -578,7 +586,7 @@ class StepFiltersMixin:
                 ``0.001`` (0.1%). Near-zero targets collapse the band; use a
                 dedicated filter for rest steps instead.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
@@ -619,7 +627,7 @@ class StepFiltersMixin:
                 acceptance band as a fraction of ``|target|``. Defaults to
                 ``0.001`` (0.1%).
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -659,7 +667,7 @@ class StepFiltersMixin:
                 acceptance band as a fraction of ``|target|``. Defaults to
                 ``0.001`` (0.1%).
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
@@ -691,7 +699,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Cycle: Filtered result for the selected groups.
@@ -717,7 +725,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Cycle]: Filtered result for the selected groups.
@@ -743,7 +751,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -769,7 +777,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
@@ -795,7 +803,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -821,7 +829,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
@@ -847,7 +855,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -873,7 +881,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
@@ -899,7 +907,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Step: Filtered result for the selected groups.
@@ -925,7 +933,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, ranges, and slices, including
                 negative indexing relative to the end.
             include_preceding_point (bool): When ``True``, include the data
-                row immediately before the first selected row.
+                row immediately before each contiguous block of selected rows.
 
         Returns:
             Iterator[Step]: Filtered result for the selected groups.
