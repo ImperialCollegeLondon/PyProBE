@@ -120,7 +120,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         ),
     }
     return Result(
-        lf=lf,
+        lf=lf.sort("Cycle"),
         info=input_data.info,
         column_definitions=column_definitions,
     )
