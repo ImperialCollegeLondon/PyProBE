@@ -233,6 +233,7 @@ class TestSliceToMaskExpr:
             (slice(-3, 0), [7, 8, 9]),
             (slice(-5, None, 2), [5, 7, 9]),
             (slice(-5, -1, 2), [5, 7]),
+            (slice(None, None), list(range(10))),
         ],
     )
     def test_slice_to_mask_selects_correct_values(self, sl, expected_values):
@@ -260,6 +261,11 @@ class TestSliceToMaskExpr:
         ):
             _slice_to_mask_expr(slice(None, -2), asc_rank, None)
 
+        with pytest.raises(
+            ValueError, match="Negative slice start requires a descending rank"
+        ):
+            _slice_to_mask_expr(slice(-2, None, 2), asc_rank, None)
+
 
 class TestFilterBuildMask:
     """Unit tests for Filter._build_mask."""
@@ -277,6 +283,12 @@ class TestFilterBuildMask:
             (filters._Filter("Event", pl.col("Current [A]") == 0), (), [1, 1, 3, 3]),
             (filters._Filter("Event", pl.col("Current [A]") == 0), (0,), [1, 1]),
             (filters._Filter("Event", pl.col("Current [A]") == 0), (1,), [3, 3]),
+            (filters._Filter("Event"), ("unsupported",), [0, 0, 1, 1, 2, 2, 3, 3]),
+            (
+                filters._Filter("Event", pl.col("Current [A]") > 0),
+                ("unsupported",),
+                [0, 0],
+            ),
         ],
     )
     def test_filter_build_mask_selects_expected_events(
