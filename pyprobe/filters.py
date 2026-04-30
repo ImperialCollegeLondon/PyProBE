@@ -76,11 +76,11 @@ def _count_condition_groups(
     return lazy.select(count_expr).collect().item()
 
 
-class Filter:
+class _Filter:
     """Encapsulates group-filtering logic for a single column and optional condition."""
 
     def __init__(self, column: str = "Event", condition: pl.Expr | None = None) -> None:
-        """Initialize a Filter instance.
+        """Initialize a _Filter instance.
 
         Args:
             column: The column name to perform filtering on. Defaults to "Event".
@@ -420,18 +420,18 @@ def get_cycle_column(
     return filtered_object.lf.with_columns(cycle_column)
 
 
-_step_f = Filter("Event")
-_cycle_f = Filter("Cycle")
-_charge_f = Filter(
+_step_f = _Filter("Event")
+_cycle_f = _Filter("Cycle")
+_charge_f = _Filter(
     "Event", pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
 )
-_discharge_f = Filter(
+_discharge_f = _Filter(
     "Event", pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
 )
-_chargeordischarge_f = Filter(
+_chargeordischarge_f = _Filter(
     "Event", pl.col("Current [A]").abs() > pl.col("Current [A]").abs().max() / 10e4
 )
-_rest_f = Filter("Event", pl.col("Current [A]") == 0)
+_rest_f = _Filter("Event", pl.col("Current [A]") == 0)
 
 
 def _make_constant_condition(
@@ -551,7 +551,7 @@ class StepFiltersMixin:
         """
         mask = pl.col("Current [A]") != 0 if target is None else None
         condition = _make_constant_condition("Current [A]", target, rtol, mask=mask)
-        f = Filter("Event", condition)
+        f = _Filter("Event", condition)
         return cast(
             "Step",
             f.singular(
@@ -593,7 +593,7 @@ class StepFiltersMixin:
         """
         mask = pl.col("Current [A]") != 0 if target is None else None
         condition = _make_constant_condition("Current [A]", target, rtol, mask=mask)
-        f = Filter("Event", condition)
+        f = _Filter("Event", condition)
         return cast(
             Iterator["Step"],
             f.plural(
@@ -633,7 +633,7 @@ class StepFiltersMixin:
             Step: Filtered result for the selected groups.
         """
         condition = _make_constant_condition("Voltage [V]", target, rtol)
-        f = Filter("Event", condition)
+        f = _Filter("Event", condition)
         return cast(
             "Step",
             f.singular(
@@ -673,7 +673,7 @@ class StepFiltersMixin:
             Iterator[Step]: Filtered result for the selected groups.
         """
         condition = _make_constant_condition("Voltage [V]", target, rtol)
-        f = Filter("Event", condition)
+        f = _Filter("Event", condition)
         return cast(
             Iterator["Step"],
             f.plural(

@@ -6,7 +6,6 @@ import pytest
 
 import pyprobe.filters as filters
 from pyprobe.filters import (
-    Filter,
     _count_condition_groups,
     _extend_mask_with_preceding_point,
     _make_constant_condition,
@@ -268,16 +267,16 @@ class TestFilterBuildMask:
     @pytest.mark.parametrize(
         "filt, indices, expected_events",
         [
-            (Filter("Event"), (), [0, 0, 1, 1, 2, 2, 3, 3]),
-            (Filter("Event"), (0,), [0, 0]),
-            (Filter("Event"), (-1,), [3, 3]),
-            (Filter("Event"), (range(0, 2),), [0, 0, 1, 1]),
-            (Filter("Event"), (slice(1, 3),), [1, 1, 2, 2]),
-            (Filter("Event", pl.col("Current [A]") > 0), (), [0, 0]),
-            (Filter("Event", pl.col("Current [A]") > 0), (0,), [0, 0]),
-            (Filter("Event", pl.col("Current [A]") == 0), (), [1, 1, 3, 3]),
-            (Filter("Event", pl.col("Current [A]") == 0), (0,), [1, 1]),
-            (Filter("Event", pl.col("Current [A]") == 0), (1,), [3, 3]),
+            (filters._Filter("Event"), (), [0, 0, 1, 1, 2, 2, 3, 3]),
+            (filters._Filter("Event"), (0,), [0, 0]),
+            (filters._Filter("Event"), (-1,), [3, 3]),
+            (filters._Filter("Event"), (range(0, 2),), [0, 0, 1, 1]),
+            (filters._Filter("Event"), (slice(1, 3),), [1, 1, 2, 2]),
+            (filters._Filter("Event", pl.col("Current [A]") > 0), (), [0, 0]),
+            (filters._Filter("Event", pl.col("Current [A]") > 0), (0,), [0, 0]),
+            (filters._Filter("Event", pl.col("Current [A]") == 0), (), [1, 1, 3, 3]),
+            (filters._Filter("Event", pl.col("Current [A]") == 0), (0,), [1, 1]),
+            (filters._Filter("Event", pl.col("Current [A]") == 0), (1,), [3, 3]),
         ],
     )
     def test_filter_build_mask_selects_expected_events(
@@ -316,14 +315,14 @@ class TestFilterExpandPositions:
             },
         )
         lf = df.lazy()
-        f_event = Filter("Event")
+        f_event = filters._Filter("Event")
         assert f_event._expand_positions(lf, indices) == expected_positions
 
     def test_filter_expand_positions_invalid_index_raises(self):
         """Negative step slice and unsupported index types raise the right errors."""
         df = pl.DataFrame({"Event": [0, 1]})
         lf = df.lazy()
-        f_event = Filter("Event")
+        f_event = filters._Filter("Event")
 
         with pytest.raises(ValueError, match="Negative step"):
             f_event._expand_positions(lf, (slice(0, None, -1),))
