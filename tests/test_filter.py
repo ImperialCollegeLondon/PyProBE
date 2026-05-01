@@ -130,17 +130,17 @@ class TestExtendMaskWithPrecedingPoint:
     @pytest.mark.parametrize(
         "input_mask, expected_mask",
         [
-            (
+            (  # mid-run: preceding row added before the True block
                 [False, False, True, True, False, False],
                 [False, True, True, True, False, False],
             ),
-            (
+            (  # leading run: no preceding row to add
                 [True, True, False, False, False, False],
                 [True, True, False, False, False, False],
             ),
-            ([False] * 6, [False] * 6),
-            ([True] * 6, [True] * 6),
-            (
+            ([False] * 6, [False] * 6),  # all False: no change
+            ([True] * 6, [True] * 6),  # all True: no change
+            (  # two separate runs: each gains its preceding row
                 [False, True, False, False, True, False],
                 [True, True, False, True, True, False],
             ),
@@ -161,19 +161,20 @@ class TestMakeGroupMarkerExpr:
     @pytest.mark.parametrize(
         "condition, expected_markers",
         [
-            (
+            (  # single matching group: only its first row marked
                 pl.col("Current [A]") > 0,
                 [True, False, False, False, False, False, False, False],
             ),
-            (
+            (  # single matching group at non-zero position
                 pl.col("Current [A]") < 0,
                 [False, False, False, False, True, False, False, False],
             ),
-            (
+            (  # two non-contiguous matching groups: two markers
                 pl.col("Current [A]") == 0,
                 [False, False, True, False, False, False, True, False],
             ),
-            (pl.lit(False), [False] * 8),
+            (pl.lit(False), [False] * 8),  # no matches: no markers
+            # every group matches: first row of each event marked
             (pl.lit(True), [True, False, True, False, True, False, True, False]),
         ],
     )
@@ -198,10 +199,10 @@ class TestCountConditionGroups:
     @pytest.mark.parametrize(
         "condition, expected_count",
         [
-            (None, 4),
-            (pl.col("Current [A]") > 0, 1),
-            (pl.col("Current [A]") == 0, 2),
-            (pl.col("Current [A]") < 0, 1),
+            (None, 4),  # no condition: counts all distinct event groups
+            (pl.col("Current [A]") > 0, 1),  # one positive-current group
+            (pl.col("Current [A]") == 0, 2),  # two zero-current groups
+            (pl.col("Current [A]") < 0, 1),  # one negative-current group
         ],
     )
     def test_count_condition_groups_counts_correctly(self, condition, expected_count):
@@ -222,18 +223,21 @@ class TestSliceToMaskExpr:
     @pytest.mark.parametrize(
         "sl, expected_values",
         [
-            (slice(2, 5), [2, 3, 4]),
-            (slice(None, 3), [0, 1, 2]),
-            (slice(7, None), [7, 8, 9]),
-            (slice(-3, None), [7, 8, 9]),
-            (slice(None, -2), [0, 1, 2, 3, 4, 5, 6, 7]),
-            (slice(-5, -2), [5, 6, 7]),
-            (slice(0, 10, 2), [0, 2, 4, 6, 8]),
-            (slice(3, 0), []),
-            (slice(-3, 0), [7, 8, 9]),
-            (slice(-5, None, 2), [5, 7, 9]),
-            (slice(-5, -1, 2), [5, 7]),
-            (slice(None, None), list(range(10))),
+            (slice(2, 5), [2, 3, 4]),  # positive start and stop
+            (slice(None, 3), [0, 1, 2]),  # no start: from beginning
+            (slice(7, None), [7, 8, 9]),  # no stop: to end
+            (slice(-3, None), [7, 8, 9]),  # negative start: from 3rd-to-last
+            (
+                slice(None, -2),
+                [0, 1, 2, 3, 4, 5, 6, 7],
+            ),  # negative stop: exclude last 2  # noqa: E501
+            (slice(-5, -2), [5, 6, 7]),  # negative start and stop
+            (slice(0, 10, 2), [0, 2, 4, 6, 8]),  # step > 1 with positive bounds
+            (slice(3, 0), []),  # stop < start: empty
+            (slice(-3, 0), [7, 8, 9]),  # negative start + stop=0: open-ended
+            (slice(-5, None, 2), [5, 7, 9]),  # negative start + step > 1
+            (slice(-5, -1, 2), [5, 7]),  # negative bounds + step > 1
+            (slice(None, None), list(range(10))),  # no bounds: all rows
         ],
     )
     def test_slice_to_mask_selects_correct_values(self, sl, expected_values):
@@ -273,17 +277,33 @@ class TestFilterBuildMask:
     @pytest.mark.parametrize(
         "filt, indices, expected_events",
         [
+            # no indices: all groups selected
             (filters._Filter("Event"), (), [0, 0, 1, 1, 2, 2, 3, 3]),
+            # first group by positive index
             (filters._Filter("Event"), (0,), [0, 0]),
+            # last group by negative index
             (filters._Filter("Event"), (-1,), [3, 3]),
+            # range selects first two groups
             (filters._Filter("Event"), (range(0, 2),), [0, 0, 1, 1]),
+            # slice selects groups 1-2
             (filters._Filter("Event"), (slice(1, 3),), [1, 1, 2, 2]),
+            # condition, no indices: all matching groups
             (filters._Filter("Event", pl.col("Current [A]") > 0), (), [0, 0]),
+            # condition, first matching group
             (filters._Filter("Event", pl.col("Current [A]") > 0), (0,), [0, 0]),
+            # condition with two matches, no indices
             (filters._Filter("Event", pl.col("Current [A]") == 0), (), [1, 1, 3, 3]),
+            # condition, first of two matching groups
             (filters._Filter("Event", pl.col("Current [A]") == 0), (0,), [1, 1]),
+            # condition, second matching group by positive index
             (filters._Filter("Event", pl.col("Current [A]") == 0), (1,), [3, 3]),
+            # range with negative bounds: last two groups
+            (filters._Filter("Event"), (range(-2, 0),), [2, 2, 3, 3]),
+            # condition + negative index: last matching group
+            (filters._Filter("Event", pl.col("Current [A]") == 0), (-1,), [3, 3]),
+            # unsupported index type falls back to all groups (no condition)
             (filters._Filter("Event"), ("unsupported",), [0, 0, 1, 1, 2, 2, 3, 3]),
+            # unsupported index type falls back to all matching groups (with condition)
             (
                 filters._Filter("Event", pl.col("Current [A]") > 0),
                 ("unsupported",),
@@ -311,9 +331,9 @@ class TestFilterExpandPositions:
     @pytest.mark.parametrize(
         "indices, expected_positions",
         [
-            ((), [0, 1, 2, 3]),
-            ((0, 1), [0, 1]),
-            ((slice(-2, None),), [2, 3]),
+            ((), [0, 1, 2, 3]),  # no indices: all positions
+            ((0, 1), [0, 1]),  # two explicit positive indices
+            ((slice(-2, None),), [2, 3]),  # slice with negative start
         ],
     )
     def test_filter_expand_positions_resolves_to_integers(
