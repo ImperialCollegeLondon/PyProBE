@@ -365,10 +365,7 @@ def _slice_to_mask_expr(
             anchor = effective_start + 1
             parts.append((asc_rank - anchor) % step_val == 0)
         else:
-            if desc_rank is None:
-                error_msg = "Negative slice start requires a descending rank."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
+            assert desc_rank is not None, "desc_rank must be provided when start < 0"
             anchor = -effective_start
             parts.append((anchor - desc_rank) % step_val == 0)
 
