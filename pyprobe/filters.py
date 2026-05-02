@@ -1,6 +1,9 @@
 """A module for the filtering classes."""
 
 import warnings
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
@@ -9,99 +12,414 @@ from pyprobe import utils
 from pyprobe.rawdata import RawData
 
 if TYPE_CHECKING:
-    from pyprobe.pyprobe_types import (  # , FilterToStepType
-        ExperimentOrCycleType,
+    from pyprobe.pyprobe_types import (
         FilterToCycleType,
     )
 
 
 from loguru import logger
 
+IndexType = int | Sequence[int] | slice
 
-def _filter_numerical(
-    dataframe: pl.LazyFrame | pl.DataFrame,
-    column: str,
-    indices: tuple[int | range, ...],
-) -> pl.LazyFrame | pl.DataFrame:
-    """Filter a polars Lazyframe or Dataframe by a numerical condition.
+
+def _include_preceding_row(mask: pl.Expr) -> pl.Expr:
+    """Extend a boolean mask to include the row preceding each contiguous True run.
 
     Args:
-        dataframe (pl.LazyFrame | pl.DataFrame): A LazyFrame or DataFrame to filter.
-        column (str): The column to filter on.
-        indices (Tuple[Union[int, range], ...]): A tuple of index values to filter by.
+        mask: A boolean polars expression.
 
     Returns:
-        pl.LazyFrame | pl.DataFrame: A filtered LazyFrame or DataFrame.
+        pl.Expr: A boolean expression that is True for every originally selected
+            row plus the row immediately before each run of selected rows.
+    """
+    return mask | mask.shift(-1).fill_null(False)
+
+
+def _group_start_expr(column: str, condition: pl.Expr) -> pl.Expr:
+    """Return a boolean expression that is True on the first row of each matching group.
+
+    Args:
+        column: The column to compute rank groups on.
+        condition: Expression selecting rows that belong to matching groups.
+
+    Returns:
+        pl.Expr: Boolean expression True at the start of each matching group.
+    """
+    event_rank = pl.col(column).rank("dense")
+    prev_matching_rank = (
+        pl.when(condition).then(event_rank).otherwise(None).forward_fill().shift()
+    )
+    return condition & (event_rank != prev_matching_rank.fill_null(-1))
+
+
+def _is_bounded(index: "Sequence[int] | slice") -> bool:
+    """Return True when the index is a bounded slice (step=1, finite non-zero stop).
+
+    Args:
+        index: A sequence or slice to test.
+
+    Returns:
+        bool: True when index is a slice with step=1 and a finite, non-zero stop.
+    """
+    if not isinstance(index, slice):
+        return False
+    s = index
+    return (s.step is None or s.step == 1) and (s.stop is not None and s.stop != 0)
+
+
+def _needs_collect(index: "IndexType | None") -> bool:
+    """Return True when rank values must be collected before iteration.
+
+    Args:
+        index: The index argument passed to a filter method.
+
+    Returns:
+        bool: True when the group count or positions cannot be determined from
+            the index alone without querying the data.
+    """
+    if index is None:
+        return True
+    if isinstance(index, int):
+        return False
+    if isinstance(index, slice):
+        if not _is_bounded(index):
+            return True
+        s = index
+        start = s.start or 0
+        stop = s.stop
+        return (start >= 0) != (stop > 0)
+    return False
+
+
+def _span_mask(s: slice, asc: pl.Expr, desc: pl.Expr) -> pl.Expr:
+    """Return a range expression for a bounded slice, routing each bound by sign.
+
+    Positive start → ``asc >= start + 1``; negative start → ``desc <= -start``;
+    None/zero start → no lower-bound predicate. Positive stop → ``asc <= stop``;
+    negative stop → ``desc > -stop``.
+
+    Args:
+        s: A bounded slice. Must satisfy ``_is_bounded(s)``.
+        asc: Ascending rank expression (1 = first group).
+        desc: Descending rank expression (1 = last group).
+
+    Returns:
+        pl.Expr: Boolean expression selecting rows within the slice bounds.
+    """
+    parts: list[pl.Expr] = []
+    if s.start is not None and s.start > 0:
+        parts.append(asc >= s.start + 1)
+    elif s.start is not None and s.start < 0:
+        parts.append(desc <= -s.start)
+
+    if s.stop is not None:
+        if s.stop > 0:
+            parts.append(asc <= s.stop)
+        else:
+            parts.append(desc > -s.stop)
+
+    assert parts, "violates _is_bounded contract: unbounded slice passed to _span_mask"
+    result: pl.Expr = parts[0]
+    for p in parts[1:]:
+        result = result & p
+    return result
+
+
+def _point_mask(i: int, asc: pl.Expr, desc: "pl.Expr | None") -> pl.Expr:
+    """Return an equality expression selecting a single group by position.
+
+    Args:
+        i: Zero-based group index. Negative values count from the last group.
+        asc: Ascending rank expression (1 = first group).
+        desc: Descending rank expression (1 = last group). Required when ``i < 0``.
+
+    Returns:
+        pl.Expr: Boolean expression True for rows in the selected group.
+    """
+    if i >= 0:
+        return asc == i + 1
+    assert desc is not None
+    return desc == -i
+
+
+@dataclass
+class _RankExprs:
+    """Lazy rank expressions for a filtered column."""
+
+    column: str
+    condition: "pl.Expr | None"
+
+    @cached_property
+    def asc(self) -> pl.Expr:
+        """Ascending group rank expression (1 = first group)."""
+        if self.condition is not None:
+            is_new = _group_start_expr(self.column, self.condition)
+            return is_new.cast(pl.Int32).cum_sum()
+        return pl.col(self.column).rank("dense")
+
+    @cached_property
+    def desc(self) -> pl.Expr:
+        """Descending group rank expression (1 = last group)."""
+        if self.condition is not None:
+            is_new = _group_start_expr(self.column, self.condition)
+            asc = is_new.cast(pl.Int32).cum_sum()
+            return asc.max() - asc + 1
+        return pl.col(self.column).rank("dense", descending=True)
+
+
+def _iter_group_masks(index: "IndexType", exprs: _RankExprs) -> "Iterator[pl.Expr]":
+    """Yield one equality mask per selected group position.
+
+    Args:
+        index: A single int, a sequence of ints, or a bounded slice.
+        exprs: Rank expressions for the target column.
+
+    Yields:
+        pl.Expr: One ``_point_mask`` per selected group, in order.
+    """
+    if isinstance(index, int):
+        yield _point_mask(index, exprs.asc, exprs.desc)
+    elif isinstance(index, slice):
+        start = index.start or 0
+        stop = index.stop
+        for i in range(start, stop):
+            yield _point_mask(i, exprs.asc, exprs.desc)
+    else:
+        for i in index:
+            yield _point_mask(i, exprs.asc, exprs.desc)
+
+
+def _nonbounded_slice_mask(s: slice, asc: pl.Expr, desc: pl.Expr) -> pl.Expr:
+    """Build a range expression for a non-bounded slice (negative or open-ended bounds).
+
+    Args:
+        s: A slice with negative or open-ended bounds. Non-zero, positive step only.
+        asc: Ascending rank expression.
+        desc: Descending rank expression.
+
+    Returns:
+        pl.Expr: Boolean expression selecting rows matched by the slice.
 
     Raises:
-        ValueError: If indices are not all positive or all negative.
+        ValueError: If ``s.step`` is zero or negative.
     """
-    index_list = []
-    for index in indices:
-        if isinstance(index, range):
-            index_list.extend(list(index))
+    if s.step is not None and s.step <= 0:
+        error_msg = (
+            "slice step cannot be zero"
+            if s.step == 0
+            else "Negative step is not supported in a slice index."
+        )
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    parts: list[pl.Expr] = []
+
+    if s.start is not None:
+        if s.start >= 0:
+            parts.append(asc >= s.start + 1)
         else:
-            index_list.extend([index])
+            parts.append(desc <= -s.start)
 
-    if len(index_list) > 0:
-        if all(item >= 0 for item in index_list):
-            index_list = [item + 1 for item in index_list]
-            return dataframe.filter(pl.col(column).rank("dense").is_in(index_list))
-        elif all(item < 0 for item in index_list):
-            index_list = [item * -1 for item in index_list]
-            return dataframe.filter(
-                pl.col(column).rank("dense", descending=True).is_in(index_list),
-            )
+    if s.stop is not None:
+        if s.stop > 0:
+            parts.append(asc <= s.stop)
+        elif s.stop < 0:
+            parts.append(desc > -s.stop)
         else:
-            error_msg = "Indices must be all positive or all negative."
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-    else:
-        return dataframe
+            return pl.lit(False)
+
+    step_val = s.step
+    if step_val is not None and step_val > 1:
+        effective_start = s.start if s.start is not None else 0
+        if effective_start >= 0:
+            anchor = effective_start + 1
+            parts.append((asc - anchor) % step_val == 0)
+        else:
+            anchor = -effective_start
+            parts.append((anchor - desc) % step_val == 0)
+
+    if not parts:
+        return pl.lit(True)
+
+    result: pl.Expr = parts[0]
+    for p in parts[1:]:
+        result = result & p
+    return result
 
 
-def _step(
-    filtered_object: "FilterToCycleType",
-    *step_numbers: int | range,
-    condition: pl.Expr | None = None,
-) -> "Step":
-    """Return a step object. Filters to a numerical condition on the Event column.
+def _combined_mask(
+    index: "IndexType | None",
+    exprs: _RankExprs,
+    condition: "pl.Expr | None",
+) -> pl.Expr:
+    """Return a single combined boolean mask for the given index.
 
     Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        step_numbers (int | range):
-            Variable-length argument list of step indices or a range object.
-        condition (pl.Expr, optional):
-            A polars expression to filter the step before applying the numerical filter.
-            Defaults to None.
+        index: The index argument. ``None`` selects all matching rows.
+        exprs: Rank expressions for the target column.
+        condition: Optional row condition. Applied after the rank mask.
 
     Returns:
-        Step: A step object.
+        pl.Expr: Combined boolean expression selecting the target rows.
     """
-    if condition is not None:
-        lf = _filter_numerical(
-            filtered_object.lf.filter(condition),
-            "Event",
-            step_numbers,
-        )
+    if index is None:
+        return condition if condition is not None else pl.lit(True)
+
+    if isinstance(index, slice):
+        if _is_bounded(index):
+            mask = _span_mask(index, exprs.asc, exprs.desc)
+        else:
+            mask = _nonbounded_slice_mask(index, exprs.asc, exprs.desc)
     else:
-        lf = _filter_numerical(
-            filtered_object.lf,
-            "Event",
-            step_numbers,
+        masks = list(_iter_group_masks(index, exprs))
+        mask = masks[0]
+        for m in masks[1:]:
+            mask = mask | m
+
+    return (condition & mask) if condition is not None else mask
+
+
+def _build_result(
+    obj: "FilterToCycleType",
+    lf: "pl.LazyFrame | pl.DataFrame",
+    mask: pl.Expr,
+    column: str,
+    include_preceding_point: bool,
+) -> "Cycle | Step":
+    """Create a filtered Cycle or Step result object.
+
+    Args:
+        obj: The source object to filter.
+        lf: The polars LazyFrame or DataFrame to filter.
+        mask: Boolean expression selecting rows to include.
+        column: The filter column name; ``"Cycle"`` produces a Cycle, else a Step.
+        include_preceding_point: When ``True``, include the row immediately
+            before each contiguous block of selected rows.
+
+    Returns:
+        Cycle | Step: A new result object containing the filtered data.
+    """
+    if include_preceding_point:
+        mask = _include_preceding_row(mask)
+    filtered_lf = lf.filter(mask)
+    if column == "Cycle":
+        cycle_info = obj.cycle_info[1:] if len(obj.cycle_info) > 1 else []
+        return Cycle(
+            lf=filtered_lf,
+            info=obj.info,
+            column_definitions=obj.column_definitions,
+            step_descriptions=obj.step_descriptions,
+            cycle_info=cycle_info,
         )
     return Step(
-        lf=lf,
-        info=filtered_object.info,
-        column_definitions=filtered_object.column_definitions,
-        step_descriptions=filtered_object.step_descriptions,
+        lf=filtered_lf,
+        info=obj.info,
+        column_definitions=obj.column_definitions,
+        step_descriptions=obj.step_descriptions,
     )
+
+
+class _Filter:
+    """Encapsulates group-filtering logic for a single column and optional condition."""
+
+    def __init__(
+        self, column: str = "Event", condition: "pl.Expr | None" = None
+    ) -> None:
+        """Initialize a _Filter instance.
+
+        Args:
+            column: The column name to perform filtering on. Defaults to "Event".
+            condition: Optional polars expression that defines which rows
+                qualify as part of a group. When ``None``, all rows in each
+                group are selected.
+        """
+        self.column = column
+        self.condition = condition
+
+    def singular(
+        self,
+        obj: "FilterToCycleType",
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Cycle | Step":
+        """Return a single filtered result for the given index.
+
+        Args:
+            obj: The source object to filter.
+            index: Positional selector. ``None`` returns all matching rows.
+            include_preceding_point: When ``True``, include the row immediately
+                before each contiguous block of selected rows.
+
+        Returns:
+            Cycle | Step: A single filtered result object.
+        """
+        lf = get_cycle_column(obj) if self.column == "Cycle" else obj.lf
+        exprs = _RankExprs(self.column, self.condition)
+        mask = _combined_mask(index, exprs, self.condition)
+        return _build_result(obj, lf, mask, self.column, include_preceding_point)
+
+    def plural(
+        self,
+        obj: "FilterToCycleType",
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Cycle | Step]":
+        """Iterate over filtered results for each selected group.
+
+        Uses a zero-collect static path when the index is statically resolvable
+        (positive/negative ints, sequences, bounded slices); falls back to a
+        single collect for open-ended or negative-start slices and ``None``.
+
+        Args:
+            obj: The source object to filter.
+            index: Positional selector. ``None`` yields one result per group.
+            include_preceding_point: When ``True``, include the row immediately
+                before each contiguous block of selected rows.
+
+        Yields:
+            Cycle | Step: Filtered result objects, one per selected group.
+        """
+        lf = get_cycle_column(obj) if self.column == "Cycle" else obj.lf
+        exprs = _RankExprs(self.column, self.condition)
+
+        if not _needs_collect(index):
+            assert index is not None
+            for rank_mask in _iter_group_masks(index, exprs):
+                cond_mask = (
+                    (self.condition & rank_mask)
+                    if self.condition is not None
+                    else rank_mask
+                )
+                yield _build_result(
+                    obj, lf, cond_mask, self.column, include_preceding_point
+                )
+        else:
+            full_mask = _combined_mask(index, exprs, self.condition)
+            lf_lazy = lf.lazy() if isinstance(lf, pl.DataFrame) else lf
+            rank_values = (
+                lf_lazy.with_columns(exprs.asc.alias("__rank__"))
+                .filter(full_mask)
+                .select("__rank__")
+                .unique()
+                .sort("__rank__")
+                .collect()["__rank__"]
+                .to_list()
+            )
+            for rank_val in rank_values:
+                rank_mask = exprs.asc == rank_val
+                cond_mask = (
+                    (self.condition & rank_mask)
+                    if self.condition is not None
+                    else rank_mask
+                )
+                yield _build_result(
+                    obj, lf, cond_mask, self.column, include_preceding_point
+                )
 
 
 def get_cycle_column(
     filtered_object: "FilterToCycleType",
-) -> pl.DataFrame | pl.LazyFrame:
+) -> "pl.DataFrame | pl.LazyFrame":
     """Adds a cycle column to the data.
 
     If cycle details have been provided in the README, the cycle column will be created
@@ -138,168 +456,538 @@ def get_cycle_column(
     return filtered_object.lf.with_columns(cycle_column)
 
 
-def _cycle(filtered_object: "ExperimentOrCycleType", *cycle_numbers: int) -> "Cycle":
-    """Return a cycle object. Filters on the Cycle column.
+_step_f = _Filter("Event")
+_cycle_f = _Filter("Cycle")
+_charge_f = _Filter(
+    "Event", pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
+)
+_discharge_f = _Filter(
+    "Event", pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
+)
+_chargeordischarge_f = _Filter(
+    "Event", pl.col("Current [A]").abs() > pl.col("Current [A]").abs().max() / 10e4
+)
+_rest_f = _Filter("Event", pl.col("Current [A]") == 0)
+
+
+def _make_constant_condition(
+    col: str,
+    target: float | None = None,
+    rtol: float = 0.001,
+    mask: pl.Expr | None = None,
+) -> pl.Expr:
+    """Return a polars expression selecting rows in a constant-value section.
 
     Args:
-        filtered_object (FilterToExperimentType):
-            A filter object that this method is called on.
-        cycle_numbers (int | range):
-            Variable-length argument list of cycle indices or a range object.
+        col: Column name to evaluate (e.g. ``"Current [A]"`` or ``"Voltage [V]"``).
+        target: When supplied, selects rows where ``col`` lies within
+            ``target ± |target| * rtol``. Sign is preserved: a positive target
+            only matches positive values; a negative target only matches negative
+            values. When ``None``, the signed mode of ``col`` (filtered by
+            ``mask`` if given) is used as the target. This is sign-sensitive:
+            the implicit target reflects the most frequent signed value, which
+            may match only one polarity (e.g. charge-only or discharge-only).
+        rtol: Relative tolerance (dimensionless). The acceptance band around
+            the target is ``|target| * rtol``. Defaults to ``0.001`` (0.1%).
+        mask: Optional polars expression used to filter ``col`` before computing
+            the global mode (only used when ``target`` is ``None``).
 
     Returns:
-        Cycle: A cycle object.
+        pl.Expr: Boolean expression that is True for rows in constant sections.
     """
-    df = get_cycle_column(filtered_object)
-
-    if len(filtered_object.cycle_info) > 1:
-        next_cycle_info = filtered_object.cycle_info[1:]
-    else:
-        next_cycle_info = []
-
-    lf_filtered = _filter_numerical(df, "Cycle", cycle_numbers)
-
-    return Cycle(
-        lf=lf_filtered,
-        info=filtered_object.info,
-        column_definitions=filtered_object.column_definitions,
-        step_descriptions=filtered_object.step_descriptions,
-        cycle_info=next_cycle_info,
-    )
+    if target is not None:
+        return (pl.col(col) - target).abs() <= abs(target) * rtol
+    mode_expr = pl.col(col).filter(mask) if mask is not None else pl.col(col)
+    t = mode_expr.mode().first()
+    return (pl.col(col) - t).abs() <= t.abs() * rtol
 
 
-def _charge(
-    filtered_object: "FilterToCycleType",
-    *charge_numbers: int | range,
-) -> "Step":
-    """Return a charge step.
+class StepFiltersMixin:
+    """Mixin providing step-specific filter methods."""
 
-    Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        charge_numbers (int | range):
-            Variable-length argument list of charge indices or a range object.
+    def step(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter step events selected by index.
 
-    Returns:
-        Step: A charge step object.
-    """
-    condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
-    return filtered_object.step(*charge_numbers, condition=condition)
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
 
-
-def _discharge(
-    filtered_object: "FilterToCycleType",
-    *discharge_numbers: int | range,
-) -> "Step":
-    """Return a discharge step.
-
-    Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        discharge_numbers (int | range):
-            Variable-length argument list of discharge indices or a range object.
-
-    Returns:
-        Step: A discharge step object.
-    """
-    condition = pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
-    return filtered_object.step(*discharge_numbers, condition=condition)
-
-
-def _chargeordischarge(
-    filtered_object: "FilterToCycleType",
-    *chargeordischarge_numbers: int | range,
-) -> "Step":
-    """Return a charge or discharge step.
-
-    Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        chargeordischarge_numbers (int | range):
-            Variable-length argument list of charge or discharge indices or a range
-            object.
-
-    Returns:
-        Step: A charge or discharge step object.
-    """
-    charge_condition = pl.col("Current [A]") > pl.col("Current [A]").abs().max() / 10e4
-    discharge_condition = (
-        pl.col("Current [A]") < -pl.col("Current [A]").abs().max() / 10e4
-    )
-    condition = charge_condition | discharge_condition
-    return filtered_object.step(*chargeordischarge_numbers, condition=condition)
-
-
-def _rest(filtered_object: "FilterToCycleType", *rest_numbers: int | range) -> "Step":
-    """Return a rest step object.
-
-    Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        rest_numbers (int | range):
-            Variable-length argument list of rest indices or a range object.
-
-    Returns:
-        Step: A rest step object.
-    """
-    condition = pl.col("Current [A]") == 0
-    return filtered_object.step(*rest_numbers, condition=condition)
-
-
-def _constant_current(
-    filtered_object: "FilterToCycleType",
-    *constant_current_numbers: int | range,
-) -> "Step":
-    """Return a constant current step object.
-
-    Args:
-        filtered_object (FilterToCycleType):
-            A filter object that this method is called on.
-        constant_current_numbers (int | range):
-            Variable-length argument list of constant current indices or a range object.
-
-    Returns:
-        Step: A constant current step object.
-    """
-    condition = (
-        (pl.col("Current [A]") != 0)
-        & (
-            pl.col("Current [A]").abs()
-            > 0.999 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        return cast(
+            "Step",
+            _step_f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
         )
-        & (
-            pl.col("Current [A]").abs()
-            < 1.001 * pl.col("Current [A]").abs().round_sig_figs(4).mode()
+
+    def iter_step(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over step events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        return cast(
+            "Iterator[Step]",
+            _step_f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
         )
-    )
-    return filtered_object.step(*constant_current_numbers, condition=condition)
+
+    def constant_current(
+        self,
+        index: "IndexType | None" = None,
+        *,
+        target: float | None = None,
+        rtol: float = 0.001,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter constant-current events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            target (float | None): When supplied, select only rows where
+                ``Current [A]`` lies within ``target ± |target| * rtol``. Sign
+                is preserved: ``target=1.0`` matches only positive (charge)
+                values; ``target=-1.0`` matches only negative (discharge)
+                values. When ``None``, the signed mode of non-zero
+                ``Current [A]`` values is used as the target.
+            rtol (float): Relative tolerance (dimensionless) controlling the
+                acceptance band as a fraction of ``|target|``. Defaults to
+                ``0.001`` (0.1%).
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        mask = pl.col("Current [A]") != 0 if target is None else None
+        condition = _make_constant_condition("Current [A]", target, rtol, mask=mask)
+        f = _Filter("Event", condition)
+        return cast(
+            "Step",
+            f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_constant_current(
+        self,
+        index: "IndexType | None" = None,
+        *,
+        target: float | None = None,
+        rtol: float = 0.001,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over constant-current events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            target (float | None): When supplied, select only rows where
+                ``Current [A]`` lies within ``target ± |target| * rtol``.
+            rtol (float): Relative tolerance (dimensionless). Defaults to
+                ``0.001`` (0.1%).
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        mask = pl.col("Current [A]") != 0 if target is None else None
+        condition = _make_constant_condition("Current [A]", target, rtol, mask=mask)
+        f = _Filter("Event", condition)
+        return cast(
+            "Iterator[Step]",
+            f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def constant_voltage(
+        self,
+        index: "IndexType | None" = None,
+        *,
+        target: float | None = None,
+        rtol: float = 0.001,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter constant-voltage events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            target (float | None): When supplied, select only rows where
+                ``Voltage [V]`` lies within ``target ± |target| * rtol``.
+                When ``None``, the signed mode of ``Voltage [V]`` is used.
+            rtol (float): Relative tolerance (dimensionless). Defaults to
+                ``0.001`` (0.1%).
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        condition = _make_constant_condition("Voltage [V]", target, rtol)
+        f = _Filter("Event", condition)
+        return cast(
+            "Step",
+            f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_constant_voltage(
+        self,
+        index: "IndexType | None" = None,
+        *,
+        target: float | None = None,
+        rtol: float = 0.001,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over constant-voltage events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            target (float | None): When supplied, select only rows where
+                ``Voltage [V]`` lies within ``target ± |target| * rtol``.
+                When ``None``, the signed mode of ``Voltage [V]`` is used.
+            rtol (float): Relative tolerance (dimensionless). Defaults to
+                ``0.001`` (0.1%).
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        condition = _make_constant_condition("Voltage [V]", target, rtol)
+        f = _Filter("Event", condition)
+        return cast(
+            "Iterator[Step]",
+            f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
 
 
-def _constant_voltage(
-    filtered_object: "FilterToCycleType",
-    *constant_voltage_numbers: int | range,
-) -> "Step":
-    """Return a constant voltage step object.
+class CycleFiltersMixin:
+    """Mixin providing cycle and charge/discharge filter methods."""
 
-    Args:
-        filtered_object: A filter object that this method is called on.
-        *constant_voltage_numbers:
-            Variable-length argument list of constant voltage indices or a range object.
+    def cycle(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Cycle":
+        """Filter cycles selected by index.
 
-    Returns:
-        Step: A constant voltage step object.
-    """
-    condition = (
-        pl.col("Voltage [V]").abs()
-        > 0.999 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
-    ) & (
-        pl.col("Voltage [V]").abs()
-        < 1.001 * pl.col("Voltage [V]").abs().round_sig_figs(4).mode()
-    )
-    return filtered_object.step(*constant_voltage_numbers, condition=condition)
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Cycle: Filtered result for the selected groups.
+        """
+        return cast(
+            "Cycle",
+            _cycle_f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_cycle(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Cycle]":
+        """Iterate over cycles selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Cycle]: Filtered result for the selected groups.
+        """
+        return cast(
+            "Iterator[Cycle]",
+            _cycle_f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def charge(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter charge events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        return cast(
+            "Step",
+            _charge_f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_charge(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over charge events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        return cast(
+            "Iterator[Step]",
+            _charge_f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def discharge(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter discharge events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        return cast(
+            "Step",
+            _discharge_f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_discharge(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over discharge events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        return cast(
+            "Iterator[Step]",
+            _discharge_f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def chargeordischarge(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter non-rest events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        return cast(
+            "Step",
+            _chargeordischarge_f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_chargeordischarge(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over non-rest events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        return cast(
+            "Iterator[Step]",
+            _chargeordischarge_f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def rest(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Step":
+        """Filter rest events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` returns
+                all matching rows as a single result.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Step: Filtered result for the selected groups.
+        """
+        return cast(
+            "Step",
+            _rest_f.singular(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
+
+    def iter_rest(
+        self,
+        index: "IndexType | None" = None,
+        include_preceding_point: bool = False,
+    ) -> "Iterator[Step]":
+        """Iterate over rest events selected by index.
+
+        Args:
+            index (int | Sequence[int] | slice | None): Positional selector.
+                Supports zero-based integers, sequences of integers, and slices,
+                including negative indexing relative to the end. ``None`` yields
+                one result per group.
+            include_preceding_point (bool): When ``True``, include the data
+                row immediately before each contiguous block of selected rows.
+
+        Returns:
+            Iterator[Step]: Filtered result for the selected groups.
+        """
+        return cast(
+            "Iterator[Step]",
+            _rest_f.plural(
+                cast("FilterToCycleType", self),
+                index,
+                include_preceding_point=include_preceding_point,
+            ),
+        )
 
 
-class Procedure(RawData):
+class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
     """A class for a procedure in a battery experiment."""
 
     readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]]
@@ -338,21 +1026,17 @@ class Procedure(RawData):
             self.step_descriptions["Step"].extend(steps)
             self.step_descriptions["Description"].extend(descriptions)
 
-    step = _step
-    cycle = _cycle
-    charge = _charge
-    discharge = _discharge
-    chargeordischarge = _chargeordischarge
-    rest = _rest
-    constant_current = _constant_current
-    constant_voltage = _constant_voltage
-
-    def experiment(self, *experiment_names: str) -> "Experiment":
+    def experiment(
+        self,
+        *experiment_names: str,
+        include_preceding_point: bool = False,
+    ) -> "Experiment":
         """Return an experiment object from the procedure.
 
         Args:
-            experiment_names (str):
-                Variable-length argument list of experiment names.
+            experiment_names: Variable-length argument list of experiment names.
+            include_preceding_point: When ``True``, prepend the data point
+                immediately before the experiment's first row.
 
         Returns:
             Experiment: An experiment object from the procedure.
@@ -365,10 +1049,10 @@ class Procedure(RawData):
                 raise ValueError(error_msg)
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
-        conditions = [
-            pl.col("Step").is_in(flattened_steps),
-        ]
-        lf_filtered = self.lf.filter(conditions)
+        mask = pl.col("Step").is_in(flattened_steps)
+        if include_preceding_point:
+            mask = _include_preceding_row(mask)
+        lf_filtered = self.lf.filter(mask)
         cycles_list: list[tuple[int, int, int]] = []
         if len(experiment_names) > 1:
             warnings.warn(
@@ -456,7 +1140,7 @@ class Procedure(RawData):
         self.add_new_data_columns(external_data, date_column_name)
 
 
-class Experiment(RawData):
+class Experiment(CycleFiltersMixin, StepFiltersMixin, RawData):
     """A class for an experiment in a battery experimental procedure."""
 
     cycle_info: list[tuple[int, int, int]] = []
@@ -481,17 +1165,8 @@ class Experiment(RawData):
             "The net charge passed since beginning of experiment.",
         )
 
-    step = _step
-    cycle = _cycle
-    charge = _charge
-    discharge = _discharge
-    chargeordischarge = _chargeordischarge
-    rest = _rest
-    constant_current = _constant_current
-    constant_voltage = _constant_voltage
 
-
-class Cycle(RawData):
+class Cycle(CycleFiltersMixin, StepFiltersMixin, RawData):
     """A class for a cycle in a battery experimental procedure."""
 
     cycle_info: list[tuple[int, int, int]] = []
@@ -516,16 +1191,8 @@ class Cycle(RawData):
             "The net charge passed since beginning of cycle.",
         )
 
-    step = _step
-    charge = _charge
-    discharge = _discharge
-    chargeordischarge = _chargeordischarge
-    rest = _rest
-    constant_current = _constant_current
-    constant_voltage = _constant_voltage
 
-
-class Step(RawData):
+class Step(StepFiltersMixin, RawData):
     """A class for a step in a battery experimental procedure."""
 
     def model_post_init(self, __context: Any) -> None:
@@ -542,7 +1209,3 @@ class Step(RawData):
             "Step Capacity [Ah]",
             "The net charge passed since beginning of step.",
         )
-
-    step = _step
-    constant_current = _constant_current
-    constant_voltage = _constant_voltage
