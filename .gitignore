@@ -149,6 +149,5 @@ openspec
 
 # Git/GitHub
 .worktrees
-.github
-# Include GitHub Actions workflows
+.github/*
 !.github/workflows
