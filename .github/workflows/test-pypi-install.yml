@@ -30,6 +30,6 @@ jobs:
 
       - name: Test install from PyPI
         run: |
-          uv venv
+          uv venv --clear
           uv pip install PyProBE-Data[hvplot,seaborn,dev,docs,pybamm]
           uv run --no-sync pytest -n auto

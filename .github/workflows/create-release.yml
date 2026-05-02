@@ -47,7 +47,7 @@ jobs:
         run: |
           uv sync --all-extras --frozen
           uv build
-          uv venv
+          uv venv --clear
           WHEEL_FILE=$(ls dist/*.whl | head -n 1)
           uv pip install ${WHEEL_FILE}[hvplot,seaborn,dev,docs,pybamm]
           uv run --no-sync pytest -n auto
