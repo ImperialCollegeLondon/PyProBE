@@ -1,62 +1,72 @@
 # Contributing to PyProBE
 
-Contributions to PyProBE are welcome. 
+Contributions are welcome. Open an issue first to discuss changes, then follow these steps.
 
-If you have a suggestion, please open an issue describing in detail the change you would like to be made. Similarly, if you have found a bug or a mistake, please open an issue describing this in detail.
+## Setup
 
-If you would like to contribute code, please:
-
-1. Install PyProBE with [developer settings](https://pyprobe.readthedocs.io/en/latest/developer_guide/developer_installation.html)
-
-2. Open an issue to detail the change/addition you wish to make, unless one already exists
-
-3. Create a feature branch and make your changes. PyProBE uses the [angular commit style](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commits), please ensure your commits follow this syntax before pushing your changes
-
-4. Follow [Google's docstring style](https://github.com/google/styleguide/blob/gh-pages/pyguide.md#38-comments-and-docstrings) and ensure that the documentation builds successfully:
-
+1. Clone the repository and navigate to it.
+2. Install uv if not already installed: https://docs.astral.sh/uv/getting-started/installation/
+3. Install dependencies and pre-commit hooks:
 ```bash
-$ cd docs
-$ make html
+uv sync
+uv run pre-commit install
+```
+4. Verify setup by running tests:
+```bash
+uv run pytest
 ```
 
-5. Ensure that all tests pass (this is best done with uv if you have installed with this tool):
+## Code Standards
 
+- **DataFrame ops:** polars expressions only. Keep data as `LazyFrame`; convert to `DataFrame` only when needed. Numpy only for complex logic in `pyprobe/analysis/`.
+
+- **Docstrings:** Google style.
+
+- **Type hints:** required on all public function signatures. Use 3.10+ syntax:
+  - `X | None` not `Optional[X]`
+  - `list[int]` not `List[int]`
+  - `tuple[str, ...]` not `Tuple[str, ...]`
+
+- **Exceptions:** use specific types (`ValueError`, `TypeError`, `KeyError`, etc.). No bare `except:` or `except Exception:` without re-raise.
+
+- **Comments:** inline only for non-obvious logic. No dashed-line block headers.
+
+- **PEP 8:** line length 88.
+
+- **Logging:** use loguru. Import as `from loguru import logger`. Log at appropriate levels: `debug` for development, `info` for key events, `warning` for recoverable issues, `error` for failures.
+
+## Test Standards
+
+- Tests mirror `pyprobe/` structure in `tests/` directory.
+- Write tests with pytest. Cover expected behavior and edge cases for all public functions.
+- One logical behaviour per test function. Name tests as `test_<unit>_<scenario>_<expected>` (e.g., `test_cell_filter_empty_result_raises_error`).
+- Keep tests independent; use pytest fixtures for shared setup.
+- Use `@pytest.mark.parametrize` for multiple inputs instead of duplicating test bodies.
+- Use `tmp_path` fixture for temporary files; never `tempfile` directly.
+- Simple synthesised test data should be used where possible; real-format sample files in `tests/sample_data/` where required.
+
+## Commit Messages
+
+Use [Angular commit style](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commits).
+
+## Before Opening a Pull Request
+
+Pre-commit checks will run automatically. You can invoke them manually with:
 ```bash
-$ uv run pytest
+uvx pre-commit run --all-files
 ```
 
-6. Ensure that the examples run to completion:
+Build docs:
 ```bash
-$ uv run pytest --nbmake docs/source/examples/*.ipynb
+cd docs && make html
 ```
 
-7. Open a pull request. In the pull request description, please describe in detail the changes your feature branch introduces, and reference the associated issue.
-
-## PyProBE structure
-Additions to the code should be made in accordance with the structure of PyProBE, to 
-maximise compatibility and ensure it is a maintainable package. Guidance for writing
-code for PyProBE includes:
-1. DataFrame operations should only be done using polars expressions. Data should be kept by default in polars LazyFrame format and only converted to DataFrame if needed for a particular operation.
-2. Analysis classes should be written in the format described in the [documentation](https://pyprobe.readthedocs.io/en/latest/developer_guide/contributing_to_the_analysis_module.html).
-
-## Linting and Style Guidelines
-PyProBE uses [Ruff](https://docs.astral.sh/ruff/) to check and format code against Python standards and good practise.
-It is able to automatically restyle your code and can make many automatic fixes for you. It 
-runs as a pre-commit hook, meaning it should pass before you commit to PyProBE. To reduce 
-the burden of making a large amount of fixes, be sure to make regular commits. You can also run:
+Run tests:
 ```bash
-uvx ruff check --fix
+uv run pytest
+uv run pytest --nbmake docs/source/examples/*.ipynb
 ```
-from the command line at any point. This will load the latest version of Ruff and run its checks, 
-making automatic fixes where possible.
 
-PyProBE also uses [mypy](https://mypy.readthedocs.io/en/stable/index.html) to check that
-all functions are correctly type hinted. Again, this runs as a pre-commit hook. It is
-likely that your code will use types already commonly used in PyProBE, so you may refer
-to existing code for how to type hint your functions.
+## Pull Request
 
-## Viewing the API documentation
-
-API documentation is built in html format, and stored locally in docs/build/html/. This can be viewed in your browser at docs/build/html/index.html.
-
-The documentation is also continuously deployed via GitHub Actions, and can be viewed [here](https://pyprobe.readthedocs.io).
+Describe changes in detail and reference the associated issue.
