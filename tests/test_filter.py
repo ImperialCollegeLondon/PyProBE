@@ -579,7 +579,7 @@ class TestSlicing:
 
 
 class TestIncludePrecedingPoint:
-    """Tests for include_preceding_point across all singular filter methods."""
+    """Tests for include_preceding_row across all singular filter methods."""
 
     def _assert_preceding_row_prepended(self, data_without, data_with, full_data):
         assert len(data_with) == len(data_without) + 1
@@ -593,10 +593,10 @@ class TestIncludePrecedingPoint:
         assert data_with["Time [s]"][0] == full_data["Time [s]"][idx - 1]
 
     def test_step_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Step with include_preceding_point prepends exactly one row."""
+        """Step with include_preceding_row prepends exactly one row."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         data_without = cycle0.step(1).data
-        data_with = cycle0.step(1, include_preceding_point=True).data
+        data_with = cycle0.step(1, include_preceding_row=True).data
         self._assert_preceding_row_prepended(data_without, data_with, cycle0.data)
         assert (
             data_with.tail(len(data_without))["Time [s]"].to_list()
@@ -604,40 +604,38 @@ class TestIncludePrecedingPoint:
         )
 
     def test_charge_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Charge with include_preceding_point prepends exactly one row."""
+        """Charge with include_preceding_row prepends exactly one row."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         data_without = cycle0.charge(0).data
-        data_with = cycle0.charge(0, include_preceding_point=True).data
+        data_with = cycle0.charge(0, include_preceding_row=True).data
         self._assert_preceding_row_prepended(data_without, data_with, cycle0.data)
 
     def test_discharge_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Discharge with include_preceding_point prepends exactly one row."""
+        """Discharge with include_preceding_row prepends exactly one row."""
         data_without = BreakinCycles_fixture.discharge(1).data
-        data_with = BreakinCycles_fixture.discharge(
-            1, include_preceding_point=True
-        ).data
+        data_with = BreakinCycles_fixture.discharge(1, include_preceding_row=True).data
         self._assert_preceding_row_prepended(
             data_without, data_with, BreakinCycles_fixture.data
         )
 
     def test_rest_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Rest with include_preceding_point prepends exactly one row."""
+        """Rest with include_preceding_row prepends exactly one row."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         data_without = cycle0.rest(0).data
-        data_with = cycle0.rest(0, include_preceding_point=True).data
+        data_with = cycle0.rest(0, include_preceding_row=True).data
         self._assert_preceding_row_prepended(data_without, data_with, cycle0.data)
 
     def test_chargeordischarge_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Chargeordischarge with include_preceding_point prepends exactly one row."""
+        """Chargeordischarge with include_preceding_row prepends exactly one row."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         data_without = cycle0.chargeordischarge(1).data
-        data_with = cycle0.chargeordischarge(1, include_preceding_point=True).data
+        data_with = cycle0.chargeordischarge(1, include_preceding_row=True).data
         self._assert_preceding_row_prepended(data_without, data_with, cycle0.data)
 
     def test_cycle_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Cycle with include_preceding_point prepends exactly one row."""
+        """Cycle with include_preceding_row prepends exactly one row."""
         data_without = BreakinCycles_fixture.cycle(1).data
-        data_with = BreakinCycles_fixture.cycle(1, include_preceding_point=True).data
+        data_with = BreakinCycles_fixture.cycle(1, include_preceding_row=True).data
         self._assert_preceding_row_prepended(
             data_without, data_with, BreakinCycles_fixture.data
         )
@@ -646,20 +644,20 @@ class TestIncludePrecedingPoint:
     def test_procedure_experiment_prepends_preceding_row(
         self, procedure_fixture, exp_name
     ):
-        """Procedure.experiment with include_preceding_point prepends one row."""
+        """Procedure.experiment with include_preceding_row prepends one row."""
         data_without = procedure_fixture.experiment(exp_name).data
         data_with = procedure_fixture.experiment(
-            exp_name, include_preceding_point=True
+            exp_name, include_preceding_row=True
         ).data
         self._assert_preceding_row_prepended(
             data_without, data_with, procedure_fixture.data
         )
 
     def test_constant_current_prepends_preceding_row(self, generic_experiment):
-        """constant_current with include_preceding_point prepends exactly one row."""
+        """constant_current with include_preceding_row prepends exactly one row."""
         data_without = generic_experiment.constant_current(1, target=1.0).data
         data_with = generic_experiment.constant_current(
-            1, target=1.0, include_preceding_point=True
+            1, target=1.0, include_preceding_row=True
         ).data
         full_data = generic_experiment.data
         assert len(data_with) == len(data_without) + 1
@@ -671,10 +669,10 @@ class TestIncludePrecedingPoint:
         assert data_with["Time [s]"][0] == full_data["Time [s]"][idx - 1]
 
     def test_constant_voltage_prepends_preceding_row(self, generic_experiment):
-        """constant_voltage with include_preceding_point prepends exactly one row."""
+        """constant_voltage with include_preceding_row prepends exactly one row."""
         data_without = generic_experiment.constant_voltage(1, target=4.2).data
         data_with = generic_experiment.constant_voltage(
-            1, target=4.2, include_preceding_point=True
+            1, target=4.2, include_preceding_row=True
         ).data
         full_data = generic_experiment.data
         assert len(data_with) == len(data_without) + 1
@@ -687,7 +685,7 @@ class TestIncludePrecedingPoint:
 
 
 class TestIterators:
-    """Tests for iter_* methods and their include_preceding_point behaviour."""
+    """Tests for iter_* methods and their include_preceding_row behaviour."""
 
     def _assert_iter_preceding_row(self, results_without, results_with, full_data):
         assert len(results_with) == len(results_without)
@@ -758,57 +756,55 @@ class TestIterators:
         assert len(results) == 5
         assert [c.data["Cycle"].unique()[0] for c in results] == [0, 1, 2, 3, 4]
 
-    def test_iter_step_with_include_preceding_point(self, BreakinCycles_fixture):
-        """iter_step with include_preceding_point adds one row to each result."""
+    def test_iter_step_with_include_preceding_row(self, BreakinCycles_fixture):
+        """iter_step with include_preceding_row adds one row to each result."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         results_without = list(cycle0.iter_step(slice(1, 2)))
-        results_with = list(cycle0.iter_step(slice(1, 2), include_preceding_point=True))
+        results_with = list(cycle0.iter_step(slice(1, 2), include_preceding_row=True))
         self._assert_iter_preceding_row(results_without, results_with, cycle0.data)
 
-    def test_iter_charge_with_include_preceding_point(self, BreakinCycles_fixture):
-        """iter_charge with include_preceding_point adds one row to each result."""
+    def test_iter_charge_with_include_preceding_row(self, BreakinCycles_fixture):
+        """iter_charge with include_preceding_row adds one row to each result."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         results_without = list(cycle0.iter_charge(slice(0, 1)))
-        results_with = list(
-            cycle0.iter_charge(slice(0, 1), include_preceding_point=True)
-        )
+        results_with = list(cycle0.iter_charge(slice(0, 1), include_preceding_row=True))
         self._assert_iter_preceding_row(results_without, results_with, cycle0.data)
 
-    def test_iter_discharge_with_include_preceding_point(self, BreakinCycles_fixture):
-        """iter_discharge with include_preceding_point adds one row to each result."""
+    def test_iter_discharge_with_include_preceding_row(self, BreakinCycles_fixture):
+        """iter_discharge with include_preceding_row adds one row to each result."""
         results_without = list(BreakinCycles_fixture.iter_discharge(slice(1, 2)))
         results_with = list(
             BreakinCycles_fixture.iter_discharge(
-                slice(1, 2), include_preceding_point=True
+                slice(1, 2), include_preceding_row=True
             )
         )
         self._assert_iter_preceding_row(
             results_without, results_with, BreakinCycles_fixture.data
         )
 
-    def test_iter_rest_with_include_preceding_point(self, BreakinCycles_fixture):
-        """iter_rest with include_preceding_point adds one row to each result."""
+    def test_iter_rest_with_include_preceding_row(self, BreakinCycles_fixture):
+        """iter_rest with include_preceding_row adds one row to each result."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         results_without = list(cycle0.iter_rest(slice(0, 1)))
-        results_with = list(cycle0.iter_rest(slice(0, 1), include_preceding_point=True))
+        results_with = list(cycle0.iter_rest(slice(0, 1), include_preceding_row=True))
         self._assert_iter_preceding_row(results_without, results_with, cycle0.data)
 
-    def test_iter_chargeordischarge_with_include_preceding_point(
+    def test_iter_chargeordischarge_with_include_preceding_row(
         self, BreakinCycles_fixture
     ):
-        """iter_chargeordischarge with include_preceding_point adds one row each."""
+        """iter_chargeordischarge with include_preceding_row adds one row each."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         results_without = list(cycle0.iter_chargeordischarge(slice(1, 2)))
         results_with = list(
-            cycle0.iter_chargeordischarge(slice(1, 2), include_preceding_point=True)
+            cycle0.iter_chargeordischarge(slice(1, 2), include_preceding_row=True)
         )
         self._assert_iter_preceding_row(results_without, results_with, cycle0.data)
 
-    def test_iter_cycle_with_include_preceding_point(self, BreakinCycles_fixture):
-        """iter_cycle with include_preceding_point adds one row to each result."""
+    def test_iter_cycle_with_include_preceding_row(self, BreakinCycles_fixture):
+        """iter_cycle with include_preceding_row adds one row to each result."""
         results_without = list(BreakinCycles_fixture.iter_cycle(slice(1, 2)))
         results_with = list(
-            BreakinCycles_fixture.iter_cycle(slice(1, 2), include_preceding_point=True)
+            BreakinCycles_fixture.iter_cycle(slice(1, 2), include_preceding_row=True)
         )
         self._assert_iter_preceding_row(
             results_without, results_with, BreakinCycles_fixture.data

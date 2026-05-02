@@ -286,7 +286,7 @@ def _build_result(
     lf: "pl.LazyFrame | pl.DataFrame",
     mask: pl.Expr,
     column: str,
-    include_preceding_point: bool,
+    include_preceding_row: bool,
 ) -> "Cycle | Step":
     """Create a filtered Cycle or Step result object.
 
@@ -295,13 +295,13 @@ def _build_result(
         lf: The polars LazyFrame or DataFrame to filter.
         mask: Boolean expression selecting rows to include.
         column: The filter column name; ``"Cycle"`` produces a Cycle, else a Step.
-        include_preceding_point: When ``True``, include the row immediately
+        include_preceding_row: When ``True``, include the row immediately
             before each contiguous block of selected rows.
 
     Returns:
         Cycle | Step: A new result object containing the filtered data.
     """
-    if include_preceding_point:
+    if include_preceding_row:
         mask = _include_preceding_row(mask)
     filtered_lf = lf.filter(mask)
     if column == "Cycle":
@@ -342,14 +342,14 @@ class _Filter:
         self,
         obj: "FilterToCycleType",
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Cycle | Step":
         """Return a single filtered result for the given index.
 
         Args:
             obj: The source object to filter.
             index: Positional selector. ``None`` returns all matching rows.
-            include_preceding_point: When ``True``, include the row immediately
+            include_preceding_row: When ``True``, include the row immediately
                 before each contiguous block of selected rows.
 
         Returns:
@@ -358,13 +358,13 @@ class _Filter:
         lf = get_cycle_column(obj) if self.column == "Cycle" else obj.lf
         exprs = _RankExprs(self.column, self.condition)
         mask = _combined_mask(index, exprs, self.condition)
-        return _build_result(obj, lf, mask, self.column, include_preceding_point)
+        return _build_result(obj, lf, mask, self.column, include_preceding_row)
 
     def plural(
         self,
         obj: "FilterToCycleType",
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Cycle | Step]":
         """Iterate over filtered results for each selected group.
 
@@ -375,7 +375,7 @@ class _Filter:
         Args:
             obj: The source object to filter.
             index: Positional selector. ``None`` yields one result per group.
-            include_preceding_point: When ``True``, include the row immediately
+            include_preceding_row: When ``True``, include the row immediately
                 before each contiguous block of selected rows.
 
         Yields:
@@ -393,7 +393,7 @@ class _Filter:
                     else rank_mask
                 )
                 yield _build_result(
-                    obj, lf, cond_mask, self.column, include_preceding_point
+                    obj, lf, cond_mask, self.column, include_preceding_row
                 )
         else:
             full_mask = _combined_mask(index, exprs, self.condition)
@@ -415,7 +415,7 @@ class _Filter:
                     else rank_mask
                 )
                 yield _build_result(
-                    obj, lf, cond_mask, self.column, include_preceding_point
+                    obj, lf, cond_mask, self.column, include_preceding_row
                 )
 
 
@@ -518,7 +518,7 @@ class StepFiltersMixin:
     def step(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter step events selected by index.
 
@@ -527,7 +527,7 @@ class StepFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` returns
                 all matching rows as a single result.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -538,14 +538,14 @@ class StepFiltersMixin:
             _step_f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def iter_step(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over step events selected by index.
 
@@ -554,7 +554,7 @@ class StepFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` yields
                 one result per group.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -565,7 +565,7 @@ class StepFiltersMixin:
             _step_f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
@@ -575,7 +575,7 @@ class StepFiltersMixin:
         *,
         target: float | None = None,
         rtol: float = 0.001,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter constant-current events selected by index.
 
@@ -593,7 +593,7 @@ class StepFiltersMixin:
             rtol (float): Relative tolerance (dimensionless) controlling the
                 acceptance band as a fraction of ``|target|``. Defaults to
                 ``0.001`` (0.1%).
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -607,7 +607,7 @@ class StepFiltersMixin:
             f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
@@ -617,7 +617,7 @@ class StepFiltersMixin:
         *,
         target: float | None = None,
         rtol: float = 0.001,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over constant-current events selected by index.
 
@@ -630,7 +630,7 @@ class StepFiltersMixin:
                 ``Current [A]`` lies within ``target ± |target| * rtol``.
             rtol (float): Relative tolerance (dimensionless). Defaults to
                 ``0.001`` (0.1%).
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -644,7 +644,7 @@ class StepFiltersMixin:
             f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
@@ -654,7 +654,7 @@ class StepFiltersMixin:
         *,
         target: float | None = None,
         rtol: float = 0.001,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter constant-voltage events selected by index.
 
@@ -668,7 +668,7 @@ class StepFiltersMixin:
                 When ``None``, the signed mode of ``Voltage [V]`` is used.
             rtol (float): Relative tolerance (dimensionless). Defaults to
                 ``0.001`` (0.1%).
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -681,7 +681,7 @@ class StepFiltersMixin:
             f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
@@ -691,7 +691,7 @@ class StepFiltersMixin:
         *,
         target: float | None = None,
         rtol: float = 0.001,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over constant-voltage events selected by index.
 
@@ -705,7 +705,7 @@ class StepFiltersMixin:
                 When ``None``, the signed mode of ``Voltage [V]`` is used.
             rtol (float): Relative tolerance (dimensionless). Defaults to
                 ``0.001`` (0.1%).
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -718,7 +718,7 @@ class StepFiltersMixin:
             f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
@@ -729,7 +729,7 @@ class CycleFiltersMixin:
     def cycle(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Cycle":
         """Filter cycles selected by index.
 
@@ -738,7 +738,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` returns
                 all matching rows as a single result.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -749,14 +749,14 @@ class CycleFiltersMixin:
             _cycle_f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def iter_cycle(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Cycle]":
         """Iterate over cycles selected by index.
 
@@ -765,7 +765,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` yields
                 one result per group.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -776,14 +776,14 @@ class CycleFiltersMixin:
             _cycle_f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def charge(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter charge events selected by index.
 
@@ -792,7 +792,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` returns
                 all matching rows as a single result.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -803,14 +803,14 @@ class CycleFiltersMixin:
             _charge_f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def iter_charge(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over charge events selected by index.
 
@@ -819,7 +819,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` yields
                 one result per group.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -830,14 +830,14 @@ class CycleFiltersMixin:
             _charge_f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def discharge(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter discharge events selected by index.
 
@@ -846,7 +846,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` returns
                 all matching rows as a single result.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -857,14 +857,14 @@ class CycleFiltersMixin:
             _discharge_f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def iter_discharge(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over discharge events selected by index.
 
@@ -873,7 +873,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` yields
                 one result per group.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -884,14 +884,14 @@ class CycleFiltersMixin:
             _discharge_f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def chargeordischarge(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter non-rest events selected by index.
 
@@ -900,7 +900,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` returns
                 all matching rows as a single result.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -911,14 +911,14 @@ class CycleFiltersMixin:
             _chargeordischarge_f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def iter_chargeordischarge(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over non-rest events selected by index.
 
@@ -927,7 +927,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` yields
                 one result per group.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -938,14 +938,14 @@ class CycleFiltersMixin:
             _chargeordischarge_f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def rest(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Step":
         """Filter rest events selected by index.
 
@@ -954,7 +954,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` returns
                 all matching rows as a single result.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -965,14 +965,14 @@ class CycleFiltersMixin:
             _rest_f.singular(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
     def iter_rest(
         self,
         index: "IndexType | None" = None,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Iterator[Step]":
         """Iterate over rest events selected by index.
 
@@ -981,7 +981,7 @@ class CycleFiltersMixin:
                 Supports zero-based integers, sequences of integers, and slices,
                 including negative indexing relative to the end. ``None`` yields
                 one result per group.
-            include_preceding_point (bool): When ``True``, include the data
+            include_preceding_row (bool): When ``True``, include the data
                 row immediately before each contiguous block of selected rows.
 
         Returns:
@@ -992,7 +992,7 @@ class CycleFiltersMixin:
             _rest_f.plural(
                 cast("FilterToCycleType", self),
                 index,
-                include_preceding_point=include_preceding_point,
+                include_preceding_row=include_preceding_row,
             ),
         )
 
@@ -1120,13 +1120,13 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
     def experiment(
         self,
         *experiment_names: str,
-        include_preceding_point: bool = False,
+        include_preceding_row: bool = False,
     ) -> "Experiment":
         """Return an experiment object from the procedure.
 
         Args:
             experiment_names: Variable-length argument list of experiment names.
-            include_preceding_point: When ``True``, prepend the data point
+            include_preceding_row: When ``True``, prepend the data point
                 immediately before the experiment's first row.
 
         Returns:
@@ -1141,7 +1141,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
         mask = pl.col("Step").is_in(flattened_steps)
-        if include_preceding_point:
+        if include_preceding_row:
             mask = _include_preceding_row(mask)
         lf_filtered = self.lf.filter(mask)
         cycles_list: list[tuple[int, int, int]] = []
