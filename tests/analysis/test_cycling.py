@@ -26,10 +26,10 @@ def test_set_capacity_throughput(Cycling_fixture):
     result = cycling._create_capacity_throughput(
         Cycling_fixture.lf,
     ).collect()
-    assert "Capacity Throughput [Ah]" in result.columns
-    assert result["Capacity Throughput [Ah]"].head(1)[0] == 0
+    assert "Capacity Throughput / Ah" in result.columns
+    assert result["Capacity Throughput / Ah"].head(1)[0] == 0
     assert math.isclose(
-        result["Capacity Throughput [Ah]"].tail(1)[0],
+        result["Capacity Throughput / Ah"].tail(1)[0],
         0.472115,
         rel_tol=1e-5,
     )
@@ -41,25 +41,26 @@ def test_summary(BreakinCycles_fixture):
     assert isinstance(summary, Result)
     columns = summary.data.columns
     required_columns = [
-        "Capacity Throughput [Ah]",
-        "Time [s]",
-        "Charge Capacity [Ah]",
-        "Discharge Capacity [Ah]",
-        "SOH Charge [%]",
-        "SOH Discharge [%]",
+        "Capacity Throughput / Ah",
+        "Test Time / s",
+        "Charge Capacity / Ah",
+        "Discharge Capacity / Ah",
+        "SOH Charge / %",
+        "SOH Discharge / %",
         "Coulombic Efficiency",
+        "Cycle Count / 1",
     ]
-    assert all(item in columns for item in required_columns)
+    assert set(required_columns) == set(columns)
     assert summary.data.shape[0] == 5
-    assert summary.data["SOH Charge [%]"].head(1)[0] == 100
-    assert summary.data["SOH Discharge [%]"].head(1)[0] == 100
+    assert summary.data["SOH Charge / %"].head(1)[0] == 100
+    assert summary.data["SOH Discharge / %"].head(1)[0] == 100
     assert math.isclose(
-        summary.data["Charge Capacity [Ah]"].tail(1)[0],
+        summary.data["Charge Capacity / Ah"].tail(1)[0],
         0.04139,
         rel_tol=1e-2,
     )
     assert math.isclose(
-        summary.data["Discharge Capacity [Ah]"].tail(1)[0],
+        summary.data["Discharge Capacity / Ah"].tail(1)[0],
         0.0413295,
         rel_tol=1e-2,
     )
@@ -69,3 +70,6 @@ def test_summary(BreakinCycles_fixture):
         0.999212,
         rel_tol=1e-2,
     )
+
+    cycle_counts = summary.data["Cycle Count / 1"].to_list()
+    assert cycle_counts == sorted(cycle_counts)

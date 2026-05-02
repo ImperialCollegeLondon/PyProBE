@@ -61,7 +61,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
     lf_time = (
         input_data.lf.with_columns(time_expr)
         .group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
-        .agg(pl.col(BDF.TEST_TIME_SECOND.name).first().alias("Time / s"))
+        .agg(pl.col(BDF.TEST_TIME_SECOND.name).first().alias(BDF.TEST_TIME_SECOND.name))
     )
 
     lf_charge = (
@@ -89,7 +89,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         )
         .join(lf_charge, on=BDF.CYCLE_COUNT.name, how="outer_coalesce")
         .join(lf_discharge, on=BDF.CYCLE_COUNT.name, how="outer_coalesce")
-    ).sort("Cycle")
+    ).sort(BDF.CYCLE_COUNT.name)
 
     lf = lf.with_columns(
         (pl.col("Charge Capacity / Ah") / pl.first("Charge Capacity / Ah") * 100).alias(
@@ -132,7 +132,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
         ),
     }
     return Result(
-        lf=lf.sort(BDF.CYCLE_COUNT.name),
+        lf=lf,
         metadata=input_data.metadata,
         column_definitions=column_definitions,
     )
