@@ -1145,7 +1145,13 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
             else:
                 logger.warning("README path provided but not found: {}", readme_path)
 
-        return cls(lf=lf, metadata=parquet_metadata, readme_dict=readme_dict)
+        # create the Procedure instance with the loaded data and metadata
+        procedure = cls(lf=lf, metadata=parquet_metadata, readme_dict=readme_dict)
+        # resolve Test Time / s
+        procedure.lf = procedure.lf.with_columns(
+            procedure.columns.resolve(BDF.TEST_TIME_SECOND)
+        )
+        return procedure
 
     def experiment(
         self,

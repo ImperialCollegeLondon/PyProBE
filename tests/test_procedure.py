@@ -139,3 +139,19 @@ class TestProcedureLoad:
 
         with pytest.raises(FileNotFoundError):
             Procedure.load(missing_path)
+
+    def test_load_materialises_test_time_when_only_unix_time(self, tmp_path) -> None:
+        """Test Time / s is in schema when parquet has only Unix Time / s."""
+        df = pl.DataFrame(
+            {
+                "Unix Time / s": [1_700_000_000.0, 1_700_000_001.0, 1_700_000_002.0],
+                "Current / A": [1.0, -1.0, 0.5],
+                "Voltage / V": [3.7, 3.6, 3.8],
+            }
+        )
+        parquet_path = tmp_path / "data.bdx.parquet"
+        df.write_parquet(parquet_path)
+
+        procedure = Procedure.load(parquet_path)
+
+        assert "Test Time / s" in procedure.lf.collect_schema().names()

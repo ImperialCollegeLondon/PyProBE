@@ -446,6 +446,33 @@ class TestStepAndCycleFiltering:
         data = BreakinCycles_fixture.cycle(0).step([0, 2, 3]).data
         assert set(data["Step Index / 1"].unique().to_list()) == {4, 6, 7}
 
+    def test_test_time_not_zeroed_after_filtering(self, BreakinCycles_fixture):
+        """Test Time / s first value stays non-zero at each filter level."""
+        experiment_first = (
+            BreakinCycles_fixture.lf.select(
+                BreakinCycles_fixture.columns.resolve(BDF.TEST_TIME_SECOND)
+            )
+            .first()
+            .collect()[0, 0]
+        )
+        assert experiment_first > 0
+
+        cycle = BreakinCycles_fixture.cycle(0)
+        cycle_first = (
+            cycle.lf.select(cycle.columns.resolve(BDF.TEST_TIME_SECOND))
+            .first()
+            .collect()[0, 0]
+        )
+        assert cycle_first > 0
+
+        step = BreakinCycles_fixture.cycle(0).step(0)
+        step_first = (
+            step.lf.select(step.columns.resolve(BDF.TEST_TIME_SECOND))
+            .first()
+            .collect()[0, 0]
+        )
+        assert step_first > 0
+
 
 class TestChargeDischargeRest:
     """Integration tests for charge(), discharge(), rest(), chargeordischarge()."""
