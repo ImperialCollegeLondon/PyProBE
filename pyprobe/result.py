@@ -182,7 +182,7 @@ class Result:
 
     .. code-block:: python
 
-        result.plot(x="Time [s]", y="Current [A]")
+        result.plot(x="Test Time / s", y="Current / A")
 
     Refer to the `pandas documentation \
     <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.plot.html>`_
@@ -221,7 +221,7 @@ class Result:
 
         .. code-block:: python
 
-            result.hvplot(x="Time [s]", y="Current [A]", kind="scatter")
+            result.hvplot(x="Test Time / s", y="Current / A", kind="scatter")
 
         This method is not compatible with the inline syntax for hvplot:
         :code:`result.hvplot.scatter(...)`.

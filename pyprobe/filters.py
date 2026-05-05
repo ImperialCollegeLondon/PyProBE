@@ -536,11 +536,11 @@ class StepFiltersMixin:
             index: Positional selector. Supports zero-based integers, sequences
                 of integers, and slices, including negative indexing relative to
                 the end. ``None`` returns all matching rows as a single result.
-            target: When supplied, select only rows where ``Current [A]`` lies
+            target: When supplied, select only rows where ``Current / A`` lies
                 within ``target ± |target| * rtol``. Sign is preserved:
                 ``target=1.0`` matches only positive (charge) values;
                 ``target=-1.0`` matches only negative (discharge) values. When
-                ``None``, the signed mode of non-zero ``Current [A]`` values is
+                ``None``, the signed mode of non-zero ``Current / A`` values is
                 used as the target.
             rtol: Relative tolerance (dimensionless) controlling the acceptance
                 band as a fraction of ``|target|``. Defaults to ``0.001`` (0.1%).
