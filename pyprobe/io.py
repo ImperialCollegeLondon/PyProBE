@@ -42,16 +42,15 @@ if TYPE_CHECKING:
 _PARQUET_METADATA_KEY: bytes = b"bdx_metadata"
 """Key used to store user metadata in Parquet footer."""
 
-_REQUIRED_BDF_TIME: list[BDF] = [BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND]
-"""Time columns (at least one must be resolvable); Unix Time is preferred."""
-
 _REQUIRED_BDF_COLUMNS: list[BDF] = [
+    BDF.TEST_TIME_SECOND,
     BDF.CURRENT_AMPERE,
     BDF.VOLTAGE_VOLT,
 ]
 """BDF columns that must be resolvable; :func:`process_cycler` raises if not."""
 
 _OPTIONAL_BDF_COLUMNS: list[BDF] = [
+    BDF.UNIX_TIME_SECOND,
     BDF.NET_CAPACITY_AH,
     BDF.STEP_COUNT,
     BDF.STEP_INDEX,
@@ -256,6 +255,8 @@ class MetadataManager:
         """
         existing_meta = self.read(metadata_format=metadata_format)
         merged_metadata = {**existing_meta, **metadata}
+        if merged_metadata == existing_meta:
+            return
         self.write(merged_metadata, metadata_format=metadata_format)
 
     @classmethod
@@ -558,16 +559,23 @@ def process_cycler(
 
     dfs = _load_raw_dataframes(source, plugin, timezone=timezone)
     df = _concat_dataframes(dfs)
+
+    # if Unix Time / s in data already, drop Test Time / s
+    # means Test Time / s is calculated from Unix Time / s where possible
+    if {"Unix Time / s", "Test Time / s"}.issubset(set(df.collect_schema().names())):
+        df = df.drop("Test Time / s")
+
     column_set = ColumnDict(df.columns)
     expressions: list[pl.Expr] = []
-
-    # Resolve time column (Unix Time preferred, Test Time fallback)
-    expressions.append(_resolve_time_column(column_set))
-
     for bdf_col in _REQUIRED_BDF_COLUMNS:
         try:
             expressions.append(column_set.resolve(bdf_col))
         except ValueError as exc:
+            if bdf_col == BDF.TEST_TIME_SECOND:
+                raise ValueError(
+                    "Required time column: either 'Unix Time / s' or 'Test Time / s' "
+                    "must be available in the source data."
+                ) from exc
             raise ValueError(
                 f"Required BDF column '{bdf_col.quantity}' could not be resolved "
                 f"from the source data: {exc}"

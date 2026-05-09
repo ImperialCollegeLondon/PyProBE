@@ -264,6 +264,8 @@ def test_dashboard_run(cell_fixture):
     """Test running the dashboard."""
 
     def run_mini_app():
+        import tempfile
+        from pathlib import Path
         from unittest.mock import patch
 
         import streamlit as st  # noqa: F811
@@ -277,20 +279,27 @@ def test_dashboard_run(cell_fixture):
                 "temperature": 25,
             },
         )
-        cell.add_procedure(
-            "Sample",
-            "tests/sample_data/neware/sample_data_neware.bdx.parquet",
-        )
-        cell.add_procedure(
-            "Sample 2",
-            "tests/sample_data/neware/sample_data_neware.bdx.parquet",
-        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            readme = "tests/sample_data/neware/README.yaml"
+            cell.add_procedure(
+                "Sample",
+                "tests/sample_data/neware/sample_data_neware.bdx.parquet",
+                output_path=tmp / "sample.bdx.parquet",
+                readme_path=readme,
+            )
+            cell.add_procedure(
+                "Sample 2",
+                "tests/sample_data/neware/sample_data_neware.bdx.parquet",
+                output_path=tmp / "sample2.bdx.parquet",
+                readme_path=readme,
+            )
 
-        dashboard = _Dashboard([cell])
-        with patch.object(_Dashboard, "select_cell_indices", return_value=[0]):
-            dashboard.run()
+            dashboard = _Dashboard([cell])
+            with patch.object(_Dashboard, "select_cell_indices", return_value=[0]):
+                dashboard.run()
 
-            st.session_state.figure = dashboard.fig
+                st.session_state.figure = dashboard.fig
 
     at = AppTest.from_function(run_mini_app)
     at.run(timeout=30)

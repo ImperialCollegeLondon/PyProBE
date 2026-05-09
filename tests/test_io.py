@@ -346,6 +346,26 @@ class TestProcessCyclerEdgeCases:
         result = pl.scan_parquet(result).collect()
         assert result.shape[0] == n_rows
 
+    def test_process_cycler_test_time_derived_from_unix_time(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that Test Time is derived from Unix Time."""
+        fake_df = pd.DataFrame(
+            {
+                "Unix Time / s": [0, 1, 2],
+                "Test Time / s": [0, 2, 4],  # different time, should be ignored
+                "Current / A": [1.0, -1.0, 0.5],
+                "Voltage / V": [3.7, 3.6, 3.8],
+            }
+        )
+        with patch("bdf.read", return_value=fake_df):
+            result = process_cycler("fake.csv", output_path=tmp_path)
+
+        result = pl.scan_parquet(result).collect()
+        assert "Test Time / s" in result.columns
+        test_time = result["Test Time / s"].to_list()
+        assert test_time == pytest.approx([0.0, 1.0, 2.0])
+
 
 class TestProcessCyclerIntegration:
     """End-to-end integration tests using real sample data files."""
@@ -355,6 +375,7 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 9, 20, 8, 37, 5, 772000).timestamp()
             ],
+            "Test Time / s": [301.214 - 30.0005],  # first datapoint at 30 s
             "Step Index / 1": [3],
             "Step Count / 1": [2],
             "Current / A": [2.650138],
@@ -369,6 +390,7 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2023, 6, 19, 17, 58, 3, 235803).timestamp()
             ],
+            "Test Time / s": [70.235804],
             "Step Index / 1": [4],
             "Step Count / 1": [1],
             "Current / A": [0.449602],
@@ -383,6 +405,7 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 5, 13, 11, 19, 51, 602139).timestamp()
             ],
+            "Test Time / s": [139.524007],
             "Step Index / 1": [1],
             "Step Count / 1": [1],
             "Current / A": [-0.899826],
@@ -423,6 +446,7 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2023, 11, 23, 15, 56, 24, 60000).timestamp()
             ],
+            "Test Time / s": [13.06],
             "Step Index / 1": [2],
             "Step Count / 1": [1],
             "Current / A": [28.798],
@@ -437,6 +461,7 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 3, 6, 21, 39, 38, 591000).timestamp()
             ],
+            "Test Time / s": [562749.497],
             "Step Index / 1": [12],
             "Step Count / 1": [61],
             "Current / A": [0.0],
@@ -448,6 +473,7 @@ class TestProcessCyclerIntegration:
     novonix_last_row = pl.DataFrame(
         {
             "Unix Time / s": [datetime.datetime(2025, 7, 19, 18, 51, 8).timestamp()],
+            "Test Time / s": [12288.0],
             "Step Count / 1": [1],
             "Step Index / 1": [0],
             "Current / A": [0.49999387],
@@ -754,6 +780,21 @@ class TestAttachMetadata:
         read_meta = read_metadata(output_file)
         assert read_meta["cell_id"] == "A"
         assert read_meta["batch"] == "1"
+
+    def test_attach_metadata_no_write_when_unchanged(self, tmp_path: Path) -> None:
+        """attach_metadata skips file write when metadata is already up to date."""
+        df = pl.DataFrame({"x": [1, 2, 3]})
+        output_file = tmp_path / "test.bdx.parquet"
+        df.write_parquet(str(output_file))
+
+        metadata = {"cell_id": "C001"}
+        attach_metadata(output_file, metadata, metadata_format="parquet")
+        mtime_after_first = output_file.stat().st_mtime_ns
+
+        attach_metadata(output_file, metadata, metadata_format="parquet")
+        mtime_after_second = output_file.stat().st_mtime_ns
+
+        assert mtime_after_first == mtime_after_second
 
     def test_attach_metadata_file_not_found(self, tmp_path: Path) -> None:
         """attach_metadata raises FileNotFoundError if file doesn't exist."""
