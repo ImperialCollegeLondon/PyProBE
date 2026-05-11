@@ -105,24 +105,23 @@ def step_descriptions_fixture():
 
 
 @pytest.fixture
-def cell_fixture(info_fixture, sample_data_neware_parquet, tmp_path):
+def cell_fixture(sample_data_neware_parquet):
     """Pytest fixture for example cell."""
-    cell = Cell(info=info_fixture)
-    cell.add_procedure(
-        "Sample",
+    c = Cell()
+    proc = Procedure.load(
         sample_data_neware_parquet,
-        output_path=tmp_path / "sample.bdx.parquet",
         readme_path="tests/sample_data/neware/README.yaml",
     )
-    return cell
+    c.add_procedure("Sample", proc)
+    return c
 
 
 @pytest.fixture
-def procedure_fixture(info_fixture):
+def procedure_fixture():
     """Pytest fixture for example procedure."""
     return Procedure.load(
         "tests/sample_data/neware/sample_data_neware.bdx.parquet",
-        "tests/sample_data/neware/README.yaml",
+        readme_path="tests/sample_data/neware/README.yaml",
     )
 
 

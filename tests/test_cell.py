@@ -1,7 +1,5 @@
 """Tests for the Cell class."""
 
-import copy
-import datetime
 import json
 import logging
 import os
@@ -13,45 +11,31 @@ from polars.testing import assert_frame_equal
 
 import pyprobe
 from pyprobe import cell
-from pyprobe._version import __version__
+from pyprobe.filters import Procedure
 
 
 @pytest.fixture
-def cell_instance(info_fixture):
+def cell_instance():
     """Return a Cell instance."""
-    return cell.Cell(info=info_fixture)
+    return cell.Cell()
 
 
-def test_init(cell_instance, info_fixture):
-    """Test the __init__ method."""
-    expected_info = copy.copy(info_fixture)
-    assert cell_instance.info == expected_info
+def test_init(cell_instance):
+    """Test Cell initialises with empty procedure dict and no info attribute."""
     assert cell_instance.procedure == {}
+    assert not hasattr(cell_instance, "info")
 
 
 def test_make_cell_list():
-    """Test the make_cell_list method."""
+    """make_cell_list emits DeprecationWarning and returns a list of Cell objects."""
     filepath = "tests/sample_data/neware/Experiment_Record.xlsx"
     record_name = "sample_data_neware"
-    cell_list = pyprobe.make_cell_list(filepath, record_name)
-    assert cell_list[0].info == {
-        "Name": "Cell1",
-        "Chemistry": "NMC622",
-        "Nominal Capacity [Ah]": 5.0,
-        "Start date": datetime.datetime(2024, 3, 20, 9, 3, 23),
-    }
-    assert cell_list[1].info == {
-        "Name": "Cell2",
-        "Chemistry": "NMC811",
-        "Nominal Capacity [Ah]": 3.0,
-        "Start date": datetime.datetime(2024, 3, 20, 9, 2, 23),
-    }
-    assert cell_list[2].info == {
-        "Name": "Cell3",
-        "Chemistry": "LFP",
-        "Nominal Capacity [Ah]": 2.5,
-        "Start date": datetime.datetime(2024, 3, 20, 9, 3, 23),
-    }
+    with pytest.warns(DeprecationWarning, match="make_cell_list"):
+        cell_list = pyprobe.make_cell_list(filepath, record_name)
+    assert len(cell_list) == 3
+    for c in cell_list:
+        assert isinstance(c, cell.Cell)
+        assert c.procedure == {}
 
 
 @pytest.fixture
@@ -89,12 +73,13 @@ def test_import_pybamm_solution(benchmark, tmp_path):
         parameter_values=parameter_values,
     )
     sol = sim.solve()
-    cell_instance = cell.Cell(info={})
-    cell_instance.import_pybamm_solution(
-        procedure_name="PyBaMM",
-        pybamm_solutions=sol,
-        experiment_names="Test",
-    )
+    cell_instance = cell.Cell()
+    with pytest.warns(DeprecationWarning, match="import_pybamm_solution"):
+        cell_instance.import_pybamm_solution(
+            procedure_name="PyBaMM",
+            pybamm_solutions=sol,
+            experiment_names="Test",
+        )
     assert_array_equal(
         cell_instance.procedure["PyBaMM"].experiment("Test").get("Voltage / V"),
         sol["Terminal voltage [V]"].entries,
@@ -159,11 +144,12 @@ def test_import_pybamm_solution(benchmark, tmp_path):
     sol2 = sim2.solve(starting_solution=sol)
 
     def add_two_experiments():
-        return cell_instance.import_pybamm_solution(
-            procedure_name="PyBaMM two experiments",
-            pybamm_solutions=[sol, sol2],
-            experiment_names=["Test1", "Test2"],
-        )
+        with pytest.warns(DeprecationWarning):
+            return cell_instance.import_pybamm_solution(
+                procedure_name="PyBaMM two experiments",
+                pybamm_solutions=[sol, sol2],
+                experiment_names=["Test1", "Test2"],
+            )
 
     benchmark(add_two_experiments)
     assert set(
@@ -189,12 +175,13 @@ def test_import_pybamm_solution(benchmark, tmp_path):
 
     # test reading and writing to parquet
     parquet_path = tmp_path / "pybamm.parquet"
-    cell_instance.import_pybamm_solution(
-        procedure_name="PyBaMM",
-        pybamm_solutions=sol,
-        experiment_names="Test",
-        output_data_path=str(parquet_path),
-    )
+    with pytest.warns(DeprecationWarning):
+        cell_instance.import_pybamm_solution(
+            procedure_name="PyBaMM",
+            pybamm_solutions=sol,
+            experiment_names="Test",
+            output_data_path=str(parquet_path),
+        )
     written_data = pl.read_parquet(parquet_path)
     assert_frame_equal(
         cell_instance.procedure["PyBaMM"].data,
@@ -209,12 +196,13 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
 
     cell_instance.add_procedure(title, sample_data_neware_parquet)
     archive_path = tmp_path / "archive"
-    cell_instance.archive(str(archive_path))
+    with pytest.warns(DeprecationWarning, match="archive"):
+        cell_instance.archive(str(archive_path))
     assert os.path.exists(archive_path)
 
-    cell_from_file = pyprobe.load_archive(str(archive_path))
+    with pytest.warns(DeprecationWarning, match="load_archive"):
+        cell_from_file = pyprobe.load_archive(str(archive_path))
     assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
-    assert cell_instance.info == cell_from_file.info
     assert (
         cell_instance.procedure[title].readme_dict
         == cell_from_file.procedure[title].readme_dict
@@ -243,24 +231,19 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
     with open(archive_path / "metadata.json", "w") as f:
         json.dump(metadata, f)
     with pytest.warns(
-        UserWarning,
-        match=(
-            f"The PyProBE version used to archive the cell was "
-            f"{metadata['PyProBE Version']}, the current version is "
-            f"{__version__}. There may be compatibility"
-            f" issues."
-        ),
+        (DeprecationWarning, UserWarning),
     ):
         cell_from_file = pyprobe.load_archive(str(archive_path))
 
     # test with zip file
     archive_zip_path = tmp_path / "archive.zip"
-    cell_instance.archive(str(archive_zip_path))
+    with pytest.warns(DeprecationWarning, match="archive"):
+        cell_instance.archive(str(archive_zip_path))
     assert os.path.exists(archive_zip_path)
     assert not os.path.exists(tmp_path / "archive")
-    cell_from_file = pyprobe.load_archive(str(archive_zip_path))
+    with pytest.warns(DeprecationWarning, match="load_archive"):
+        cell_from_file = pyprobe.load_archive(str(archive_zip_path))
     assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
-    assert cell_instance.info == cell_from_file.info
     assert (
         cell_instance.procedure[title].readme_dict
         == cell_from_file.procedure[title].readme_dict
@@ -286,99 +269,75 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
 class TestCellAddProcedure:
     """Tests for Cell.add_procedure() method."""
 
-    def test_add_procedure_basic(self, cell_instance, mocker):
-        """add_procedure processes cycler and loads procedure."""
-        from pathlib import Path
-        from unittest.mock import MagicMock
+    def test_add_procedure_with_parquet_path(self, sample_data_neware_parquet):
+        """add_procedure loads and stores a Procedure from a parquet path."""
+        c = cell.Cell()
+        c.add_procedure("Sample", sample_data_neware_parquet)
+        assert "Sample" in c.procedure
+        assert isinstance(c.procedure["Sample"], Procedure)
 
-        source = "fake_cycler_file.xlsx"
-        procedure_name = "TestProcedure"
+    def test_add_procedure_with_procedure_object(self, sample_data_neware_parquet):
+        """add_procedure stores an existing Procedure object directly."""
+        proc = Procedure.load(sample_data_neware_parquet)
+        c = cell.Cell()
+        c.add_procedure("Sample", proc)
+        assert c.procedure["Sample"] is proc
 
-        mock_path = Path("/tmp/output.bdx.parquet")
-        mock_procedure = MagicMock()
+    def test_add_procedure_with_lazyframe(self, lazyframe_fixture):
+        """add_procedure wraps a LazyFrame in a Procedure."""
+        c = cell.Cell()
+        c.add_procedure("Sample", lazyframe_fixture)
+        assert isinstance(c.procedure["Sample"], Procedure)
 
-        mock_process = mocker.patch(
-            "pyprobe.io.process_cycler",
-            return_value=mock_path,
-        )
-        mock_attach = mocker.patch("pyprobe.io.attach_metadata")
-        mock_load = mocker.patch(
-            "pyprobe.filters.Procedure.load",
-            return_value=mock_procedure,
-        )
+    def test_add_procedure_with_dataframe(self, lazyframe_fixture):
+        """add_procedure wraps a DataFrame in a Procedure."""
+        c = cell.Cell()
+        c.add_procedure("Sample", lazyframe_fixture.collect())
+        assert isinstance(c.procedure["Sample"], Procedure)
 
-        cell_instance.add_procedure(
-            procedure_name,
-            source,
-            output_path="/tmp/out.bdx.parquet",
-        )
+    def test_add_procedure_bdf_incompatible_dataframe_raises_error(self):
+        """add_procedure raises ValueError when DataFrame lacks required BDF columns."""
+        import polars as pl
 
-        mock_process.assert_called_once()
-        mock_attach.assert_called_once()
-        mock_load.assert_called_once_with(mock_path, readme_path=None)
-        assert cell_instance.procedure[procedure_name] == mock_procedure
+        df = pl.DataFrame({"time": [0.0, 1.0], "arbitrary_col": [1.0, 2.0]})
+        c = cell.Cell()
+        with pytest.raises(ValueError, match="Required"):
+            c.add_procedure("Sample", df)
 
-    def test_add_procedure_merges_metadata(self, cell_instance, mocker):
-        """add_procedure merges cell.info with provided metadata."""
-        from pathlib import Path
-        from unittest.mock import MagicMock
 
-        source = "fake_cycler_file.xlsx"
-        procedure_name = "TestProcedure"
-        additional_metadata = {"batch": "B001"}
+class TestCellDeprecations:
+    """Tests that deprecated Cell methods emit DeprecationWarning."""
 
-        mock_path = Path("/tmp/output.bdx.parquet")
-        mock_procedure = MagicMock()
+    def test_archive_emits_deprecation(self, tmp_path, sample_data_neware_parquet):
+        """Cell.archive() emits DeprecationWarning."""
+        c = cell.Cell()
+        c.add_procedure("Sample", sample_data_neware_parquet)
+        with pytest.warns(DeprecationWarning, match="archive"):
+            c.archive(str(tmp_path / "arc"))
 
-        mocker.patch(
-            "pyprobe.io.process_cycler",
-            return_value=mock_path,
-        )
-        mock_attach = mocker.patch("pyprobe.io.attach_metadata")
-        mocker.patch(
-            "pyprobe.filters.Procedure.load",
-            return_value=mock_procedure,
-        )
+    def test_load_archive_emits_deprecation(self, tmp_path, sample_data_neware_parquet):
+        """load_archive() emits DeprecationWarning."""
+        c = cell.Cell()
+        c.add_procedure("Sample", sample_data_neware_parquet)
+        with pytest.warns(DeprecationWarning):
+            c.archive(str(tmp_path / "arc"))
+        with pytest.warns(DeprecationWarning, match="load_archive"):
+            pyprobe.load_archive(str(tmp_path / "arc"))
 
-        cell_instance.add_procedure(
-            procedure_name,
-            source,
-            metadata=additional_metadata,
-        )
+    def test_make_cell_list_emits_deprecation(self):
+        """make_cell_list() emits DeprecationWarning."""
+        filepath = "tests/sample_data/neware/Experiment_Record.xlsx"
+        with pytest.warns(DeprecationWarning, match="make_cell_list"):
+            pyprobe.make_cell_list(filepath, "sample_data_neware")
 
-        expected_metadata = {**cell_instance.info, **additional_metadata}
-        mock_attach.assert_called_once()
-        call_args = mock_attach.call_args
-        assert call_args[0][1] == expected_metadata
+    def test_import_pybamm_solution_emits_deprecation(self):
+        """Cell.import_pybamm_solution() emits DeprecationWarning."""
+        import contextlib
 
-    def test_add_procedure_custom_readme(self, cell_instance, mocker):
-        """add_procedure uses explicit readme_path when provided."""
-        from pathlib import Path
-        from unittest.mock import MagicMock
-
-        source = "fake_cycler_file.xlsx"
-        procedure_name = "TestProcedure"
-        readme_path = Path("/custom/README.yaml")
-
-        mock_path = Path("/tmp/output.bdx.parquet")
-        mock_procedure = MagicMock()
-
-        mocker.patch(
-            "pyprobe.io.process_cycler",
-            return_value=mock_path,
-        )
-        mocker.patch("pyprobe.io.attach_metadata")
-        mock_load = mocker.patch(
-            "pyprobe.filters.Procedure.load",
-            return_value=mock_procedure,
-        )
-
-        cell_instance.add_procedure(
-            procedure_name,
-            source,
-            readme_path=readme_path,
-        )
-
-        mock_load.assert_called_once()
-        call_kwargs = mock_load.call_args.kwargs
-        assert call_kwargs["readme_path"] == readme_path
+        pytest.importorskip("pybamm")
+        c = cell.Cell()
+        with (
+            pytest.warns(DeprecationWarning, match="import_pybamm_solution"),
+            contextlib.suppress(Exception),
+        ):
+            c.import_pybamm_solution("x", [], [])

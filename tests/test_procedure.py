@@ -1,5 +1,7 @@
 """Module containing tests of the procedure class."""
 
+from typing import Any
+
 import numpy as np
 import polars as pl
 import pytest
@@ -155,3 +157,177 @@ class TestProcedureLoad:
         procedure = Procedure.load(parquet_path)
 
         assert "Test Time / s" in procedure.lf.collect_schema().names()
+
+    def test_load_parquet_sets_path(self, tmp_path) -> None:
+        """Procedure.load with a .parquet file sets _path to the resolved path."""
+        df = pl.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0],
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+        parquet_path = tmp_path / "data.parquet"
+        df.write_parquet(parquet_path)
+
+        procedure = Procedure.load(parquet_path)
+
+        assert procedure._path == parquet_path  # noqa: SLF001
+
+    def test_load_csv_path_returns_none_path(self, tmp_path) -> None:
+        """Procedure.load with a .csv file returns Procedure with _path=None."""
+        csv_path = tmp_path / "data.csv"
+        csv_path.write_text(
+            "Test Time / s,Current / A,Voltage / V\n0.0,1.0,3.7\n1.0,-1.0,3.6\n"
+        )
+
+        procedure = Procedure.load(csv_path)
+
+        assert procedure._path is None  # noqa: SLF001
+
+    def test_load_lazyframe_returns_none_path(self) -> None:
+        """Procedure.load with a LazyFrame returns Procedure with _path=None."""
+        lf = pl.LazyFrame(
+            {
+                "Test Time / s": [0.0, 1.0],
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+
+        procedure = Procedure.load(lf)
+
+        assert procedure._path is None  # noqa: SLF001
+
+    def test_load_dataframe_returns_none_path(self) -> None:
+        """Procedure.load with a DataFrame returns Procedure with _path=None."""
+        df = pl.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0],
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+
+        procedure = Procedure.load(df)
+
+        assert procedure._path is None  # noqa: SLF001
+
+    def test_load_raises_on_missing_required_bdf_columns(self, tmp_path) -> None:
+        """Procedure.load raises ValueError when required BDF columns are absent."""
+        csv_path = tmp_path / "bad.csv"
+        csv_path.write_text("Test Time / s,Some Column\n0.0,1.0\n1.0,2.0\n")
+
+        with pytest.raises(ValueError, match="Required BDF column"):
+            Procedure.load(csv_path)
+
+    def test_path_propagates_through_filter(self, tmp_path) -> None:
+        """_path is preserved after a filter operation."""
+        df = pl.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0, 2.0],
+                "Current / A": [1.0, -1.0, 0.5],
+                "Voltage / V": [3.7, 3.6, 3.8],
+                "Step Index / 1": [1, 1, 2],
+                "Step Count / 1": [0, 0, 1],
+            }
+        )
+        parquet_path = tmp_path / "data.parquet"
+        df.write_parquet(parquet_path)
+
+        procedure = Procedure.load(parquet_path)
+        step = procedure.step(1)
+
+        assert step._path == parquet_path  # noqa: SLF001
+
+
+class TestSyncMetadata:
+    """Tests for Procedure.sync_metadata()."""
+
+    def _make_procedure_with_metadata(
+        self, tmp_path, initial_meta: dict[str, Any]
+    ) -> "Procedure":
+        """Helper: create parquet with metadata, load as Procedure."""
+        import json
+
+        import pyarrow.parquet as pq
+
+        from pyprobe.io import _PARQUET_METADATA_KEY
+
+        df = pl.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0],
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+        parquet_path = tmp_path / "data.parquet"
+        table = df.to_arrow()
+        existing_meta: dict[bytes, bytes] = table.schema.metadata or {}
+        table = table.replace_schema_metadata(
+            {**existing_meta, _PARQUET_METADATA_KEY: json.dumps(initial_meta).encode()}
+        )
+        pq.write_table(table, parquet_path)
+        return Procedure.load(parquet_path)
+
+    def test_sync_metadata_writes_new_key(self, tmp_path) -> None:
+        """sync_metadata writes a new key to the backing file."""
+        from pyprobe.io import MetadataManager
+
+        proc = self._make_procedure_with_metadata(tmp_path, {"existing": "value"})
+        proc.metadata["new_key"] = "new_value"
+
+        proc.sync_metadata()
+
+        assert proc._path is not None  # noqa: SLF001
+        written = MetadataManager(proc._path).read_parquet()  # noqa: SLF001
+        assert written["new_key"] == "new_value"
+        assert written["existing"] == "value"
+
+    def test_sync_metadata_protect_existing_raises_on_removed_key(
+        self, tmp_path
+    ) -> None:
+        """sync_metadata(protect_existing=True) raises when a key is removed."""
+        proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "val_a"})
+        del proc.metadata["key_a"]
+
+        with pytest.raises(ValueError, match="absent from metadata"):
+            proc.sync_metadata(protect_existing=True)
+
+    def test_sync_metadata_protect_existing_raises_on_changed_value(
+        self, tmp_path
+    ) -> None:
+        """sync_metadata(protect_existing=True) raises when a value changes."""
+        proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "original"})
+        proc.metadata["key_a"] = "changed"
+
+        with pytest.raises(ValueError, match="changed value"):
+            proc.sync_metadata(protect_existing=True)
+
+    def test_sync_metadata_protect_false_allows_value_change(self, tmp_path) -> None:
+        """sync_metadata(protect_existing=False) allows changing an existing value."""
+        from pyprobe.io import MetadataManager
+
+        proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "original"})
+        proc.metadata["key_a"] = "changed"
+
+        proc.sync_metadata(protect_existing=False)
+
+        assert proc._path is not None  # noqa: SLF001
+        written = MetadataManager(proc._path).read_parquet()  # noqa: SLF001
+        assert written["key_a"] == "changed"
+
+    def test_sync_metadata_raises_when_no_path(self) -> None:
+        """sync_metadata raises RuntimeError when _path is None."""
+        proc = Procedure.load(
+            pl.DataFrame(
+                {
+                    "Test Time / s": [0.0],
+                    "Current / A": [1.0],
+                    "Voltage / V": [3.7],
+                }
+            )
+        )
+
+        with pytest.raises(RuntimeError, match="_path is None"):
+            proc.sync_metadata()

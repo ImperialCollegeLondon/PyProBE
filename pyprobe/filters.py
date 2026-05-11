@@ -302,6 +302,7 @@ def _build_result(
     if include_preceding_row:
         mask = _include_preceding_row(mask)
     filtered_lf = obj.lf.filter(mask)
+    path = getattr(obj, "_path", None)
     if column == BDF.CYCLE_COUNT:
         cycle_info = obj.cycle_info[1:] if len(obj.cycle_info) > 1 else []
         return Cycle(
@@ -310,12 +311,14 @@ def _build_result(
             column_definitions=obj.column_definitions,
             step_descriptions=obj.step_descriptions,
             cycle_info=cycle_info,
+            _path=path,
         )
     return Step(
         lf=filtered_lf,
         metadata=obj.info,
         column_definitions=obj.column_definitions,
         step_descriptions=obj.step_descriptions,
+        _path=path,
     )
 
 
@@ -1077,65 +1080,102 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
     @classmethod
     def load(
         cls,
-        parquet_path: str | Path,
+        source: str | Path | pl.LazyFrame | pl.DataFrame,
         readme_path: str | Path | None = None,
         metadata_prefer: Literal["parquet", "json"] = "parquet",
     ) -> "Procedure":
-        """Load a Procedure from a processed .parquet file.
+        """Load a Procedure from a file, LazyFrame, or DataFrame.
 
-        Reads BDF-normalised data and any embedded metadata from *parquet_path*.
-        When *readme_path* is ``None``, the method auto-guesses by looking for
-        ``README.yaml`` in the same directory as *parquet_path*. If found it is
-        used; if not found a log message is emitted and the Procedure is returned
-        without experiment definitions.
+        Accepts a path to a ``.parquet`` or ``.csv`` file, or directly a Polars
+        :class:`~polars.LazyFrame` or :class:`~polars.DataFrame`. The source
+        data can come from **any origin** — battery cycler software, simulation
+        tools, or manual construction — as long as it contains BDF-compatible
+        columns:
+
+        - A time column: ``"Test Time / s"`` or ``"Unix Time / s"``
+        - ``"Current / A"``
+        - ``"Voltage / V"``
+
+        Use :func:`~pyprobe.io.process_cycler` to convert raw cycler files to
+        BDF format, or :func:`~pyprobe.io.process_generic` with a column map to
+        normalise arbitrary DataFrames before passing them here.
+
+        For ``.parquet`` sources, metadata is read from the Parquet footer (or a
+        JSON sidecar, depending on *metadata_prefer*). For ``.csv`` and
+        frame sources, metadata is empty. README auto-discovery only applies when
+        *source* is a file path.
 
         Args:
-            parquet_path: Path to a ``.parquet`` file (e.g. from
-                :func:`~pyprobe.io.process_cycler`).
+            source: A path to a ``.parquet`` or ``.csv`` file, a
+                :class:`~polars.LazyFrame`, or a :class:`~polars.DataFrame`.
+                Must contain BDF-compatible columns (see above).
             readme_path: Explicit path to a README.yaml for experiment definitions.
-                When ``None`` (default), the parent directory of *parquet_path* is
-                checked automatically.
+                When ``None`` (default), the parent directory of a file *source*
+                is checked automatically.
             metadata_prefer: Whether to prefer the Parquet footer (``"parquet"``,
-                default) or a JSON sidecar (``"json"``) when both metadata sources
-                exist.
+                default) or a JSON sidecar (``"json"``) when both sources exist.
+                Only used when *source* is a ``.parquet`` file.
 
         Returns:
-            Procedure with BDF-format columns, metadata, and
-            optional experiment definitions from README.yaml.
+            Procedure with BDF-format columns, optional metadata, and optional
+            experiment definitions from README.yaml.
 
         Raises:
-            FileNotFoundError: If *parquet_path* does not exist.
+            FileNotFoundError: If *source* is a path that does not exist.
+            ValueError: If *source* is a path with an unsupported suffix.
+            ValueError: If required BDF columns are missing from the data.
 
         Example:
-            Load a procedure from a processed parquet file::
+            Load from a processed parquet file::
 
-                from pyprobe.io import process_cycler
                 from pyprobe.filters import Procedure
 
-                path = process_cycler("data.xlsx")
-                procedure = Procedure.load(path)
-                procedure = Procedure.load(path, readme_path="README.yaml")
+                procedure = Procedure.load("data.bdx.parquet")
+                procedure = Procedure.load(
+                    "data.bdx.parquet", readme_path="README.yaml"
+                )
+
+            Load from a LazyFrame::
+
+                procedure = Procedure.load(my_lf)
         """
         from pyprobe.io import read_metadata
         from pyprobe.readme_processor import process_readme
 
-        parquet_path = Path(parquet_path)
-        if not parquet_path.exists():
-            raise FileNotFoundError(f"Parquet file not found: {parquet_path}")
+        resolved_path: Path | None = None
+        lf: pl.LazyFrame
+        parquet_metadata: dict[str, Any] = {}
 
-        lf = pl.scan_parquet(parquet_path)
-        parquet_metadata = read_metadata(parquet_path, prefer=metadata_prefer)
-
-        if readme_path is None:
-            candidate = parquet_path.parent / "README.yaml"
-            if candidate.exists():
-                readme_path = candidate
+        if isinstance(source, pl.DataFrame):
+            lf = source.lazy()
+        elif isinstance(source, pl.LazyFrame):
+            lf = source
+        else:
+            file_path = Path(source)
+            if not file_path.exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+            suffix = file_path.suffix.lower()
+            if suffix == ".parquet":
+                resolved_path = file_path
+                lf = pl.scan_parquet(file_path)
+                parquet_metadata = read_metadata(file_path, prefer=metadata_prefer)
+            elif suffix == ".csv":
+                lf = pl.scan_csv(file_path)
             else:
-                logger.info(
-                    "No README.yaml found in '{}'; proceeding without "
-                    "experiment definitions.",
-                    parquet_path.parent,
+                raise ValueError(
+                    f"Unsupported file format '{suffix}'. "
+                    "Use '.parquet' or '.csv', or pass a LazyFrame/DataFrame directly."
                 )
+            if readme_path is None:
+                candidate = file_path.parent / "README.yaml"
+                if candidate.exists():
+                    readme_path = candidate
+                else:
+                    logger.info(
+                        "No README.yaml found in '{}'; proceeding without "
+                        "experiment definitions.",
+                        file_path.parent,
+                    )
 
         readme_dict: dict[str, dict[str, Any]] = {}
         if readme_path is not None:
@@ -1145,13 +1185,59 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
             else:
                 logger.warning("README path provided but not found: {}", readme_path)
 
-        # create the Procedure instance with the loaded data and metadata
         procedure = cls(lf=lf, metadata=parquet_metadata, readme_dict=readme_dict)
-        # resolve Test Time / s
         procedure.lf = procedure.lf.with_columns(
             procedure.columns.resolve(BDF.TEST_TIME_SECOND)
         )
+        procedure._path = resolved_path
         return procedure
+
+    def sync_metadata(self, *, protect_existing: bool = True) -> None:
+        """Write ``self.metadata`` back to the backing Parquet file.
+
+        Args:
+            protect_existing: When ``True`` (default), raises ``ValueError`` if
+                any key present in the file metadata is absent from
+                ``self.metadata`` or has a changed value. Set to ``False`` to
+                allow removing or changing existing keys.
+
+        Raises:
+            RuntimeError: If ``self._path`` is ``None`` (no backing file).
+            ValueError: If *protect_existing* is ``True`` and a destructive
+                change would be made.
+        """
+        if self._path is None:
+            raise RuntimeError(
+                "sync_metadata requires a backing Parquet file but _path is None. "
+                "Load the Procedure from a file path to enable sync_metadata."
+            )
+
+        from pyprobe.io import MetadataManager
+
+        manager = MetadataManager(self._path)
+
+        if protect_existing:
+            file_meta = manager.read_parquet()
+            conflicts: list[str] = []
+            for key, value in file_meta.items():
+                if key not in self.metadata:
+                    conflicts.append(
+                        f"key '{key}' is present in file but absent from metadata"
+                    )
+                elif self.metadata[key] != value:
+                    conflicts.append(
+                        f"key '{key}' has a changed value "
+                        f"(file={value!r}, memory={self.metadata[key]!r})"
+                    )
+            if conflicts:
+                raise ValueError(
+                    "sync_metadata(protect_existing=True) would overwrite existing "
+                    "file metadata. Conflicts:\n"
+                    + "\n".join(f"  - {c}" for c in conflicts)
+                )
+
+        manager.write(self.metadata)
+        logger.info("Synced metadata to '{}'.", self._path)
 
     def experiment(
         self,
@@ -1195,6 +1281,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
             column_definitions=self.column_definitions,
             step_descriptions=self.step_descriptions,
             cycle_info=cycles_list,
+            _path=self._path,
         )
 
     def remove_experiment(self, *experiment_names: str) -> None:
@@ -1267,6 +1354,7 @@ class Experiment(CycleFiltersMixin, StepFiltersMixin, RawData):
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
+        _path: Path | None = None,
     ) -> None:
         """Initialize an experiment view with optional cycle metadata.
 
@@ -1277,12 +1365,14 @@ class Experiment(CycleFiltersMixin, StepFiltersMixin, RawData):
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
             cycle_info: Cycle boundary information.
+            _path: Optional path to the backing Parquet file.
         """
         super().__init__(
             lf=lf,
             metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
+            _path=_path,
         )
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
 
@@ -1304,6 +1394,7 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, RawData):
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
+        _path: Path | None = None,
     ) -> None:
         """Initialize a cycle view with optional nested cycle metadata.
 
@@ -1313,12 +1404,14 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, RawData):
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
             cycle_info: Cycle boundary information.
+            _path: Optional path to the backing Parquet file.
         """
         super().__init__(
             lf=lf,
             metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
+            _path=_path,
         )
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
 
@@ -1332,6 +1425,7 @@ class Step(StepFiltersMixin, RawData):
         metadata: dict[str, Any | None],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
+        _path: Path | None = None,
     ) -> None:
         """Initialize a step view.
 
@@ -1340,10 +1434,12 @@ class Step(StepFiltersMixin, RawData):
             metadata: Dictionary containing metadata about the step and data source.
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
+            _path: Optional path to the backing Parquet file.
         """
         super().__init__(
             lf=lf,
             metadata=metadata,
             column_definitions=column_definitions,
             step_descriptions=step_descriptions,
+            _path=_path,
         )

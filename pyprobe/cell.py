@@ -8,118 +8,67 @@ import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import polars as pl
 from loguru import logger
 
-from pyprobe import io as _io
 from pyprobe._version import __version__
-from pyprobe.columns import BDF
 from pyprobe.filters import Procedure
 from pyprobe.utils import PyBaMMSolution, deprecated
-
-if TYPE_CHECKING:
-    pass
 
 
 @dataclass
 class Cell:
     """A class for a cell in a battery experiment."""
 
-    info: dict[str, Any | None]
-    """Dictionary containing information about the cell.
-    The dictionary must contain a 'Name' field, other information may include
-    channel number or other rig information.
-    """
     procedure: dict[str, Procedure] = field(default_factory=dict)
     """Dictionary containing the procedures that have been run on the cell."""
 
     def add_procedure(
         self,
         procedure_name: str,
-        source: str | Path | pl.DataFrame | pl.LazyFrame | Any,
-        output_path: str | Path | None = None,
-        readme_path: str | Path | None = None,
-        metadata: dict[str, Any] | None = None,
-        column_map: dict[str | BDF, str] | None = None,
-        compression_priority: Literal[
-            "performance",
-            "file size",
-            "uncompressed",
-        ] = "performance",
-        plugin: str | None = None,
-        skip_if_exists: bool = True,
+        source: str | Path | pl.LazyFrame | pl.DataFrame | Procedure,
     ) -> None:
-        """Add a procedure to the cell from a cycler file or a DataFrame.
+        """Add a procedure to the cell.
 
-        Processes the source data, attaches cell metadata, loads the result as a
-        :class:`~pyprobe.filters.Procedure`, and stores it under *procedure_name*.
+        Loads *source* as a :class:`~pyprobe.filters.Procedure` and stores it
+        under *procedure_name*. When *source* is already a
+        :class:`~pyprobe.filters.Procedure` it is stored directly; otherwise
+        it is passed to :meth:`~pyprobe.filters.Procedure.load`.
 
-        If *source* is a file path or glob pattern, data is processed via
-        :func:`~pyprobe.io.process_cycler`. If *source* is a DataFrame (polars or
-        pandas), data is processed via :func:`~pyprobe.io.process_generic` and both
-        *output_path* and *column_map* must be provided.
+        *source* must contain BDF-compatible columns — at minimum a time column
+        (``"Test Time / s"`` or ``"Unix Time / s"``), ``"Current / A"``, and
+        ``"Voltage / V"``. Any file or DataFrame with these columns is accepted,
+        regardless of origin. Use :func:`~pyprobe.io.process_cycler` to convert
+        raw cycler files to BDF format, or :func:`~pyprobe.io.process_generic`
+        with a column map to convert arbitrary DataFrames.
 
         Args:
             procedure_name: Key under which the procedure is stored in
                 ``self.procedure``.
-            source: Path to a raw cycler file, a glob pattern matching multiple
-                files, or a polars DataFrame, polars LazyFrame, or pandas
-                DataFrame of raw battery data.
-            output_path: Destination path for the output Parquet file. Must end
-                with ``.parquet``. When *source* is a file path and this is
-                ``None``, the path is auto-generated. Required when *source* is a
-                DataFrame.
-            readme_path: Path to a README.yaml for experiment definitions. When
-                ``None``, :meth:`~pyprobe.filters.Procedure.load` auto-guesses
-                from the output directory.
-            metadata: Additional metadata to attach alongside ``self.info``.
-                Values in *metadata* take precedence over ``self.info`` values.
-            column_map: Mapping from BDF-format output names (e.g.
-                ``"Current / A"``) to source column names. When *source* is a
-                cycler file, entries override auto-resolved BDF columns or append
-                new ones. Required when *source* is a DataFrame.
-            compression_priority: Compression algorithm for the output Parquet
-                file. ``"performance"`` → lz4, ``"file size"`` → zstd.
-            plugin: BatteryDF plugin name for reading cycler files. ``None``
-                auto-detects.
-            skip_if_exists: When ``True`` (default), skip re-processing if the
-                output Parquet file already exists. Only applies when *source* is a
-                file path.
+            source: A :class:`~pyprobe.filters.Procedure`, a path to a
+                ``.parquet`` or ``.csv`` file, a :class:`~polars.LazyFrame`,
+                or a :class:`~polars.DataFrame`. Must have BDF-compatible columns.
 
         Raises:
-            ValueError: If *source* is a DataFrame and *output_path* or
-                *column_map* is not provided.
+            ValueError: If *source* lacks required BDF columns (time, current,
+                voltage).
         """
-        combined_meta = {**self.info, **(metadata or {})}
-        if isinstance(source, (str, Path)):
-            path = _io.process_cycler(
-                source,
-                output_path=output_path,
-                plugin=plugin,
-                skip_if_exists=skip_if_exists,
-                compression_priority=compression_priority,
-                column_map=column_map,
-            )
+        if isinstance(source, Procedure):
+            self.procedure[procedure_name] = source
         else:
-            if output_path is None:
-                raise ValueError(
-                    "output_path must be provided when source is a DataFrame."
-                )
-            if column_map is None:
-                raise ValueError(
-                    "column_map must be provided when source is a DataFrame."
-                )
-            path = _io.process_generic(
-                source,
-                column_map=column_map,
-                output_path=output_path,
-                compression_priority=compression_priority,
-            )
-        _io.attach_metadata(path, combined_meta)
-        self.procedure[procedure_name] = Procedure.load(path, readme_path=readme_path)
+            self.procedure[procedure_name] = Procedure.load(source)
 
+    @deprecated(
+        reason="Use :func:`~pyprobe.io.process_generic` with a column map to convert "
+        "PyBaMM outputs to BDF format, then load via "
+        ":meth:`~pyprobe.filters.Procedure.load`.",
+        version="2.5.0",
+        plain_reason="Cell.import_pybamm_solution() is deprecated. "
+        "Use pyprobe.io.process_generic() with a column map to convert PyBaMM "
+        "outputs to BDF format, then load via Procedure.load().",
+    )
     def import_pybamm_solution(
         self,
         procedure_name: str,
@@ -130,14 +79,10 @@ class Cell:
     ) -> None:
         """Import a PyBaMM solution object into a procedure of the cell.
 
-        Filtering a PyBaMM solution object by cycle and step reflects the behaviour of
-        the :code:`cycles` and :code:`steps` dictionaries of the PyBaMM solution object.
-
-        Multiple experiments can be imported into the same procedure. This is achieved
-        by providing multiple solution objects and experiment names.
-
-        This method optionally writes the data to a parquet file, if a data path is
-        provided.
+        .. deprecated::
+            Use :func:`~pyprobe.io.process_generic` with a column map to convert
+            PyBaMM outputs to BDF format, then load via
+            :meth:`~pyprobe.filters.Procedure.load`.
 
         Args:
             procedure_name (str):
@@ -262,10 +207,9 @@ class Cell:
                 ),
             ],
         )
-        # create the procedure object
         self.procedure[procedure_name] = Procedure(
             lf=lf,
-            metadata=self.info,
+            metadata={},
             readme_dict=experiment_dict,
         )
 
@@ -275,8 +219,20 @@ class Cell:
                 output_data_path += ".parquet"
             lf.collect().write_parquet(output_data_path)
 
+    @deprecated(
+        reason="Use :func:`~pyprobe.io.process_cycler` and "
+        ":meth:`~pyprobe.filters.Procedure.load` to manage data persistence.",
+        version="2.5.0",
+        plain_reason="Cell.archive() is deprecated. "
+        "Use pyprobe.io.process_cycler() and Procedure.load() "
+        "to manage data persistence.",
+    )
     def archive(self, path: str) -> None:
         """Archive the cell object.
+
+        .. deprecated::
+            Use :func:`~pyprobe.io.process_cycler` and
+            :meth:`~pyprobe.filters.Procedure.load` to manage data persistence.
 
         Args:
             path (str): The path to the archive directory or zip file.
@@ -289,7 +245,7 @@ class Cell:
         if not os.path.exists(path):
             os.makedirs(path)
         metadata: dict[str, Any] = {
-            "info": self.info,
+            "info": {},
             "procedure": {},
             "PyProBE Version": __version__,
         }
@@ -434,8 +390,20 @@ class Cell:
         )
 
 
+@deprecated(
+    reason="Use :meth:`~pyprobe.filters.Procedure.load` to load data directly from "
+    "Parquet files written by :func:`~pyprobe.io.process_cycler`.",
+    version="2.5.0",
+    plain_reason="load_archive() is deprecated. "
+    "Use Procedure.load() to load data from Parquet files written by "
+    "process_cycler().",
+)
 def load_archive(path: str) -> Cell:
     """Load a cell object from an archive.
+
+    .. deprecated::
+        Use :meth:`~pyprobe.filters.Procedure.load` to load data directly from
+        Parquet files written by :func:`~pyprobe.io.process_cycler`.
 
     Args:
         path (str): The path to the archive directory.
@@ -462,7 +430,8 @@ def load_archive(path: str) -> Cell:
             f" issues.",
         )
     metadata.pop("PyProBE Version")
-    cell = Cell(info=metadata["info"])
+    legacy_info: dict[str, Any] = metadata.get("info", {})
+    cell = Cell()
     for procedure_name, procedure in metadata["procedure"].items():
         readme_dict = procedure.get("readme_dict", {})
         for experiment_data in readme_dict.values():
@@ -472,7 +441,7 @@ def load_archive(path: str) -> Cell:
                 ]
         cell.procedure[procedure_name] = Procedure(
             lf=os.path.join(archive_path, procedure["lf"]),
-            metadata=procedure.get("metadata", cell.info),
+            metadata=procedure.get("metadata", legacy_info),
             readme_dict=readme_dict,
             column_definitions=procedure.get("column_definitions"),
             step_descriptions=procedure.get("step_descriptions"),
@@ -512,12 +481,23 @@ def process_cycler_data(
     )
 
 
+@deprecated(
+    reason="Use :class:`~pyprobe.cell.Cell` directly and load procedures via "
+    ":meth:`~pyprobe.cell.Cell.add_procedure`.",
+    version="2.5.0",
+    plain_reason="make_cell_list() is deprecated. "
+    "Use Cell() directly and load procedures via Cell.add_procedure().",
+)
 def make_cell_list(
     record_filepath: str,
     worksheet_name: str,
     header_row: int = 0,
 ) -> list[Cell]:
     """Function to make a list of cell objects from a record of tests in Excel format.
+
+    .. deprecated::
+        Use :class:`~pyprobe.cell.Cell` directly and load procedures via
+        :meth:`~pyprobe.cell.Cell.add_procedure`.
 
     Args:
         record_filepath (str): The path to the experiment record .xlsx file.
@@ -536,7 +516,6 @@ def make_cell_list(
 
     n_cells = len(record)
     cell_list = []
-    for i in range(n_cells):
-        info = record.row(i, named=True)
-        cell_list.append(Cell(info=info))
+    for _ in range(n_cells):
+        cell_list.append(Cell())
     return cell_list

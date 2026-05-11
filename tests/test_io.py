@@ -185,30 +185,30 @@ class TestProcessCyclerOutputPath:
         assert isinstance(result, Path)
 
 
-class TestProcessCyclerSkipIfExists:
-    """Tests for skip_if_exists parameter behavior."""
+class TestProcessCyclerOverwriteData:
+    """Tests for overwrite_data parameter behavior."""
 
-    def test_process_cycler_skip_exists_true_skips_read(
+    def test_process_cycler_overwrite_false_skips_read(
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
-        """With skip_if_exists=True, bdf.read() is not called if file exists."""
+        """With overwrite_data=False, bdf.read() is not called if file exists."""
         with patch("bdf.read", return_value=bdf_df):
             process_cycler("fake.csv", output_path=tmp_path)
 
         mock_read = MagicMock()
         with patch("bdf.read", side_effect=mock_read):
             result = process_cycler(
-                "fake.csv", output_path=tmp_path, skip_if_exists=True
+                "fake.csv", output_path=tmp_path, overwrite_data=False
             )
 
         mock_read.assert_not_called()
         result = pl.scan_parquet(result).collect()
         assert result.shape[0] == 3
 
-    def test_process_cycler_skip_exists_false_overwrites(
+    def test_process_cycler_overwrite_true_overwrites(
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
-        """With skip_if_exists=False, existing file is overwritten."""
+        """With overwrite_data=True, existing file is overwritten."""
         with patch("bdf.read", return_value=bdf_df):
             process_cycler("fake.csv", output_path=tmp_path)
 
@@ -221,17 +221,17 @@ class TestProcessCyclerSkipIfExists:
         )
         with patch("bdf.read", return_value=new_df) as mock_read:
             result = process_cycler(
-                "fake.csv", output_path=tmp_path, skip_if_exists=False
+                "fake.csv", output_path=tmp_path, overwrite_data=True
             )
 
         mock_read.assert_called_once()
         result = pl.scan_parquet(result).collect()
         assert result.shape[0] == 4
 
-    def test_process_cycler_skip_exists_default_true(
+    def test_process_cycler_overwrite_data_defaults_false(
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
-        """skip_if_exists defaults to True."""
+        """overwrite_data defaults to False (skip if exists)."""
         with patch("bdf.read", return_value=bdf_df):
             process_cycler("fake.csv", output_path=tmp_path)
 
@@ -602,19 +602,22 @@ class TestProcessCyclerIntegration:
         offset = (unix_berlin - unix_utc).to_list()
         assert all(abs(v - (-7200.0)) < 1e-3 for v in offset)
 
-    def test_process_cycler_skip_if_exists_integration(self, tmp_path: Path) -> None:
-        """With skip_if_exists=True, cached files are reused with real data.
-
-        Replicates skip_if_exists behavior with actual sample data.
-        """
+    def test_process_cycler_overwrite_data_false_integration(
+        self, tmp_path: Path
+    ) -> None:
+        """With overwrite_data=False, cached files are reused with real data."""
         source = "tests/sample_data/neware/sample_data_neware.xlsx"
 
         # First call - creates file
-        result1_path = process_cycler(source, output_path=tmp_path, skip_if_exists=True)
+        result1_path = process_cycler(
+            source, output_path=tmp_path, overwrite_data=False
+        )
         result1 = pl.scan_parquet(result1_path).collect()
 
         # Second call - should reuse
-        result2_path = process_cycler(source, output_path=tmp_path, skip_if_exists=True)
+        result2_path = process_cycler(
+            source, output_path=tmp_path, overwrite_data=False
+        )
         result2 = pl.scan_parquet(result2_path).collect()
 
         # Results should be identical
@@ -1402,3 +1405,77 @@ class TestHelperFunctions:
 
         with pytest.raises(ValueError, match="not found in data"):
             _extract_column_map_columns(df, column_map)
+
+
+class TestIsProbeFile:
+    """Tests for is_pyprobe_file()."""
+
+    def test_is_pyprobe_file_true_after_process_cycler(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """is_pyprobe_file returns True for a file written by process_cycler."""
+        from pyprobe.io import is_pyprobe_file
+
+        with patch("bdf.read", return_value=bdf_df):
+            path = process_cycler("fake.csv", output_path=tmp_path)
+
+        assert is_pyprobe_file(path) is True
+
+    def test_is_pyprobe_file_false_for_plain_parquet(self, tmp_path: Path) -> None:
+        """is_pyprobe_file returns False for a file without pyprobe key."""
+        from pyprobe.io import is_pyprobe_file
+
+        p = tmp_path / "plain.parquet"
+        pl.DataFrame({"x": [1, 2]}).write_parquet(p)
+        assert is_pyprobe_file(p) is False
+
+    def test_is_pyprobe_file_raises_for_missing_file(self, tmp_path: Path) -> None:
+        """is_pyprobe_file raises FileNotFoundError for non-existent path."""
+        from pyprobe.io import is_pyprobe_file
+
+        with pytest.raises(FileNotFoundError):
+            is_pyprobe_file(tmp_path / "nonexistent.parquet")
+
+    def test_pyprobe_footer_contains_version_and_written_at_after_process_cycler(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """Parquet footer after process_cycler has pyprobe.version and written_at."""
+        from pyprobe.io import MetadataManager
+
+        with patch("bdf.read", return_value=bdf_df):
+            path = process_cycler("fake.csv", output_path=tmp_path)
+
+        meta = MetadataManager(path).read_parquet()
+        assert "pyprobe" in meta
+        assert "version" in meta["pyprobe"]
+        assert "written_at" in meta["pyprobe"]
+
+    def test_pyprobe_footer_present_after_process_generic(self, tmp_path: Path) -> None:
+        """Parquet footer after process_generic has pyprobe sub-dict."""
+        from pyprobe.io import MetadataManager
+
+        df = pl.DataFrame(
+            {
+                "Test Time / s": [0.0, 1.0],
+                "Current / A": [1.0, -1.0],
+                "Voltage / V": [3.7, 3.6],
+            }
+        )
+        column_map: dict[str | BDF, str] = {
+            "Test Time / s": "Test Time / s",
+            "Current / A": "Current / A",
+            "Voltage / V": "Voltage / V",
+        }
+        path = process_generic(df, column_map, tmp_path / "out.parquet")
+        meta = MetadataManager(path).read_parquet()
+        assert isinstance(meta.get("pyprobe"), dict)
+
+    def test_process_cycler_raises_on_pyprobe_file_input(
+        self, tmp_path: Path, bdf_df: pd.DataFrame
+    ) -> None:
+        """process_cycler raises ValueError when source is a PyProBE-written file."""
+        with patch("bdf.read", return_value=bdf_df):
+            path = process_cycler("fake.csv", output_path=tmp_path)
+
+        with pytest.raises(ValueError, match="Procedure.load"):
+            process_cycler(path, output_path=tmp_path / "other")

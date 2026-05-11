@@ -1,5 +1,6 @@
 """A module for the RawData class."""
 
+from pathlib import Path
 from typing import Any, Optional
 
 import polars as pl
@@ -53,10 +54,11 @@ class RawData(Result):
         metadata: dict[str, Any | None],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
+        _path: Path | None = None,
     ) -> None:
         """Create a RawData object with BDF-column validation."""
         super().__init__(
-            lf=lf, metadata=metadata, column_definitions=column_definitions
+            lf=lf, metadata=metadata, column_definitions=column_definitions, _path=_path
         )
 
         if step_descriptions is None:

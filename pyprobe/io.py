@@ -223,16 +223,22 @@ class MetadataManager:
         Raises:
             ValueError: If the Parquet file is corrupted.
         """
-        table = pq.read_table(self.path)
-
         if metadata_format == "parquet":
+            pf = pq.ParquetFile(self.path)
+            original_compression = (
+                pf.metadata.row_group(0).column(0).compression.lower()
+                if pf.metadata.num_row_groups > 0
+                and pf.metadata.row_group(0).num_columns > 0
+                else "snappy"
+            )
+            table = pf.read()
             existing: dict[bytes, bytes] = table.schema.metadata or {}
             combined_meta = {
                 **existing,
                 _PARQUET_METADATA_KEY: json.dumps(metadata).encode(),
             }
             table = table.replace_schema_metadata(combined_meta)
-            pq.write_table(table, self.path)
+            pq.write_table(table, self.path, compression=original_compression)
         else:
             self.json_path.write_text(json.dumps(metadata, indent=2))
 
@@ -374,6 +380,49 @@ def _handle_existing_cached_file(output_path: Path) -> Path | None:
     return output_path
 
 
+def _embed_provenance(path: Path) -> None:
+    """Embed PyProBE provenance metadata into a Parquet file footer."""
+    import datetime as _dt
+
+    from pyprobe._version import __version__ as _version
+
+    MetadataManager(path).update(
+        {
+            "pyprobe": {
+                "version": _version,
+                "written_at": _dt.datetime.now(_dt.UTC).isoformat(),
+            }
+        }
+    )
+
+
+def is_pyprobe_file(path: Path | str) -> bool:
+    """Return True if path is a PyProBE-written Parquet file.
+
+    Args:
+        path: Path to the Parquet file.
+
+    Returns:
+        True if the file contains a ``"pyprobe"`` key with a dict value
+        in its footer metadata.
+
+    Raises:
+        FileNotFoundError: If path does not exist.
+
+    Example::
+
+        from pyprobe.io import is_pyprobe_file
+
+        if is_pyprobe_file("data.bdx.parquet"):
+            procedure = Procedure.load("data.bdx.parquet")
+    """
+    file_path = Path(path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    meta = MetadataManager(file_path).read_parquet()
+    return isinstance(meta.get("pyprobe"), dict)
+
+
 def _build_column_map_exprs(
     columns: list[str],
     column_map: dict[str | BDF, str],
@@ -468,7 +517,7 @@ def process_cycler(
     output_path: str | Path | None = None,
     *,
     plugin: str | None = None,
-    skip_if_exists: bool = True,
+    overwrite_data: bool = False,
     compression_priority: Literal[
         "performance", "file size", "uncompressed"
     ] = "performance",
@@ -489,8 +538,9 @@ def process_cycler(
             ``<source_parent>/<stem>.bdx.parquet`` where *stem* comes from
             *source* (or the first sorted glob match for glob patterns).
         plugin: BatteryDF plugin name for reading. ``None`` triggers auto-detection.
-        skip_if_exists: When ``True`` (default), return the cached Parquet path
+        overwrite_data: When ``False`` (default), return the cached Parquet path
             immediately if it already exists without reprocessing raw data.
+            When ``True``, reprocess and overwrite the existing file.
         compression_priority: Controls the Parquet compression algorithm:
 
             - ``"performance"`` (default) — uses ``lz4`` for fast read/write.
@@ -510,6 +560,8 @@ def process_cycler(
 
     Raises:
         FileNotFoundError: If *source* is a glob pattern that matches no files.
+        ValueError: If *source* is a PyProBE-written file (use
+            :func:`~pyprobe.filters.Procedure.load` instead).
         ValueError: If *timezone* is not a recognised IANA timezone string.
         ValueError: If *output_path* is provided but does not end with ``.parquet``.
         ValueError: If any time column (Unix Time or Test Time) cannot be resolved
@@ -538,6 +590,18 @@ def process_cycler(
     """
     validate_timezone(timezone)
     first_file = _resolve_glob(source)[0]
+
+    if (
+        first_file.suffix == ".parquet"
+        and first_file.exists()
+        and is_pyprobe_file(first_file)
+    ):
+        raise ValueError(
+            f"'{first_file}' is a PyProBE-written file. "
+            "Use Procedure.load() to load already-processed files "
+            "instead of process_cycler()."
+        )
+
     if output_path is not None:
         candidate = Path(output_path)
         if candidate.suffix == "":
@@ -552,7 +616,7 @@ def process_cycler(
     else:
         resolved_output_path = first_file.parent / (first_file.stem + ".bdx.parquet")
 
-    if skip_if_exists:
+    if not overwrite_data:
         cached = _handle_existing_cached_file(resolved_output_path)
         if cached is not None:
             return cached
@@ -612,6 +676,7 @@ def process_cycler(
         str(resolved_output_path),
         compression=_COMPRESSION_MAP[compression_priority],
     )
+    _embed_provenance(resolved_output_path)
     logger.info("Wrote normalised data to '{}'.", resolved_output_path)
     return resolved_output_path
 
@@ -687,12 +752,14 @@ def attach_metadata(
 
 
 def process_generic(
-    data: pl.DataFrame | pl.LazyFrame | pd.DataFrame,
+    source: pl.DataFrame | pl.LazyFrame | pd.DataFrame,
     column_map: dict[str | BDF, str],
     output_path: str | Path,
     compression_priority: Literal[
         "performance", "file size", "uncompressed"
     ] = "performance",
+    *,
+    overwrite_data: bool = False,
 ) -> Path:
     """Normalise an arbitrary DataFrame to BDF format and write to Parquet.
 
@@ -702,38 +769,46 @@ def process_generic(
     columns to *output_path*.
 
     Args:
-        data: Raw battery data. Accepts a polars DataFrame, polars LazyFrame,
+        source: Raw battery data. Accepts a polars DataFrame, polars LazyFrame,
             or pandas DataFrame.
         column_map: Mapping from BDF-format output name (e.g. ``"Current / A"``)
-            to the source column name in *data*.
+            to the column name in *source*.
         output_path: Destination path for the output Parquet file.
         compression_priority: Compression algorithm selection.
+        overwrite_data: When ``False`` (default), return the existing output path
+            immediately if it already exists without reprocessing. When ``True``,
+            reprocess and overwrite the existing file.
 
     Returns:
         The resolved path of the written Parquet file.
 
     Raises:
-        TypeError: If *data* cannot be converted to a Polars DataFrame.
+        TypeError: If *source* cannot be converted to a Polars DataFrame.
         ValueError: If any required BDF column cannot be resolved after
             applying *column_map*.
     """
     output = Path(output_path)
     compression = _COMPRESSION_MAP[compression_priority]
 
+    if not overwrite_data:
+        cached = _handle_existing_cached_file(output)
+        if cached is not None:
+            return cached
+
     # Normalize input: convert to LazyFrame, tracking original type for output method
-    is_lazy = isinstance(data, pl.LazyFrame)
+    is_lazy = isinstance(source, pl.LazyFrame)
     if not is_lazy:
-        if not isinstance(data, pl.DataFrame):
+        if not isinstance(source, pl.DataFrame):
             try:
-                data = pl.from_pandas(data)
+                source = pl.from_pandas(source)
             except Exception as exc:
                 raise TypeError(
-                    f"Could not convert data to a Polars DataFrame: {exc}"
+                    f"Could not convert source to a Polars DataFrame: {exc}"
                 ) from exc
-        data = data.lazy()
+        source = source.lazy()
 
     # Build and apply column map expressions
-    exprs = _build_column_map_exprs(data.collect_schema().names(), column_map)
+    exprs = _build_column_map_exprs(source.collect_schema().names(), column_map)
     output_columns = [str(e.meta.output_name()) for e in exprs]
     column_set = ColumnDict(output_columns)
 
@@ -744,15 +819,16 @@ def process_generic(
         except ValueError as exc:
             raise ValueError(
                 f"Required BDF column '{bdf_col.quantity}' could not be resolved "
-                f"from the data: {exc}"
+                f"from the source: {exc}"
             ) from exc
 
     # Select mapped columns and write (method depends on original type)
-    selected = data.select(exprs)
+    selected = source.select(exprs)
     if is_lazy:
         selected.sink_parquet(str(output), compression=compression)
     else:
         selected.collect().write_parquet(str(output), compression=compression)
 
+    _embed_provenance(output)
     logger.info("Wrote generic data to '{}'.", output)
     return output

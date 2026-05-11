@@ -157,7 +157,7 @@ class _Dashboard:
         """
         info_list = []
         for i in range(len(cell_list)):
-            info_list.append(cell_list[i].info)
+            info_list.append(getattr(cell_list[i], "info", {}))
         return pl.DataFrame(info_list)
 
     @staticmethod
@@ -262,7 +262,7 @@ class _Dashboard:
             x=plot_data.get(self.x_axis),
             y=plot_data.get(self.y_axis),
             mode="lines",
-            name=f"{data.info[self.cell_identifier]}",
+            name=f"{data.info.get(self.cell_identifier, '')}",
             line={"color": color},
         )
         self.fig.add_trace(primary_trace)
@@ -282,7 +282,7 @@ class _Dashboard:
             x=plot_data.get(self.x_axis),
             y=plot_data.get(self.secondary_y_axis),
             mode="lines",
-            name=f"{data.info[self.cell_identifier]}",
+            name=f"{data.info.get(self.cell_identifier, '')}",
             yaxis="y2",
             line={
                 "color": color,
@@ -381,7 +381,7 @@ class _Dashboard:
         )
 
         selected_names: list[str] = [
-            str(self.cell_list[i].info[self.cell_identifier])
+            str(getattr(self.cell_list[i], "info", {}).get(self.cell_identifier, ""))
             for i in self.selected_indices
         ]
         graph_placeholder = st.empty()

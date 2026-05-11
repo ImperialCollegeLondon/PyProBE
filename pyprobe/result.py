@@ -5,6 +5,7 @@ import re
 import warnings
 from collections.abc import Callable
 from functools import wraps
+from pathlib import Path
 from pprint import pprint
 from typing import Any, Literal, Union
 
@@ -52,6 +53,7 @@ class Result:
         lf: pl.LazyFrame | pl.DataFrame | str,
         metadata: dict[str, Any | None] = {},
         column_definitions: dict[str, str] | None = None,
+        _path: Path | None = None,
     ) -> None:
         """Create a Result with explicit constructor validation.
 
@@ -59,6 +61,7 @@ class Result:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
             metadata: Dictionary containing metadata about the result.
             column_definitions: Optional definitions for data columns.
+            _path: Optional path to the backing Parquet file.
 
         Raises:
             ValueError: If constructor inputs do not match expected types.
@@ -84,6 +87,7 @@ class Result:
         self.lf: pl.LazyFrame = lf
         self.metadata = metadata
         self.column_definitions = column_definitions.copy()
+        self._path: Path | None = _path
 
     def collect(self) -> pl.DataFrame:
         """Collect the lazy dataframe into a polars DataFrame.
