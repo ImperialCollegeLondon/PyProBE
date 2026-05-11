@@ -2,11 +2,35 @@
 
 import functools
 import sys
+import warnings
 from typing import Any, Literal, Protocol
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from loguru import logger
 from pydantic import ValidationError
+
+
+def _loguru_showwarning(
+    message: Warning | str,
+    category: type[Warning],
+    filename: str,
+    lineno: int,
+    file: object = None,
+    line: str | None = None,
+) -> None:
+    import pathlib
+
+    src = pathlib.Path(filename).stem
+
+    def _patch(record: dict) -> None:  # type: ignore[type-arg]
+        record["name"] = src
+        record["function"] = category.__name__
+        record["line"] = lineno
+
+    logger.patch(_patch).warning(str(message))
+
+
+warnings.showwarning = _loguru_showwarning
 
 
 def validate_timezone(timezone: str) -> str:
@@ -105,6 +129,7 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
 
             # Wrap the getter
             def getter(self: Any) -> Any:
+                warnings.warn(warning_msg, DeprecationWarning, stacklevel=2)
                 logger.warning(
                     "Deprecation Warning: " + warning_msg,
                 )
@@ -115,6 +140,7 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
             # Wrap the setter if it exists
             def make_setter(fset: Any) -> Any:
                 def set_func(self: Any, value: Any) -> None:
+                    warnings.warn(warning_msg, DeprecationWarning, stacklevel=2)
                     logger.warning(
                         "Deprecation Warning: " + warning_msg,
                     )
@@ -133,9 +159,8 @@ def deprecated(*, reason: str, version: str, plain_reason: str | None = None) ->
         # Handle regular functions
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            logger.warning(
-                "Deprecation Warning: " + (plain_reason if plain_reason else reason),
-            )
+            msg = plain_reason if plain_reason else reason
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return func(*args, **kwargs)
 
         # Prepend a Sphinx deprecation note to the original docstring.

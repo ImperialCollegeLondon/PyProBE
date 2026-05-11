@@ -1,7 +1,5 @@
 """Tests for the differentiation module."""
 
-import logging
-
 import numpy as np
 import polars as pl
 import pytest
@@ -44,19 +42,15 @@ def test_differentiate_lean(differentiation_fixture):
     assert isinstance(result, Result)
 
 
-def test_deprecated_differentiate_lean(differentiation_fixture, mocker, caplog):
+def test_deprecated_differentiate_lean(differentiation_fixture, mocker):
     """Test the deprecated LEAN differentiation method."""
     mocker.patch("pyprobe.analysis.differentiation.differentiate_lean")
 
-    with caplog.at_level(logging.WARNING):
+    with pytest.warns(DeprecationWarning, match="differentiate_lean"):
         differentiation.differentiate_LEAN(
             differentiation_fixture,
             "x",
             "y",
             gradient="dydx",
         )
-        differentiation.differentiate_lean.assert_called_once()
-        assert (
-            caplog.messages[-1]
-            == "Deprecation Warning: Use the `differentiate_lean` method instead."
-        )
+    differentiation.differentiate_lean.assert_called_once()

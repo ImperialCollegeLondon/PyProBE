@@ -1490,40 +1490,24 @@ class TestResultPolarsIO:
 class TestDeprecatedProperties:
     """Test deprecated Result properties."""
 
-    def test_base_dataframe_deprecated_property(self, Result_fixture, caplog):
+    def test_base_dataframe_deprecated_property(self, Result_fixture):
         """Test that base_dataframe property is deprecated."""
-        import logging
-
-        with caplog.at_level(logging.WARNING):
+        with pytest.warns(DeprecationWarning, match="base_dataframe"):
             _ = Result_fixture.base_dataframe
-        assert "base_dataframe" in caplog.text
-        assert "deprecated" in caplog.text
 
-    def test_base_dataframe_setter_deprecated(self, Result_fixture, caplog):
+    def test_base_dataframe_setter_deprecated(self, Result_fixture):
         """Test that base_dataframe setter is deprecated."""
-        import logging
-
         new_lf = pl.LazyFrame({"a": [1, 2, 3]})
-        with caplog.at_level(logging.WARNING):
+        with pytest.warns(DeprecationWarning, match="base_dataframe"):
             Result_fixture.base_dataframe = new_lf
-        assert "base_dataframe" in caplog.text
-        assert "deprecated" in caplog.text
 
-    def test_live_dataframe_deprecated_property(self, Result_fixture, caplog):
+    def test_live_dataframe_deprecated_property(self, Result_fixture):
         """Test that live_dataframe property is deprecated."""
-        import logging
-
-        with caplog.at_level(logging.WARNING):
+        with pytest.warns(DeprecationWarning, match="live_dataframe"):
             _ = Result_fixture.live_dataframe
-        assert "live_dataframe" in caplog.text
-        assert "deprecated" in caplog.text
 
-    def test_live_dataframe_setter_deprecated(self, Result_fixture, caplog):
+    def test_live_dataframe_setter_deprecated(self, Result_fixture):
         """Test that live_dataframe setter is deprecated."""
-        import logging
-
         new_lf = pl.LazyFrame({"a": [1, 2, 3]})
-        with caplog.at_level(logging.WARNING):
+        with pytest.warns(DeprecationWarning, match="live_dataframe"):
             Result_fixture.live_dataframe = new_lf
-        assert "live_dataframe" in caplog.text
-        assert "deprecated" in caplog.text
