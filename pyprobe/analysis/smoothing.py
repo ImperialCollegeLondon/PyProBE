@@ -1,6 +1,5 @@
 """Module containing methods for smoothing noisy experimental data."""
 
-import copy
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -8,22 +7,26 @@ import numpy as np
 import polars as pl
 from loguru import logger
 from numpy.typing import NDArray
-from pydantic import ConfigDict, validate_call
 from scipy import interpolate
 from scipy.interpolate import make_smoothing_spline
 from scipy.signal import savgol_filter
 
-from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.analysis.utils import (
+    append_columns,
+    build_result,
+    get_columns,
+    validate_columns,
+)
+from pyprobe.columns import BDF, Column
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def spline_smoothing(
     input_data: PyProBEDataType,
     target_column: str,
     smoothing_lambda: float | None = None,
-    x: str = "Time [s]",
+    x: str | Column = BDF.TEST_TIME_SECOND,
 ) -> Result:
     """A method for smoothing noisy data using a spline.
 
@@ -36,23 +39,25 @@ def spline_smoothing(
             The smoothing parameter. Default is None.
         x:
             The name of the x variable for the spline curve fit.
-            Default is "Time [s]".
+            Default is BDF.TEST_TIME_SECOND.
 
     Returns:
         Result:
             A result object containing the data from input data with the target
             column smoothed using a spline, and the gradient of the smoothed data
             with respect to the x variable.
+
+    Raises:
+        ColumnResolutionError: If `target_column` or `x` cannot be resolved from
+            `input_data`.
     """
-    # validate and identify variables
-    validator = AnalysisValidator(
-        input_data=input_data,
-        required_columns=[x, target_column],
-    )
-    x_data, y_data = validator.variables
+    validate_columns(input_data, x, target_column)
+    x_data, y_data = get_columns(input_data, x, target_column)
+
+    x_name = x.name if isinstance(x, Column) else x
 
     data_flipped = False
-    if x_data[0] > x_data[-1]:  # flip the data if it is not in ascending order
+    if x_data[0] > x_data[-1]:
         x_data = np.flip(x_data)
         y_data = np.flip(y_data)
         data_flipped = True
@@ -67,23 +72,19 @@ def spline_smoothing(
     derivative = y_spline.derivative()
     smoothed_dydx = derivative(x_data)
 
-    data = copy.deepcopy(input_data)
-    smoothed_data_column = pl.Series(target_column, smoothed_y)
-    smoothed_dataframe = data.lf.with_columns(
-        smoothed_data_column.alias(target_column),
+    gradient_column_name = f"d({target_column})/d({x_name})"
+    return append_columns(
+        input_data,
+        {
+            target_column: smoothed_y,
+            gradient_column_name: smoothed_dydx,
+        },
+        overwrite=True,
+        column_definitions={
+            **input_data.column_definitions,
+            gradient_column_name: "The gradient of the smoothed data.",
+        },
     )
-
-    gradient_column_name = f"d({target_column})/d({x})"
-    dydx_column = pl.Series(gradient_column_name, smoothed_dydx)
-    smoothed_dataframe = smoothed_dataframe.with_columns(
-        dydx_column.alias(gradient_column_name),
-    )
-    result = data.clean_copy(smoothed_dataframe, data.column_definitions)
-    result.define_column(
-        f"d({target_column})/d({x})",
-        "The gradient of the smoothed data.",
-    )
-    return result
 
 
 def _downsample_monotonic_data(
@@ -165,7 +166,6 @@ def _downsample_non_monotonic_data(
     return df.filter(pl.col("index").is_in(indices)).drop("index")
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def downsample(
     input_data: PyProBEDataType,
     target_column: str,
@@ -207,27 +207,27 @@ def downsample(
     Returns:
         Result:
             A result object containing the downsampled DataFrame.
+
+    Raises:
+        ColumnResolutionError: If `target_column` cannot be resolved from `input_data`.
     """
-    AnalysisValidator(input_data=input_data, required_columns=[target_column])
-    data = copy.deepcopy(input_data)
+    validate_columns(input_data, target_column)
     if monotonic:
         downsampled_data = _downsample_monotonic_data(
-            data.lf,
+            input_data.lf,
             target_column,
             sampling_interval,
             occurrence,
         )
     else:
         downsampled_data = _downsample_non_monotonic_data(
-            data.lf,
+            input_data.lf,
             target_column,
             sampling_interval,
         )
-    result = input_data.clean_copy(downsampled_data, data.column_definitions)
-    return result
+    return build_result(input_data, downsampled_data)
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def savgol_smoothing(
     input_data: PyProBEDataType,
     target_column: str,
@@ -253,26 +253,23 @@ def savgol_smoothing(
         Result:
             A result object containing all of the columns of input_data smoothed
             using the Savitzky-Golay filter.
+
+    Raises:
+        ColumnResolutionError: If `target_column` cannot be resolved from `input_data`.
     """
-    # validate and identify variables
-    validator = AnalysisValidator(
-        input_data=input_data,
-        required_columns=[target_column],
-    )
-    x = validator.variables
+    validate_columns(input_data, target_column)
+    x = get_columns(input_data, target_column)
     smoothed_y = savgol_filter(
         x=x,
         window_length=window_length,
         polyorder=polyorder,
         deriv=derivative,
     )
-
-    smoothed_data_column = pl.Series(target_column, smoothed_y)
-    result = copy.deepcopy(input_data)
-    result.lf = result.lf.with_columns(
-        smoothed_data_column.alias(target_column),
+    return append_columns(
+        input_data,
+        {target_column: smoothed_y},
+        overwrite=True,
     )
-    return result
 
 
 class _LinearInterpolator(interpolate.PPoly):

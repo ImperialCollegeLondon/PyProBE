@@ -11,13 +11,12 @@ import sympy as sp
 from joblib import Parallel, delayed
 from loguru import logger
 from numpy.typing import NDArray
-from pydantic import ConfigDict, validate_call
 from scipy import optimize
 from scipy.interpolate import PPoly
 
 import pyprobe.analysis.base.degradation_mode_analysis_functions as dma_functions
 from pyprobe.analysis import smoothing, utils
-from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.analysis.utils import build_result, get_columns, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.pyprobe_types import FilterToCycleType, PyProBEDataType
 from pyprobe.result import Result
@@ -510,7 +509,6 @@ def _build_objective_function(
     return _objective_function
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_ocv_curve_fit(
     input_data: PyProBEDataType,
     ocp_pe: OCP | CompositeOCP,
@@ -542,27 +540,37 @@ def run_ocv_curve_fit(
     Returns:
         - The stoichiometry limits and electrode capacities.
         - The fitted OCV data.
+
+    Raises:
+        ColumnResolutionError: If required columns cannot be resolved from `input_data`.
+        ValueError: If `fitting_target` or `optimizer` is not a valid option.
     """
     if input_data.columns.can_resolve("SOC / %"):
-        required_columns = [BDF.VOLTAGE_VOLT.name, BDF.NET_CAPACITY_AH.name, "SOC / %"]
-        validator = AnalysisValidator(
-            input_data=input_data,
-            required_columns=required_columns,
+        voltage, capacity, SOC = get_columns(
+            input_data, BDF.VOLTAGE_VOLT, BDF.NET_CAPACITY_AH, "SOC / %"
         )
-        voltage, capacity, SOC = validator.variables
         cell_capacity = np.abs(np.ptp(capacity)) / np.abs(np.ptp(SOC))
     else:
-        required_columns = [BDF.VOLTAGE_VOLT.name, BDF.NET_CAPACITY_AH.name]
-        validator = AnalysisValidator(
-            input_data=input_data,
-            required_columns=required_columns,
+        voltage, capacity = get_columns(
+            input_data, BDF.VOLTAGE_VOLT, BDF.NET_CAPACITY_AH
         )
-        voltage, capacity = validator.variables
         cell_capacity = np.abs(np.ptp(capacity))
         SOC = (capacity - capacity.min()) / cell_capacity
 
     dVdSOC = np.gradient(voltage, SOC)
     dSOCdV = np.gradient(SOC, voltage)
+
+    valid_targets = ("OCV", "dQdV", "dVdQ")
+    if fitting_target not in valid_targets:
+        raise ValueError(
+            f"Invalid fitting_target '{fitting_target}'. "
+            f"Must be one of {valid_targets}."
+        )
+    valid_optimizers = ("minimize", "differential_evolution")
+    if optimizer not in valid_optimizers:
+        raise ValueError(
+            f"Invalid optimizer '{optimizer}'. Must be one of {valid_optimizers}."
+        )
 
     fitting_target_data = {
         "OCV": voltage,
@@ -628,8 +636,7 @@ def run_ocv_curve_fit(
     if composite_ne:
         data_dict["ne composite fraction"] = np.array([ne_frac])
 
-    input_stoichiometry_limits = input_data.clean_copy(pl.DataFrame(data_dict))
-    input_stoichiometry_limits.column_definitions = {
+    sto_col_defs = {
         "x_pe low SOC": "Positive electrode stoichiometry at lowest SOC point.",
         "x_pe high SOC": "Positive electrode stoichiometry at highest SOC point.",
         "x_ne low SOC": "Negative electrode stoichiometry at lowest SOC point.",
@@ -639,15 +646,17 @@ def run_ocv_curve_fit(
         "Anode Capacity": "Anode capacity.",
         "Li Inventory": "Lithium inventory.",
     }
-
     if composite_pe:
-        input_stoichiometry_limits.column_definitions["pe composite fraction"] = (
+        sto_col_defs["pe composite fraction"] = (
             "Fraction of composite cathode capacity attributed to first component."
         )
     if composite_ne:
-        input_stoichiometry_limits.column_definitions["ne composite fraction"] = (
+        sto_col_defs["ne composite fraction"] = (
             "Fraction of composite anode capacity attributed to first component."
         )
+    input_stoichiometry_limits = build_result(
+        input_data, pl.DataFrame(data_dict), column_definitions=sto_col_defs
+    )
 
     fitted_voltage = _f_OCV(
         ocp_pe,
@@ -667,7 +676,8 @@ def run_ocv_curve_fit(
         x_ne_lo,
         x_ne_hi,
     )
-    fitted_OCV = input_data.clean_copy(
+    fitted_OCV = build_result(
+        input_data,
         pl.DataFrame(
             {
                 BDF.NET_CAPACITY_AH.name: capacity,
@@ -680,16 +690,15 @@ def run_ocv_curve_fit(
                 "Fitted dVdSOC [V]": fitted_dVdSOC,
             },
         ),
+        column_definitions={
+            "SOC / %": "Cell state of charge.",
+            "Voltage": "Fitted OCV values.",
+        },
     )
-    fitted_OCV.column_definitions = {
-        "SOC / %": "Cell state of charge.",
-        "Voltage": "Fitted OCV values.",
-    }
 
     return input_stoichiometry_limits, fitted_OCV
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def quantify_degradation_modes(
     stoichiometry_limits_list: list[Result],
 ) -> Result:
@@ -702,6 +711,10 @@ def quantify_degradation_modes(
     Returns:
         A result object containing the SOH, LAM_pe, LAM_ne, and LLI for each of
         the provided OCV fits.
+
+    Raises:
+        ColumnResolutionError: If required columns cannot be resolved from any Result
+            in `stoichiometry_limits_list`.
     """
     required_columns = [
         "x_pe low SOC",
@@ -714,10 +727,7 @@ def quantify_degradation_modes(
         "Li Inventory [Ah]",
     ]
     for stoichiometry_limits in stoichiometry_limits_list:
-        AnalysisValidator(
-            input_data=stoichiometry_limits,
-            required_columns=required_columns,
-        )
+        validate_columns(stoichiometry_limits, *required_columns)
     x_pe_lo = utils.assemble_array(stoichiometry_limits_list, "x_pe low SOC")
     x_pe_hi = utils.assemble_array(stoichiometry_limits_list, "x_pe high SOC")
     x_ne_lo = utils.assemble_array(stoichiometry_limits_list, "x_ne low SOC")
@@ -740,39 +750,39 @@ def quantify_degradation_modes(
         li_inventory,
     )
 
-    dma_result = stoichiometry_limits_list[0].clean_copy(
-        pl.DataFrame(
-            {
-                "Index": np.arange(len(stoichiometry_limits_list)),
-                "x_pe low SOC": x_pe_lo[:, 0],
-                "x_pe high SOC": x_pe_hi[:, 0],
-                "x_ne low SOC": x_ne_lo[:, 0],
-                "x_ne high SOC": x_ne_hi[:, 0],
-                "Cell Capacity [Ah]": cell_capacity[:, 0],
-                "Cathode Capacity [Ah]": pe_capacity[:, 0],
-                "Anode Capacity [Ah]": ne_capacity[:, 0],
-                "Li Inventory [Ah]": li_inventory[:, 0],
-                "SOH": SOH[:, 0],
-                "LAM_pe": LAM_pe[:, 0],
-                "LAM_ne": LAM_ne[:, 0],
-                "LLI": LLI[:, 0],
-            },
-        ),
+    dma_df = pl.DataFrame(
+        {
+            "Index": np.arange(len(stoichiometry_limits_list)),
+            "x_pe low SOC": x_pe_lo[:, 0],
+            "x_pe high SOC": x_pe_hi[:, 0],
+            "x_ne low SOC": x_ne_lo[:, 0],
+            "x_ne high SOC": x_ne_hi[:, 0],
+            "Cell Capacity [Ah]": cell_capacity[:, 0],
+            "Cathode Capacity [Ah]": pe_capacity[:, 0],
+            "Anode Capacity [Ah]": ne_capacity[:, 0],
+            "Li Inventory [Ah]": li_inventory[:, 0],
+            "SOH": SOH[:, 0],
+            "LAM_pe": LAM_pe[:, 0],
+            "LAM_ne": LAM_ne[:, 0],
+            "LLI": LLI[:, 0],
+        },
     )
-    dma_result.lf = dma_result.lf.with_columns(
-        pl.col("Index").cast(pl.Int64),
+    dma_result = build_result(
+        stoichiometry_limits_list[0],
+        dma_df.with_columns(pl.col("Index").cast(pl.Int64)),
+        column_definitions={
+            "Index": (
+                "The index of the data point from the provided list of input data."
+            ),
+            "SOH": "Cell capacity normalized to initial capacity.",
+            "LAM_pe": "Loss of active material in positive electrode.",
+            "LAM_ne": "Loss of active material in positive electrode.",
+            "LLI": "Loss of lithium inventory.",
+        },
     )
-    dma_result.column_definitions = {
-        "Index": "The index of the data point from the provided list of input data.",
-        "SOH": "Cell capacity normalized to initial capacity.",
-        "LAM_pe": "Loss of active material in positive electrode.",
-        "LAM_ne": "Loss of active material in positive electrode.",
-        "LLI": "Loss of lithium inventory.",
-    }
     return dma_result
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_parallel(
     input_data_list: list[PyProBEDataType],
     ocp_pe: OCP | CompositeOCP,
@@ -808,7 +818,6 @@ def run_batch_dma_parallel(
         degradation modes.
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
-    # Run the OCV curve fitting in parallel
     logger.info(f"Using {joblib.cpu_count()} CPUs")
     fit_results = Parallel(n_jobs=-1)(
         delayed(run_ocv_curve_fit)(
@@ -821,7 +830,6 @@ def run_batch_dma_parallel(
         )
         for input_data in input_data_list
     )
-    # Extract the results
     stoichiometry_limit_list = [result[0] for result in fit_results]
     fitted_ocvs = [result[1] for result in fit_results]
 
@@ -834,7 +842,6 @@ def run_batch_dma_parallel(
     return dma_results, fitted_ocvs
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def run_batch_dma_sequential(
     input_data_list: list[PyProBEDataType],
     ocp_pe: OCP | CompositeOCP,
@@ -888,10 +895,22 @@ def run_batch_dma_sequential(
           degradation modes.
         - List[Result]: The fitted OCV data for each list item in input_data.
     """
-    # Initialize the results list
+    if not input_data_list:
+        raise ValueError("input_data_list must not be empty.")
+    n = len(input_data_list)
+    valid_optimizers = ("minimize", "differential_evolution")
+    for opt in optimizer:
+        if opt not in valid_optimizers:
+            raise ValueError(
+                f"Invalid optimizer '{opt}'. Must be one of {valid_optimizers}."
+            )
+    if len(optimizer) not in (1, 2, n):
+        raise ValueError(
+            f"optimizer list length must be 1, 2, or match input_data_list length "
+            f"({n}), got {len(optimizer)}."
+        )
     stoichiometry_limit_list: list[Result] = []
     fitted_OCVs: list[Result] = []
-    # Run the OCV curve fitting sequentially
     for index, input_data in enumerate(input_data_list):
         current_optimizer = optimizer[0] if len(optimizer) == 1 else optimizer[index]
         if len(optimizer_options) == 1:
@@ -934,7 +953,6 @@ def run_batch_dma_sequential(
     return dma_results, fitted_OCVs
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def average_ocvs(
     input_data: FilterToCycleType,
     discharge_filter: str | None = None,
@@ -954,17 +972,24 @@ def average_ocvs(
 
     Returns:
         A Result object containing the averaged OCV curve.
-    """
-    required_columns = [
-        BDF.VOLTAGE_VOLT.name,
-        BDF.NET_CAPACITY_AH.name,
-        "SOC / %",
-        BDF.CURRENT_AMPERE.name,
-    ]
 
-    AnalysisValidator(
-        input_data=input_data,
-        required_columns=required_columns,
+    Raises:
+        ValueError: If `input_data` is not a Procedure, Experiment, or Cycle.
+        ColumnResolutionError: If required columns cannot be resolved from `input_data`.
+    """
+    from pyprobe.filters import Cycle, Experiment, Procedure
+
+    if not isinstance(input_data, (Procedure, Experiment, Cycle)):
+        raise ValueError(
+            f"average_ocvs requires a Procedure, Experiment, or Cycle input, "
+            f"got {type(input_data).__name__}."
+        )
+    validate_columns(
+        input_data,
+        BDF.VOLTAGE_VOLT,
+        BDF.NET_CAPACITY_AH,
+        "SOC / %",
+        BDF.CURRENT_AMPERE,
     )
     if discharge_filter is None:
         discharge_result = input_data.discharge()
@@ -974,15 +999,12 @@ def average_ocvs(
         charge_result = input_data.charge()
     else:
         charge_result = eval(f"input_data.{charge_filter}")
-    charge_SOC, charge_OCV, charge_current = charge_result.get(
-        "SOC / %",
-        BDF.VOLTAGE_VOLT.name,
-        BDF.CURRENT_AMPERE.name,
+
+    charge_SOC, charge_OCV, charge_current = get_columns(
+        charge_result, "SOC / %", BDF.VOLTAGE_VOLT, BDF.CURRENT_AMPERE
     )
-    discharge_SOC, discharge_OCV, discharge_current = discharge_result.get(
-        "SOC / %",
-        BDF.VOLTAGE_VOLT.name,
-        BDF.CURRENT_AMPERE.name,
+    discharge_SOC, discharge_OCV, discharge_current = get_columns(
+        discharge_result, "SOC / %", BDF.VOLTAGE_VOLT, BDF.CURRENT_AMPERE
     )
 
     average_OCV = dma_functions.average_OCV_curves(
@@ -994,7 +1016,8 @@ def average_ocvs(
         discharge_current,
     )
 
-    return charge_result.clean_copy(
+    return build_result(
+        charge_result,
         pl.DataFrame(
             {
                 BDF.VOLTAGE_VOLT.name: average_OCV,

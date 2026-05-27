@@ -7,7 +7,7 @@ import polars as pl
 from loguru import logger
 from scipy import ndimage, signal
 
-from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.analysis.utils import get_columns, validate_columns
 
 if TYPE_CHECKING:
     from pyprobe.result import Result
@@ -83,23 +83,22 @@ def align_data(
 
     Returns:
         Tuple[Result, Result]: The two Result objects, with the second one shifted.
+
+    Raises:
+        ColumnResolutionError: If required columns cannot be resolved from either
+            result.
+        ValueError: If either dataset has fewer than 2 valid points after cleaning.
     """
     logger.info(f"Aligning data on {column1} and {column2}...")
 
     # Get data from result1
-    validator1 = AnalysisValidator(
-        input_data=result1,
-        required_columns=["Unix Time / s", column1],
-    )
-    date1, y1 = validator1.variables
+    validate_columns(result1, "Unix Time / s", column1)
+    date1, y1 = get_columns(result1, "Unix Time / s", column1)
     t1, y1 = _clean_data(date1, y1)
 
     # Get data from result2
-    validator2 = AnalysisValidator(
-        input_data=result2,
-        required_columns=["Unix Time / s", column2],
-    )
-    date2, y2 = validator2.variables
+    validate_columns(result2, "Unix Time / s", column2)
+    date2, y2 = get_columns(result2, "Unix Time / s", column2)
     t2, y2 = _clean_data(date2, y2)
 
     # Determine sampling rate (median dt)

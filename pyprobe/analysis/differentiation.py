@@ -2,17 +2,15 @@
 
 import numpy as np
 import polars as pl
-from pydantic import ConfigDict, validate_call
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
-from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.analysis.utils import build_result, get_columns, validate_columns
 from pyprobe.pyprobe_types import PyProBEDataType
 from pyprobe.result import Result
 from pyprobe.utils import deprecated
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
-def gradient(  # 1. Define the method
+def gradient(
     input_data: PyProBEDataType,
     x: str,
     y: str,
@@ -31,33 +29,27 @@ def gradient(  # 1. Define the method
     Returns:
         A result object containing the columns, `x`, `y` and the
         calculated gradient.
-    """
-    # 2. Validate the inputs to the method
-    validator = AnalysisValidator(
-        input_data=input_data,
-        required_columns=[x, y],
-        # required_type not neccessary here as type specified when declaring
-        # input_data attribute is strict enough
-    )
-    # 3. Retrieve the validated columns as numpy arrays
-    x_data, y_data = validator.variables
 
-    # 4. Perform the computation
+    Raises:
+        ColumnResolutionError: If `x` or `y` cannot be resolved from `input_data`.
+    """
+    validate_columns(input_data, x, y)
+    x_data, y_data = get_columns(input_data, x, y)
+
     gradient_title = f"d({y})/d({x})"
     gradient_data = np.gradient(y_data, x_data)
 
-    # 5. Create a Result object to store the results
-    gradient_result = input_data.clean_copy(
-        pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data}),
+    lf = pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data})
+    return build_result(
+        input_data,
+        lf,
+        column_definitions={
+            **input_data.column_definitions,
+            gradient_title: "The calculated gradient.",
+        },
     )
-    # 6. Define the column definitions for the Result object
-    gradient_result.column_definitions = input_data.column_definitions
-    gradient_result.column_definitions[gradient_title] = "The calculated gradient."
-    # 7. Return the Result object
-    return gradient_result
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def differentiate_lean(
     input_data: PyProBEDataType,
     x: str,
@@ -108,10 +100,12 @@ def differentiate_lean(
         Result:
             A result object containing the columns, `x`, `y` and the calculated
             gradient.
+
+    Raises:
+        ColumnResolutionError: If `x` or `y` cannot be resolved from `input_data`.
     """
-    # validate and identify variables
-    validator = AnalysisValidator(input_data=input_data, required_columns=[x, y])
-    x_data, y_data = validator.variables
+    validate_columns(input_data, x, y)
+    x_data, y_data = get_columns(input_data, x, y)
 
     # split input data into uniformly sampled sections
     x_sections = diff_functions.get_x_sections(x_data)
@@ -143,12 +137,15 @@ def differentiate_lean(
 
     # output the results
     gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
-    gradient_result = input_data.clean_copy(
-        pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient}),
+    lf = pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient})
+    return build_result(
+        input_data,
+        lf,
+        column_definitions={
+            **input_data.column_definitions,
+            gradient_title: "The calculated gradient.",
+        },
     )
-    gradient_result.column_definitions = input_data.column_definitions
-    gradient_result.column_definitions[gradient_title] = "The calculated gradient."
-    return gradient_result
 
 
 @deprecated(

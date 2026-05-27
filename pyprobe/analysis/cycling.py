@@ -1,9 +1,8 @@
 """A module for the Cycling class."""
 
 import polars as pl
-from pydantic import ConfigDict, validate_call
 
-from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.analysis.utils import build_result, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.filters import get_cycle_column
 from pyprobe.pyprobe_types import FilterToCycleType
@@ -34,7 +33,6 @@ def _create_capacity_throughput(
     )
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Result:
     """Calculate the state of health of the battery.
 
@@ -45,11 +43,11 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
 
     Returns:
         Result: A result object for the capacity SOH of the cell.
+
+    Raises:
+        ColumnResolutionError: If required columns cannot be resolved from `input_data`.
     """
-    AnalysisValidator(
-        input_data=input_data,
-        required_columns=[BDF.NET_CAPACITY_AH.name, BDF.TEST_TIME_SECOND.name],
-    )
+    validate_columns(input_data, BDF.NET_CAPACITY_AH, BDF.TEST_TIME_SECOND)
     input_data.lf = get_cycle_column(input_data)
 
     input_data.lf = _create_capacity_throughput(input_data.lf)
@@ -131,8 +129,4 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
             "The ratio between a discharge and its preceding charge."
         ),
     }
-    return Result(
-        lf=lf,
-        metadata=input_data.metadata,
-        column_definitions=column_definitions,
-    )
+    return build_result(input_data, lf, column_definitions=column_definitions)

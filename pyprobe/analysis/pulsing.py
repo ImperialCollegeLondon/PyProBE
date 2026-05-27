@@ -1,9 +1,9 @@
 """A module for the Pulsing class."""
 
 import polars as pl
-from pydantic import BaseModel, ConfigDict, validate_call
+from pydantic import BaseModel, ConfigDict
 
-from pyprobe.analysis.utils import AnalysisValidator
+from pyprobe.analysis.utils import build_result, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.filters import Experiment, Step
 from pyprobe.pyprobe_types import PyProBEDataType
@@ -51,7 +51,6 @@ def _get_end_of_rest_points(
     )
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def get_ocv_curve(input_data: PyProBEDataType) -> Result:
     """Filter down a pulsing experiment to the points representing the cell OCV.
 
@@ -60,26 +59,23 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
 
     Returns:
         A new Result object containing the OCV curve.
+
+    Raises:
+        ColumnResolutionError: If required columns cannot be resolved from `input_data`.
     """
-    AnalysisValidator(
-        input_data=input_data,
-        required_columns=[
-            BDF.CURRENT_AMPERE.name,
-            BDF.VOLTAGE_VOLT.name,
-            BDF.TEST_TIME_SECOND.name,
-            "SOC / %",
-        ],
+    validate_columns(
+        input_data,
+        BDF.CURRENT_AMPERE,
+        BDF.VOLTAGE_VOLT,
+        BDF.TEST_TIME_SECOND,
+        "SOC / %",
     )
 
     all_data_df = input_data.lf
     ocv_df = _get_end_of_rest_points(all_data_df).drop("Pulse Number")
-    return input_data.clean_copy(
-        ocv_df,
-        column_definitions=input_data.column_definitions,
-    )
+    return build_result(input_data, ocv_df)
 
 
-@validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 def get_resistances(
     input_data: PyProBEDataType,
     r_times: list[float | int] = [],
@@ -109,15 +105,16 @@ def get_resistances(
             pulse where the current is within 1% of the median pulse current
             - Resistance calculated at each time provided in seconds in the r_times
             argument
+
+    Raises:
+        ColumnResolutionError: If required columns cannot be resolved from `input_data`.
     """
-    AnalysisValidator(
-        input_data=input_data,
-        required_columns=[
-            BDF.CURRENT_AMPERE.name,
-            BDF.VOLTAGE_VOLT.name,
-            BDF.TEST_TIME_SECOND.name,
-            "SOC / %",
-        ],
+    validate_columns(
+        input_data,
+        BDF.CURRENT_AMPERE,
+        BDF.VOLTAGE_VOLT,
+        BDF.TEST_TIME_SECOND,
+        "SOC / %",
     )
     time_expr = input_data.columns.resolve(BDF.TEST_TIME_SECOND)
     all_data_df = input_data.lf.with_columns(time_expr)
@@ -252,7 +249,7 @@ def get_resistances(
         "R0": "The instantaneous resistance measured between the final rest "
         "point and the first data point in the pulse.",
     }
-    result = input_data.clean_copy(pulse_df, column_definitions)
+    result = build_result(input_data, pulse_df, column_definitions=column_definitions)
     for time in r_times:
         result.define_column(
             f"R_{time}s",
