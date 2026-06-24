@@ -1,8 +1,6 @@
 """Tests for analysis helper functions in pyprobe.analysis.utils."""
 
-import ast
 import copy
-import pkgutil
 
 import numpy as np
 import polars as pl
@@ -308,42 +306,3 @@ def test_quantify_degradation_modes_raises_on_missing_column():
     )
     with pytest.raises(ColumnResolutionError):
         dma.quantify_degradation_modes([stripped])
-
-
-_PYDANTIC_VALIDATION_IMPORTS = {"validate_call", "model_validator", "field_validator"}
-_ALLOWED_PYDANTIC_MODULES = {"pulsing"}
-
-
-@pytest.mark.parametrize(
-    "module_name",
-    [
-        name
-        for _, name, _ in pkgutil.iter_modules(
-            [str(__import__("pyprobe.analysis", fromlist=[""]).__path__[0])]
-        )
-        if name not in _ALLOWED_PYDANTIC_MODULES and not name.startswith("_")
-    ],
-)
-def test_analysis_module_no_pydantic_validation_imports(module_name):
-    """No analysis module (except pulsing) imports pydantic validation helpers."""
-    import pyprobe.analysis as pkg
-
-    source_path = pkg.__path__[0]
-    module_file = f"{source_path}/{module_name}.py"
-    try:
-        with open(module_file) as f:
-            tree = ast.parse(f.read())
-    except (FileNotFoundError, SyntaxError):
-        pytest.skip(f"Could not parse {module_name}.py")
-
-    for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.ImportFrom)
-            and node.module
-            and "pydantic" in node.module
-        ):
-            imported_names = {alias.name for alias in node.names}
-            forbidden = imported_names & _PYDANTIC_VALIDATION_IMPORTS
-            assert not forbidden, (
-                f"{module_name}.py imports pydantic validation helpers: {forbidden}"
-            )

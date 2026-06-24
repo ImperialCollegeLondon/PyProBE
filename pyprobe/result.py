@@ -18,7 +18,7 @@ from numpy.typing import NDArray
 from scipy.io import savemat
 
 from pyprobe.columns import Column, ColumnDict
-from pyprobe.utils import catch_pydantic_validation, deprecated, validate_timezone
+from pyprobe.utils import deprecated, validate_timezone
 
 try:
     import hvplot.polars  # noqa: F401
@@ -860,7 +860,6 @@ class Result:
         }
         savemat(filename, variable_dict, oned_as="column")
 
-    @catch_pydantic_validation
     @staticmethod
     def from_polars_io(
         polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],

@@ -7,7 +7,6 @@ from typing import Any, Literal, Protocol
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from loguru import logger
-from pydantic import ValidationError
 
 
 def _loguru_showwarning(
@@ -84,32 +83,6 @@ class PyBaMMSolution(Protocol):
         cycles_and_steps: bool = True,
     ) -> dict[str, Any]:
         """Get solution data as dictionary."""
-
-
-class PyProBEValidationError(Exception):
-    """Custom exception for PyProBE validation errors."""
-
-    pass
-
-
-def catch_pydantic_validation(func: Any) -> Any:
-    """A decorator that wraps pydantic ValidationError to raise a custom exception."""
-
-    @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return func(*args, **kwargs)
-        except ValidationError as e:
-            error_message = (
-                f"Validation error, invalid input provided to "
-                f"{func.__module__}.{func.__name__}\n"
-            )
-            for error in e.errors():
-                loc_str = ".".join(str(loc) for loc in error["loc"])
-                error_message += f"\n{loc_str}: {error['msg']}"
-            raise PyProBEValidationError(error_message) from None
-
-    return wrapper
 
 
 def deprecated(*, reason: str, version: str, plain_reason: str | None = None) -> Any:
