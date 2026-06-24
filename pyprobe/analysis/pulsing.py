@@ -1,7 +1,6 @@
 """A module for the Pulsing class."""
 
 import polars as pl
-from pydantic import BaseModel, ConfigDict
 
 from pyprobe.analysis.utils import build_result, validate_columns
 from pyprobe.columns import BDF
@@ -259,13 +258,16 @@ def get_resistances(
     return result
 
 
-class Pulsing(BaseModel):
+class Pulsing:
     """A pulsing experiment in a battery procedure."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __init__(self, input_data: Experiment) -> None:
+        """Initialise the Pulsing experiment.
 
-    input_data: Experiment
-    """The input data for the pulsing experiment."""
+        Args:
+            input_data: The input data for the pulsing experiment.
+        """
+        self.input_data = input_data
 
     def pulse(self, pulse_number: int) -> Step:
         """Return a step object for a pulse in the pulsing experiment.
