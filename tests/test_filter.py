@@ -56,7 +56,7 @@ def generic_experiment():
     dataframe = pl.DataFrame(
         {
             "Test Time / s": list(range(len(steps))),
-            "Step Index / 1": steps,
+            "Step ID": steps,
             "Step Count / 1": events,
             "Current / A": currents,
             "Voltage / V": voltages,
@@ -64,7 +64,7 @@ def generic_experiment():
         },
     )
     step_descriptions = {
-        "Step Index / 1": [1, 2, 3, 4],
+        "Step ID": [1, 2, 3, 4],
         "Description": ["CC Charge", "CV Charge", "Discharge", "Rest"],
     }
     cycle_info = [(1, 4, 2), (1, 2, 2)]
@@ -102,7 +102,7 @@ def _make_multilevel_experiment(
     df = pl.DataFrame(
         {
             "Test Time / s": list(range(n_total)),
-            "Step Index / 1": [0] * n_total,
+            "Step ID": [0] * n_total,
             "Step Count / 1": events,
             "Current / A": values if col == "Current / A" else other,
             "Voltage / V": values if col == "Voltage / V" else [3.7] * n_total,
@@ -112,7 +112,7 @@ def _make_multilevel_experiment(
     return filters.Experiment(
         lf=df,
         metadata={},
-        step_descriptions={"Step Index / 1": [0], "Description": ["Test"]},
+        step_descriptions={"Step ID": [0], "Description": ["Test"]},
         cycle_info=[],
     )
 
@@ -404,47 +404,47 @@ class TestStepAndCycleFiltering:
     """Integration tests for step() and cycle() using the BreakinCycles fixture."""
 
     def test_step_returns_correct_step(self, BreakinCycles_fixture, benchmark):
-        """step(1) in cycle 0 returns Step Index / 1 5."""
+        """step(1) in cycle 0 returns Step ID 5."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).step(1).data)
-        assert (data["Step Index / 1"] == 5).all()
+        assert (data["Step ID"] == 5).all()
 
     def test_multi_step_returns_multiple_steps(self, BreakinCycles_fixture, benchmark):
         """step(range(1, 4)) returns Steps 5, 6, 7."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).step(range(1, 4)).data)
-        assert (data["Step Index / 1"].unique() == [5, 6, 7]).all()
+        assert (data["Step ID"].unique() == [5, 6, 7]).all()
 
     def test_cycle_returns_correct_cycle(self, BreakinCycles_fixture, benchmark):
         """cycle(2) returns only cycle 2 data."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(2).data)
         assert (data["Cycle Count / 1"] == 2).all()
-        assert (data["Step Index / 1"].unique() == [4, 5, 6, 7]).all()
+        assert (data["Step ID"].unique() == [4, 5, 6, 7]).all()
 
     def test_negative_cycle_index_selects_last(self, BreakinCycles_fixture, benchmark):
         """cycle(-1) returns the last cycle."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(-1).data)
         assert (data["Cycle Count / 1"] == 4).all()
-        assert (data["Step Index / 1"].unique() == [4, 5, 6, 7]).all()
+        assert (data["Step ID"].unique() == [4, 5, 6, 7]).all()
 
     def test_negative_step_index_selects_last(self, BreakinCycles_fixture, benchmark):
         """step(-1) returns the last step event in the cycle."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).step(-1).data)
-        assert (data["Step Index / 1"] == 7).all()
+        assert (data["Step ID"] == 7).all()
 
     def test_all_steps_returns_full_cycle(self, BreakinCycles_fixture, benchmark):
         """step() with no index returns all step events."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).step().data)
         assert (data["Cycle Count / 1"] == 0).all()
-        assert (data["Step Index / 1"].unique() == [4, 5, 6, 7]).all()
+        assert (data["Step ID"].unique() == [4, 5, 6, 7]).all()
 
     def test_multiple_indices_selects_union(self, BreakinCycles_fixture):
         """List of integer indices selects the union of those step events."""
         data = BreakinCycles_fixture.cycle(0).step([0, 1, 2]).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [4, 5, 6]
+        assert sorted(data["Step ID"].unique().to_list()) == [4, 5, 6]
 
     def test_multiple_indices_list(self, BreakinCycles_fixture):
         """List of specific integer indices selects their union."""
         data = BreakinCycles_fixture.cycle(0).step([0, 2, 3]).data
-        assert set(data["Step Index / 1"].unique().to_list()) == {4, 6, 7}
+        assert set(data["Step ID"].unique().to_list()) == {4, 6, 7}
 
     def test_test_time_not_zeroed_after_filtering(self, BreakinCycles_fixture):
         """Test Time / s first value stays non-zero at each filter level."""
@@ -480,13 +480,13 @@ class TestChargeDischargeRest:
     def test_charge_returns_positive_current(self, BreakinCycles_fixture, benchmark):
         """charge(0) returns only positive-current rows."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).charge(0).data)
-        assert (data["Step Index / 1"] == 6).all()
+        assert (data["Step ID"] == 6).all()
         assert (data["Current / A"] > 0).all()
 
     def test_discharge_returns_negative_current(self, BreakinCycles_fixture, benchmark):
         """discharge(0) returns only negative-current rows."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).discharge(0).data)
-        assert (data["Step Index / 1"] == 4).all()
+        assert (data["Step ID"] == 4).all()
         assert (data["Current / A"] < 0).all()
         with pytest.raises(ValueError):
             BreakinCycles_fixture.cycle(6).data
@@ -498,19 +498,19 @@ class TestChargeDischargeRest:
         data = benchmark(
             lambda: BreakinCycles_fixture.cycle(0).chargeordischarge(0).data
         )
-        assert (data["Step Index / 1"] == 4).all()
+        assert (data["Step ID"] == 4).all()
         assert (data["Current / A"] < 0).all()
         data = BreakinCycles_fixture.cycle(0).chargeordischarge(1).data
-        assert (data["Step Index / 1"] == 6).all()
+        assert (data["Step ID"] == 6).all()
         assert (data["Current / A"] > 0).all()
 
     def test_rest_returns_zero_current(self, BreakinCycles_fixture, benchmark):
         """rest(0) and rest(1) return zero-current rows at the expected steps."""
         data = benchmark(lambda: BreakinCycles_fixture.cycle(0).rest(0).data)
-        assert (data["Step Index / 1"] == 5).all()
+        assert (data["Step ID"] == 5).all()
         assert (data["Current / A"] == 0).all()
         data = BreakinCycles_fixture.cycle(0).rest(1).data
-        assert (data["Step Index / 1"] == 7).all()
+        assert (data["Step ID"] == 7).all()
         assert (data["Current / A"] == 0).all()
 
 
@@ -546,34 +546,34 @@ class TestSlicing:
     def test_slice_positive_bounds_selects_range(self, BreakinCycles_fixture):
         """slice(0, 2) selects the first two step events."""
         data = BreakinCycles_fixture.cycle(0).step(slice(0, 2)).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [4, 5]
+        assert sorted(data["Step ID"].unique().to_list()) == [4, 5]
 
     def test_slice_negative_bounds_selects_from_end(self, BreakinCycles_fixture):
         """slice(-2, None) selects the last two step events."""
         data = BreakinCycles_fixture.cycle(0).step(slice(-2, None)).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [6, 7]
+        assert sorted(data["Step ID"].unique().to_list()) == [6, 7]
 
     def test_slice_mixed_bounds_selects_intersection(self, BreakinCycles_fixture):
         """slice(-3, 3) satisfies both negative start and positive stop bounds."""
         data = BreakinCycles_fixture.cycle(0).step(slice(-3, 3)).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [5, 6]
+        assert sorted(data["Step ID"].unique().to_list()) == [5, 6]
 
     def test_slice_step_greater_than_one_strides(self, BreakinCycles_fixture):
         """slice(0, None, 2) selects every other step event."""
         data = BreakinCycles_fixture.cycle(0).step(slice(0, None, 2)).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [4, 6]
+        assert sorted(data["Step ID"].unique().to_list()) == [4, 6]
 
     def test_slice_negative_start_open_ended(self, BreakinCycles_fixture):
         """slice(-2, None) selects the last two step events."""
         data = BreakinCycles_fixture.cycle(0).step(slice(-2, None)).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [6, 7]
+        assert sorted(data["Step ID"].unique().to_list()) == [6, 7]
 
     def test_slice_negative_start_with_step_greater_than_one(
         self, BreakinCycles_fixture
     ):
         """slice(-4, None, 2) strides from the fourth-to-last event."""
         data = BreakinCycles_fixture.cycle(0).step(slice(-4, None, 2)).data
-        assert sorted(data["Step Index / 1"].unique().to_list()) == [4, 6]
+        assert sorted(data["Step ID"].unique().to_list()) == [4, 6]
 
     def test_slice_zero_stop_returns_empty(self, BreakinCycles_fixture):
         """slice(0, 0) produces an empty result."""
@@ -603,7 +603,7 @@ class TestIncludePrecedingPoint:
         assert len(data_with) == len(data_without) + 1
         match = (
             (full_data["Unix Time / s"] == data_without["Unix Time / s"][0])
-            & (full_data["Step Index / 1"] == data_without["Step Index / 1"][0])
+            & (full_data["Step ID"] == data_without["Step ID"][0])
             & (full_data["Step Count / 1"] == data_without["Step Count / 1"][0])
         )
         idx = int(np.where(match)[0][0])
@@ -611,7 +611,7 @@ class TestIncludePrecedingPoint:
         assert data_with["Unix Time / s"][0] == full_data["Unix Time / s"][idx - 1]
 
     def test_step_prepends_preceding_row(self, BreakinCycles_fixture):
-        """Step Index / 1 with include_preceding_row prepends exactly one row."""
+        """Step ID with include_preceding_row prepends exactly one row."""
         cycle0 = BreakinCycles_fixture.cycle(0)
         data_without = cycle0.step(1).data
         data_with = cycle0.step(1, include_preceding_row=True).data
@@ -711,7 +711,7 @@ class TestIterators:
         first_row = results_without[0].data
         match = (
             (full_data["Unix Time / s"] == first_row["Unix Time / s"][0])
-            & (full_data["Step Index / 1"] == first_row["Step Index / 1"][0])
+            & (full_data["Step ID"] == first_row["Step ID"][0])
             & (full_data["Step Count / 1"] == first_row["Step Count / 1"][0])
         )
         idx = int(np.where(match)[0][0])
@@ -725,28 +725,28 @@ class TestIterators:
         """iter_step(0) yields one result containing step event 0."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(0))
         assert len(results) == 1
-        assert results[0].data["Step Index / 1"].unique().to_list() == [4]
+        assert results[0].data["Step ID"].unique().to_list() == [4]
 
     def test_iter_step_range(self, BreakinCycles_fixture):
         """iter_step(range(2)) yields two results, one per step event."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(range(2)))
         assert len(results) == 2
-        assert results[0].data["Step Index / 1"].unique().to_list() == [4]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [5]
+        assert results[0].data["Step ID"].unique().to_list() == [4]
+        assert results[1].data["Step ID"].unique().to_list() == [5]
 
     def test_iter_step_slice(self, BreakinCycles_fixture):
         """iter_step(slice(0, 2)) yields one result per selected step event."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(slice(0, 2)))
         assert len(results) == 2
-        assert results[0].data["Step Index / 1"].unique().to_list() == [4]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [5]
+        assert results[0].data["Step ID"].unique().to_list() == [4]
+        assert results[1].data["Step ID"].unique().to_list() == [5]
 
     def test_iter_charge_yields_all_groups(self, BreakinCycles_fixture):
         """iter_charge() yields one result per charge event."""
         results = list(BreakinCycles_fixture.iter_charge())
         assert len(results) == 5
         for item in results:
-            assert item.data["Step Index / 1"].unique().to_list() == [6]
+            assert item.data["Step ID"].unique().to_list() == [6]
             assert (item.data["Current / A"] > 0).all()
 
     def test_iter_discharge_yields_all_groups(self, BreakinCycles_fixture):
@@ -754,7 +754,7 @@ class TestIterators:
         results = list(BreakinCycles_fixture.iter_discharge())
         assert len(results) == 5
         for item in results:
-            assert item.data["Step Index / 1"].unique().to_list() == [4]
+            assert item.data["Step ID"].unique().to_list() == [4]
             assert (item.data["Current / A"] < 0).all()
 
     def test_iter_rest_yields_all_groups(self, BreakinCycles_fixture):
@@ -860,35 +860,35 @@ class TestIterators:
         """iter_step(-1) yields the last step event via static desc_rank path."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(-1))
         assert len(results) == 1
-        assert results[0].data["Step Index / 1"].unique().to_list() == [7]
+        assert results[0].data["Step ID"].unique().to_list() == [7]
 
     def test_iter_step_multiple_negative_indices(self, BreakinCycles_fixture):
         """iter_step([-2, -1]) yields second-to-last then last step in forward order."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step([-2, -1]))
         assert len(results) == 2
-        assert results[0].data["Step Index / 1"].unique().to_list() == [6]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [7]
+        assert results[0].data["Step ID"].unique().to_list() == [6]
+        assert results[1].data["Step ID"].unique().to_list() == [7]
 
     def test_iter_step_negative_start_slice_forward_order(self, BreakinCycles_fixture):
         """iter_step(slice(-2, None)) yields last two steps in forward order."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(slice(-2, None)))
         assert len(results) == 2
-        assert results[0].data["Step Index / 1"].unique().to_list() == [6]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [7]
+        assert results[0].data["Step ID"].unique().to_list() == [6]
+        assert results[1].data["Step ID"].unique().to_list() == [7]
 
     def test_iter_step_negative_both_bounds_slice(self, BreakinCycles_fixture):
         """iter_step(slice(-3, -1)) yields second and third step events."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(slice(-3, -1)))
         assert len(results) == 2
-        assert results[0].data["Step Index / 1"].unique().to_list() == [5]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [6]
+        assert results[0].data["Step ID"].unique().to_list() == [5]
+        assert results[1].data["Step ID"].unique().to_list() == [6]
 
     def test_iter_step_negative_slice_fewer_groups_than_bound(self):
         """slice(-3, None) with 2 groups yields only the 2 existing groups."""
         df = pl.DataFrame(
             {
                 "Test Time / s": [0, 1, 2, 3],
-                "Step Index / 1": [1, 1, 2, 2],
+                "Step ID": [1, 1, 2, 2],
                 "Step Count / 1": [0, 0, 1, 1],
                 "Current / A": [0.0] * 4,
                 "Voltage / V": [3.7] * 4,
@@ -898,13 +898,13 @@ class TestIterators:
         exp = filters.Experiment(
             lf=df,
             metadata={},
-            step_descriptions={"Step Index / 1": [1, 2], "Description": ["A", "B"]},
+            step_descriptions={"Step ID": [1, 2], "Description": ["A", "B"]},
             cycle_info=[],
         )
         results = list(exp.iter_step(slice(-3, None)))
         assert len(results) == 2
-        assert results[0].data["Step Index / 1"].unique().to_list() == [1]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [2]
+        assert results[0].data["Step ID"].unique().to_list() == [1]
+        assert results[1].data["Step ID"].unique().to_list() == [2]
 
     def test_iter_step_open_ended_positive_slice_collect_path(
         self, BreakinCycles_fixture
@@ -912,15 +912,15 @@ class TestIterators:
         """iter_step(slice(1, None)) uses collect path and yields remaining steps."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step(slice(1, None)))
         assert len(results) == 3
-        assert results[0].data["Step Index / 1"].unique().to_list() == [5]
-        assert results[1].data["Step Index / 1"].unique().to_list() == [6]
-        assert results[2].data["Step Index / 1"].unique().to_list() == [7]
+        assert results[0].data["Step ID"].unique().to_list() == [5]
+        assert results[1].data["Step ID"].unique().to_list() == [6]
+        assert results[2].data["Step ID"].unique().to_list() == [7]
 
     def test_iter_step_empty_indices_collect_path(self, BreakinCycles_fixture):
         """iter_step() with no indices uses collect path and yields all steps."""
         results = list(BreakinCycles_fixture.cycle(0).iter_step())
         assert len(results) == 4
-        steps = [r.data["Step Index / 1"].unique().to_list()[0] for r in results]
+        steps = [r.data["Step ID"].unique().to_list()[0] for r in results]
         assert steps == [4, 5, 6, 7]
 
 
@@ -976,7 +976,7 @@ class TestGenericExperiment:
         """step() selects rows by event group index."""
         data = generic_experiment.step(0).data
         assert data["Test Time / s"].to_list() == [0, 1, 2]
-        assert (data["Step Index / 1"] == 1).all()
+        assert (data["Step ID"] == 1).all()
 
         data = generic_experiment.step(2).data
         assert data["Test Time / s"].to_list() == [6, 7, 8]
@@ -991,11 +991,11 @@ class TestGenericExperiment:
         """charge() selects groups by positive-current event index."""
         data = generic_experiment.charge(0).data
         assert data["Test Time / s"].to_list() == [0, 1, 2]
-        assert (data["Step Index / 1"] == 1).all()
+        assert (data["Step ID"] == 1).all()
 
         data = generic_experiment.charge(1).data
         assert data["Test Time / s"].to_list() == [3, 4, 5]
-        assert (data["Step Index / 1"] == 2).all()
+        assert (data["Step ID"] == 2).all()
 
         data = generic_experiment.charge(4).data
         assert data["Test Time / s"].to_list() == [26, 27, 28]
@@ -1004,7 +1004,7 @@ class TestGenericExperiment:
         """discharge() selects groups by negative-current event index."""
         data = generic_experiment.discharge(0).data
         assert data["Test Time / s"].to_list() == list(range(12, 22))
-        assert (data["Step Index / 1"] == 3).all()
+        assert (data["Step ID"] == 3).all()
         assert (data["Current / A"] < 0).all()
 
         data = generic_experiment.discharge(1).data
@@ -1014,7 +1014,7 @@ class TestGenericExperiment:
         """rest() selects groups where current is zero."""
         data = generic_experiment.rest(0).data
         assert data["Test Time / s"].to_list() == list(range(22, 26))
-        assert (data["Step Index / 1"] == 4).all()
+        assert (data["Step ID"] == 4).all()
         assert (data["Current / A"] == 0).all()
 
     def test_constant_current_selects_by_target(self, generic_experiment):
@@ -1074,7 +1074,7 @@ class TestParametricConstantFilters:
         df = pl.DataFrame(
             {
                 "Test Time / s": list(range(20)),
-                "Step Index / 1": [0] * 20,
+                "Step ID": [0] * 20,
                 "Step Count / 1": [0] * 10 + [1] * 10,
                 "Current / A": [0.0] * 20,
                 "Voltage / V": [4.2] * 10 + [4.19] * 10,
@@ -1084,7 +1084,7 @@ class TestParametricConstantFilters:
         exp = filters.Experiment(
             lf=df,
             metadata={},
-            step_descriptions={"Step Index / 1": [0], "Description": ["Test"]},
+            step_descriptions={"Step ID": [0], "Description": ["Test"]},
             cycle_info=[],
         )
         wide = exp.constant_voltage(target=4.2, rtol=0.003).data

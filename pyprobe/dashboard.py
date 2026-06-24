@@ -77,7 +77,7 @@ class _Dashboard:
     }
     _display_columns_all = [
         "Test Time / s",
-        "Step Index / 1",
+        "Step ID",
         "Current / A",
         "Voltage / V",
         "Net Capacity / Ah",

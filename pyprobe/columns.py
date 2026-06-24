@@ -12,10 +12,10 @@ column names and Polars expressions:
 - :class:`ColumnDict` — thin per-DataFrame wrapper that delegates resolution
   to :class:`Column` / :class:`BDFColumn` methods.
 
-The :class:`BDF` enum provides all 27 BDF-standard quantities as members
-(e.g. :attr:`BDF.CURRENT_AMPERE`, :attr:`BDF.VOLTAGE_VOLT`).
-:data:`DEFAULT_COLUMNS` is the core subset that PyProBE retains after
-ingestion.
+The :class:`BDF` enum mirrors the BDF-standard quantities defined in
+:data:`bdf.spec.COLUMN_ONTOLOGY` as members (e.g. :attr:`BDF.CURRENT_AMPERE`,
+:attr:`BDF.VOLTAGE_VOLT`). :data:`DEFAULT_COLUMNS` is the core subset that
+PyProBE retains after ingestion.
 
 Typical usage::
 
@@ -34,9 +34,13 @@ from functools import cache
 from types import MappingProxyType
 from typing import Any, cast
 
+import bdf.spec as _bdf_spec
 import pint
 import polars as pl
 from loguru import logger
+
+_ONTOLOGY = _bdf_spec.COLUMN_ONTOLOGY
+"""The BDF column ontology that PyProBE's :class:`BDF` definitions track."""
 
 BDF_PATTERN: str = r"^([^/]*?)(?:\s*/\s*(.+?))?\s*$"
 """Regex pattern for BDF ``"Quantity / unit"`` column names.
@@ -63,7 +67,7 @@ DEFAULT_COLUMNS: list[str] = [
     "Voltage / V",
     "Net Capacity / Ah",
     "Step Count / 1",
-    "Step Index / 1",
+    "Step ID",
 ]
 """Core PyProBE column subset retained after BDF ingestion.
 
@@ -301,11 +305,15 @@ class Column:
     """
 
     quantity: str
-    unit: str = "1"
+    unit: str | None = "1"
 
     @property
     def name(self) -> str:
-        """BDF standard column name string (``"Quantity / unit"``).
+        """BDF standard column name string.
+
+        Columns with a unit are formatted as ``"Quantity / unit"``. Unitless
+        columns (``unit`` is ``None``, e.g. ``"Step ID"``) are formatted as the
+        bare quantity name, matching the BDF ontology label convention.
 
         Returns:
             The BDF column name string.
@@ -319,7 +327,11 @@ class Column:
             'Step Count / 1'
             >>> Column("Step").name
             'Step / 1'
+            >>> Column("Step ID", None).name
+            'Step ID'
         """
+        if self.unit is None:
+            return self.quantity
         return f"{self.quantity} / {self.unit}"
 
     def __str__(self) -> str:
@@ -357,11 +369,11 @@ class Column:
             >>> col.conversion_parameters("mA")
             (1000.0, 0.0)
         """
-        if self.unit == "1":
+        if self.unit in ("1", None):
             raise UnitsError(
                 f"Column '{self.quantity}' is dimensionless; cannot convert."
             )
-        source_unit_str = _resolve_unit(self.unit, self.quantity)
+        source_unit_str = _resolve_unit(cast(str, self.unit), self.quantity)
         target_unit_str = _resolve_unit(target_unit, self.quantity)
         try:
             source_pint = _ureg.parse_units(source_unit_str)
@@ -399,12 +411,14 @@ class Column:
         except ColumnResolutionError:
             return False
 
-    def _apply_unit_conversion(self, source_expr: pl.Expr, source_unit: str) -> pl.Expr:
+    def _apply_unit_conversion(
+        self, source_expr: pl.Expr, source_unit: str | None
+    ) -> pl.Expr:
         """Convert resolved expression from source_unit to this column's unit."""
         if source_unit == self.unit:
             return source_expr.alias(self.name)
         source_col = Column(self.quantity, source_unit)
-        factor, offset = source_col.conversion_parameters(self.unit)
+        factor, offset = source_col.conversion_parameters(cast(str, self.unit))
         return _apply_conversion(source_expr, factor, offset, self.name)
 
     def resolve(self, available: "set[Column] | ColumnDict") -> pl.Expr:
@@ -507,13 +521,13 @@ class BDFColumn(Column):
 
     @property
     def iri(self) -> str:
-        """Full BDF ontology IRI, computed from quantity and unit.
+        """Full BDF ontology IRI for this column.
 
-        The IRI is built as :data:`BDF_IRI_PREFIX` +
-        ``snake_case(quantity)`` + ``_`` + ``pint_long_form(unit)``.
-        Dimensionless columns (unit ``"1"``) omit the unit suffix.
-        "Surface Temperature" quantities have the "Surface " prefix
-        stripped to match the BDF ontology convention.
+        The IRI is looked up directly from :data:`bdf.spec.COLUMN_ONTOLOGY`
+        using this column's BDF label, keeping PyProBE in lock-step with the
+        ontology. Columns that are not part of the ontology fall back to a
+        computed IRI of :data:`BDF_IRI_PREFIX` + ``snake_case(quantity)``
+        (plus a pint long-form unit suffix for dimensioned columns).
 
         Returns:
             The IRI string.
@@ -524,14 +538,14 @@ class BDFColumn(Column):
             >>> BDFColumn("Step Count").iri
             'https://w3id.org/battery-data-alliance/ontology/battery-data-format#step_count'
         """
-        quantity = self.quantity
-        if quantity.startswith("Surface "):
-            quantity = quantity.removeprefix("Surface ")
-        slug = quantity.lower().replace(" ", "_")
-        if self.unit == "1":
+        match = _ONTOLOGY.quantity_from_label(self.name)
+        if match is not None:
+            return match[0].iri
+        slug = self.quantity.lower().replace(" ", "_")
+        if self.unit in ("1", None):
             return f"{BDF_IRI_PREFIX}{slug}"
         unit_long = (
-            str(_ureg.parse_units(_resolve_unit(self.unit, quantity)))
+            str(_ureg.parse_units(_resolve_unit(cast(str, self.unit), self.quantity)))
             .lower()
             .replace(" ", "_")
         )
@@ -592,29 +606,56 @@ class BDF(BDFColumn, Enum):
     VOLTAGE_VOLT = "Voltage", "V"
     CURRENT_AMPERE = "Current", "A"
     UNIX_TIME_SECOND = "Unix Time", "s"
+    STEP_TIME_SECOND = "Step Time", "s"
     CYCLE_COUNT = "Cycle Count", "1"
     STEP_COUNT = "Step Count", "1"
+    STEP_ID = "Step ID", None
     STEP_INDEX = "Step Index", "1"
-    AMBIENT_TEMPERATURE_CELSIUS = "Ambient Temperature", "degC"
-    CHARGING_CAPACITY_AH = "Charging Capacity", "Ah"
-    DISCHARGING_CAPACITY_AH = "Discharging Capacity", "Ah"
-    STEP_CAPACITY_AH = "Step Capacity", "Ah"
-    NET_CAPACITY_AH = "Net Capacity", "Ah"
-    CUMULATIVE_CAPACITY_AH = "Cumulative Capacity", "Ah"
-    CHARGING_ENERGY_WH = "Charging Energy", "Wh"
-    DISCHARGING_ENERGY_WH = "Discharging Energy", "Wh"
-    STEP_ENERGY_WH = "Step Energy", "Wh"
-    NET_ENERGY_WH = "Net Energy", "Wh"
-    CUMULATIVE_ENERGY_WH = "Cumulative Energy", "Wh"
+    STEP_TYPE = "Step Type", None
+    RECORD_INDEX = "Record Index", "1"
     POWER_WATT = "Power", "W"
-    INTERNAL_RESISTANCE_OHM = "Internal Resistance", "Ohm"
+    AMBIENT_TEMPERATURE_CELSIUS = "Ambient Temperature", "degC"
+    SURFACE_TEMPERATURE_CELSIUS = "Surface Temperature", "degC"
+    TEMPERATURE_T1_CELSIUS = "Temperature T1", "degC"
+    TEMPERATURE_T2_CELSIUS = "Temperature T2", "degC"
+    TEMPERATURE_T3_CELSIUS = "Temperature T3", "degC"
+    TEMPERATURE_T4_CELSIUS = "Temperature T4", "degC"
+    TEMPERATURE_T5_CELSIUS = "Temperature T5", "degC"
     AMBIENT_PRESSURE_PA = "Ambient Pressure", "Pa"
     APPLIED_PRESSURE_PA = "Applied Pressure", "Pa"
-    TEMPERATURE_T1_CELCIUS = "Surface Temperature T1", "degC"
-    TEMPERATURE_T2_CELCIUS = "Surface Temperature T2", "degC"
-    TEMPERATURE_T3_CELCIUS = "Surface Temperature T3", "degC"
-    TEMPERATURE_T4_CELCIUS = "Surface Temperature T4", "degC"
-    TEMPERATURE_T5_CELCIUS = "Surface Temperature T5", "degC"
+    SURFACE_PRESSURE_PA = "Surface Pressure", "Pa"
+    CHARGING_CAPACITY_AH = "Charging Capacity", "Ah"
+    DISCHARGING_CAPACITY_AH = "Discharging Capacity", "Ah"
+    NET_CAPACITY_AH = "Net Capacity", "Ah"
+    CUMULATIVE_CAPACITY_AH = "Cumulative Capacity", "Ah"
+    STEP_CHARGING_CAPACITY_AH = "Step Charging Capacity", "Ah"
+    STEP_DISCHARGING_CAPACITY_AH = "Step Discharging Capacity", "Ah"
+    STEP_NET_CAPACITY_AH = "Step Net Capacity", "Ah"
+    STEP_CUMULATIVE_CAPACITY_AH = "Step Cumulative Capacity", "Ah"
+    CYCLE_CHARGING_CAPACITY_AH = "Cycle Charging Capacity", "Ah"
+    CYCLE_DISCHARGING_CAPACITY_AH = "Cycle Discharging Capacity", "Ah"
+    CYCLE_NET_CAPACITY_AH = "Cycle Net Capacity", "Ah"
+    CYCLE_CUMULATIVE_CAPACITY_AH = "Cycle Cumulative Capacity", "Ah"
+    CHARGING_ENERGY_WH = "Charging Energy", "Wh"
+    DISCHARGING_ENERGY_WH = "Discharging Energy", "Wh"
+    NET_ENERGY_WH = "Net Energy", "Wh"
+    CUMULATIVE_ENERGY_WH = "Cumulative Energy", "Wh"
+    STEP_CHARGING_ENERGY_WH = "Step Charging Energy", "Wh"
+    STEP_DISCHARGING_ENERGY_WH = "Step Discharging Energy", "Wh"
+    STEP_NET_ENERGY_WH = "Step Net Energy", "Wh"
+    STEP_CUMULATIVE_ENERGY_WH = "Step Cumulative Energy", "Wh"
+    CYCLE_CHARGING_ENERGY_WH = "Cycle Charging Energy", "Wh"
+    CYCLE_DISCHARGING_ENERGY_WH = "Cycle Discharging Energy", "Wh"
+    CYCLE_NET_ENERGY_WH = "Cycle Net Energy", "Wh"
+    CYCLE_CUMULATIVE_ENERGY_WH = "Cycle Cumulative Energy", "Wh"
+    INTERNAL_RESISTANCE_OHM = "Internal Resistance", "ohm"
+    AC_INTERNAL_RESISTANCE_OHM = "AC Internal Resistance", "ohm"
+    DC_INTERNAL_RESISTANCE_OHM = "DC Internal Resistance", "ohm"
+    REAL_IMPEDANCE_OHM = "Real Impedance", "ohm"
+    IMAGINARY_IMPEDANCE_OHM = "Imaginary Impedance", "ohm"
+    ABSOLUTE_IMPEDANCE_OHM = "Absolute Impedance", "ohm"
+    FREQUENCY_HERTZ = "Frequency", "Hz"
+    PHASE_DEGREE = "Phase", "deg"
 
     def __str__(self) -> str:
         """Return the BDF column name string.
@@ -628,7 +669,7 @@ class BDF(BDFColumn, Enum):
             >>> print(BDF.CURRENT_AMPERE)
             Current / A
         """
-        return f"{self.quantity} / {self.unit}"
+        return self.name
 
     @classmethod
     @cache
@@ -637,12 +678,13 @@ class BDF(BDFColumn, Enum):
         return {member.quantity: member for member in cls}
 
     @classmethod
-    def get(cls, quantity: str, unit: str) -> "BDF":
+    def get(cls, quantity: str, unit: str | None) -> "BDF":
         """Look up a BDF column by exact quantity and unit match.
 
         Args:
             quantity: The physical quantity name (e.g. ``"Current"``).
-            unit: The unit string (e.g. ``"A"``, ``"Ah"``, ``"1"``).
+            unit: The unit string (e.g. ``"A"``, ``"Ah"``, ``"1"``), or
+                ``None`` for unitless quantities (e.g. ``"Step ID"``).
 
         Returns:
             The matching :class:`BDF` enum member.
@@ -719,20 +761,20 @@ def _time_from_unix_time(columns: dict[BDF, pl.Expr]) -> pl.Expr:
     return (t - t.first()).alias(BDF.TEST_TIME_SECOND.name)
 
 
-def _step_count_from_step_index(columns: dict[BDF, pl.Expr]) -> pl.Expr:
-    """Derive step count from a Step Index column.
+def _step_count_from_step_id(columns: dict[BDF, pl.Expr]) -> pl.Expr:
+    """Derive step count from a Step ID column.
 
-    Increments the step count whenever the step index changes.
+    Increments the step count whenever the step ID changes.
 
     Args:
-        columns: Mapping of ``{step_index: expr}``.
+        columns: Mapping of ``{step_id: expr}``.
 
     Returns:
         A :class:`polars.Expr` representing a monotonically increasing step
         count (``UInt64``).
     """
     return (
-        columns[BDF.STEP_INDEX]
+        columns[BDF.STEP_ID]
         .cast(pl.Int64)
         .diff()
         .fill_null(0)
@@ -755,22 +797,23 @@ BDF_RECIPES: dict[BDF, list[Recipe]] = {
             compute=_capacity_from_ch_dch,
         )
     ],
-    BDF.STEP_COUNT: [
-        Recipe(required=[BDF.STEP_INDEX], compute=_step_count_from_step_index)
-    ],
+    BDF.STEP_COUNT: [Recipe(required=[BDF.STEP_ID], compute=_step_count_from_step_id)],
 }
 
 
-def column_factory(quantity: str, unit: str = "1") -> "Column | BDF":
+def column_factory(quantity: str, unit: str | None = "1") -> "Column | BDF":
     """Create a Column or return a BDF enum member if available.
 
-    Returns a BDF enum member if one exists for the given quantity and unit,
-    otherwise creates a new Column.
+    Returns a BDF enum member if one exists for the given quantity and unit
+    (including unitless BDF columns such as ``"Step ID"`` where ``unit`` is
+    ``None``), otherwise creates a new :class:`Column`. A ``None`` unit that
+    does not match a unitless BDF column falls back to the dimensionless
+    unit ``"1"``.
     """
     try:
         return BDF.get(quantity, unit)
     except KeyError:
-        return Column(quantity, unit)
+        return Column(quantity, "1" if unit is None else unit)
 
 
 def column_factory_from_string(name: str, pattern: str = BDF_PATTERN) -> "Column | BDF":
@@ -791,7 +834,7 @@ def column_factory_from_string(name: str, pattern: str = BDF_PATTERN) -> "Column
         identify a BDF-standard column; otherwise a new :class:`Column`.
     """
     quantity, unit = _split_quantity_unit(name, pattern)
-    return column_factory(quantity, unit or "1")
+    return column_factory(quantity, unit)
 
 
 class ColumnDict(Mapping[str, Column]):

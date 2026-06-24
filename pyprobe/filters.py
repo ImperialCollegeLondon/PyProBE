@@ -439,7 +439,7 @@ def get_cycle_column(
     Returns:
         pl.DataFrame | pl.LazyFrame: The data with a cycle count column.
     """
-    step_expr = filtered_object.columns.resolve(BDF.STEP_INDEX)
+    step_expr = filtered_object.columns.resolve(BDF.STEP_ID)
     cycle_col_name = BDF.CYCLE_COUNT.name
     if len(filtered_object.cycle_info) > 0:
         cycle_ends = (
@@ -1262,7 +1262,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
                 raise ValueError(error_msg)
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
-        mask = self.columns.resolve(BDF.STEP_INDEX).is_in(flattened_steps)
+        mask = self.columns.resolve(BDF.STEP_ID).is_in(flattened_steps)
         if include_preceding_row:
             mask = _include_preceding_row(mask)
         lf_filtered = self.lf.filter(mask)
@@ -1299,7 +1299,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
             steps_idx.append(self.readme_dict[experiment_name]["Steps"])
         flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
-            self.columns.resolve(BDF.STEP_INDEX).is_in(flattened_steps).not_(),
+            self.columns.resolve(BDF.STEP_ID).is_in(flattened_steps).not_(),
         ]
         for experiment_name in experiment_names:
             self.readme_dict.pop(experiment_name)

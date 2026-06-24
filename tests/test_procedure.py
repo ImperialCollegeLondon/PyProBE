@@ -16,11 +16,11 @@ def test_experiment(procedure_fixture, steps_fixture, benchmark):
         return procedure_fixture.experiment("Break-in Cycles")
 
     experiment = benchmark(make_experiment)
-    assert experiment.data["Step Index / 1"].unique().to_list() == steps_fixture[1]
+    assert experiment.data["Step ID"].unique().to_list() == steps_fixture[1]
     assert experiment.cycle_info == [(4, 7, 5)]
 
     experiment = procedure_fixture.experiment("Discharge Pulses")
-    assert experiment.data["Step Index / 1"].unique().to_list() == steps_fixture[2]
+    assert experiment.data["Step ID"].unique().to_list() == steps_fixture[2]
     assert experiment.cycle_info == [(9, 12, 10)]
 
     """Test filtering by multiple experiment names."""
@@ -34,7 +34,7 @@ def test_remove_experiment(procedure_fixture):
     """Test removing an experiment."""
     procedure_fixture.remove_experiment("Break-in Cycles")
     assert "Break-in Cycles" not in procedure_fixture.experiment_names
-    assert procedure_fixture.data["Step Index / 1"].unique().to_list() == [
+    assert procedure_fixture.data["Step ID"].unique().to_list() == [
         2,
         3,
         9,
@@ -76,7 +76,7 @@ class TestProcedureLoad:
                 "Test Time / s": [0.0, 1.0, 2.0],
                 "Current / A": [1.0, -1.0, 0.5],
                 "Voltage / V": [3.7, 3.6, 3.8],
-                "Step Index / 1": [1, 1, 2],
+                "Step ID": [1, 1, 2],
             }
         )
 
@@ -119,7 +119,7 @@ class TestProcedureLoad:
                 "Test Time / s": [0.0, 1.0, 2.0],
                 "Current / A": [1.0, -1.0, 0.5],
                 "Voltage / V": [3.7, 3.6, 3.8],
-                "Step Index / 1": [1, 1, 2],
+                "Step ID": [1, 1, 2],
             }
         )
 
@@ -228,7 +228,7 @@ class TestProcedureLoad:
                 "Test Time / s": [0.0, 1.0, 2.0],
                 "Current / A": [1.0, -1.0, 0.5],
                 "Voltage / V": [3.7, 3.6, 3.8],
-                "Step Index / 1": [1, 1, 2],
+                "Step ID": [1, 1, 2],
                 "Step Count / 1": [0, 0, 1],
             }
         )

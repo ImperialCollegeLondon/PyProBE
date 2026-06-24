@@ -194,7 +194,7 @@ class Cell:
                 (pl.col("Current [A]") * -1).alias("Current / A"),
                 pl.col("Terminal voltage [V]").alias("Voltage / V"),
                 (pl.col("Discharge capacity [A.h]") * -1).alias("Net Capacity / Ah"),
-                pl.col("Step").alias("Step Index / 1"),
+                pl.col("Step").alias("Step ID"),
                 (
                     (
                         pl.col("Step").cast(pl.Int64)

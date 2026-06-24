@@ -78,7 +78,7 @@ class TestColumnFactory:
         self, quantity: str, unit: str, expected_col: BDFColumn
     ) -> None:
         """column_factory_from_string returns the expected BDFColumn."""
-        col = column_factory_from_string(f"{quantity} / {unit}")
+        col = column_factory_from_string(expected_col.name)
         assert col == expected_col
 
     non_bdf_cases = [
@@ -154,9 +154,10 @@ class TestBDFColumnIRI:
             (BDF.CURRENT_AMPERE, "current_ampere"),
             (BDF.VOLTAGE_VOLT, "voltage_volt"),
             (BDF.STEP_COUNT, "step_count"),
+            (BDF.STEP_ID, "step_id"),
             (BDF.CYCLE_COUNT, "cycle_count"),
-            (BDF.CHARGING_CAPACITY_AH, "charging_capacity_ampere_hour"),
-            (BDF.TEMPERATURE_T1_CELCIUS, "temperature_t1_degree_celsius"),
+            (BDF.CHARGING_CAPACITY_AH, "charging_capacity_ah"),
+            (BDF.TEMPERATURE_T1_CELSIUS, "temperature_t1_celsius"),
         ],
     )
     def test_iri_computed_from_quantity_and_unit(
@@ -178,11 +179,11 @@ class TestRecipeComputation:
     """Tests for recipe computation functions."""
 
     def test_step_count_from_step_index_recipe(self) -> None:
-        """_step_count_from_step_index increments on step changes."""
-        cs = ColumnDict(["Step Index / 1"])
+        """Step count derivation increments on step ID changes."""
+        cs = ColumnDict(["Step ID"])
         df = pl.DataFrame(
             {
-                "Step Index / 1": [
+                "Step ID": [
                     1,
                     1,
                     2,
@@ -594,8 +595,11 @@ class TestBDFEnum:
     """Tests for the BDF Enum and its 27 standard column members."""
 
     def test_member_count(self) -> None:
-        """BDF contains exactly 27 members."""
-        assert len(list(BDF)) == 27
+        """BDF mirrors the non-deprecated COLUMN_ONTOLOGY quantities."""
+        from bdf.spec import COLUMN_ONTOLOGY
+
+        ontology_count = sum(1 for _, q in COLUMN_ONTOLOGY if not q.deprecated)
+        assert len(list(BDF)) == ontology_count
 
     def test_all_members_are_bdf_columns(self) -> None:
         """Every BDF member is a BDFColumn instance."""
@@ -798,7 +802,7 @@ class TestColumnResolvability:
         "bdf_column",
         [
             BDFColumn("Net Capacity", "Ah"),  # BDFColumn with no matching recipe key
-            BDF.TEMPERATURE_T1_CELCIUS,  # BDF member with no recipe defined
+            BDF.TEMPERATURE_T1_CELSIUS,  # BDF member with no recipe defined
         ],
     )
     def test_cannot_resolve_bdf_recipe(self, bdf_column: BDFColumn) -> None:

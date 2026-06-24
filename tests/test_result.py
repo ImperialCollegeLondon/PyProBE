@@ -201,7 +201,7 @@ class TestResultDataProperty:
             "Voltage",
             "Net Capacity",
             "Step Count",
-            "Step Index",
+            "Step ID",
             "Unix Time",
         }
 
@@ -1372,7 +1372,7 @@ class TestResultExport:
             "Test_Time___s",
             "Net_Capacity___Ah",
             "Step_Count___1",
-            "Step_Index___1",
+            "Step_ID",
             "Unix_Time___s",
         }
         actual_columns = set(saved_data["data"].dtype.names)

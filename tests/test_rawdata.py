@@ -175,7 +175,7 @@ def test_pybamm_experiment():
         {
             "Test Time / s": [1, 2, 3],
             "Step Count / 1": [1, 2, 2],
-            "Step Index / 1": [1, 2, 2],
+            "Step ID": [1, 2, 2],
             "Current / A": [0.1, 0.2, 0.3],
             "Voltage / V": [3.0, 3.1, 3.2],
             "Net Capacity / Ah": [0.1, 0.2, 0.3],
@@ -206,7 +206,7 @@ def test_pybamm_experiment_missing_descriptions():
         {
             "Test Time / s": [1, 2, 3],
             "Step Count / 1": [1, 2, 3],
-            "Step Index / 1": [1, 2, 3],
+            "Step ID": [1, 2, 3],
             "Current / A": [0.1, 0.2, 0.3],
             "Voltage / V": [3.0, 3.1, 3.2],
             "Net Capacity / Ah": [0.1, 0.2, 0.3],
@@ -234,7 +234,7 @@ def test_pybamm_experiment_multiple_conditions():
         {
             "Test Time / s": [1, 2],
             "Step Count / 1": [1, 2],
-            "Step Index / 1": [1, 2],
+            "Step ID": [1, 2],
             "Current / A": [0.1, 0.2],
             "Voltage / V": [3.0, 3.1],
             "Net Capacity / Ah": [0.1, 0.2],
@@ -267,7 +267,7 @@ def test_pybamm_experiment_with_loops():
     # Create test data with repeated steps: 1->2->1->2
     base_df = pl.DataFrame(
         {
-            "Step Index / 1": [1, 1, 1, 2, 2, 1, 1, 2, 2],
+            "Step ID": [1, 1, 1, 2, 2, 1, 1, 2, 2],
             "Test Time / s": range(9),
             "Voltage / V": [3.0] * 9,
             "Current / A": [0.1] * 9,

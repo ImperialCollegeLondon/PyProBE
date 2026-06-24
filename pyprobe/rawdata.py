@@ -16,7 +16,7 @@ _REQUIRED_BDF_TIME: list[BDF] = [BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND]
 _REQUIRED_BDF: list[BDF] = [BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT]
 """BDF columns that must be resolvable; RawData raises ValueError if not."""
 
-_OPTIONAL_BDF: list[BDF] = [BDF.NET_CAPACITY_AH, BDF.STEP_COUNT, BDF.STEP_INDEX]
+_OPTIONAL_BDF: list[BDF] = [BDF.NET_CAPACITY_AH, BDF.STEP_COUNT, BDF.STEP_ID]
 """BDF columns included when available; warnings emitted on failure."""
 
 
@@ -38,7 +38,7 @@ class RawData(Result):
 
     - ``Net Capacity / Ah``
     - ``Step Count / 1``
-    - ``Step Index / 1``
+    - ``Step ID``
     """
 
     step_descriptions: dict[str, list[str | int | None]]
@@ -269,7 +269,7 @@ class RawData(Result):
         Returns:
             The PyBaMM operating conditions.
         """
-        step_index_col = BDF.STEP_INDEX.name
+        step_index_col = BDF.STEP_ID.name
         step_count_col = BDF.STEP_COUNT.name
         only_steps: pl.DataFrame = (
             self.lf.with_row_index()

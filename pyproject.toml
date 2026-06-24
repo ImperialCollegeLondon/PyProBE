@@ -18,13 +18,13 @@ dependencies = [
     "pandas>=2.2.3",
     "plotly>=5.24.1",
     "polars>=1.18.0",
-    "pydantic>=2.10.4",
     "pyyaml>=6.0.2",
     "scikit-learn>=1.6.0",
     "streamlit>=1.41.1",
     "sympy>=1.13.3",
     "tzlocal>=5.2",
     "pint>=0.25.2",
+    "batterydf",
 ]
 
 classifiers = [
@@ -169,3 +169,6 @@ addopts = "-v -p no:warnings --doctest-modules --benchmark-disable"
 exclude_also = [
     "@overload"
 ]
+
+[tool.uv.sources]
+batterydf = { git = "ssh://git@github.com/battery-data-alliance/battery-data-format.git" }

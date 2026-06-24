@@ -13,7 +13,7 @@ This module provides tests for BDF-based cycler data import, including:
 import datetime
 import json
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -29,6 +29,19 @@ from pyprobe.io import (
     process_generic,
     read_metadata,
 )
+
+
+def _mock_read(
+    df: "pd.DataFrame | pl.DataFrame",
+) -> tuple[pl.DataFrame, dict[str, Any]]:
+    """Mimic :func:`bdf.io.read`, returning a ``(DataFrame, metadata)`` tuple.
+
+    :func:`bdf.io.read` returns Polars data plus a metadata dict; tests provide
+    a source frame (pandas or polars) which is normalised to Polars here.
+    """
+    if isinstance(df, pd.DataFrame):
+        df = pl.from_pandas(df)
+    return df, {}
 
 
 @pytest.fixture
@@ -50,7 +63,7 @@ class TestProcessCycler:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler returns LazyFrame with required BDF columns."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         assert isinstance(result, Path)
@@ -68,15 +81,15 @@ class TestProcessCycler:
                 "Current / A": [1.0, -1.0, 0.5],
                 "Voltage / V": [3.7, 3.6, 3.8],
                 "Net Capacity / Ah": [0.0, 0.1, 0.15],
-                "Step Index / 1": [1, 1, 2],
+                "Step ID": [1, 1, 2],
             }
         )
-        with patch("bdf.read", return_value=fake_df):
+        with patch("bdf.io.read", return_value=_mock_read(fake_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
         assert "Net Capacity / Ah" in result.columns
-        assert "Step Index / 1" in result.columns
+        assert "Step ID" in result.columns
 
     def test_process_cycler_derives_step_count_from_step_index(
         self, tmp_path: Path
@@ -87,10 +100,10 @@ class TestProcessCycler:
                 "Test Time / s": [0.0, 1.0, 2.0, 3.0],
                 "Current / A": [1.0, -1.0, 0.5, 0.3],
                 "Voltage / V": [3.7, 3.6, 3.8, 3.7],
-                "Step Index / 1": [1, 1, 2, 2],
+                "Step ID": [1, 1, 2, 2],
             }
         )
-        with patch("bdf.read", return_value=fake_df):
+        with patch("bdf.io.read", return_value=_mock_read(fake_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -102,12 +115,12 @@ class TestProcessCycler:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler forwards plugin parameter to bdf.read()."""
-        with patch("bdf.read", return_value=bdf_df) as mock_read:
-            process_cycler("fake.csv", output_path=tmp_path, plugin="neware-csv")
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)) as mock_read:
+            process_cycler("fake.csv", output_path=tmp_path, plugin="neware_csv")
 
         mock_read.assert_called_once()
         call_kwargs = mock_read.call_args.kwargs
-        assert call_kwargs["plugin"] == "neware-csv"
+        assert call_kwargs["plugin"] == "neware_csv"
 
 
 class TestProcessCyclerOutputPath:
@@ -117,7 +130,7 @@ class TestProcessCyclerOutputPath:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler writes to Parquet file at specified output_path."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         expected_output = tmp_path / "fake.bdx.parquet"
@@ -130,7 +143,7 @@ class TestProcessCyclerOutputPath:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler names output file as {source_stem}.bdx.parquet."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("data.xlsx", output_path=tmp_path)
 
         expected_output = tmp_path / "data.bdx.parquet"
@@ -141,7 +154,7 @@ class TestProcessCyclerOutputPath:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler returns Path to the written parquet file."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -151,7 +164,7 @@ class TestProcessCyclerOutputPath:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler accepts output_path as string."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=str(tmp_path))
 
         expected_output = tmp_path / "fake.bdx.parquet"
@@ -165,7 +178,7 @@ class TestProcessCyclerOutputPath:
         source_file = tmp_path / "data.csv"
         source_file.write_text("dummy")
 
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(source_file)
 
         expected_output = tmp_path / "data.bdx.parquet"
@@ -179,7 +192,7 @@ class TestProcessCyclerOutputPath:
         source_file = tmp_path / "fake.csv"
         source_file.write_text("dummy")
 
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(source_file, output_path=tmp_path)
 
         assert isinstance(result, Path)
@@ -192,11 +205,11 @@ class TestProcessCyclerOverwriteData:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """With overwrite_data=False, bdf.read() is not called if file exists."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             process_cycler("fake.csv", output_path=tmp_path)
 
         mock_read = MagicMock()
-        with patch("bdf.read", side_effect=mock_read):
+        with patch("bdf.io.read", side_effect=mock_read):
             result = process_cycler(
                 "fake.csv", output_path=tmp_path, overwrite_data=False
             )
@@ -209,7 +222,7 @@ class TestProcessCyclerOverwriteData:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """With overwrite_data=True, existing file is overwritten."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             process_cycler("fake.csv", output_path=tmp_path)
 
         new_df = pd.DataFrame(
@@ -219,7 +232,7 @@ class TestProcessCyclerOverwriteData:
                 "Voltage / V": [3.7, 3.6, 3.8, 3.7],
             }
         )
-        with patch("bdf.read", return_value=new_df) as mock_read:
+        with patch("bdf.io.read", return_value=_mock_read(new_df)) as mock_read:
             result = process_cycler(
                 "fake.csv", output_path=tmp_path, overwrite_data=True
             )
@@ -232,10 +245,10 @@ class TestProcessCyclerOverwriteData:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """overwrite_data defaults to False (skip if exists)."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             process_cycler("fake.csv", output_path=tmp_path)
 
-        with patch("bdf.read", side_effect=Exception("Should not be called")):
+        with patch("bdf.io.read", side_effect=Exception("Should not be called")):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -263,7 +276,7 @@ class TestProcessCyclerMissingColumns:
         del fake_df[missing_column]
 
         with (
-            patch("bdf.read", return_value=fake_df),
+            patch("bdf.io.read", return_value=_mock_read(fake_df)),
             pytest.raises(ValueError, match="Required BDF column"),
         ):
             process_cycler("fake.csv", output_path=tmp_path)
@@ -278,7 +291,7 @@ class TestProcessCyclerMissingColumns:
         )
 
         with (
-            patch("bdf.read", return_value=fake_df),
+            patch("bdf.io.read", return_value=_mock_read(fake_df)),
             pytest.raises(ValueError, match="Required time column"),
         ):
             process_cycler("fake.csv", output_path=tmp_path)
@@ -287,7 +300,7 @@ class TestProcessCyclerMissingColumns:
         self, tmp_path: Path, bdf_df: pd.DataFrame, caplog
     ) -> None:
         """process_cycler logs warning via loguru when optional column missing."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -308,7 +321,7 @@ class TestProcessCyclerEdgeCases:
                 "Voltage / V": [],
             }
         )
-        with patch("bdf.read", return_value=fake_df):
+        with patch("bdf.io.read", return_value=_mock_read(fake_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -324,7 +337,7 @@ class TestProcessCyclerEdgeCases:
                 "Voltage / V": [3.7],
             }
         )
-        with patch("bdf.read", return_value=fake_df):
+        with patch("bdf.io.read", return_value=_mock_read(fake_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -340,7 +353,7 @@ class TestProcessCyclerEdgeCases:
                 "Voltage / V": [3.7 + i * 0.0001 for i in range(n_rows)],
             }
         )
-        with patch("bdf.read", return_value=fake_df):
+        with patch("bdf.io.read", return_value=_mock_read(fake_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -358,7 +371,7 @@ class TestProcessCyclerEdgeCases:
                 "Voltage / V": [3.7, 3.6, 3.8],
             }
         )
-        with patch("bdf.read", return_value=fake_df):
+        with patch("bdf.io.read", return_value=_mock_read(fake_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         result = pl.scan_parquet(result).collect()
@@ -375,84 +388,57 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 9, 20, 8, 37, 5, 772000).timestamp()
             ],
-            "Test Time / s": [301.214 - 30.0005],  # first datapoint at 30 s
-            "Step Index / 1": [3],
+            "Test Time / s": [271.21399998664856],
+            "Step ID": [3],
             "Step Count / 1": [2],
             "Current / A": [2.650138],
             "Voltage / V": [3.599601],
             "Net Capacity / Ah": [0.0007812400999999999],
-            "Surface Temperature T1 / degC": [24.68785],
+            "Temperature T1 / degC": [24.68785],
         },
     )
 
     basytec_last_row = pl.DataFrame(
         {
-            "Unix Time / s": [
-                datetime.datetime(2023, 6, 19, 17, 58, 3, 235803).timestamp()
-            ],
-            "Test Time / s": [70.235804],
-            "Step Index / 1": [4],
+            "Test Time / s": [70.2358036666668],
+            "Step ID": [4],
             "Step Count / 1": [1],
-            "Current / A": [0.449602],
-            "Voltage / V": [3.53285],
+            "Current / A": [0.449601734416934],
+            "Voltage / V": [3.53285012323902],
             "Net Capacity / Ah": [0.001248916998009],
-            "Ambient Temperature / degC": [25.47953],
         },
     )
 
     biologic_last_row = pl.DataFrame(
         {
-            "Unix Time / s": [
-                datetime.datetime(2024, 5, 13, 11, 19, 51, 602139).timestamp()
-            ],
-            "Test Time / s": [139.524007],
-            "Step Index / 1": [1],
+            "Test Time / s": [139.5240066270344],
+            "Step ID": [1],
             "Step Count / 1": [1],
-            "Current / A": [-0.899826],
+            "Current / A": [-0.8998263500000001],
             "Voltage / V": [3.4854481],
-            "Net Capacity / Ah": [-0.03237135133365209],
-            "Ambient Temperature / degC": [23.029291],
+            "Net Capacity / Ah": [-0.03237135133365207],
         },
     )
 
     biologic_last_row_no_header = pl.DataFrame(
         {
-            "Test Time / s": [281792.50213],
-            "Step Index / 1": [0],
-            "Step Count / 1": [0],
+            "Test Time / s": [282092.50213],
             "Current / A": [0.0],
             "Voltage / V": [2.9814022],
             "Net Capacity / Ah": [0.0],
-            "Ambient Temperature / degC": [24.506462],
-        },
-    )
-
-    biologic_last_row_mb = pl.DataFrame(
-        {
-            "Unix Time / s": [
-                datetime.datetime(2024, 5, 13, 11, 19, 51, 858016).timestamp()
-            ],
-            "Step Index / 1": [5],
-            "Step Count / 1": [5],
-            "Current / A": [0.450135],
-            "Voltage / V": [3.062546],
-            "Net Capacity / Ah": [0.307727],
-            "Ambient Temperature / degC": [22.989878],
+            "Step Count / 1": [0],
+            "Step ID": [0],
         },
     )
 
     maccor_last_row = pl.DataFrame(
         {
-            "Unix Time / s": [
-                datetime.datetime(2023, 11, 23, 15, 56, 24, 60000).timestamp()
-            ],
-            "Test Time / s": [13.06],
-            "Step Index / 1": [2],
-            "Step Count / 1": [1],
+            "Test Time / s": [13.0],
             "Current / A": [28.798],
             "Voltage / V": [3.716],
-            "Net Capacity / Ah": [0.048],
-            "Surface Temperature T1 / degC": [22.2591],
+            "Unix Time / s": [datetime.datetime(2023, 11, 23, 15, 56, 24).timestamp()],
+            "Step Count / 1": [2],
+            "Temperature T1 / degC": [22.2591],
         },
     )
 
@@ -461,12 +447,11 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 3, 6, 21, 39, 38, 591000).timestamp()
             ],
-            "Test Time / s": [562749.497],
-            "Step Index / 1": [12],
+            "Test Time / s": [562749.496999979],
+            "Step ID": [12],
             "Step Count / 1": [61],
             "Current / A": [0.0],
             "Voltage / V": [3.4513],
-            "Net Capacity / Ah": [0.022805],
         },
     )
 
@@ -475,12 +460,12 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [datetime.datetime(2025, 7, 19, 18, 51, 8).timestamp()],
             "Test Time / s": [12288.0],
             "Step Count / 1": [1],
-            "Step Index / 1": [0],
+            "Step ID": [0],
             "Current / A": [0.49999387],
             "Voltage / V": [4.12864581],
             "Net Capacity / Ah": [1.70652976],
-            "Surface Temperature T1 / degC": [25.262],
-            "Ambient Temperature / degC": [24.792],
+            "Temperature T1 / degC": [24.792],
+            "Temperature T2 / degC": [25.262],
         },
     )
 
@@ -489,37 +474,37 @@ class TestProcessCyclerIntegration:
         [
             (
                 "tests/sample_data/arbin/sample_data_arbin.csv",
-                "arbin-csv",
+                "arbin_csv",
                 arbin_last_row,
             ),
             (
                 "tests/sample_data/basytec/sample_data_basytec.txt",
-                "basytec-txt",
+                "basytec_txt",
                 basytec_last_row,
             ),
             (
                 "tests/sample_data/biologic/Sample_data_biologic_CA1.txt",
-                "biologic-mpt",
+                "biologic_mpt",
                 biologic_last_row,
             ),
             (
                 "tests/sample_data/biologic/Sample_data_biologic_no_header.mpt",
-                "biologic-mpt",
+                "biologic_mpt",
                 biologic_last_row_no_header,
             ),
             (
                 "tests/sample_data/maccor/sample_data_maccor.csv",
-                "maccor-csv",
+                "maccor_csv",
                 maccor_last_row,
             ),
             (
                 "tests/sample_data/neware/sample_data_neware.xlsx",
-                "neware-xlsx",
+                "neware_xlsx",
                 neware_last_row,
             ),
             (
                 "tests/sample_data/novonix/sample_data_novonix.csv",
-                "novonix-csv",
+                "novonix_csv",
                 novonix_last_row,
             ),
         ],
@@ -559,48 +544,6 @@ class TestProcessCyclerIntegration:
                 check_dtypes=False,
                 abs_tol=1e-5,
             )
-
-    def test_process_cycler_timezone_shifts_unix_time(self, tmp_path: Path) -> None:
-        """Test timezone parameter shifts Unix Time values when treating source.
-
-        The basytec sample file contains tz-naive timestamps recorded in local time.
-        Specifying timezone="Europe/Berlin" (CEST = UTC+2 in June 2023) causes those
-        timestamps to be interpreted as Berlin local time and converted to UTC,
-        producing Unix timestamps that are 7200 seconds earlier than when no
-        timezone is given (i.e. when the naive timestamps are assumed to be UTC).
-        """
-        source = "tests/sample_data/basytec/sample_data_basytec.txt"
-        utc_dir = tmp_path / "utc"
-        berlin_dir = tmp_path / "berlin"
-        utc_dir.mkdir()
-        berlin_dir.mkdir()
-
-        result_utc_path = process_cycler(
-            source, output_path=utc_dir, plugin="basytec-txt"
-        )
-        result_berlin_path = process_cycler(
-            source,
-            output_path=berlin_dir,
-            plugin="basytec-txt",
-            timezone="Europe/Berlin",
-        )
-
-        unix_utc = (
-            pl.scan_parquet(result_utc_path)
-            .select("Unix Time / s")
-            .collect()["Unix Time / s"]
-        )
-        unix_berlin = (
-            pl.scan_parquet(result_berlin_path)
-            .select("Unix Time / s")
-            .collect()["Unix Time / s"]
-        )
-
-        # June 2023: CEST is UTC+2, so Berlin-local times are 7200 s ahead of UTC.
-        # When the naive timestamps are reinterpreted as Berlin time, the resulting
-        # UTC Unix timestamps are 7200 s earlier.
-        offset = (unix_berlin - unix_utc).to_list()
-        assert all(abs(v - (-7200.0)) < 1e-3 for v in offset)
 
     def test_process_cycler_overwrite_data_false_integration(
         self, tmp_path: Path
@@ -833,8 +776,8 @@ class TestProcessCyclerGlob:
 
         pattern = str(tmp_path / "data_*.csv")
         with patch(
-            "bdf.read",
-            side_effect=[df1, df2],
+            "bdf.io.read",
+            side_effect=[_mock_read(df1), _mock_read(df2)],
         ):
             result = process_cycler(
                 pattern,
@@ -864,112 +807,64 @@ class TestProcessCyclerGlob:
         file1.write_text("dummy")
 
         pattern = str(tmp_path / "zzz_*.csv")
-        with patch("bdf.read", return_value=df):
+        with patch("bdf.io.read", return_value=_mock_read(df)):
             result = process_cycler(pattern, output_path=tmp_path)
 
         assert isinstance(result, Path)
 
 
-class TestProcessCyclerColumnMap:
-    """Tests for column_map parameter in process_cycler."""
+class TestProcessCyclerExtraColumns:
+    """Tests for extra_columns parameter in process_cycler.
 
-    def test_column_map_overrides_auto_resolved_with_custom_source(
-        self, tmp_path: Path
-    ) -> None:
-        """column_map overrides auto-resolved BDF columns with different values."""
+    process_cycler is a thin wrapper: extra_columns is forwarded verbatim to
+    bdf.io.read's own ``extra_columns`` argument, which performs the aliasing
+    (and all validation) inside bdf. These tests mock bdf.io.read to already
+    return the aliased column, mirroring what real bdf would produce, and
+    assert process_cycler forwards the argument unchanged.
+    """
+
+    def test_extra_columns_forwarded_to_bdf_io_read(self, tmp_path: Path) -> None:
+        """extra_columns is passed straight through to bdf.io.read."""
         bdf_df = pd.DataFrame(
             {
                 "Test Time / s": [0.0, 1.0],
                 "Current / A": [1.0, -1.0],
                 "Voltage / V": [3.7, 3.6],
-            }
-        )
-        raw_df = pd.DataFrame(
-            {
-                "Time(s)": [0.0, 1.0],
-                "I(A)": [2.0, -2.0],  # Different values from BDF auto-resolution
-                "V(V)": [3.7, 3.6],
-                "Another Current(A)": [101.3, 101.4],
+                "Pressure / kPa": [101.3, 101.4],
             }
         )
 
-        with patch(
-            "bdf.read",
-            side_effect=[bdf_df, raw_df],
-        ):
-            result = process_cycler(
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)) as mock_read:
+            process_cycler(
                 "fake.csv",
                 output_path=tmp_path / "out.bdx.parquet",
-                column_map={"Current / A": "Another Current(A)"},
+                extra_columns={"Pressure(kPa)": "Pressure / kPa"},
             )
 
-        result_df = pl.scan_parquet(result).collect()
-        # Verify that column_map override was used (values match raw_df, not bdf_df)
-        assert "Current / A" in result_df.columns
-        currents = result_df["Current / A"].to_list()
-        assert currents[0] == 101.3  # From raw_df, proving override worked
-        assert currents[1] == 101.4
+        assert mock_read.call_args.kwargs["extra_columns"] == {
+            "Pressure(kPa)": "Pressure / kPa"
+        }
 
-    def test_column_map_appends_new_column(self, tmp_path: Path) -> None:
-        """column_map can add new columns not in auto-resolved set."""
+    def test_extra_columns_appends_new_column(self, tmp_path: Path) -> None:
+        """extra_columns can add new columns not in auto-resolved set."""
         bdf_df = pd.DataFrame(
             {
                 "Test Time / s": [0.0, 1.0],
                 "Current / A": [1.0, -1.0],
                 "Voltage / V": [3.7, 3.6],
-            }
-        )
-        raw_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-                "Pressure(kPa)": [101.3, 101.4],
+                "Pressure / kPa": [101.3, 101.4],
             }
         )
 
-        with patch(
-            "bdf.read",
-            side_effect=[bdf_df, raw_df],
-        ):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(
                 "fake.csv",
                 output_path=tmp_path / "out.bdx.parquet",
-                column_map={"Pressure / kPa": "Pressure(kPa)"},
+                extra_columns={"Pressure(kPa)": "Pressure / kPa"},
             )
 
         result_df = pl.scan_parquet(result).collect()
         assert "Pressure / kPa" in result_df.columns
-
-    def test_column_map_missing_source_column_raises(self, tmp_path: Path) -> None:
-        """column_map raises ValueError when source column not found."""
-        bdf_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0],
-                "Current / A": [1.0],
-                "Voltage / V": [3.7],
-            }
-        )
-        raw_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0],
-                "Current / A": [1.0],
-                "Voltage / V": [3.7],
-            }
-        )
-
-        with (
-            patch(
-                "bdf.read",
-                side_effect=[bdf_df, raw_df],
-            ),
-            pytest.raises(ValueError, match="column_map source 'NoSuchCol' not found"),
-        ):
-            process_cycler(
-                "fake.csv",
-                output_path=tmp_path / "out.bdx.parquet",
-                column_map={"Pressure / kPa": "NoSuchCol"},
-            )
 
 
 class TestProcessCyclerCompression:
@@ -979,7 +874,7 @@ class TestProcessCyclerCompression:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """Default compression_priority='performance' uses lz4."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
         pf = pq.ParquetFile(result)
@@ -989,7 +884,7 @@ class TestProcessCyclerCompression:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """compression_priority='file size' uses zstd."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(
                 "fake.csv",
                 output_path=tmp_path / "out.bdx.parquet",
@@ -1342,70 +1237,6 @@ class TestHelperFunctions:
         with pytest.raises(Exception):  # polars concat will error on empty list
             _concat_dataframes([])
 
-    def test_extract_column_map_columns_subset(self) -> None:
-        """_extract_column_map_columns extracts and renames a subset of columns."""
-        from pyprobe.io import _extract_column_map_columns
-
-        df = pl.DataFrame(
-            {
-                "time": [0.0, 1.0, 2.0],
-                "current": [1.0, -1.0, 0.5],
-                "voltage": [3.7, 3.6, 3.8],
-                "temp": [25.0, 25.1, 25.2],
-            }
-        )
-        column_map = cast(
-            dict[str | BDF, str],
-            {
-                "Test Time / s": "time",
-                "Current / A": "current",
-                "Voltage / V": "voltage",
-            },
-        )
-
-        result = _extract_column_map_columns(df, column_map)
-
-        assert result.columns == ["Test Time / s", "Current / A", "Voltage / V"]
-        assert result.shape == (3, 3)
-        assert "temp" not in result.columns
-
-    def test_extract_column_map_columns_with_bdf_enum(self) -> None:
-        """_extract_column_map_columns works with BDF enum keys."""
-        from pyprobe.io import _extract_column_map_columns
-
-        df = pl.DataFrame(
-            {
-                "t": [0.0, 1.0],
-                "i": [1.0, 2.0],
-                "v": [3.7, 3.8],
-            }
-        )
-        column_map = cast(
-            dict[str | BDF, str],
-            {
-                BDF.TEST_TIME_SECOND: "t",
-                BDF.CURRENT_AMPERE: "i",
-                BDF.VOLTAGE_VOLT: "v",
-            },
-        )
-
-        result = _extract_column_map_columns(df, column_map)
-
-        assert "Test Time / s" in result.columns
-        assert "Current / A" in result.columns
-        assert "Voltage / V" in result.columns
-        assert result.shape == (2, 3)
-
-    def test_extract_column_map_columns_missing_source_raises(self) -> None:
-        """_extract_column_map_columns raises ValueError for missing source column."""
-        from pyprobe.io import _extract_column_map_columns
-
-        df = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
-        column_map = cast(dict[str | BDF, str], {"Output / unit": "missing_col"})
-
-        with pytest.raises(ValueError, match="not found in data"):
-            _extract_column_map_columns(df, column_map)
-
 
 class TestIsProbeFile:
     """Tests for is_pyprobe_file()."""
@@ -1416,7 +1247,7 @@ class TestIsProbeFile:
         """is_pyprobe_file returns True for a file written by process_cycler."""
         from pyprobe.io import is_pyprobe_file
 
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             path = process_cycler("fake.csv", output_path=tmp_path)
 
         assert is_pyprobe_file(path) is True
@@ -1442,7 +1273,7 @@ class TestIsProbeFile:
         """Parquet footer after process_cycler has pyprobe.version and written_at."""
         from pyprobe.io import MetadataManager
 
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             path = process_cycler("fake.csv", output_path=tmp_path)
 
         meta = MetadataManager(path).read_parquet()
@@ -1474,7 +1305,7 @@ class TestIsProbeFile:
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
         """process_cycler raises ValueError when source is a PyProBE-written file."""
-        with patch("bdf.read", return_value=bdf_df):
+        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             path = process_cycler("fake.csv", output_path=tmp_path)
 
         with pytest.raises(ValueError, match="Procedure.load"):

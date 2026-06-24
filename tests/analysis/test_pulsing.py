@@ -22,10 +22,10 @@ def test_pulse(Pulsing_fixture):
     """Test the pulse method."""
     pulse_obj = Pulsing(input_data=Pulsing_fixture)
     pulse = pulse_obj.pulse(0)
-    assert (pulse.data[BDF.STEP_INDEX.name] == 10).all()
+    assert (pulse.data[BDF.STEP_ID.name] == 10).all()
 
     pulse = pulse_obj.pulse(6)
-    assert (pulse.data[BDF.STEP_INDEX.name] == 10).all()
+    assert (pulse.data[BDF.STEP_ID.name] == 10).all()
 
 
 def test_get_resistances(Pulsing_fixture):
