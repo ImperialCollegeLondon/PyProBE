@@ -1,6 +1,77 @@
 # CHANGELOG
 
 
+## Unreleased
+
+### Quantified data model + Table/Curve operation namespaces
+
+A unified `Quantified` data model and verb-grouped operation namespaces were
+added. Existing code keeps working through deprecated aliases.
+
+#### Added
+
+- **`Quantified` trait** — the shared contract for every PyProBE data object
+  (`columns`, `metadata`, `column_definitions`). Both `Table` and `Curve`
+  satisfy it, so a consumer can validate the quantities it received against a
+  single surface.
+- **`Curve`** — a continuous data object that *is* a scipy `PPoly` (so
+  `isinstance(curve, PPoly)` is `True`) carrying `x`/`y` BDF quantities plus
+  metadata. Build one from any `PPoly` or `BSpline` via `Curve.from_poly(...)`;
+  `Curve.derivative()` returns a `Curve` with the derived `d(y)/d(x)` quantity;
+  `Curve.to_table(x)` samples it onto a grid.
+- **Operations as flat methods on `Table`** — `table.to_curve(y, x, fit=...)` →
+  `Curve` fits any scipy 1-D interpolator/smoother (or user callable sharing the
+  `callable(x, y, **kwargs) -> PPoly | BSpline` protocol), defaulting to
+  `PchipInterpolator`; `table.savgol(...)` → `Table`; `table.downsample(...)` →
+  `Table`; `table.gradient(y, x)` → `Table`. Each delegates to the existing
+  standalone analysis function (no behaviour change) and is documented
+  automatically by the autosummary template.
+- **Scalar quantity methods on `CyclingData`** —
+  `{net_capacity|net_energy|capacity_throughput|energy_throughput}()` → `float`,
+  living on the cycling data class that validates the required BDF columns.
+- **`validate_quantity`** (`pyprobe.analysis.utils`) — the unified boundary
+  check; reads a `Quantified` object's `columns` and raises
+  `ColumnResolutionError` when an expected quantity is missing.
+
+#### Changed / Deprecated
+
+- **`Result` → `Table`.** The tabular data object is now named `Table`.
+  `Result` remains importable as a deprecated alias and emits a
+  `DeprecationWarning` on construction. `isinstance(obj, Result)` stays `True`
+  for any `Table` (or subclass) instance. *Migration:* replace
+  `from pyprobe.result import Result` with `from pyprobe.result import Table`.
+- **`RawData` → `CyclingData`.** The cycling data object is now named
+  `CyclingData`, signalling a cycling-specific type distinct from the generic
+  `Table`. `RawData` remains importable as a deprecated alias and emits a
+  `DeprecationWarning` on construction. `isinstance(obj, RawData)` stays `True`
+  for any `CyclingData` (or subclass such as `Step`/`Cycle`/`Experiment`/
+  `Procedure`) instance. *Migration:* replace
+  `from pyprobe.rawdata import RawData` with
+  `from pyprobe.rawdata import CyclingData`.
+- **`RawData.capacity` deprecated** in favour of `CyclingData.net_capacity()`.
+  The property still returns the same value but emits a `DeprecationWarning`.
+  *Migration:* replace `raw.capacity` with `cycling_data.net_capacity()`.
+
+#### Migration map
+
+The verb namespaces from the previous unreleased iteration are removed:
+
+| Old (removed) | New |
+| --- | --- |
+| `table.interpolate.linear(y, x)` | `table.to_curve(y, x, fit=make_interp_spline)` (or any scipy interpolator) |
+| `table.interpolate.cubic(y, x)` | `table.to_curve(y, x, fit=CubicSpline)` |
+| `table.interpolate.pchip(y, x)` | `table.to_curve(y, x, fit=PchipInterpolator)` (the default) |
+| `table.interpolate.akima(y, x)` | `table.to_curve(y, x, fit=Akima1DInterpolator)` |
+| `table.smooth.spline(y, x, lam=...)` | `table.to_curve(y, x, fit=make_smoothing_spline, lam=...)` |
+| `table.smooth.savgol(...)` | `table.savgol(...)` |
+| `table.differentiate.gradient(y, x)` | `table.gradient(y, x)` |
+| `table.resample.downsample(...)` | `table.downsample(...)` |
+| `table.quantify.net_capacity()` | `cycling_data.net_capacity()` |
+| `table.quantify.net_energy()` | `cycling_data.net_energy()` |
+| `table.quantify.capacity_throughput()` | `cycling_data.capacity_throughput()` |
+| `table.quantify.energy_throughput()` | `cycling_data.energy_throughput()` |
+
+
 ## v2.2.0 (2025-03-25)
 
 ### Bug Fixes
