@@ -6,7 +6,7 @@ from pyprobe.analysis.utils import build_result, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.filters import Experiment, Step
 from pyprobe.pyprobe_types import PyProBEDataType
-from pyprobe.result import Result
+from pyprobe.result import Table
 
 
 def _get_pulse_number(data: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame | pl.LazyFrame:
@@ -50,14 +50,14 @@ def _get_end_of_rest_points(
     )
 
 
-def get_ocv_curve(input_data: PyProBEDataType) -> Result:
+def get_ocv_curve(input_data: PyProBEDataType) -> Table:
     """Filter down a pulsing experiment to the points representing the cell OCV.
 
     Args:
         input_data: The input data for the pulsing experiment.
 
     Returns:
-        A new Result object containing the OCV curve.
+        A new Table object containing the OCV curve.
 
     Raises:
         ColumnResolutionError: If required columns cannot be resolved from `input_data`.
@@ -78,7 +78,7 @@ def get_ocv_curve(input_data: PyProBEDataType) -> Result:
 def get_resistances(
     input_data: PyProBEDataType,
     r_times: list[float | int] = [],
-) -> Result:
+) -> Table:
     """Returns a result object summarising the pulsing experiment.
 
     Args:
@@ -94,7 +94,7 @@ def get_resistances(
             the cell resistance.
 
     Returns:
-        Result:
+        Table:
             A result object containing key summary statistics for a pulsing
             experiment. Includes:
             - Experiment Capacity [Ah]

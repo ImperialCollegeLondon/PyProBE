@@ -10,7 +10,7 @@ from scipy import ndimage, signal
 from pyprobe.analysis.utils import get_columns, validate_columns
 
 if TYPE_CHECKING:
-    from pyprobe.result import Result
+    from pyprobe.result import Table
 
 
 def _clean_data(
@@ -65,24 +65,24 @@ def _parabolic_peak(corr: np.ndarray, peak_idx: int, lags: np.ndarray) -> float:
 
 
 def align_data(
-    result1: "Result",
-    result2: "Result",
+    result1: "Table",
+    result2: "Table",
     column1: str,
     column2: str,
-) -> tuple["Result", "Result"]:
-    """Align the data of two Result objects from the cross-correlation of two columns.
+) -> tuple["Table", "Table"]:
+    """Align the data of two Table objects from the cross-correlation of two columns.
 
     The unix time column of result2 is shifted to best align column2 with column1
     from result1.
 
     Args:
-        result1 (Result): The first Result object (reference).
-        result2 (Result): The second Result object (to be shifted).
-        column1 (str): The column name in the first Result object to align on.
-        column2 (str): The column name in the second Result object to align on.
+        result1 (Table): The first Table object (reference).
+        result2 (Table): The second Table object (to be shifted).
+        column1 (str): The column name in the first Table object to align on.
+        column2 (str): The column name in the second Table object to align on.
 
     Returns:
-        Tuple[Result, Result]: The two Result objects, with the second one shifted.
+        Tuple[Table, Table]: The two Table objects, with the second one shifted.
 
     Raises:
         ColumnResolutionError: If required columns cannot be resolved from either

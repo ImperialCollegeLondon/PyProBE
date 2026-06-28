@@ -11,7 +11,7 @@ import polars as pl
 
 from pyprobe import utils
 from pyprobe.columns import BDF, Column
-from pyprobe.rawdata import RawData
+from pyprobe.rawdata import CyclingData
 
 if TYPE_CHECKING:
     from pyprobe.pyprobe_types import (
@@ -1030,7 +1030,7 @@ class CycleFiltersMixin:
         )
 
 
-class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
+class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     """A class for a procedure in a battery experiment."""
 
     def __init__(
@@ -1337,7 +1337,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, RawData):
         )
 
 
-class Experiment(CycleFiltersMixin, StepFiltersMixin, RawData):
+class Experiment(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     """A class for an experiment in a battery experimental procedure."""
 
     cycle_info: list[tuple[int, int, int]] = []
@@ -1377,7 +1377,7 @@ class Experiment(CycleFiltersMixin, StepFiltersMixin, RawData):
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
 
 
-class Cycle(CycleFiltersMixin, StepFiltersMixin, RawData):
+class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     """A class for a cycle in a battery experimental procedure."""
 
     cycle_info: list[tuple[int, int, int]] = []
@@ -1416,7 +1416,7 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, RawData):
         self.cycle_info = cycle_info.copy() if cycle_info is not None else []
 
 
-class Step(StepFiltersMixin, RawData):
+class Step(StepFiltersMixin, CyclingData):
     """A class for a step in a battery experimental procedure."""
 
     def __init__(

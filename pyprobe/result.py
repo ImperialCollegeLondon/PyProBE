@@ -1,4 +1,4 @@
-"""A module for the Result class."""
+"""A module for the Table data object and the Curve continuous data object."""
 
 import os
 import re
@@ -7,7 +7,7 @@ from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Literal, Union
+from typing import Any, Literal, Protocol, Union, runtime_checkable
 
 import numpy as np
 import pandas as pd
@@ -15,9 +15,15 @@ import polars as pl
 from loguru import logger
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
+from scipy.interpolate import BSpline, PchipInterpolator, PPoly
 from scipy.io import savemat
 
-from pyprobe.columns import Column, ColumnDict
+from pyprobe.columns import (
+    Column,
+    ColumnDict,
+    CurveColumns,
+    column_factory_from_string,
+)
 from pyprobe.utils import deprecated, validate_timezone
 
 try:
@@ -28,11 +34,232 @@ except ImportError:
     hvplot_exists = False
 
 
-class Result:
-    """A class for holding any data in PyProBE.
+@runtime_checkable
+class Quantified(Protocol):
+    """The shared contract for every PyProBE data object.
 
-    A Result object is the base type for every data object in PyProBE. This class
-    includes all of the main methods for returning and describing any data in PyProBE.
+    Any object that carries BDF quantities plus metadata satisfies ``Quantified``.
+    A ``Quantified`` object exposes a :attr:`columns` accessor (a
+    :class:`~pyprobe.columns.ColumnDict` or one of its variants such as
+    :class:`~pyprobe.columns.CurveColumns`), a :attr:`metadata` mapping, and a
+    :attr:`column_definitions` mapping. Both :class:`Table` (discrete) and
+    :class:`Curve` (continuous) satisfy it, so a consumer can validate the
+    quantities it received against a single surface regardless of storage.
+
+    This is a structural :class:`typing.Protocol`: any object exposing the three
+    members is recognised by ``isinstance(obj, Quantified)`` without explicit
+    inheritance.
+    """
+
+    metadata: dict[str, Any]
+    column_definitions: dict[str, str]
+
+    @property
+    def columns(self) -> ColumnDict:
+        """The object's quantities as a ColumnDict (or variant)."""
+        ...
+
+
+def _derived_quantity(y_quantity: Column, x_quantity: Column) -> Column:
+    """Return the quantity representing ``d(y)/d(x)``.
+
+    Args:
+        y_quantity: The y-axis quantity descriptor.
+        x_quantity: The x-axis quantity descriptor.
+
+    Returns:
+        A dimensionless :class:`~pyprobe.columns.Column` labelled
+        ``d(<y>)/d(<x>)``.
+    """
+    return Column(f"d({y_quantity.quantity})/d({x_quantity.quantity})", "1")
+
+
+class Curve(Quantified, PPoly):
+    """A quantity-labelled continuous data object that *is* a scipy ``PPoly``.
+
+    ``Curve`` subclasses :class:`scipy.interpolate.PPoly`, so
+    ``isinstance(curve, PPoly)`` is ``True`` and a ``Curve`` drops straight into
+    scipy and matplotlib. It additionally carries ``x`` and ``y`` BDF quantities
+    (:attr:`x_quantity`, :attr:`y_quantity`) plus :attr:`metadata`, satisfying
+    the :class:`Quantified` contract.
+
+    Construct a ``Curve`` from any scipy ``PPoly`` (e.g. a ``PchipInterpolator``)
+    or ``BSpline`` via :meth:`from_poly`.
+
+    Attributes:
+        x_quantity: The x-axis BDF quantity descriptor.
+        y_quantity: The y-axis BDF quantity descriptor.
+        metadata: Metadata carried with the curve.
+        column_definitions: Definitions of the curve's quantities.
+    """
+
+    def __init__(
+        self,
+        c: NDArray[np.float64],
+        x: NDArray[np.float64],
+        *,
+        x_quantity: str | Column,
+        y_quantity: str | Column,
+        metadata: dict[str, Any] | None = None,
+        column_definitions: dict[str, str] | None = None,
+        extrapolate: bool | None = None,
+        axis: int = 0,
+    ) -> None:
+        """Create a Curve from piecewise-polynomial coefficients.
+
+        Args:
+            c: Polynomial coefficients (as for :class:`scipy.interpolate.PPoly`).
+            x: Breakpoints (as for :class:`scipy.interpolate.PPoly`).
+            x_quantity: The x-axis quantity (string, ``Column``, or ``BDF``).
+            y_quantity: The y-axis quantity (string, ``Column``, or ``BDF``).
+            metadata: Optional metadata mapping.
+            column_definitions: Optional column-definition mapping.
+            extrapolate: Passed through to :class:`scipy.interpolate.PPoly`.
+            axis: Passed through to :class:`scipy.interpolate.PPoly`.
+        """
+        # Call PPoly.__init__ directly: the Quantified Protocol sits ahead of
+        # PPoly in the MRO and would otherwise swallow the constructor call.
+        PPoly.__init__(self, c, x, extrapolate=extrapolate, axis=axis)
+        self.x_quantity: Column = (
+            column_factory_from_string(x_quantity)
+            if isinstance(x_quantity, str)
+            else x_quantity
+        )
+        self.y_quantity: Column = (
+            column_factory_from_string(y_quantity)
+            if isinstance(y_quantity, str)
+            else y_quantity
+        )
+        self.metadata: dict[str, Any] = metadata if metadata is not None else {}
+        self.column_definitions: dict[str, str] = (
+            column_definitions if column_definitions is not None else {}
+        )
+
+    @classmethod
+    def from_poly(
+        cls,
+        poly: PPoly | BSpline,
+        *,
+        x_quantity: str | Column,
+        y_quantity: str | Column,
+        metadata: dict[str, Any] | None = None,
+        column_definitions: dict[str, str] | None = None,
+    ) -> "Curve":
+        """Build a Curve from a scipy ``PPoly`` or ``BSpline``.
+
+        A ``BSpline`` is not a ``PPoly`` (a sibling representation), so it is
+        normalised once at construction via
+        :meth:`scipy.interpolate.PPoly.from_spline`. The original construction
+        method is recorded in ``metadata["curve_method"]``.
+
+        Args:
+            poly: A scipy ``PPoly`` (e.g. ``PchipInterpolator``) or ``BSpline``.
+            x_quantity: The x-axis quantity (string, ``Column``, or ``BDF``).
+            y_quantity: The y-axis quantity (string, ``Column``, or ``BDF``).
+            metadata: Optional metadata mapping; ``curve_method`` is added if
+                not already present.
+            column_definitions: Optional column-definition mapping.
+
+        Returns:
+            A new :class:`Curve` wrapping the (normalised) piecewise polynomial.
+
+        Raises:
+            TypeError: If ``poly`` is neither a ``PPoly`` nor a ``BSpline``.
+        """
+        if isinstance(poly, BSpline):
+            method = "smoothing_spline"
+            poly = PPoly.from_spline(poly)
+        elif isinstance(poly, PPoly):
+            method = type(poly).__name__
+        else:
+            raise TypeError(
+                "Curve.from_poly expects a scipy PPoly or BSpline, "
+                f"got {type(poly).__name__}."
+            )
+        meta = dict(metadata) if metadata is not None else {}
+        meta.setdefault("curve_method", method)
+        return cls(
+            poly.c,
+            poly.x,
+            x_quantity=x_quantity,
+            y_quantity=y_quantity,
+            metadata=meta,
+            column_definitions=column_definitions,
+            extrapolate=poly.extrapolate,
+            axis=poly.axis,
+        )
+
+    @property
+    def columns(self) -> CurveColumns:
+        """The curve's quantities as a :class:`~pyprobe.columns.CurveColumns`.
+
+        Returns:
+            A :class:`~pyprobe.columns.CurveColumns` exposing ``.x`` and ``.y``
+            axis roles that resolve to the curve's quantities.
+        """
+        return CurveColumns(self.x_quantity, self.y_quantity)
+
+    def derivative(self, n: int = 1) -> "Curve":
+        """Return the ``n``-th derivative as a new ``Curve``.
+
+        The returned curve carries the derived ``d(y)/d(x)`` quantity, while its
+        x quantity and metadata are preserved.
+
+        Args:
+            n: The order of derivative to compute. Default is 1.
+
+        Returns:
+            A new :class:`Curve` representing the derivative.
+        """
+        d = PPoly.derivative(self, n)
+        y_quantity = self.y_quantity
+        for _ in range(n):
+            y_quantity = _derived_quantity(y_quantity, self.x_quantity)
+        return Curve(
+            d.c,
+            d.x,
+            x_quantity=self.x_quantity,
+            y_quantity=y_quantity,
+            metadata=dict(self.metadata),
+            column_definitions=dict(self.column_definitions),
+            extrapolate=d.extrapolate,
+            axis=d.axis,
+        )
+
+    def to_table(self, x: NDArray[np.float64]) -> "Table":
+        """Sample the curve onto a grid and return a discrete :class:`Table`.
+
+        Args:
+            x: The x grid to evaluate the curve on.
+
+        Returns:
+            A :class:`Table` with the x quantity and the sampled y quantity.
+        """
+        x_arr = np.asarray(x, dtype=np.float64)
+        y_arr = np.asarray(self(x_arr), dtype=np.float64)
+        frame = pl.DataFrame({self.x_quantity.name: x_arr, self.y_quantity.name: y_arr})
+        return Table(
+            lf=frame.lazy(),
+            metadata=dict(self.metadata),
+            column_definitions=dict(self.column_definitions),
+        )
+
+
+class Table:
+    """A class for holding any tabular data in PyProBE.
+
+    A Table object is the base type for every discrete data object in PyProBE. It
+    composes a polars :class:`~polars.LazyFrame` and carries metadata and column
+    definitions, satisfying the :class:`Quantified` contract. This class includes
+    all of the main methods for returning and describing tabular data in PyProBE.
+
+    Continuous fits are produced with :meth:`to_curve`; discrete operations are
+    exposed as the flat methods :meth:`savgol`, :meth:`downsample`, and
+    :meth:`gradient`.
+
+    .. note::
+        ``Result`` is a deprecated alias of ``Table``. Existing code using
+        ``Result`` keeps working but emits a deprecation warning on construction.
 
     Key attributes for returning data:
         - :attr:`data`: The data as a Polars DataFrame.
@@ -55,7 +282,7 @@ class Result:
         column_definitions: dict[str, str] | None = None,
         _path: Path | None = None,
     ) -> None:
-        """Create a Result with explicit constructor validation.
+        """Create a Table with explicit constructor validation.
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
@@ -103,6 +330,130 @@ class Result:
         self.lf = lf.lazy()
         return lf
 
+    def to_curve(
+        self,
+        y: str | Column,
+        x: str | Column = "Test Time / s",
+        fit: Callable[..., PPoly | BSpline] = PchipInterpolator,
+        **kwargs: Any,
+    ) -> "Curve":
+        """Fit a continuous :class:`Curve` to a column of this table.
+
+        Resolves ``x`` and ``y`` to numpy arrays, fits them with ``fit``, and
+        wraps the result as a quantity-labelled :class:`Curve`. ``fit`` may be
+        any scipy 1-D interpolator/smoother or a user callable sharing the
+        informal protocol ``callable(x, y, **kwargs) -> PPoly | BSpline``.
+
+        Args:
+            y: The y-axis column (name, ``Column``, or ``BDF``).
+            x: The x-axis column (name, ``Column``, or ``BDF``). Defaults to
+                ``"Test Time / s"``.
+            fit: A callable ``(x, y, **kwargs) -> PPoly | BSpline``. Defaults to
+                :class:`scipy.interpolate.PchipInterpolator`. Any scipy 1-D
+                interpolator (e.g. ``CubicSpline``, ``Akima1DInterpolator``) or
+                smoother (e.g. ``make_smoothing_spline``) is accepted.
+            **kwargs: Extra keyword arguments forwarded to ``fit`` (e.g.
+                ``bc_type``, ``lam``, ``k``).
+
+        Returns:
+            A :class:`Curve` labelled with the ``x`` and ``y`` quantities.
+
+        Raises:
+            ColumnResolutionError: If ``x`` or ``y`` cannot be resolved.
+            TypeError: If ``fit`` returns neither a ``PPoly`` nor a ``BSpline``.
+        """
+        from pyprobe.analysis.utils import get_columns
+
+        x_data, y_data = get_columns(self, x, y)
+        obj = fit(x_data, y_data, **kwargs)
+        return Curve.from_poly(
+            obj,
+            x_quantity=x,
+            y_quantity=y,
+            metadata=dict(self.metadata),
+        )
+
+    def savgol(
+        self,
+        target_column: str,
+        window_length: int,
+        polyorder: int,
+        derivative: int = 0,
+    ) -> "Table":
+        """Savitzky-Golay denoise ``target_column``, returning a new ``Table``.
+
+        Args:
+            target_column: The name of the column to smooth.
+            window_length: The length of the filter window (positive odd int).
+            polyorder: The order of the polynomial used to fit the samples.
+            derivative: The order of the derivative to compute. Default is 0.
+
+        Returns:
+            A new :class:`Table` with ``target_column`` smoothed.
+
+        Raises:
+            ColumnResolutionError: If ``target_column`` cannot be resolved.
+        """
+        from pyprobe.analysis.smoothing import savgol_smoothing
+
+        return savgol_smoothing(
+            self,
+            target_column,
+            window_length=window_length,
+            polyorder=polyorder,
+            derivative=derivative,
+        )
+
+    def downsample(
+        self,
+        target_column: str,
+        sampling_interval: float,
+        monotonic: bool = True,
+        occurrence: Literal["first", "last", "middle"] = "first",
+    ) -> "Table":
+        """Downsample on ``target_column`` to ``sampling_interval``.
+
+        Args:
+            target_column: The column to downsample on.
+            sampling_interval: The desired minimum interval between points.
+            monotonic: If True, ``target_column`` is assumed monotonic. Default
+                is True.
+            occurrence: The occurrence to take within each bin (only used when
+                ``monotonic``). Default is ``"first"``.
+
+        Returns:
+            A new :class:`Table` containing the downsampled data.
+
+        Raises:
+            ColumnResolutionError: If ``target_column`` cannot be resolved.
+        """
+        from pyprobe.analysis.smoothing import downsample
+
+        return downsample(
+            self,
+            target_column,
+            sampling_interval=sampling_interval,
+            monotonic=monotonic,
+            occurrence=occurrence,
+        )
+
+    def gradient(self, y: str, x: str) -> "Table":
+        """Finite-difference derivative of ``y`` with respect to ``x``.
+
+        Args:
+            y: The name of the y variable.
+            x: The name of the x variable.
+
+        Returns:
+            A new :class:`Table` with the ``x``, ``y`` and gradient columns.
+
+        Raises:
+            ColumnResolutionError: If ``x`` or ``y`` cannot be resolved.
+        """
+        from pyprobe.analysis.differentiation import gradient
+
+        return gradient(self, x=x, y=y)
+
     @property
     def columns(self) -> ColumnDict:
         """The columns in the data as a ColumnDict.
@@ -122,8 +473,8 @@ class Result:
 
         Examples:
             >>> import polars as pl
-            >>> from pyprobe.result import Result
-            >>> r = Result(lf=pl.LazyFrame({"Current / A": [1.0]}))
+            >>> from pyprobe.result import Table
+            >>> r = Table(lf=pl.LazyFrame({"Current / A": [1.0]}))
             >>> r.columns.names
             ('Current / A',)
             >>> r.columns.quantities
@@ -235,7 +586,7 @@ class Result:
         and examples.
         """
 
-    def __getitem__(self, *column_names: str | Column) -> "Result":
+    def __getitem__(self, *column_names: str | Column) -> "Table":
         """Return a new result object with the specified columns.
 
         Args:
@@ -243,11 +594,11 @@ class Result:
                 The columns to include in the new result object.
 
         Returns:
-            Result: A new result object with the specified columns.
+            Table: A new Table object with the specified columns.
         """
         col_set = self.columns
         exprs = [col_set.resolve(name) for name in column_names]
-        return Result(
+        return Table(
             lf=self.lf.select(*exprs),
             metadata=self.metadata,
         )
@@ -329,7 +680,7 @@ class Result:
             ValueError: If none of the requested columns are present in the data.
 
         Examples:
-            >>> result = Result(lf=pl.LazyFrame({"Current / A": [1.0, 2.0]}))
+            >>> result = Table(lf=pl.LazyFrame({"Current / A": [1.0, 2.0]}))
             >>> df = result.get_plotting_data(["Current / mA"], {})
             >>> df.shape
             (2, 1)
@@ -374,17 +725,17 @@ class Result:
         self,
         dataframe: pl.DataFrame | pl.LazyFrame | None = None,
         column_definitions: dict[str, str] | None = None,
-    ) -> "Result":
-        """Create a copy of the result object with info dictionary but without data.
+    ) -> "Table":
+        """Create a copy of the Table object with info dictionary but without data.
 
         Args:
             dataframe (Optional[Union[pl.DataFrame, pl.LazyFrame]):
-                The data to include in the new Result object.
+                The data to include in the new Table object.
             column_definitions (Optional[dict[str, str]]):
-                The definitions of the columns in the new result object.
+                The definitions of the columns in the new Table object.
 
         Returns:
-            Result: A new result object with the specified data.
+            Table: A new Table object with the specified data.
         """
         if dataframe is None:
             dataframe = pl.LazyFrame({})
@@ -392,7 +743,7 @@ class Result:
             dataframe = dataframe.lazy()
         if column_definitions is None:
             column_definitions = {}
-        return Result(
+        return Table(
             lf=dataframe,
             metadata=self.metadata,
             column_definitions=column_definitions,
@@ -593,7 +944,7 @@ class Result:
         new_data = new_data.rename({time_column_name: "Unix Time / s"})
         if isinstance(new_data, pl.DataFrame):
             new_data = new_data.lazy()
-        new_result = Result(lf=new_data, metadata={})
+        new_result = Table(lf=new_data, metadata={})
 
         # Collect new data column names (excluding unix time)
         new_data_cols = [
@@ -716,7 +1067,7 @@ class Result:
 
     def join(
         self,
-        other: "Result",
+        other: "Table",
         on: str | list[str],
         how: str = "inner",
         coalesce: bool = True,
@@ -753,7 +1104,7 @@ class Result:
 
     def extend(
         self,
-        other: Union["Result", list["Result"]],  # noqa: UP007
+        other: Union["Table", list["Table"]],  # noqa: UP007
         concat_method: str = "diagonal",
     ) -> None:
         """Extend the data in this Result object with the data in another Result object.
@@ -800,8 +1151,8 @@ class Result:
             ]
         ],
         info: dict[str, Any | None],
-    ) -> "Result":
-        """Build a Result object from a list of dataframes.
+    ) -> "Table":
+        """Build a Table object from a list of dataframes.
 
         Args:
             data_list (List[List[pl.LazyFrame | pl.DataFrame | dict]]):
@@ -866,8 +1217,8 @@ class Result:
         metadata: dict[str, Any | None] = {},
         column_definitions: dict[str, str] = {},
         **kwargs: Any,
-    ) -> "Result":
-        """Create a new Result object with data from a Polars IO function.
+    ) -> "Table":
+        """Create a new Table object with data from a Polars IO function.
 
         Refer to the Polars documentation for a list of available IO functions:
 
@@ -893,7 +1244,7 @@ class Result:
 
             .. code-block:: python
 
-            result = Result.from_polars_io(
+            result = Table.from_polars_io(
                 pl.scan_csv,
                 metadata={"test": "test"},
                 column_definitions={},
@@ -904,7 +1255,7 @@ class Result:
 
             .. code-block:: python
 
-            result = Result.from_polars_io(
+            result = Table.from_polars_io(
                 pl.from_pandas,
                 metadata={"test": "test"},
                 column_definitions={},
@@ -915,7 +1266,7 @@ class Result:
 
             .. code-block:: python
 
-            result = Result.from_polars_io(
+            result = Table.from_polars_io(
                 pl.from_numpy,
                 metadata={"test": "test"},
                 column_definitions={},
@@ -927,7 +1278,7 @@ class Result:
         lf = polars_io_func(**kwargs)
         if isinstance(lf, pl.DataFrame):
             lf = lf.lazy()
-        return Result(lf=lf, metadata=metadata, column_definitions=column_definitions)
+        return Table(lf=lf, metadata=metadata, column_definitions=column_definitions)
 
     @property
     @deprecated(
@@ -981,23 +1332,23 @@ class Result:
 
 
 def combine_results(
-    results: list[Result],
+    results: list[Table],
     concat_method: str = "diagonal",
-) -> Result:
-    """Combine multiple Result objects into a single Result object.
+) -> Table:
+    """Combine multiple Table objects into a single Table object.
 
-    This method should be used to combine multiple Result objects that have different
-    entries in their info dictionaries. The info dictionaries of the Result objects will
-    be integrated into the dataframe of the new Result object
+    This method should be used to combine multiple Table objects that have different
+    entries in their info dictionaries. The info dictionaries of the Table objects will
+    be integrated into the dataframe of the new Table object
 
     Args:
-        results (List[Result]): The Result objects to combine.
+        results (List[Table]): The Table objects to combine.
         concat_method (str):
             The method to use for concatenation. Default is 'diagonal'. See the
             polars.concat method documentation for more information.
 
     Returns:
-        Result: A new result object with the combined data.
+        Table: A new Table object with the combined data.
     """
     for result in results:
         instructions = [
@@ -1006,3 +1357,37 @@ def combine_results(
         result.lf = result.lf.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]
+
+
+class _ResultMeta(type):
+    """Metaclass making ``isinstance(obj, Result)`` true for any ``Table``.
+
+    The :class:`Result` alias is a deprecated subclass of :class:`Table`. This
+    metaclass keeps ``isinstance(table, Result)`` working for *all* ``Table``
+    instances (not just those constructed via ``Result``), preserving the
+    pre-rename behaviour while still warning on direct construction.
+    """
+
+    def __instancecheck__(cls, instance: object) -> bool:
+        """Return ``True`` for any :class:`Table` instance."""
+        return isinstance(instance, Table)
+
+
+class Result(Table, metaclass=_ResultMeta):
+    """Deprecated alias of :class:`Table`.
+
+    ``Result`` was renamed to :class:`Table`. This subclass keeps existing code
+    and notebooks working: it constructs a fully functional ``Table`` while
+    emitting a :class:`DeprecationWarning`. ``isinstance(obj, Result)`` remains
+    ``True`` for any ``Table`` (or subclass) instance.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Warn that ``Result`` is deprecated, then construct a ``Table``."""
+        warnings.warn(
+            "Result has been renamed to Table. Use 'from pyprobe.result import "
+            "Table'. The Result alias will be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

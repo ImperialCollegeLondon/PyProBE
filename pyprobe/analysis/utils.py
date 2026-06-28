@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 
 from pyprobe.columns import Column, ColumnResolutionError
 from pyprobe.pyprobe_types import PyProBEDataType
-from pyprobe.result import Result
+from pyprobe.result import Quantified, Table
 
 
 class ColumnCollisionError(ValueError):
@@ -38,6 +38,35 @@ def validate_columns(
             name = col.name if isinstance(col, Column) else str(col)
             raise ColumnResolutionError(
                 f"Cannot resolve '{name}' from available columns: {col_dict.names}"
+            )
+
+
+def validate_quantity(
+    input_data: Quantified,
+    *quantities: str | Column,
+) -> None:
+    """Confirm each expected quantity can be resolved against a Quantified object.
+
+    The unified boundary check for any PyProBE data object — :class:`Table` or
+    :class:`~pyprobe.result.Curve`. It reads the object's ``columns`` accessor
+    and raises if an expected quantity cannot be resolved, mirroring
+    :func:`validate_columns`.
+
+    Args:
+        input_data: A :class:`~pyprobe.result.Quantified` object (e.g. a
+            ``Table`` or ``Curve``).
+        *quantities: Quantity references — str, Column, or BDF enum members.
+
+    Raises:
+        ColumnResolutionError: On the first unresolvable quantity reference.
+    """
+    col_dict = input_data.columns
+    for quantity in quantities:
+        if not col_dict.can_resolve(quantity):
+            name = quantity.name if isinstance(quantity, Column) else str(quantity)
+            raise ColumnResolutionError(
+                f"Cannot resolve quantity '{name}' from available quantities: "
+                f"{col_dict.names}"
             )
 
 
@@ -89,11 +118,11 @@ def build_result(
     source: PyProBEDataType,
     data: pl.LazyFrame | pl.DataFrame,
     column_definitions: dict[str, str] | None = None,
-) -> Result:
-    """Construct a Result inheriting source metadata.
+) -> Table:
+    """Construct a Table inheriting source metadata.
 
     When column_definitions is None, source.column_definitions is inherited.
-    When provided, it replaces source.column_definitions entirely on the new Result.
+    When provided, it replaces source.column_definitions entirely on the new Table.
     To inherit and extend, call with ``column_definitions={**source.column_definitions,
     "New": "new def"}``.
 
@@ -103,14 +132,14 @@ def build_result(
         column_definitions: When provided, replaces source.column_definitions entirely.
 
     Returns:
-        A new Result with the given data and inherited or replaced column_definitions.
+        A new Table with the given data and inherited or replaced column_definitions.
     """
     defs = (
         source.column_definitions if column_definitions is None else column_definitions
     )
     if isinstance(data, pl.DataFrame):
         data = data.lazy()
-    return Result(lf=data, metadata=source.metadata, column_definitions=defs)
+    return Table(lf=data, metadata=source.metadata, column_definitions=defs)
 
 
 def append_columns(
@@ -119,8 +148,8 @@ def append_columns(
     *,
     overwrite: bool = False,
     column_definitions: dict[str, str] | None = None,
-) -> Result:
-    """Append new columns to source and return a new Result.
+) -> Table:
+    """Append new columns to source and return a new Table.
 
     Args:
         source: The source data object.
@@ -129,7 +158,7 @@ def append_columns(
         column_definitions: Passed through to build_result.
 
     Returns:
-        A new Result whose LazyFrame is source.lf extended with new_columns.
+        A new Table whose LazyFrame is source.lf extended with new_columns.
 
     Raises:
         ColumnCollisionError: If overwrite=False and a key collides with an existing
@@ -156,13 +185,13 @@ def append_columns(
 
 
 def assemble_array(
-    input_data: list[Result],
+    input_data: list[Table],
     column: str | Column,
 ) -> NDArray[Any]:
     """Assemble an array from a list of results by stacking a column across all of them.
 
     Args:
-        input_data: A list of Result objects.
+        input_data: A list of Table objects.
         column: The column name or Column reference.
 
     Returns:

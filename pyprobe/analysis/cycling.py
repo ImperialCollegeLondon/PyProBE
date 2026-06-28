@@ -6,7 +6,7 @@ from pyprobe.analysis.utils import build_result, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.filters import get_cycle_column
 from pyprobe.pyprobe_types import FilterToCycleType
-from pyprobe.result import Result
+from pyprobe.result import Table
 
 
 def _create_capacity_throughput(
@@ -33,7 +33,7 @@ def _create_capacity_throughput(
     )
 
 
-def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Result:
+def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Table:
     """Calculate the state of health of the battery.
 
     Args:
@@ -42,7 +42,7 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Resu
             charge in the cycle loop. Default is True.
 
     Returns:
-        Result: A result object for the capacity SOH of the cell.
+        Table: A result object for the capacity SOH of the cell.
 
     Raises:
         ColumnResolutionError: If required columns cannot be resolved from `input_data`.

@@ -19,7 +19,7 @@ from pyprobe.analysis import smoothing, utils
 from pyprobe.analysis.utils import build_result, get_columns, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.pyprobe_types import FilterToCycleType, PyProBEDataType
-from pyprobe.result import Result
+from pyprobe.result import Table
 
 
 def _get_gradient(
@@ -519,7 +519,7 @@ def run_ocv_curve_fit(
         "x0": np.array([0.9, 0.1, 0.1, 0.9]),
         "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
     },
-) -> tuple[Result, Result]:
+) -> tuple[Table, Table]:
     """Fit half cell open circuit potential curves to full cell OCV data.
 
     Args:
@@ -700,12 +700,12 @@ def run_ocv_curve_fit(
 
 
 def quantify_degradation_modes(
-    stoichiometry_limits_list: list[Result],
-) -> Result:
+    stoichiometry_limits_list: list[Table],
+) -> Table:
     """Quantify the change in degradation modes between at least two OCV fits.
 
     Args:
-        stoichiometry_limits_list: A list of Result objects containing the
+        stoichiometry_limits_list: A list of Table objects containing the
         stoichiometry limits for the OCV fits.
 
     Returns:
@@ -713,7 +713,7 @@ def quantify_degradation_modes(
         the provided OCV fits.
 
     Raises:
-        ColumnResolutionError: If required columns cannot be resolved from any Result
+        ColumnResolutionError: If required columns cannot be resolved from any Table
             in `stoichiometry_limits_list`.
     """
     required_columns = [
@@ -793,7 +793,7 @@ def run_batch_dma_parallel(
         "x0": np.array([0.9, 0.1, 0.1, 0.9]),
         "bounds": [(0, 1), (0, 1), (0, 1), (0, 1)],
     },
-) -> tuple[Result, list[Result]]:
+) -> tuple[Table, list[Table]]:
     """Fit half cell open circuit potential curves to full cell OCV data.
 
     DMA analysis is run in parallel across all provided input_data.
@@ -814,9 +814,9 @@ def run_batch_dma_parallel(
             limits at low and high full-cell SOC respectively.
 
     Returns:
-        - Result: The stoichiometry limits, electrode capacities and
+        - Table: The stoichiometry limits, electrode capacities and
         degradation modes.
-        - List[Result]: The fitted OCV data for each list item in input_data.
+        - List[Table]: The fitted OCV data for each list item in input_data.
     """
     logger.info(f"Using {joblib.cpu_count()} CPUs")
     fit_results = Parallel(n_jobs=-1)(
@@ -855,7 +855,7 @@ def run_batch_dma_sequential(
         },
     ],
     link_results: bool = False,
-) -> tuple[Result, list[Result]]:
+) -> tuple[Table, list[Table]]:
     """Fit half cell open circuit potential curves to full cell OCV data.
 
     DMA analysis is run sequentially across all provided input_data.
@@ -891,9 +891,9 @@ def run_batch_dma_sequential(
             input data list item to the next input data list item. Defaults to False.
 
     Returns:
-        - Result: The stoichiometry limits, electrode capacities and
+        - Table: The stoichiometry limits, electrode capacities and
           degradation modes.
-        - List[Result]: The fitted OCV data for each list item in input_data.
+        - List[Table]: The fitted OCV data for each list item in input_data.
     """
     if not input_data_list:
         raise ValueError("input_data_list must not be empty.")
@@ -909,8 +909,8 @@ def run_batch_dma_sequential(
             f"optimizer list length must be 1, 2, or match input_data_list length "
             f"({n}), got {len(optimizer)}."
         )
-    stoichiometry_limit_list: list[Result] = []
-    fitted_OCVs: list[Result] = []
+    stoichiometry_limit_list: list[Table] = []
+    fitted_OCVs: list[Table] = []
     for index, input_data in enumerate(input_data_list):
         current_optimizer = optimizer[0] if len(optimizer) == 1 else optimizer[index]
         if len(optimizer_options) == 1:
@@ -957,7 +957,7 @@ def average_ocvs(
     input_data: FilterToCycleType,
     discharge_filter: str | None = None,
     charge_filter: str | None = None,
-) -> Result:
+) -> Table:
     """Average the charge and discharge OCV curves.
 
     Args:
@@ -971,7 +971,7 @@ def average_ocvs(
             be used.
 
     Returns:
-        A Result object containing the averaged OCV curve.
+        A Table object containing the averaged OCV curve.
 
     Raises:
         ValueError: If `input_data` is not a Procedure, Experiment, or Cycle.

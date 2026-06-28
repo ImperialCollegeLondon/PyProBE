@@ -19,7 +19,7 @@ from pyprobe.analysis.utils import (
 )
 from pyprobe.columns import BDF, Column
 from pyprobe.pyprobe_types import PyProBEDataType
-from pyprobe.result import Result
+from pyprobe.result import Table
 
 
 def spline_smoothing(
@@ -27,7 +27,7 @@ def spline_smoothing(
     target_column: str,
     smoothing_lambda: float | None = None,
     x: str | Column = BDF.TEST_TIME_SECOND,
-) -> Result:
+) -> Table:
     """A method for smoothing noisy data using a spline.
 
     Args:
@@ -172,7 +172,7 @@ def downsample(
     sampling_interval: float,
     monotonic: bool = True,
     occurrence: Literal["first", "last", "middle"] = "first",
-) -> Result:
+) -> Table:
     """Downsample a DataFrame to a specified interval.
 
     This function uses two different methods for downsampling depending on whether the
@@ -234,7 +234,7 @@ def savgol_smoothing(
     window_length: int,
     polyorder: int,
     derivative: int = 0,
-) -> Result:
+) -> Table:
     """Smooth noisy data using a Savitzky-Golay filter.
 
     Args:

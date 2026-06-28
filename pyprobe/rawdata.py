@@ -1,5 +1,6 @@
-"""A module for the RawData class."""
+"""A module for the CyclingData class."""
 
+import warnings
 from pathlib import Path
 from typing import Any, Optional
 
@@ -7,27 +8,31 @@ import polars as pl
 from loguru import logger
 
 from pyprobe.columns import BDF, Column
-from pyprobe.result import Result
+from pyprobe.result import Table
 from pyprobe.utils import deprecated
 
 _REQUIRED_BDF_TIME: list[BDF] = [BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND]
 """Time columns (at least one must be resolvable); Unix Time is preferred."""
 
 _REQUIRED_BDF: list[BDF] = [BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT]
-"""BDF columns that must be resolvable; RawData raises ValueError if not."""
+"""BDF columns that must be resolvable; CyclingData raises ValueError if not."""
 
 _OPTIONAL_BDF: list[BDF] = [BDF.NET_CAPACITY_AH, BDF.STEP_COUNT, BDF.STEP_ID]
 """BDF columns included when available; warnings emitted on failure."""
 
 
-class RawData(Result):
+class CyclingData(Table):
     """A class for holding battery cycler data in BDF-standard column format.
 
     This is the default object returned when data is loaded into PyProBE with the
     standard methods of the :class:`~pyprobe.cell.Cell` class. It is a subclass of
-    :class:`~pyprobe.result.Result` and can be used in the same way.
+    :class:`~pyprobe.result.Table` and can be used in the same way.
 
-    The RawData object validates that the required BDF columns are resolvable
+    .. note::
+        ``RawData`` is a deprecated alias of ``CyclingData``. Existing code using
+        ``RawData`` keeps working but emits a deprecation warning on construction.
+
+    The CyclingData object validates that the required BDF columns are resolvable
     from the data via :class:`~pyprobe.columns.ColumnDict`:
 
     - At least one time column: ``Unix Time / s`` (preferred) or ``Test Time / s``
@@ -56,7 +61,7 @@ class RawData(Result):
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         _path: Path | None = None,
     ) -> None:
-        """Create a RawData object with BDF-column validation."""
+        """Create a CyclingData object with BDF-column validation."""
         super().__init__(
             lf=lf, metadata=metadata, column_definitions=column_definitions, _path=_path
         )
@@ -117,11 +122,11 @@ class RawData(Result):
     def zero_column(
         self,
         column: str | Column,
-    ) -> "RawData":
+    ) -> "CyclingData":
         """Zero a column relative to the start of this data slice.
 
-        Returns a new RawData object with *column* shifted so its first row is
-        zero. The original object is not modified.
+        Returns a new CyclingData object with *column* shifted so its first row
+        is zero. The original object is not modified.
 
         Args:
             column: A BDF column string or :class:`~pyprobe.columns.Column`
@@ -130,14 +135,14 @@ class RawData(Result):
                 ``"Net Capacity / Ah"`` or ``BDF.NET_CAPACITY_AH``).
 
         Returns:
-            A new RawData with the zeroed column.
+            A new CyclingData with the zeroed column.
         """
         column_str = str(column)
         expr = self.columns.resolve(column)
         new_lf = self.lf.with_columns(
             (expr - expr.first()).alias(column_str),
         )
-        return RawData(
+        return CyclingData(
             lf=new_lf,
             metadata=self.metadata,
             column_definitions=self.column_definitions,
@@ -160,7 +165,7 @@ class RawData(Result):
     def set_soc(
         self,
         reference_capacity: float | None = None,
-        reference_charge: Optional["RawData"] = None,
+        reference_charge: Optional["CyclingData"] = None,
     ) -> None:
         """Add an SOC column to the data.
 
@@ -168,14 +173,14 @@ class RawData(Result):
         This column remains with the data if the object is filtered further.
 
         The SOC column is calculated either relative to a provided reference capacity
-        value, a reference charge (provided as a RawData object), or the maximum
-        capacity delta across the data in the RawData object upon which this method
-        is called.
+        value, a reference charge (provided as a CyclingData object), or the
+        maximum capacity delta across the data in the CyclingData object upon
+        which this method is called.
 
         Args:
             reference_capacity: The reference capacity value.
-            reference_charge: A RawData object containing a charge to use as a
-                reference.
+            reference_charge: A CyclingData object containing a charge to use as
+                a reference.
         """
         cap_col = BDF.NET_CAPACITY_AH.name
         if reference_capacity is None:
@@ -223,14 +228,14 @@ class RawData(Result):
     def set_SOC(  # noqa: N802
         self,
         reference_capacity: float | None = None,
-        reference_charge: Optional["RawData"] = None,
+        reference_charge: Optional["CyclingData"] = None,
     ) -> None:
         """Add an SOC column to the data.
 
         Args:
             reference_capacity: The reference capacity value.
-            reference_charge: A RawData object containing a charge to use as a
-                reference.
+            reference_charge: A CyclingData object containing a charge to use as
+                a reference.
         """
         self.set_soc(reference_capacity, reference_charge)
 
@@ -314,3 +319,39 @@ class RawData(Result):
             for item in line:
                 description_list.append(item.strip())
         return description_list
+
+
+class _CyclingDataMeta(type):
+    """Metaclass making ``isinstance(obj, RawData)`` true for any ``CyclingData``.
+
+    The :class:`RawData` alias is a deprecated subclass of :class:`CyclingData`.
+    This metaclass keeps ``isinstance(obj, RawData)`` working for *all*
+    ``CyclingData`` instances (including filtered slices such as ``Step`` and
+    ``Cycle``), preserving the pre-rename behaviour while still warning on direct
+    construction.
+    """
+
+    def __instancecheck__(cls, instance: object) -> bool:
+        """Return ``True`` for any :class:`CyclingData` instance."""
+        return isinstance(instance, CyclingData)
+
+
+class RawData(CyclingData, metaclass=_CyclingDataMeta):
+    """Deprecated alias of :class:`CyclingData`.
+
+    ``RawData`` was renamed to :class:`CyclingData`. This subclass keeps existing
+    code and notebooks working: it constructs a fully functional ``CyclingData``
+    while emitting a :class:`DeprecationWarning`. ``isinstance(obj, RawData)``
+    remains ``True`` for any ``CyclingData`` (or subclass) instance.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Warn that ``RawData`` is deprecated, then construct a ``CyclingData``."""
+        warnings.warn(
+            "RawData has been renamed to CyclingData. Use 'from pyprobe.rawdata "
+            "import CyclingData'. The RawData alias will be removed in a future "
+            "release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

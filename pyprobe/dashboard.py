@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 from pyprobe.cell import Cell
 from pyprobe.columns import BDF
-from pyprobe.rawdata import RawData
+from pyprobe.rawdata import CyclingData
 
 
 def launch_dashboard(cell_list: list[Cell]) -> None:
@@ -132,7 +132,7 @@ class _Dashboard:
 
     @staticmethod
     def _resolve_available_columns(
-        data: RawData, column_options: list[str]
+        data: CyclingData, column_options: list[str]
     ) -> list[str]:
         """Filter column options to only those that can be resolved from data.
 
@@ -222,12 +222,12 @@ class _Dashboard:
         else:
             return ()
 
-    def get_data(self) -> list[RawData]:
+    def get_data(self) -> list[CyclingData]:
         """Get the data from the selected cells."""
         selected_data = []
         for i in range(len(self.selected_indices)):
             selected_index = self.selected_indices[i]
-            experiment_data: RawData
+            experiment_data: CyclingData
             if len(self.selected_experiments) == 0:
                 experiment_data = self.cell_list[selected_index].procedure[
                     self.selected_procedure
@@ -247,11 +247,11 @@ class _Dashboard:
             selected_data.append(filtered_data)
         return selected_data
 
-    def add_primary_trace(self, data: RawData, color: str) -> None:
+    def add_primary_trace(self, data: CyclingData, color: str) -> None:
         """Add the primary trace to the plot.
 
         Args:
-            data (RawData): The data to plot.
+            data (CyclingData): The data to plot.
             color (str): The color for the trace.
         """
         plot_data = data
@@ -267,11 +267,11 @@ class _Dashboard:
         )
         self.fig.add_trace(primary_trace)
 
-    def add_secondary_trace(self, data: RawData, color: str) -> None:
+    def add_secondary_trace(self, data: CyclingData, color: str) -> None:
         """Add the secondary trace to the plot.
 
         Args:
-            data (RawData): The data to plot.
+            data (CyclingData): The data to plot.
             color (str): The color for the trace.
         """
         plot_data = data

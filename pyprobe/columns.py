@@ -998,3 +998,46 @@ class ColumnDict(Mapping[str, Column]):
             value_repr = f"BDF.{col._name_}" if isinstance(col, BDF) else repr(col)
             parts.append(f"{name!r}: {value_repr}")
         return f"{self.__class__.__name__}({{{', '.join(parts)}}})"
+
+
+class CurveColumns(ColumnDict):
+    """A :class:`ColumnDict` variant exposing the ``x`` and ``y`` axis roles.
+
+    Used by :class:`~pyprobe.result.Curve` to describe its two BDF quantities
+    as resolvable columns. The variant carries exactly two columns — the curve's
+    x and y quantities — and adds the :attr:`x` and :attr:`y` accessors that
+    return the corresponding :class:`Column` / :class:`BDF` descriptors. The
+    standard resolution machinery (:meth:`resolve`, :meth:`can_resolve`) works
+    unchanged, since a curve's quantities are presented as ordinary columns.
+
+    Args:
+        x: The x-axis quantity as a column name string, :class:`Column`, or
+            :class:`BDF` member.
+        y: The y-axis quantity as a column name string, :class:`Column`, or
+            :class:`BDF` member.
+
+    Examples:
+        >>> cc = CurveColumns("Stoichiometry / 1", "Voltage / V")
+        >>> cc.x.quantity
+        'Stoichiometry'
+        >>> cc.y.quantity
+        'Voltage'
+        >>> cc.can_resolve("Voltage / V")
+        True
+    """
+
+    def __init__(self, x: str | Column, y: str | Column) -> None:
+        """Initialise a CurveColumns from the x and y axis quantities."""
+        self._x: Column = column_factory_from_string(x) if isinstance(x, str) else x
+        self._y: Column = column_factory_from_string(y) if isinstance(y, str) else y
+        super().__init__([self._x.name, self._y.name])
+
+    @property
+    def x(self) -> Column:
+        """The x-axis quantity descriptor."""
+        return self._x
+
+    @property
+    def y(self) -> Column:
+        """The y-axis quantity descriptor."""
+        return self._y

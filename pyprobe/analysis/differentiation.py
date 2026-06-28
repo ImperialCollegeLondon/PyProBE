@@ -6,7 +6,7 @@ import polars as pl
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import build_result, get_columns, validate_columns
 from pyprobe.pyprobe_types import PyProBEDataType
-from pyprobe.result import Result
+from pyprobe.result import Table
 from pyprobe.utils import deprecated
 
 
@@ -14,7 +14,7 @@ def gradient(
     input_data: PyProBEDataType,
     x: str,
     y: str,
-) -> Result:
+) -> Table:
     """Differentiate smooth data with a finite difference method.
 
     A wrapper of the numpy.gradient function. This method calculates the gradient
@@ -58,7 +58,7 @@ def differentiate_lean(
     gradient: str = "dydx",
     smoothing_filter: list[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
     section: str = "longest",
-) -> Result:
+) -> Table:
     r"""A method for differentiating noisy data.
 
     Uses 'Level Evaluation ANalysis' (LEAN) method described in the paper of
@@ -160,7 +160,7 @@ def differentiate_LEAN(  # noqa: N802
     gradient: str = "dydx",
     smoothing_filter: list[float] = [0.0668, 0.2417, 0.3830, 0.2417, 0.0668],
     section: str = "longest",
-) -> Result:
+) -> Table:
     r"""A method for differentiating noisy data.
 
     Uses 'Level Evaluation ANalysis' (LEAN) method described in the paper of
