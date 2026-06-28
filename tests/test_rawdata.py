@@ -84,7 +84,7 @@ def test_SOC_with_base_as_dataframe(BreakinCycles_fixture):
 
 def test_deprecated_set_SOC(BreakinCycles_fixture, mocker):
     """Test the deprecated set_SOC method."""
-    mocker.patch("pyprobe.rawdata.RawData.set_soc")
+    mocker.patch("pyprobe.rawdata.CyclingData.set_soc")
     BreakinCycles_fixture.set_SOC(0.04)
     BreakinCycles_fixture.set_soc.assert_called_once_with(0.04, None)
 

@@ -13,7 +13,9 @@ from tzlocal import get_localzone
 
 from pyprobe.columns import BDF, Column
 from pyprobe.result import (
+    Quantified,
     Result,
+    Table,
     combine_results,
 )
 
@@ -1511,3 +1513,27 @@ class TestDeprecatedProperties:
         new_lf = pl.LazyFrame({"a": [1, 2, 3]})
         with pytest.warns(DeprecationWarning, match="live_dataframe"):
             Result_fixture.live_dataframe = new_lf
+
+
+class TestQuantifiedTraitAndAlias:
+    """Tests for the Quantified trait and the deprecated Result alias."""
+
+    def test_table_satisfies_quantified(self):
+        """A Table exposes columns, metadata, and column_definitions."""
+        table = Table(lf=pl.LazyFrame({"Current / A": [1.0, 2.0]}))
+        assert isinstance(table, Quantified)
+        assert table.columns.names == ("Current / A",)
+        assert isinstance(table.metadata, dict)
+        assert isinstance(table.column_definitions, dict)
+
+    def test_result_alias_resolves_to_table_and_warns(self):
+        """Constructing via Result warns but yields a working Table."""
+        with pytest.warns(DeprecationWarning):
+            result = Result(lf=pl.LazyFrame({"Current / A": [1.0]}))
+        assert isinstance(result, Table)
+        assert result.columns.names == ("Current / A",)
+
+    def test_table_instance_is_result_instance(self):
+        """isinstance(table, Result) stays True for the deprecated alias."""
+        table = Table(lf=pl.LazyFrame({"Current / A": [1.0]}))
+        assert isinstance(table, Result)

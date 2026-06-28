@@ -9,7 +9,7 @@ import pytest
 import pyprobe.analysis.utils as utils
 from pyprobe.analysis import differentiation, pulsing, smoothing
 from pyprobe.columns import BDF, Column, ColumnResolutionError
-from pyprobe.result import Result
+from pyprobe.result import Result, Table
 
 
 @pytest.fixture
@@ -306,3 +306,30 @@ def test_quantify_degradation_modes_raises_on_missing_column():
     )
     with pytest.raises(ColumnResolutionError):
         dma.quantify_degradation_modes([stripped])
+
+
+class TestValidateQuantity:
+    """Tests for the validate_quantity boundary check."""
+
+    def test_validate_quantity_resolvable_passes(self, result):
+        """Expected quantities present on a Table raise nothing."""
+        utils.validate_quantity(result, BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT)
+
+    def test_validate_quantity_on_curve_passes(self):
+        """Quantities carried by a Curve resolve via its columns accessor."""
+        table = Table(
+            lf=pl.LazyFrame(
+                {
+                    BDF.TEST_TIME_SECOND.name: [0.0, 1.0, 2.0],
+                    BDF.VOLTAGE_VOLT.name: [3.0, 3.5, 4.0],
+                }
+            ),
+            metadata={},
+        )
+        curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
+        utils.validate_quantity(curve, BDF.TEST_TIME_SECOND, BDF.VOLTAGE_VOLT)
+
+    def test_validate_quantity_missing_raises_clear_message(self, result):
+        """An absent quantity raises ColumnResolutionError naming the quantity."""
+        with pytest.raises(ColumnResolutionError, match="Net Energy"):
+            utils.validate_quantity(result, BDF.NET_ENERGY_WH)
