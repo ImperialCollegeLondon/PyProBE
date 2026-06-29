@@ -119,6 +119,56 @@ class CyclingData(Table):
                     "features may be unavailable."
                 )
 
+    def _net(self, quantity: Column) -> float:
+        """Return the signed extent (max − min) of a resolved quantity."""
+        from pyprobe.analysis.utils import validate_quantity
+
+        validate_quantity(self, quantity)
+        expr = self.columns.resolve(quantity)
+        value = self.lf.select((expr.max() - expr.min()).alias("_v")).collect()
+        return float(value["_v"][0])
+
+    def _throughput(self, quantity: Column) -> float:
+        """Return the cumulative absolute change of a resolved quantity."""
+        from pyprobe.analysis.utils import validate_quantity
+
+        validate_quantity(self, quantity)
+        expr = self.columns.resolve(quantity)
+        value = self.lf.select(expr.diff().abs().sum().alias("_v")).collect()
+        return float(value["_v"][0])
+
+    def net_capacity(self) -> float:
+        """The signed extent (max − min) of the net capacity, as a ``float``.
+
+        Returns:
+            The net capacity passed.
+        """
+        return self._net(BDF.NET_CAPACITY_AH)
+
+    def net_energy(self) -> float:
+        """The signed extent (max − min) of the net energy, as a ``float``.
+
+        Returns:
+            The net energy passed.
+        """
+        return self._net(BDF.NET_ENERGY_WH)
+
+    def capacity_throughput(self) -> float:
+        """The cumulative absolute change of net capacity, as a ``float``.
+
+        Returns:
+            The cumulative absolute capacity throughput.
+        """
+        return self._throughput(BDF.NET_CAPACITY_AH)
+
+    def energy_throughput(self) -> float:
+        """The cumulative absolute change of net energy, as a ``float``.
+
+        Returns:
+            The cumulative absolute energy throughput.
+        """
+        return self._throughput(BDF.NET_ENERGY_WH)
+
     def zero_column(
         self,
         column: str | Column,
@@ -150,17 +200,17 @@ class CyclingData(Table):
         )
 
     @property
+    @deprecated(
+        reason="Use the ``net_capacity`` method instead.",
+        version="3.0.0",
+    )
     def capacity(self) -> float:
         """Calculate the net capacity passed.
 
         Returns:
             float: The net capacity passed.
         """
-        col = BDF.NET_CAPACITY_AH.name
-        result = self.lf.select(
-            (pl.col(col).max() - pl.col(col).min()).abs().alias("_cap")
-        ).collect()
-        return float(result["_cap"][0])  # type: ignore[index]
+        return self.net_capacity()
 
     def set_soc(
         self,
