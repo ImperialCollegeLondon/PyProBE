@@ -6,8 +6,11 @@ Examples
 
    getting-started
    filtering-data
+   table-statistics
    column-schema-and-the-bdf
+   understanding-column-recipes
    plotting
+   smoothing-and-interpolation-from-a-table
    maximising-performance
    sharing-data
    working-with-pybamm-models
