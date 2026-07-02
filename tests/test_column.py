@@ -354,7 +354,7 @@ class TestSeamCorrection:
         Per-step signed totals alone give ``2 - 1 = 1``; the seam-corrected
         reconstruction must include the ``0.5`` seam charge, giving ``1.5``.
         """
-        compute = _global_net_from_step_ch_dch(
+        recipe = _global_net_from_step_ch_dch(
             BDF.STEP_CHARGING_CAPACITY_AH,
             BDF.STEP_DISCHARGING_CAPACITY_AH,
             BDF.CURRENT_AMPERE,
@@ -363,7 +363,7 @@ class TestSeamCorrection:
         )
         result = _compute_series(
             seam_boundary_df,
-            compute(
+            recipe.compute(
                 _recipe_mapping(
                     BDF.STEP_CHARGING_CAPACITY_AH,
                     BDF.STEP_DISCHARGING_CAPACITY_AH,
@@ -379,7 +379,7 @@ class TestSeamCorrection:
         self, seam_boundary_df: pl.DataFrame
     ) -> None:
         """Seam-corrected cumulative throughput includes the seam magnitude."""
-        compute = _global_cumulative_from_step_ch_dch(
+        recipe = _global_cumulative_from_step_ch_dch(
             BDF.STEP_CHARGING_CAPACITY_AH,
             BDF.STEP_DISCHARGING_CAPACITY_AH,
             BDF.CURRENT_AMPERE,
@@ -388,7 +388,7 @@ class TestSeamCorrection:
         )
         result = _compute_series(
             seam_boundary_df,
-            compute(
+            recipe.compute(
                 _recipe_mapping(
                     BDF.STEP_CHARGING_CAPACITY_AH,
                     BDF.STEP_DISCHARGING_CAPACITY_AH,
@@ -728,22 +728,13 @@ class TestRecipeDataclass:
         assert callable(recipe.compute)
 
     def test_recipe_with_multiple_dependencies(self) -> None:
-        """Recipe can require multiple BDFColumn instances."""
-        recipe = Recipe(
-            required=[
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-                BDF.CURRENT_AMPERE,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ],
-            compute=_global_net_from_step_ch_dch(
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-                BDF.CURRENT_AMPERE,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ),
+        """Recipe factories fill required from their column arguments."""
+        recipe = _global_net_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
         )
         assert len(recipe.required) == 5
         assert BDF.STEP_CHARGING_CAPACITY_AH in recipe.required
@@ -862,7 +853,7 @@ class TestColumnSetResolve:
             BDF.CURRENT_AMPERE,
             BDF.TEST_TIME_SECOND,
             BDF.STEP_COUNT,
-        )(
+        ).compute(
             {
                 BDF.STEP_CHARGING_CAPACITY_AH: pl.col("Step Charging Capacity / Ah"),
                 BDF.STEP_DISCHARGING_CAPACITY_AH: pl.col(
@@ -972,23 +963,29 @@ class TestColumnSetResolve:
         )
         column_set = ColumnDict(df.columns)
         resolved_expr = column_set.resolve(BDF.NET_CAPACITY_AH)
-        expected_expr = _global_net_from_step_ch_dch(
-            BDF.STEP_CHARGING_CAPACITY_AH,
-            BDF.STEP_DISCHARGING_CAPACITY_AH,
-            BDF.CURRENT_AMPERE,
-            BDF.TEST_TIME_SECOND,
-            BDF.STEP_COUNT,
-        )(
-            {
-                BDF.STEP_CHARGING_CAPACITY_AH: pl.col("Step Charging Capacity / Ah"),
-                BDF.STEP_DISCHARGING_CAPACITY_AH: pl.col(
-                    "Step Discharging Capacity / Ah"
-                ),
-                BDF.CURRENT_AMPERE: pl.col("Current / A"),
-                BDF.TEST_TIME_SECOND: pl.col("Test Time / s"),
-                BDF.STEP_COUNT: pl.col("Step Count / 1"),
-            }
-        ).alias(BDF.NET_CAPACITY_AH.name)
+        expected_expr = (
+            _global_net_from_step_ch_dch(
+                BDF.STEP_CHARGING_CAPACITY_AH,
+                BDF.STEP_DISCHARGING_CAPACITY_AH,
+                BDF.CURRENT_AMPERE,
+                BDF.TEST_TIME_SECOND,
+                BDF.STEP_COUNT,
+            )
+            .compute(
+                {
+                    BDF.STEP_CHARGING_CAPACITY_AH: pl.col(
+                        "Step Charging Capacity / Ah"
+                    ),
+                    BDF.STEP_DISCHARGING_CAPACITY_AH: pl.col(
+                        "Step Discharging Capacity / Ah"
+                    ),
+                    BDF.CURRENT_AMPERE: pl.col("Current / A"),
+                    BDF.TEST_TIME_SECOND: pl.col("Test Time / s"),
+                    BDF.STEP_COUNT: pl.col("Step Count / 1"),
+                }
+            )
+            .alias(BDF.NET_CAPACITY_AH.name)
+        )
         assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
 
 

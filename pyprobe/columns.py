@@ -812,14 +812,50 @@ def _seam_charge(current: pl.Expr, time: pl.Expr, key: pl.Expr) -> pl.Expr:
     return pl.when(is_boundary).then(seam).otherwise(0.0).fill_null(0.0)
 
 
+def _step_diffs_and_seam(
+    columns: dict["BDF", pl.Expr],
+    ch_col: "BDF",
+    dch_col: "BDF",
+    current_col: "BDF",
+    time_col: "BDF",
+    key_col: "BDF",
+) -> tuple[pl.Expr, pl.Expr, pl.Expr]:
+    """Shared diff/clip and seam terms for step-level reconstructions.
+
+    Removes step-reset artifacts from the charging/discharging columns via
+    diff/clip and computes the trapezoidal seam charge dropped at each step
+    boundary (see :func:`_seam_charge`).
+
+    Args:
+        columns: Mapping of resolved :class:`BDF` expressions.
+        ch_col: Step-level charging :class:`BDF` column.
+        dch_col: Step-level discharging :class:`BDF` column.
+        current_col: Current (or power) :class:`BDF` column for the seam term.
+        time_col: Elapsed-time :class:`BDF` column for the seam term.
+        key_col: Group key :class:`BDF` column marking step boundaries.
+
+    Returns:
+        A ``(diff_charge, diff_discharge, seam)`` tuple of expressions.
+    """
+    charge = columns[ch_col].cast(pl.Float64)
+    discharge = columns[dch_col].cast(pl.Float64)
+    current = columns[current_col].cast(pl.Float64)
+    time = columns[time_col].cast(pl.Float64)
+    key = columns[key_col]
+    diff_charge = charge.diff().clip(lower_bound=0).fill_null(strategy="zero")
+    diff_discharge = discharge.diff().clip(lower_bound=0).fill_null(strategy="zero")
+    seam = _seam_charge(current, time, key)
+    return diff_charge, diff_discharge, seam
+
+
 def _global_net_from_step_ch_dch(
     ch_col: "BDF",
     dch_col: "BDF",
     current_col: "BDF",
     time_col: "BDF",
     key_col: "BDF",
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for global net from step-level charging/discharging columns.
+) -> Recipe:
+    """Recipe for global net from step-level charging/discharging columns.
 
     Removes step-reset artifacts via diff/clip before accumulating the signed
     global integral, adding back the trapezoidal seam charge dropped at each
@@ -833,22 +869,19 @@ def _global_net_from_step_ch_dch(
         key_col: Group key :class:`BDF` column marking step boundaries.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
-        charge = columns[ch_col].cast(pl.Float64)
-        discharge = columns[dch_col].cast(pl.Float64)
-        current = columns[current_col].cast(pl.Float64)
-        time = columns[time_col].cast(pl.Float64)
-        key = columns[key_col]
-
-        diff_charge = charge.diff().clip(lower_bound=0).fill_null(strategy="zero")
-        diff_discharge = discharge.diff().clip(lower_bound=0).fill_null(strategy="zero")
-        seam = _seam_charge(current, time, key)
+        diff_charge, diff_discharge, seam = _step_diffs_and_seam(
+            columns, ch_col, dch_col, current_col, time_col, key_col
+        )
         return (diff_charge - diff_discharge + seam).cum_sum()
 
-    return _compute
+    return Recipe(
+        required=[ch_col, dch_col, current_col, time_col, key_col],
+        compute=_compute,
+    )
 
 
 def _global_cumulative_from_step_ch_dch(
@@ -857,8 +890,8 @@ def _global_cumulative_from_step_ch_dch(
     current_col: "BDF",
     time_col: "BDF",
     key_col: "BDF",
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for global cumulative throughput from step-level ch/dch columns.
+) -> Recipe:
+    """Recipe for global cumulative throughput from step-level ch/dch columns.
 
     Adds back the trapezoidal seam charge dropped at each step boundary (see
     :func:`_seam_charge`).
@@ -871,35 +904,30 @@ def _global_cumulative_from_step_ch_dch(
         key_col: Group key :class:`BDF` column marking step boundaries.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
-        charge = columns[ch_col].cast(pl.Float64)
-        discharge = columns[dch_col].cast(pl.Float64)
-        current = columns[current_col].cast(pl.Float64)
-        time = columns[time_col].cast(pl.Float64)
-        key = columns[key_col]
-
-        diff_charge = charge.diff().clip(lower_bound=0).fill_null(strategy="zero")
-        diff_discharge = discharge.diff().clip(lower_bound=0).fill_null(strategy="zero")
-        seam = _seam_charge(current, time, key)
+        diff_charge, diff_discharge, seam = _step_diffs_and_seam(
+            columns, ch_col, dch_col, current_col, time_col, key_col
+        )
         return diff_charge.cum_sum() + diff_discharge.cum_sum() + seam.abs().cum_sum()
 
-    return _compute
+    return Recipe(
+        required=[ch_col, dch_col, current_col, time_col, key_col],
+        compute=_compute,
+    )
 
 
-def _net_from_cumulative_current(
-    cumul_col: "BDF", current_col: "BDF"
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for signed net from cumulative throughput and current direction.
+def _net_from_cumulative_current(cumul_col: "BDF", current_col: "BDF") -> Recipe:
+    """Recipe for signed net from cumulative throughput and current direction.
 
     Args:
         cumul_col: Cumulative (unsigned throughput) :class:`BDF` column.
         current_col: Current :class:`BDF` column used for sign recovery.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
@@ -907,13 +935,11 @@ def _net_from_cumulative_current(
         current = columns[current_col].cast(pl.Float64)
         return (current.sign() * cumul.diff().fill_null(strategy="zero")).cum_sum()
 
-    return _compute
+    return Recipe(required=[cumul_col, current_col], compute=_compute)
 
 
-def _trapz_integral_from_rate(
-    rate_col: "BDF", time_col: "BDF"
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for net capacity/energy as the trapezoidal integral of current/power.
+def _trapz_integral_from_rate(rate_col: "BDF", time_col: "BDF") -> Recipe:
+    """Recipe for net capacity/energy as the trapezoidal integral of current/power.
 
     Reconstructs the signed running integral directly from current (or power)
     and elapsed time, with no dependency on any recorded charging/discharging
@@ -925,7 +951,7 @@ def _trapz_integral_from_rate(
         time_col: Elapsed-time :class:`BDF` column.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
@@ -934,13 +960,11 @@ def _trapz_integral_from_rate(
         dt = time.diff().fill_null(0.0)
         return (0.5 * (rate + rate.shift(1)) * dt / 3600.0).fill_null(0.0).cum_sum()
 
-    return _compute
+    return Recipe(required=[rate_col, time_col], compute=_compute)
 
 
-def _within_net(
-    ch_col: "BDF", dch_col: "BDF"
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for within-scope signed net: ``ch - dch``.
+def _within_net(ch_col: "BDF", dch_col: "BDF") -> Recipe:
+    """Recipe for within-scope signed net: ``ch - dch``.
 
     Valid when both inputs reset at the same step/cycle boundary.
 
@@ -949,19 +973,17 @@ def _within_net(
         dch_col: Within-scope discharging :class:`BDF` column.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
         return columns[ch_col] - columns[dch_col]
 
-    return _compute
+    return Recipe(required=[ch_col, dch_col], compute=_compute)
 
 
-def _within_cumulative(
-    ch_col: "BDF", dch_col: "BDF"
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for within-scope cumulative throughput: ``ch + dch``.
+def _within_cumulative(ch_col: "BDF", dch_col: "BDF") -> Recipe:
+    """Recipe for within-scope cumulative throughput: ``ch + dch``.
 
     Valid when both inputs reset at the same step/cycle boundary.
 
@@ -970,19 +992,17 @@ def _within_cumulative(
         dch_col: Within-scope discharging :class:`BDF` column.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
         return columns[ch_col] + columns[dch_col]
 
-    return _compute
+    return Recipe(required=[ch_col, dch_col], compute=_compute)
 
 
-def _component_from_net(
-    net_col: "BDF", key_col: "BDF | None", sign: float
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for one signed component of a net column.
+def _component_from_net(net_col: "BDF", key_col: "BDF | None", sign: float) -> Recipe:
+    """Recipe for one signed component of a net column.
 
     Accumulates the positive increments of ``sign * net``, i.e. the charging
     component for ``sign == 1.0`` and the discharging component for
@@ -999,7 +1019,7 @@ def _component_from_net(
             discharging component.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
@@ -1011,13 +1031,12 @@ def _component_from_net(
             return component
         return component.over(columns[key_col])
 
-    return _compute
+    required = [net_col] if key_col is None else [net_col, key_col]
+    return Recipe(required=required, compute=_compute)
 
 
-def _charge_from_net(
-    net_col: "BDF", key_col: "BDF | None" = None
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for charging component: ``cumsum(clip(diff(net), 0))``.
+def _charge_from_net(net_col: "BDF", key_col: "BDF | None" = None) -> Recipe:
+    """Recipe for charging component: ``cumsum(clip(diff(net), 0))``.
 
     Args:
         net_col: Signed net :class:`BDF` column.
@@ -1025,15 +1044,13 @@ def _charge_from_net(
             ``None`` for global net columns.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
     return _component_from_net(net_col, key_col, 1.0)
 
 
-def _discharge_from_net(
-    net_col: "BDF", key_col: "BDF | None" = None
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for discharging component: ``cumsum(clip(-diff(net), 0))``.
+def _discharge_from_net(net_col: "BDF", key_col: "BDF | None" = None) -> Recipe:
+    """Recipe for discharging component: ``cumsum(clip(-diff(net), 0))``.
 
     Args:
         net_col: Signed net :class:`BDF` column.
@@ -1041,15 +1058,13 @@ def _discharge_from_net(
             ``None`` for global net columns.
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
     return _component_from_net(net_col, key_col, -1.0)
 
 
-def _scope_reset(
-    global_col: "BDF", key_col: "BDF"
-) -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory for cross-scope reset: ``val - val.first().over(key)``.
+def _scope_reset(global_col: "BDF", key_col: "BDF") -> Recipe:
+    """Recipe for cross-scope reset: ``val - val.first().over(key)``.
 
     Subtracts the per-group baseline value so the result starts at zero
     within each step or cycle.
@@ -1059,7 +1074,7 @@ def _scope_reset(
         key_col: Group key :class:`BDF` column (e.g. ``BDF.STEP_COUNT``).
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
@@ -1067,7 +1082,7 @@ def _scope_reset(
         key = columns[key_col]
         return val - val.first().over(key)
 
-    return _compute
+    return Recipe(required=[global_col, key_col], compute=_compute)
 
 
 def _time_from_unix_time(columns: dict[BDF, pl.Expr]) -> pl.Expr:
@@ -1109,25 +1124,25 @@ def _step_count_from_step_id(columns: dict[BDF, pl.Expr]) -> pl.Expr:
     ).alias(BDF.STEP_COUNT.name)
 
 
-def _cumulative_from_net(net_col: "BDF") -> Callable[[dict["BDF", pl.Expr]], pl.Expr]:
-    """Factory returning a recipe compute for cumulative-from-net derivation.
+def _cumulative_from_net(net_col: "BDF") -> Recipe:
+    """Recipe for cumulative-from-net derivation.
 
-    The returned function computes ``cumsum(|diff(net)|)`` null-filled to zero,
-    giving a monotonically non-decreasing cumulative quantity.
+    Computes ``cumsum(|diff(net)|)`` null-filled to zero, giving a
+    monotonically non-decreasing cumulative quantity.
 
     Args:
         net_col: The source net :class:`BDF` column (e.g.
             ``BDF.NET_CAPACITY_AH``).
 
     Returns:
-        A compute function for use in a :class:`Recipe`.
+        A :class:`Recipe` deriving the target column.
     """
 
     def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
         net = columns[net_col]
         return net.diff().abs().fill_null(strategy="zero").cum_sum()
 
-    return _compute
+    return Recipe(required=[net_col], compute=_compute)
 
 
 BDF_RECIPES: dict[BDF, list[Recipe]] = {
@@ -1135,354 +1150,130 @@ BDF_RECIPES: dict[BDF, list[Recipe]] = {
         Recipe(required=[BDF.UNIX_TIME_SECOND], compute=_time_from_unix_time)
     ],
     BDF.NET_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH],
-            compute=_within_net(BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH),
+        _within_net(BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH),
+        _global_net_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
         ),
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-                BDF.CURRENT_AMPERE,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ],
-            compute=_global_net_from_step_ch_dch(
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-                BDF.CURRENT_AMPERE,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ),
-        ),
-        Recipe(
-            required=[BDF.CUMULATIVE_CAPACITY_AH, BDF.CURRENT_AMPERE],
-            compute=_net_from_cumulative_current(
-                BDF.CUMULATIVE_CAPACITY_AH, BDF.CURRENT_AMPERE
-            ),
-        ),
-        Recipe(
-            required=[BDF.CURRENT_AMPERE, BDF.TEST_TIME_SECOND],
-            compute=_trapz_integral_from_rate(BDF.CURRENT_AMPERE, BDF.TEST_TIME_SECOND),
-        ),
+        _net_from_cumulative_current(BDF.CUMULATIVE_CAPACITY_AH, BDF.CURRENT_AMPERE),
+        _trapz_integral_from_rate(BDF.CURRENT_AMPERE, BDF.TEST_TIME_SECOND),
     ],
     BDF.NET_ENERGY_WH: [
-        Recipe(
-            required=[BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH],
-            compute=_within_net(BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH),
+        _within_net(BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH),
+        _global_net_from_step_ch_dch(
+            BDF.STEP_CHARGING_ENERGY_WH,
+            BDF.STEP_DISCHARGING_ENERGY_WH,
+            BDF.POWER_WATT,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
         ),
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_ENERGY_WH,
-                BDF.STEP_DISCHARGING_ENERGY_WH,
-                BDF.POWER_WATT,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ],
-            compute=_global_net_from_step_ch_dch(
-                BDF.STEP_CHARGING_ENERGY_WH,
-                BDF.STEP_DISCHARGING_ENERGY_WH,
-                BDF.POWER_WATT,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ),
-        ),
-        Recipe(
-            required=[BDF.CUMULATIVE_ENERGY_WH, BDF.CURRENT_AMPERE],
-            compute=_net_from_cumulative_current(
-                BDF.CUMULATIVE_ENERGY_WH, BDF.CURRENT_AMPERE
-            ),
-        ),
-        Recipe(
-            required=[BDF.POWER_WATT, BDF.TEST_TIME_SECOND],
-            compute=_trapz_integral_from_rate(BDF.POWER_WATT, BDF.TEST_TIME_SECOND),
-        ),
+        _net_from_cumulative_current(BDF.CUMULATIVE_ENERGY_WH, BDF.CURRENT_AMPERE),
+        _trapz_integral_from_rate(BDF.POWER_WATT, BDF.TEST_TIME_SECOND),
     ],
     BDF.STEP_COUNT: [Recipe(required=[BDF.STEP_ID], compute=_step_count_from_step_id)],
     BDF.CUMULATIVE_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH],
-            compute=_within_cumulative(
-                BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH
-            ),
-        ),
-        Recipe(
-            required=[BDF.NET_CAPACITY_AH],
-            compute=_cumulative_from_net(BDF.NET_CAPACITY_AH),
-        ),
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-                BDF.CURRENT_AMPERE,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ],
-            compute=_global_cumulative_from_step_ch_dch(
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-                BDF.CURRENT_AMPERE,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ),
+        _within_cumulative(BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH),
+        _cumulative_from_net(BDF.NET_CAPACITY_AH),
+        _global_cumulative_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
         ),
     ],
     BDF.CUMULATIVE_ENERGY_WH: [
-        Recipe(
-            required=[BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH],
-            compute=_within_cumulative(
-                BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH
-            ),
-        ),
-        Recipe(
-            required=[BDF.NET_ENERGY_WH],
-            compute=_cumulative_from_net(BDF.NET_ENERGY_WH),
-        ),
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_ENERGY_WH,
-                BDF.STEP_DISCHARGING_ENERGY_WH,
-                BDF.POWER_WATT,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ],
-            compute=_global_cumulative_from_step_ch_dch(
-                BDF.STEP_CHARGING_ENERGY_WH,
-                BDF.STEP_DISCHARGING_ENERGY_WH,
-                BDF.POWER_WATT,
-                BDF.TEST_TIME_SECOND,
-                BDF.STEP_COUNT,
-            ),
+        _within_cumulative(BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH),
+        _cumulative_from_net(BDF.NET_ENERGY_WH),
+        _global_cumulative_from_step_ch_dch(
+            BDF.STEP_CHARGING_ENERGY_WH,
+            BDF.STEP_DISCHARGING_ENERGY_WH,
+            BDF.POWER_WATT,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
         ),
     ],
     # Global charging/discharging components
-    BDF.CHARGING_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.NET_CAPACITY_AH],
-            compute=_charge_from_net(BDF.NET_CAPACITY_AH),
-        ),
-    ],
-    BDF.DISCHARGING_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.NET_CAPACITY_AH],
-            compute=_discharge_from_net(BDF.NET_CAPACITY_AH),
-        ),
-    ],
-    BDF.CHARGING_ENERGY_WH: [
-        Recipe(
-            required=[BDF.NET_ENERGY_WH],
-            compute=_charge_from_net(BDF.NET_ENERGY_WH),
-        ),
-    ],
-    BDF.DISCHARGING_ENERGY_WH: [
-        Recipe(
-            required=[BDF.NET_ENERGY_WH],
-            compute=_discharge_from_net(BDF.NET_ENERGY_WH),
-        ),
-    ],
+    BDF.CHARGING_CAPACITY_AH: [_charge_from_net(BDF.NET_CAPACITY_AH)],
+    BDF.DISCHARGING_CAPACITY_AH: [_discharge_from_net(BDF.NET_CAPACITY_AH)],
+    BDF.CHARGING_ENERGY_WH: [_charge_from_net(BDF.NET_ENERGY_WH)],
+    BDF.DISCHARGING_ENERGY_WH: [_discharge_from_net(BDF.NET_ENERGY_WH)],
     # Step-scope capacity
     BDF.STEP_NET_CAPACITY_AH: [
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-            ],
-            compute=_within_net(
-                BDF.STEP_CHARGING_CAPACITY_AH, BDF.STEP_DISCHARGING_CAPACITY_AH
-            ),
-        ),
-        Recipe(
-            required=[BDF.NET_CAPACITY_AH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.NET_CAPACITY_AH, BDF.STEP_COUNT),
-        ),
+        _within_net(BDF.STEP_CHARGING_CAPACITY_AH, BDF.STEP_DISCHARGING_CAPACITY_AH),
+        _scope_reset(BDF.NET_CAPACITY_AH, BDF.STEP_COUNT),
     ],
     BDF.STEP_CUMULATIVE_CAPACITY_AH: [
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_CAPACITY_AH,
-                BDF.STEP_DISCHARGING_CAPACITY_AH,
-            ],
-            compute=_within_cumulative(
-                BDF.STEP_CHARGING_CAPACITY_AH, BDF.STEP_DISCHARGING_CAPACITY_AH
-            ),
+        _within_cumulative(
+            BDF.STEP_CHARGING_CAPACITY_AH, BDF.STEP_DISCHARGING_CAPACITY_AH
         ),
-        Recipe(
-            required=[BDF.CUMULATIVE_CAPACITY_AH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.CUMULATIVE_CAPACITY_AH, BDF.STEP_COUNT),
-        ),
+        _scope_reset(BDF.CUMULATIVE_CAPACITY_AH, BDF.STEP_COUNT),
     ],
     BDF.STEP_CHARGING_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.CHARGING_CAPACITY_AH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.CHARGING_CAPACITY_AH, BDF.STEP_COUNT),
-        ),
-        Recipe(
-            required=[BDF.STEP_NET_CAPACITY_AH, BDF.STEP_COUNT],
-            compute=_charge_from_net(BDF.STEP_NET_CAPACITY_AH, BDF.STEP_COUNT),
-        ),
+        _scope_reset(BDF.CHARGING_CAPACITY_AH, BDF.STEP_COUNT),
+        _charge_from_net(BDF.STEP_NET_CAPACITY_AH, BDF.STEP_COUNT),
     ],
     BDF.STEP_DISCHARGING_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.DISCHARGING_CAPACITY_AH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.DISCHARGING_CAPACITY_AH, BDF.STEP_COUNT),
-        ),
-        Recipe(
-            required=[BDF.STEP_NET_CAPACITY_AH, BDF.STEP_COUNT],
-            compute=_discharge_from_net(BDF.STEP_NET_CAPACITY_AH, BDF.STEP_COUNT),
-        ),
+        _scope_reset(BDF.DISCHARGING_CAPACITY_AH, BDF.STEP_COUNT),
+        _discharge_from_net(BDF.STEP_NET_CAPACITY_AH, BDF.STEP_COUNT),
     ],
     # Cycle-scope capacity
     BDF.CYCLE_NET_CAPACITY_AH: [
-        Recipe(
-            required=[
-                BDF.CYCLE_CHARGING_CAPACITY_AH,
-                BDF.CYCLE_DISCHARGING_CAPACITY_AH,
-            ],
-            compute=_within_net(
-                BDF.CYCLE_CHARGING_CAPACITY_AH, BDF.CYCLE_DISCHARGING_CAPACITY_AH
-            ),
-        ),
-        Recipe(
-            required=[BDF.NET_CAPACITY_AH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.NET_CAPACITY_AH, BDF.CYCLE_COUNT),
-        ),
+        _within_net(BDF.CYCLE_CHARGING_CAPACITY_AH, BDF.CYCLE_DISCHARGING_CAPACITY_AH),
+        _scope_reset(BDF.NET_CAPACITY_AH, BDF.CYCLE_COUNT),
     ],
     BDF.CYCLE_CUMULATIVE_CAPACITY_AH: [
-        Recipe(
-            required=[
-                BDF.CYCLE_CHARGING_CAPACITY_AH,
-                BDF.CYCLE_DISCHARGING_CAPACITY_AH,
-            ],
-            compute=_within_cumulative(
-                BDF.CYCLE_CHARGING_CAPACITY_AH, BDF.CYCLE_DISCHARGING_CAPACITY_AH
-            ),
+        _within_cumulative(
+            BDF.CYCLE_CHARGING_CAPACITY_AH, BDF.CYCLE_DISCHARGING_CAPACITY_AH
         ),
-        Recipe(
-            required=[BDF.CUMULATIVE_CAPACITY_AH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.CUMULATIVE_CAPACITY_AH, BDF.CYCLE_COUNT),
-        ),
+        _scope_reset(BDF.CUMULATIVE_CAPACITY_AH, BDF.CYCLE_COUNT),
     ],
     BDF.CYCLE_CHARGING_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.CHARGING_CAPACITY_AH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.CHARGING_CAPACITY_AH, BDF.CYCLE_COUNT),
-        ),
-        Recipe(
-            required=[BDF.CYCLE_NET_CAPACITY_AH, BDF.CYCLE_COUNT],
-            compute=_charge_from_net(BDF.CYCLE_NET_CAPACITY_AH, BDF.CYCLE_COUNT),
-        ),
+        _scope_reset(BDF.CHARGING_CAPACITY_AH, BDF.CYCLE_COUNT),
+        _charge_from_net(BDF.CYCLE_NET_CAPACITY_AH, BDF.CYCLE_COUNT),
     ],
     BDF.CYCLE_DISCHARGING_CAPACITY_AH: [
-        Recipe(
-            required=[BDF.DISCHARGING_CAPACITY_AH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.DISCHARGING_CAPACITY_AH, BDF.CYCLE_COUNT),
-        ),
-        Recipe(
-            required=[BDF.CYCLE_NET_CAPACITY_AH, BDF.CYCLE_COUNT],
-            compute=_discharge_from_net(BDF.CYCLE_NET_CAPACITY_AH, BDF.CYCLE_COUNT),
-        ),
+        _scope_reset(BDF.DISCHARGING_CAPACITY_AH, BDF.CYCLE_COUNT),
+        _discharge_from_net(BDF.CYCLE_NET_CAPACITY_AH, BDF.CYCLE_COUNT),
     ],
     # Step-scope energy
     BDF.STEP_NET_ENERGY_WH: [
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_ENERGY_WH,
-                BDF.STEP_DISCHARGING_ENERGY_WH,
-            ],
-            compute=_within_net(
-                BDF.STEP_CHARGING_ENERGY_WH, BDF.STEP_DISCHARGING_ENERGY_WH
-            ),
-        ),
-        Recipe(
-            required=[BDF.NET_ENERGY_WH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.NET_ENERGY_WH, BDF.STEP_COUNT),
-        ),
+        _within_net(BDF.STEP_CHARGING_ENERGY_WH, BDF.STEP_DISCHARGING_ENERGY_WH),
+        _scope_reset(BDF.NET_ENERGY_WH, BDF.STEP_COUNT),
     ],
     BDF.STEP_CUMULATIVE_ENERGY_WH: [
-        Recipe(
-            required=[
-                BDF.STEP_CHARGING_ENERGY_WH,
-                BDF.STEP_DISCHARGING_ENERGY_WH,
-            ],
-            compute=_within_cumulative(
-                BDF.STEP_CHARGING_ENERGY_WH, BDF.STEP_DISCHARGING_ENERGY_WH
-            ),
-        ),
-        Recipe(
-            required=[BDF.CUMULATIVE_ENERGY_WH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.CUMULATIVE_ENERGY_WH, BDF.STEP_COUNT),
-        ),
+        _within_cumulative(BDF.STEP_CHARGING_ENERGY_WH, BDF.STEP_DISCHARGING_ENERGY_WH),
+        _scope_reset(BDF.CUMULATIVE_ENERGY_WH, BDF.STEP_COUNT),
     ],
     BDF.STEP_CHARGING_ENERGY_WH: [
-        Recipe(
-            required=[BDF.CHARGING_ENERGY_WH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.CHARGING_ENERGY_WH, BDF.STEP_COUNT),
-        ),
-        Recipe(
-            required=[BDF.STEP_NET_ENERGY_WH, BDF.STEP_COUNT],
-            compute=_charge_from_net(BDF.STEP_NET_ENERGY_WH, BDF.STEP_COUNT),
-        ),
+        _scope_reset(BDF.CHARGING_ENERGY_WH, BDF.STEP_COUNT),
+        _charge_from_net(BDF.STEP_NET_ENERGY_WH, BDF.STEP_COUNT),
     ],
     BDF.STEP_DISCHARGING_ENERGY_WH: [
-        Recipe(
-            required=[BDF.DISCHARGING_ENERGY_WH, BDF.STEP_COUNT],
-            compute=_scope_reset(BDF.DISCHARGING_ENERGY_WH, BDF.STEP_COUNT),
-        ),
-        Recipe(
-            required=[BDF.STEP_NET_ENERGY_WH, BDF.STEP_COUNT],
-            compute=_discharge_from_net(BDF.STEP_NET_ENERGY_WH, BDF.STEP_COUNT),
-        ),
+        _scope_reset(BDF.DISCHARGING_ENERGY_WH, BDF.STEP_COUNT),
+        _discharge_from_net(BDF.STEP_NET_ENERGY_WH, BDF.STEP_COUNT),
     ],
     # Cycle-scope energy
     BDF.CYCLE_NET_ENERGY_WH: [
-        Recipe(
-            required=[
-                BDF.CYCLE_CHARGING_ENERGY_WH,
-                BDF.CYCLE_DISCHARGING_ENERGY_WH,
-            ],
-            compute=_within_net(
-                BDF.CYCLE_CHARGING_ENERGY_WH, BDF.CYCLE_DISCHARGING_ENERGY_WH
-            ),
-        ),
-        Recipe(
-            required=[BDF.NET_ENERGY_WH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.NET_ENERGY_WH, BDF.CYCLE_COUNT),
-        ),
+        _within_net(BDF.CYCLE_CHARGING_ENERGY_WH, BDF.CYCLE_DISCHARGING_ENERGY_WH),
+        _scope_reset(BDF.NET_ENERGY_WH, BDF.CYCLE_COUNT),
     ],
     BDF.CYCLE_CUMULATIVE_ENERGY_WH: [
-        Recipe(
-            required=[
-                BDF.CYCLE_CHARGING_ENERGY_WH,
-                BDF.CYCLE_DISCHARGING_ENERGY_WH,
-            ],
-            compute=_within_cumulative(
-                BDF.CYCLE_CHARGING_ENERGY_WH, BDF.CYCLE_DISCHARGING_ENERGY_WH
-            ),
+        _within_cumulative(
+            BDF.CYCLE_CHARGING_ENERGY_WH, BDF.CYCLE_DISCHARGING_ENERGY_WH
         ),
-        Recipe(
-            required=[BDF.CUMULATIVE_ENERGY_WH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.CUMULATIVE_ENERGY_WH, BDF.CYCLE_COUNT),
-        ),
+        _scope_reset(BDF.CUMULATIVE_ENERGY_WH, BDF.CYCLE_COUNT),
     ],
     BDF.CYCLE_CHARGING_ENERGY_WH: [
-        Recipe(
-            required=[BDF.CHARGING_ENERGY_WH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.CHARGING_ENERGY_WH, BDF.CYCLE_COUNT),
-        ),
-        Recipe(
-            required=[BDF.CYCLE_NET_ENERGY_WH, BDF.CYCLE_COUNT],
-            compute=_charge_from_net(BDF.CYCLE_NET_ENERGY_WH, BDF.CYCLE_COUNT),
-        ),
+        _scope_reset(BDF.CHARGING_ENERGY_WH, BDF.CYCLE_COUNT),
+        _charge_from_net(BDF.CYCLE_NET_ENERGY_WH, BDF.CYCLE_COUNT),
     ],
     BDF.CYCLE_DISCHARGING_ENERGY_WH: [
-        Recipe(
-            required=[BDF.DISCHARGING_ENERGY_WH, BDF.CYCLE_COUNT],
-            compute=_scope_reset(BDF.DISCHARGING_ENERGY_WH, BDF.CYCLE_COUNT),
-        ),
-        Recipe(
-            required=[BDF.CYCLE_NET_ENERGY_WH, BDF.CYCLE_COUNT],
-            compute=_discharge_from_net(BDF.CYCLE_NET_ENERGY_WH, BDF.CYCLE_COUNT),
-        ),
+        _scope_reset(BDF.DISCHARGING_ENERGY_WH, BDF.CYCLE_COUNT),
+        _discharge_from_net(BDF.CYCLE_NET_ENERGY_WH, BDF.CYCLE_COUNT),
     ],
 }
 
