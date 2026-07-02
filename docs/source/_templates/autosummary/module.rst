@@ -9,6 +9,10 @@
    **Classes:**
    
    * :py:class:`pyprobe.Cell <pyprobe.cell.Cell>`
+   * :py:class:`pyprobe.Table <pyprobe.result.Table>`
+   * :py:class:`pyprobe.Curve <pyprobe.result.Curve>`
+   * :py:class:`pyprobe.CyclingData <pyprobe.rawdata.CyclingData>`
+   * :py:class:`pyprobe.CyclerData <pyprobe.rawdata.CyclingData>`
    * :py:class:`pyprobe.Result <pyprobe.result.Result>`
    
    **Functions:**
