@@ -17,9 +17,9 @@ from pyprobe.analysis.utils import (
     get_columns,
     validate_columns,
 )
-from pyprobe.columns import BDF, Column
+from pyprobe.columns import BDF, Column, column_factory_from_string
 from pyprobe.pyprobe_types import PyProBEDataType
-from pyprobe.result import Table
+from pyprobe.result import Table, _derived_quantity
 
 
 def spline_smoothing(
@@ -72,7 +72,10 @@ def spline_smoothing(
     derivative = y_spline.derivative()
     smoothed_dydx = derivative(x_data)
 
-    gradient_column_name = f"d({target_column})/d({x_name})"
+    gradient_column_name = _derived_quantity(
+        column_factory_from_string(target_column),
+        x if isinstance(x, Column) else column_factory_from_string(x_name),
+    ).name
     return append_columns(
         input_data,
         {

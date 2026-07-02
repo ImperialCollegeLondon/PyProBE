@@ -5,8 +5,9 @@ import polars as pl
 
 import pyprobe.analysis.base.differentiation_functions as diff_functions
 from pyprobe.analysis.utils import build_result, get_columns, validate_columns
+from pyprobe.columns import column_factory_from_string
 from pyprobe.pyprobe_types import PyProBEDataType
-from pyprobe.result import Table
+from pyprobe.result import Table, _derived_quantity
 from pyprobe.utils import deprecated
 
 
@@ -36,7 +37,10 @@ def gradient(
     validate_columns(input_data, x, y)
     x_data, y_data = get_columns(input_data, x, y)
 
-    gradient_title = f"d({y})/d({x})"
+    gradient_title = _derived_quantity(
+        column_factory_from_string(y),
+        column_factory_from_string(x),
+    ).name
     gradient_data = np.gradient(y_data, x_data)
 
     lf = pl.DataFrame({x: x_data, y: y_data, gradient_title: gradient_data})
@@ -136,7 +140,16 @@ def differentiate_lean(
     )
 
     # output the results
-    gradient_title = f"d({y})/d({x})" if gradient == "dydx" else f"d({x})/d({y})"
+    if gradient == "dydx":
+        gradient_title = _derived_quantity(
+            column_factory_from_string(y),
+            column_factory_from_string(x),
+        ).name
+    else:
+        gradient_title = _derived_quantity(
+            column_factory_from_string(x),
+            column_factory_from_string(y),
+        ).name
     lf = pl.DataFrame({x: x_all, y: y_all, gradient_title: smoothed_gradient})
     return build_result(
         input_data,

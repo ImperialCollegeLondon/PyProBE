@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from scipy.interpolate import PchipInterpolator, PPoly, make_smoothing_spline
 
-from pyprobe.columns import BDF
+from pyprobe.columns import BDF, column_factory_from_string
 from pyprobe.result import Curve, Quantified, Table
 
 
@@ -88,10 +88,20 @@ def test_derivative_returns_curve_with_derived_quantity(curve):
     """derivative() returns a Curve carrying the d(y)/d(x) quantity."""
     derivative = curve.derivative()
     assert isinstance(derivative, Curve)
-    assert derivative.y_quantity.quantity == "d(Voltage)/d(Test Time)"
+    assert derivative.y_quantity.quantity == "d(Voltage)_d(Test Time)"
+    assert derivative.y_quantity.unit == "V s^-1"
+    assert derivative.y_quantity.name == "d(Voltage)_d(Test Time) / V s^-1"
     # x quantity and metadata are preserved
     assert derivative.x_quantity.name == curve.x_quantity.name
     assert derivative.metadata == curve.metadata
+
+
+def test_derivative_quantity_name_round_trips_through_column_parser(curve):
+    """Derived names avoid embedded slashes so the column parser can read them."""
+    derivative = curve.derivative()
+    parsed = column_factory_from_string(derivative.y_quantity.name)
+    assert parsed.quantity == derivative.y_quantity.quantity
+    assert parsed.unit == derivative.y_quantity.unit
 
 
 def test_derivative_values_match_analytic(curve, xy):

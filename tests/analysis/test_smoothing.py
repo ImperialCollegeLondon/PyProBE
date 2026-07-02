@@ -56,13 +56,13 @@ def test_spline_smoothing(noisy_data, noisy_data_reversed, benchmark):
 
     np.testing.assert_allclose(result.get("y"), expected_y, rtol=0.2)
 
-    input_data_columns = set(noisy_data.columns.names) | {"d(y)/d(x)"}
+    input_data_columns = set(noisy_data.columns.names) | {"d(y)_d(x) / 1"}
     result_columns = set(result.columns.names)
     assert input_data_columns == result_columns
 
     expected_dydx = 2 * x
 
-    np.testing.assert_allclose(result.get("d(y)/d(x)"), expected_dydx, rtol=0.2)
+    np.testing.assert_allclose(result.get("d(y)_d(x) / 1"), expected_dydx, rtol=0.2)
 
     # reverse the data
     flipped_x = np.flip(x)
