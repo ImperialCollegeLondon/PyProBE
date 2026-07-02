@@ -30,12 +30,15 @@ def result():
 
 @pytest.fixture
 def result_with_recipe_cols():
-    """Result with Charging/Discharging Capacity for BDF.NET_CAPACITY_AH resolution."""
+    """Result with step charge/discharge inputs for net capacity resolution."""
     return Result(
         lf=pl.LazyFrame(
             {
-                BDF.CHARGING_CAPACITY_AH.name: [0.0, 0.5, 1.0],
-                BDF.DISCHARGING_CAPACITY_AH.name: [0.0, -0.5, -1.0],
+                BDF.STEP_CHARGING_CAPACITY_AH.name: [0.0, 0.5, 1.0],
+                BDF.STEP_DISCHARGING_CAPACITY_AH.name: [0.0, 0.5, 1.0],
+                BDF.CURRENT_AMPERE.name: [1.0, 1.0, 1.0],
+                BDF.TEST_TIME_SECOND.name: [0.0, 1.0, 2.0],
+                BDF.STEP_COUNT.name: [0, 0, 0],
             }
         ),
         metadata={},

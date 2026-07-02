@@ -62,7 +62,12 @@ class TestProcessCycler:
     def test_process_cycler_required_columns_only(
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
-        """process_cycler returns LazyFrame with required BDF columns."""
+        """process_cycler returns LazyFrame with required BDF columns.
+
+        `Net Capacity / Ah` also resolves here (and is included as an
+        optional column) via the trapezoidal current/time integral recipe,
+        since `Current / A` and `Test Time / s` are both present.
+        """
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
@@ -71,7 +76,8 @@ class TestProcessCycler:
         assert "Test Time / s" in result.columns
         assert "Current / A" in result.columns
         assert "Voltage / V" in result.columns
-        assert result.shape == (3, 3)
+        assert "Net Capacity / Ah" in result.columns
+        assert result.shape == (3, 4)
 
     def test_process_cycler_with_optional_columns(self, tmp_path: Path) -> None:
         """process_cycler includes optional columns when available."""
@@ -326,7 +332,7 @@ class TestProcessCyclerEdgeCases:
 
         result = pl.scan_parquet(result).collect()
         assert result.shape[0] == 0
-        assert result.shape[1] == 3
+        assert result.shape[1] == 4
 
     def test_process_cycler_single_row(self, tmp_path: Path) -> None:
         """process_cycler handles single-row DataFrame."""
@@ -393,7 +399,7 @@ class TestProcessCyclerIntegration:
             "Step Count / 1": [2],
             "Current / A": [2.650138],
             "Voltage / V": [3.599601],
-            "Net Capacity / Ah": [0.0007812400999999999],
+            "Net Capacity / Ah": [0.0003806986],
             "Temperature T1 / degC": [24.68785],
         },
     )
@@ -437,6 +443,7 @@ class TestProcessCyclerIntegration:
             "Current / A": [28.798],
             "Voltage / V": [3.716],
             "Unix Time / s": [datetime.datetime(2023, 11, 23, 15, 56, 24).timestamp()],
+            "Net Capacity / Ah": [0.024005],
             "Step Count / 1": [2],
             "Temperature T1 / degC": [22.2591],
         },
@@ -452,6 +459,7 @@ class TestProcessCyclerIntegration:
             "Step Count / 1": [61],
             "Current / A": [0.0],
             "Voltage / V": [3.4513],
+            "Net Capacity / Ah": [-0.018585],
         },
     )
 

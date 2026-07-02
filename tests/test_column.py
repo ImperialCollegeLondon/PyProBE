@@ -17,6 +17,7 @@ from pyprobe.columns import (
     BDF,
     BDF_IRI_PREFIX,
     BDF_PATTERN,
+    BDF_RECIPES,
     DEFAULT_COLUMNS,
     BDFColumn,
     Column,
@@ -24,12 +25,57 @@ from pyprobe.columns import (
     ColumnResolutionError,
     Recipe,
     _apply_conversion,
-    _capacity_from_ch_dch,
+    _global_cumulative_from_step_ch_dch,
+    _global_net_from_step_ch_dch,
     _resolve_unit,
+    _seam_charge,
     _split_quantity_unit,
     column_factory,
     column_factory_from_string,
 )
+
+
+def _compute_series(df: pl.DataFrame, compute: pl.Expr) -> list[int | float]:
+    """Evaluate a Polars expression against a DataFrame and return values.
+
+    Args:
+        df: Input DataFrame containing the expression dependencies.
+        compute: Polars expression to evaluate.
+
+    Returns:
+        Materialized values from the selected expression.
+    """
+    return df.select(compute.alias("result"))["result"].to_list()
+
+
+def _flatten(
+    recipes: dict[BDF, list[Recipe]],
+) -> list[tuple[BDF, Recipe]]:
+    """Flatten recipe lists into `(bdf_key, recipe)` pairs.
+
+    Args:
+        recipes: Mapping from target BDF column to candidate recipes.
+
+    Returns:
+        Flat list of `(bdf_key, recipe)` tuples.
+    """
+    return [
+        (bdf_key, recipe)
+        for bdf_key, recipe_list in recipes.items()
+        for recipe in recipe_list
+    ]
+
+
+def _recipe_mapping(*columns: BDF) -> dict[BDF, pl.Expr]:
+    """Build a `{BDF: pl.Expr}` mapping from BDF names.
+
+    Args:
+        *columns: BDF columns to expose as `pl.col(...)` expressions.
+
+    Returns:
+        Mapping from each BDF column to its matching `pl.col(...)` expression.
+    """
+    return {column: pl.col(column.name) for column in columns}
 
 
 class TestColumnInit:
@@ -175,64 +221,317 @@ class TestBDFColumnIRI:
         assert iri.endswith(iri.split("#")[-1])
 
 
-class TestRecipeComputation:
-    """Tests for recipe computation functions."""
+@pytest.fixture
+def recipe_sample_df() -> pl.DataFrame:
+    """Provide one explicit fixture covering every recipe-touched column.
 
-    def test_step_count_from_step_index_recipe(self) -> None:
-        """Step count derivation increments on step ID changes."""
-        cs = ColumnDict(["Step ID"])
+    Twenty rows simulating charge / discharge / charge / discharge / rest steps
+    split across two cycles. Values are mutually consistent across every
+    registered recipe (including fallback branches) for every BDF column
+    reachable from :data:`BDF_RECIPES` -- capacity and energy, step and
+    cycle scope, and the global charging/discharging/net/cumulative columns.
+
+    Returns:
+        DataFrame containing 20 hand-verified rows covering all recipe inputs
+        and targets across time, capacity, and energy columns.
+    """
+    # fmt: off
+    return pl.DataFrame({
+        # Hourly cadence (dt = 3600 s) so that a plain trapezoidal integral of
+        # `Current / A` (or `Power / W`) against this column reproduces the
+        # recorded Ah/Wh increments below exactly (1 A for 1 h == 1 Ah).
+        # Duplicated at every step boundary (indices 4, 8, 12, 16) so that
+        # dt == 0 there and the seam term is exactly zero
+        # A genuine (dt > 0) seam is covered separately by `seam_boundary_df`.
+        BDF.UNIX_TIME_SECOND.name:              [1000000.0, 1003600.0, 1007200.0, 1010800.0, 1010800.0, 1014400.0, 1018000.0, 1021600.0, 1021600.0, 1025200.0, 1028800.0, 1032400.0, 1032400.0, 1036000.0, 1039600.0, 1043200.0, 1043200.0, 1046800.0, 1050400.0, 1054000.0],  # noqa: E501
+        BDF.TEST_TIME_SECOND.name:              [0.0, 3600.0, 7200.0, 10800.0, 10800.0, 14400.0, 18000.0, 21600.0, 21600.0, 25200.0, 28800.0, 32400.0, 32400.0, 36000.0, 39600.0, 43200.0, 43200.0, 46800.0, 50400.0, 54000.0],  # noqa: E501
+        BDF.STEP_ID.name:                       [1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],  # noqa: E501
+        BDF.STEP_COUNT.name:                    [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4],  # noqa: E501
+        BDF.CYCLE_COUNT.name:                   [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # noqa: E501
+        BDF.CURRENT_AMPERE.name:                [1.0, 1.0, 1.0, 1.0, -2.0, -2.0, -2.0, -2.0, 1.0, 1.0, 1.0, 1.0, -2.0, -2.0, -2.0, -2.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.POWER_WATT.name:                    [2.0, 2.0, 2.0, 2.0, -3.0, -3.0, -3.0, -3.0, 2.0, 2.0, 2.0, 2.0, -3.0, -3.0, -3.0, -3.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_CHARGING_CAPACITY_AH.name:     [0.0, 1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_DISCHARGING_CAPACITY_AH.name:  [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_NET_CAPACITY_AH.name:          [0.0, 1.0, 2.0, 3.0, 0.0, -2.0, -4.0, -6.0, 0.0, 1.0, 2.0, 3.0, 0.0, -2.0, -4.0, -6.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_CUMULATIVE_CAPACITY_AH.name:   [0.0, 1.0, 2.0, 3.0, 0.0, 2.0, 4.0, 6.0, 0.0, 1.0, 2.0, 3.0, 0.0, 2.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_CHARGING_ENERGY_WH.name:       [0.0, 2.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_DISCHARGING_ENERGY_WH.name:    [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_NET_ENERGY_WH.name:            [0.0, 2.0, 4.0, 6.0, 0.0, -3.0, -6.0, -9.0, 0.0, 2.0, 4.0, 6.0, 0.0, -3.0, -6.0, -9.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.STEP_CUMULATIVE_ENERGY_WH.name:     [0.0, 2.0, 4.0, 6.0, 0.0, 3.0, 6.0, 9.0, 0.0, 2.0, 4.0, 6.0, 0.0, 3.0, 6.0, 9.0, 0.0, 0.0, 0.0, 0.0],  # noqa: E501
+        BDF.CYCLE_CHARGING_CAPACITY_AH.name:    [0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0],  # noqa: E501
+        BDF.CYCLE_DISCHARGING_CAPACITY_AH.name: [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0],  # noqa: E501
+        BDF.CYCLE_NET_CAPACITY_AH.name:         [0.0, 1.0, 2.0, 3.0, 3.0, 1.0, -1.0, -3.0, 0.0, 1.0, 2.0, 3.0, 3.0, 1.0, -1.0, -3.0, -3.0, -3.0, -3.0, -3.0],  # noqa: E501
+        BDF.CYCLE_CUMULATIVE_CAPACITY_AH.name:  [0.0, 1.0, 2.0, 3.0, 3.0, 5.0, 7.0, 9.0, 0.0, 1.0, 2.0, 3.0, 3.0, 5.0, 7.0, 9.0, 9.0, 9.0, 9.0, 9.0],  # noqa: E501
+        BDF.CYCLE_CHARGING_ENERGY_WH.name:      [0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0, 0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0],  # noqa: E501
+        BDF.CYCLE_DISCHARGING_ENERGY_WH.name:   [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 9.0, 9.0, 9.0, 9.0],  # noqa: E501
+        BDF.CYCLE_NET_ENERGY_WH.name:           [0.0, 2.0, 4.0, 6.0, 6.0, 3.0, 0.0, -3.0, 0.0, 2.0, 4.0, 6.0, 6.0, 3.0, 0.0, -3.0, -3.0, -3.0, -3.0, -3.0],  # noqa: E501
+        BDF.CYCLE_CUMULATIVE_ENERGY_WH.name:    [0.0, 2.0, 4.0, 6.0, 6.0, 9.0, 12.0, 15.0, 0.0, 2.0, 4.0, 6.0, 6.0, 9.0, 12.0, 15.0, 15.0, 15.0, 15.0, 15.0],  # noqa: E501
+        BDF.CHARGING_CAPACITY_AH.name:          [0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 5.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0],  # noqa: E501
+        BDF.DISCHARGING_CAPACITY_AH.name:       [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 8.0, 10.0, 12.0, 12.0, 12.0, 12.0, 12.0],  # noqa: E501
+        BDF.NET_CAPACITY_AH.name:               [0.0, 1.0, 2.0, 3.0, 3.0, 1.0, -1.0, -3.0, -3.0, -2.0, -1.0, 0.0, 0.0, -2.0, -4.0, -6.0, -6.0, -6.0, -6.0, -6.0],  # noqa: E501
+        BDF.CUMULATIVE_CAPACITY_AH.name:        [0.0, 1.0, 2.0, 3.0, 3.0, 5.0, 7.0, 9.0, 9.0, 10.0, 11.0, 12.0, 12.0, 14.0, 16.0, 18.0, 18.0, 18.0, 18.0, 18.0],  # noqa: E501
+        BDF.CHARGING_ENERGY_WH.name:            [0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 8.0, 10.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0],  # noqa: E501
+        BDF.DISCHARGING_ENERGY_WH.name:         [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 12.0, 15.0, 18.0, 18.0, 18.0, 18.0, 18.0],  # noqa: E501
+        BDF.NET_ENERGY_WH.name:                 [0.0, 2.0, 4.0, 6.0, 6.0, 3.0, 0.0, -3.0, -3.0, -1.0, 1.0, 3.0, 3.0, 0.0, -3.0, -6.0, -6.0, -6.0, -6.0, -6.0],  # noqa: E501
+        BDF.CUMULATIVE_ENERGY_WH.name:          [0.0, 2.0, 4.0, 6.0, 6.0, 9.0, 12.0, 15.0, 15.0, 17.0, 19.0, 21.0, 21.0, 24.0, 27.0, 30.0, 30.0, 30.0, 30.0, 30.0],  # noqa: E501
+    })
+    # fmt: on
+
+
+@pytest.mark.parametrize("bdf_key,recipe", _flatten(BDF_RECIPES))
+def test_recipe_matches_explicit_fixture_output(
+    bdf_key: BDF, recipe: Recipe, recipe_sample_df: pl.DataFrame
+) -> None:
+    """Every registered recipe reproduces the target column from one fixture."""
+    required_columns = [column.name for column in recipe.required]
+    df = recipe_sample_df.select([*required_columns, bdf_key.name])
+    result = _compute_series(df, recipe.compute(_recipe_mapping(*recipe.required)))
+    assert result == pytest.approx(df[bdf_key.name].to_list())
+
+
+@pytest.fixture
+def seam_boundary_df() -> pl.DataFrame:
+    """One genuine (``dt > 0``, nonzero current) step-boundary seam.
+
+    Two steps -- charge at 2 A then discharge at 1 A -- sampled hourly so the
+    seam's ``/ 3600`` conversion cancels exactly, matching the worked example
+    in ``capacity_columns.md``: per-step signed totals give ``2 - 1 = 1``, but
+    the true signed integral of current across the whole test is ``1.5`` --
+    the trapezoidal seam charge at the step boundary (``0.5 * (2 + -1) = 0.5``)
+    that a plain diff/clip reconstruction drops.
+
+    Returns:
+        DataFrame with one step boundary carrying a real (non-zero-``dt``)
+        seam.
+    """
+    return pl.DataFrame(
+        {
+            BDF.STEP_CHARGING_CAPACITY_AH.name: [0.0, 2.0, 0.0, 0.0],
+            BDF.STEP_DISCHARGING_CAPACITY_AH.name: [0.0, 0.0, 0.0, 1.0],
+            BDF.CURRENT_AMPERE.name: [2.0, 2.0, -1.0, -1.0],
+            BDF.TEST_TIME_SECOND.name: [0.0, 3600.0, 7200.0, 10800.0],
+            BDF.STEP_COUNT.name: [0, 0, 1, 1],
+        }
+    )
+
+
+class TestSeamCorrection:
+    """Tests for the step-boundary seam correction (fix-capacity-seam-recipes)."""
+
+    def test_seam_charge_zero_at_duplicate_timestamp_boundary(self) -> None:
+        """Seam term is zero when a boundary has ``dt == 0``."""
         df = pl.DataFrame(
             {
-                "Step ID": [
-                    1,
-                    1,
-                    2,
-                    2,
-                    3,
-                    3,
-                    1,
-                    1,
-                    2,
-                    2,
-                    3,
-                    3,
-                    4,
-                    4,
-                    4,
-                    4,
-                    5,
-                    5,
-                ]
+                "current": [1.0, 1.0, -2.0, -2.0],
+                "time": [0.0, 1.0, 1.0, 2.0],
+                "key": [0, 0, 1, 1],
             }
         )
-        result = df.select(cs.resolve(BDF.STEP_COUNT))
-        expected = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 7, 7]
-        assert result["Step Count / 1"].to_list() == expected
+        result = df.select(
+            _seam_charge(pl.col("current"), pl.col("time"), pl.col("key")).alias("seam")
+        )["seam"].to_list()
+        assert result == [0.0, 0.0, 0.0, 0.0]
 
-    def test_col_recipe_net_capacity(self) -> None:
-        """Recipe resolves Net Capacity from Charging and Discharging Capacity."""
+    def test_seam_charge_nonzero_at_real_dt_boundary(self) -> None:
+        """Seam term is the trapezoidal current integral when ``dt > 0``."""
+        df = pl.DataFrame(
+            {
+                "current": [2.0, 2.0, -1.0, -1.0],
+                "time": [0.0, 3600.0, 7200.0, 10800.0],
+                "key": [0, 0, 1, 1],
+            }
+        )
+        result = df.select(
+            _seam_charge(pl.col("current"), pl.col("time"), pl.col("key")).alias("seam")
+        )["seam"].to_list()
+        assert result == pytest.approx([0.0, 0.0, 0.5, 0.0])
+
+    def test_global_net_from_step_ch_dch_includes_seam(
+        self, seam_boundary_df: pl.DataFrame
+    ) -> None:
+        """Seam-corrected net matches the true signed current integral.
+
+        Per-step signed totals alone give ``2 - 1 = 1``; the seam-corrected
+        reconstruction must include the ``0.5`` seam charge, giving ``1.5``.
+        """
+        compute = _global_net_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
+        )
+        result = _compute_series(
+            seam_boundary_df,
+            compute(
+                _recipe_mapping(
+                    BDF.STEP_CHARGING_CAPACITY_AH,
+                    BDF.STEP_DISCHARGING_CAPACITY_AH,
+                    BDF.CURRENT_AMPERE,
+                    BDF.TEST_TIME_SECOND,
+                    BDF.STEP_COUNT,
+                )
+            ),
+        )
+        assert result == pytest.approx([0.0, 2.0, 2.5, 1.5])
+
+    def test_global_cumulative_from_step_ch_dch_includes_seam(
+        self, seam_boundary_df: pl.DataFrame
+    ) -> None:
+        """Seam-corrected cumulative throughput includes the seam magnitude."""
+        compute = _global_cumulative_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
+        )
+        result = _compute_series(
+            seam_boundary_df,
+            compute(
+                _recipe_mapping(
+                    BDF.STEP_CHARGING_CAPACITY_AH,
+                    BDF.STEP_DISCHARGING_CAPACITY_AH,
+                    BDF.CURRENT_AMPERE,
+                    BDF.TEST_TIME_SECOND,
+                    BDF.STEP_COUNT,
+                )
+            ),
+        )
+        assert result == pytest.approx([0.0, 2.0, 2.5, 3.5])
+
+    def test_direct_charging_discharging_identity_resolves_net_capacity(self) -> None:
+        """NET_CAPACITY_AH resolves directly from global charging/discharging."""
         cs = ColumnDict(["Charging Capacity / Ah", "Discharging Capacity / Ah"])
         df = pl.DataFrame(
             {
-                "Charging Capacity / Ah": [1.0, 0.0, 0.0],
-                "Discharging Capacity / Ah": [0.0, 1.0, 2.0],
+                "Charging Capacity / Ah": [0.0, 3.0, 3.0],
+                "Discharging Capacity / Ah": [0.0, 0.0, 2.0],
             }
         )
-        result = df.select(cs.resolve(BDF.NET_CAPACITY_AH))
-        expected = [1.0, 0.0, -1.0]
-        assert result["Net Capacity / Ah"].to_list() == pytest.approx(expected)
+        result = df.select(cs.resolve(BDF.NET_CAPACITY_AH))["Net Capacity / Ah"]
+        assert result.to_list() == [0.0, 3.0, 1.0]
 
-    def test_col_recipe_time_from_unix_time(self) -> None:
-        """Recipe resolves Test Time from Unix epoch time in seconds."""
-        cs = ColumnDict(["Unix Time / s"])
+    def test_direct_charging_discharging_identity_resolves_net_energy(self) -> None:
+        """NET_ENERGY_WH resolves directly from global charging/discharging."""
+        cs = ColumnDict(["Charging Energy / Wh", "Discharging Energy / Wh"])
         df = pl.DataFrame(
             {
-                "Unix Time / s": [1648864360.0, 1648864361.0, 1648864362.0],
+                "Charging Energy / Wh": [0.0, 6.0, 6.0],
+                "Discharging Energy / Wh": [0.0, 0.0, 4.0],
             }
         )
-        result = df.select(cs.resolve(BDF.TEST_TIME_SECOND))
-        expected = [0.0, 1.0, 2.0]
-        assert result["Test Time / s"].to_list() == pytest.approx(expected)
+        result = df.select(cs.resolve(BDF.NET_ENERGY_WH))["Net Energy / Wh"]
+        assert result.to_list() == [0.0, 6.0, 2.0]
+
+    def test_direct_charging_discharging_identity_resolves_cumulative_capacity(
+        self,
+    ) -> None:
+        """CUMULATIVE_CAPACITY_AH resolves directly from global charging/discharging."""
+        cs = ColumnDict(["Charging Capacity / Ah", "Discharging Capacity / Ah"])
+        df = pl.DataFrame(
+            {
+                "Charging Capacity / Ah": [0.0, 3.0, 3.0],
+                "Discharging Capacity / Ah": [0.0, 0.0, 2.0],
+            }
+        )
+        result = df.select(cs.resolve(BDF.CUMULATIVE_CAPACITY_AH))[
+            "Cumulative Capacity / Ah"
+        ]
+        assert result.to_list() == [0.0, 3.0, 5.0]
+
+    def test_direct_identity_does_not_require_step_or_cycle_columns(self) -> None:
+        """Direct global-column recipe needs no step/cycle-scoped dependency."""
+        cs = ColumnDict(["Charging Capacity / Ah", "Discharging Capacity / Ah"])
+        assert cs.can_resolve("Net Capacity / Ah") is True
+
+    def test_step_scope_net_capacity_resolves_without_current_or_time(self) -> None:
+        """STEP_NET_CAPACITY_AH is unaffected by the seam correction."""
+        cs = ColumnDict(
+            ["Step Charging Capacity / Ah", "Step Discharging Capacity / Ah"]
+        )
+        assert cs.can_resolve("Step Net Capacity / Ah") is True
+
+    def test_cycle_scope_net_capacity_resolves_without_current_or_time(self) -> None:
+        """CYCLE_NET_CAPACITY_AH is unaffected by the seam correction."""
+        cs = ColumnDict(
+            ["Cycle Charging Capacity / Ah", "Cycle Discharging Capacity / Ah"]
+        )
+        assert cs.can_resolve("Cycle Net Capacity / Ah") is True
+
+    def test_seam_recipe_falls_through_when_current_and_time_missing(self) -> None:
+        """Missing current/time falls through to another recipe, not silent drift."""
+        cs = ColumnDict(
+            [
+                "Step Charging Capacity / Ah",
+                "Step Discharging Capacity / Ah",
+                "Cumulative Capacity / Ah",
+                "Current / A",
+            ]
+        )
+        assert cs.can_resolve("Net Capacity / Ah") is True
+        expr = cs.resolve(BDF.NET_CAPACITY_AH)
+        df = pl.DataFrame(
+            {
+                "Step Charging Capacity / Ah": [0.0, 1.0],
+                "Step Discharging Capacity / Ah": [0.0, 0.0],
+                "Cumulative Capacity / Ah": [0.0, 1.0],
+                "Current / A": [1.0, 1.0],
+            }
+        )
+        assert df.select(expr)["Net Capacity / Ah"].to_list() == [0.0, 1.0]
+
+    def test_seam_recipe_raises_when_no_recipe_resolves(self) -> None:
+        """ColumnResolutionError raised when no recipe's dependencies resolve."""
+        cs = ColumnDict(
+            ["Step Charging Capacity / Ah", "Step Discharging Capacity / Ah"]
+        )
+        assert cs.can_resolve("Net Capacity / Ah") is False
+        with pytest.raises(ColumnResolutionError):
+            cs.resolve(BDF.NET_CAPACITY_AH)
+
+
+class TestTrapzIntegralRecipe:
+    """Tests for the raw current/power-time trapezoidal integral recipes."""
+
+    def test_net_capacity_resolves_from_current_and_time_only(self) -> None:
+        """NET_CAPACITY_AH resolves from just current and elapsed time."""
+        cs = ColumnDict(["Current / A", "Test Time / s"])
+        assert cs.can_resolve("Net Capacity / Ah") is True
+        df = pl.DataFrame(
+            {
+                "Current / A": [2.0, 2.0, -1.0, -1.0],
+                "Test Time / s": [0.0, 3600.0, 7200.0, 10800.0],
+            }
+        )
+        result = df.select(cs.resolve(BDF.NET_CAPACITY_AH))["Net Capacity / Ah"]
+        assert result.to_list() == pytest.approx([0.0, 2.0, 2.5, 1.5])
+
+    def test_net_energy_resolves_from_power_and_time_only(self) -> None:
+        """NET_ENERGY_WH resolves from just power and elapsed time."""
+        cs = ColumnDict(["Power / W", "Test Time / s"])
+        assert cs.can_resolve("Net Energy / Wh") is True
+        df = pl.DataFrame(
+            {
+                "Power / W": [2.0, 2.0, -1.0, -1.0],
+                "Test Time / s": [0.0, 3600.0, 7200.0, 10800.0],
+            }
+        )
+        result = df.select(cs.resolve(BDF.NET_ENERGY_WH))["Net Energy / Wh"]
+        assert result.to_list() == pytest.approx([0.0, 2.0, 2.5, 1.5])
+
+    def test_trapz_integral_is_lowest_priority_for_net_capacity(self) -> None:
+        """A recipe using recorded charge data outranks the raw trapz integral."""
+        cs = ColumnDict(["Cumulative Capacity / Ah", "Current / A", "Test Time / s"])
+        df = pl.DataFrame(
+            {
+                "Cumulative Capacity / Ah": [0.0, 1.0],
+                "Current / A": [1.0, 1.0],
+                "Test Time / s": [0.0, 3600.0],
+            }
+        )
+        result = df.select(cs.resolve(BDF.NET_CAPACITY_AH))["Net Capacity / Ah"]
+        assert result.to_list() == pytest.approx([0.0, 1.0])
 
 
 class TestSplitQuantityUnit:
@@ -349,12 +648,24 @@ class TestRecipeDataclass:
     def test_recipe_with_multiple_dependencies(self) -> None:
         """Recipe can require multiple BDFColumn instances."""
         recipe = Recipe(
-            required=[BDF.CHARGING_CAPACITY_AH, BDF.DISCHARGING_CAPACITY_AH],
-            compute=_capacity_from_ch_dch,
+            required=[
+                BDF.STEP_CHARGING_CAPACITY_AH,
+                BDF.STEP_DISCHARGING_CAPACITY_AH,
+                BDF.CURRENT_AMPERE,
+                BDF.TEST_TIME_SECOND,
+                BDF.STEP_COUNT,
+            ],
+            compute=_global_net_from_step_ch_dch(
+                BDF.STEP_CHARGING_CAPACITY_AH,
+                BDF.STEP_DISCHARGING_CAPACITY_AH,
+                BDF.CURRENT_AMPERE,
+                BDF.TEST_TIME_SECOND,
+                BDF.STEP_COUNT,
+            ),
         )
-        assert len(recipe.required) == 2
-        assert BDF.CHARGING_CAPACITY_AH in recipe.required
-        assert BDF.DISCHARGING_CAPACITY_AH in recipe.required
+        assert len(recipe.required) == 5
+        assert BDF.STEP_CHARGING_CAPACITY_AH in recipe.required
+        assert BDF.STEP_DISCHARGING_CAPACITY_AH in recipe.required
 
     def test_unused_required_column_raises(self) -> None:
         """Recipe raises ValueError if a required column is never accessed."""
@@ -454,16 +765,30 @@ class TestColumnSetResolve:
         """resolve() via recipe then converts the result to the requested unit."""
         df = pl.DataFrame(
             {
-                "Charging Capacity / Ah": [0.0, 0.0, 0.0],
-                "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                "Step Charging Capacity / Ah": [0.0, 0.0, 0.0],
+                "Step Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                "Current / A": [0.0, 0.0, 0.0],
+                "Test Time / s": [0.0, 1.0, 2.0],
+                "Step Count / 1": [0, 0, 0],
             }
         )
         cs = ColumnDict(df.columns)
         expr = cs.resolve("Net Capacity / mAh")
-        base = _capacity_from_ch_dch(
+        base = _global_net_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
+        )(
             {
-                BDF.CHARGING_CAPACITY_AH: pl.col("Charging Capacity / Ah"),
-                BDF.DISCHARGING_CAPACITY_AH: pl.col("Discharging Capacity / Ah"),
+                BDF.STEP_CHARGING_CAPACITY_AH: pl.col("Step Charging Capacity / Ah"),
+                BDF.STEP_DISCHARGING_CAPACITY_AH: pl.col(
+                    "Step Discharging Capacity / Ah"
+                ),
+                BDF.CURRENT_AMPERE: pl.col("Current / A"),
+                BDF.TEST_TIME_SECOND: pl.col("Test Time / s"),
+                BDF.STEP_COUNT: pl.col("Step Count / 1"),
             }
         )
         assert_frame_equal(
@@ -473,12 +798,23 @@ class TestColumnSetResolve:
 
     def test_resolve_non_standard_unit_recipe_deps(self) -> None:
         """resolve() works when recipe inputs are in non-standard units (mAh)."""
-        cs = ColumnDict(["Charging Capacity / mAh", "Discharging Capacity / mAh"])
+        cs = ColumnDict(
+            [
+                "Step Charging Capacity / mAh",
+                "Step Discharging Capacity / mAh",
+                "Current / A",
+                "Test Time / s",
+                "Step Count / 1",
+            ]
+        )
         expr = cs.resolve("Net Capacity / mAh")
         df = pl.DataFrame(
             {
-                "Charging Capacity / mAh": [500.0, 1000.0],
-                "Discharging Capacity / mAh": [0.0, 0.0],
+                "Step Charging Capacity / mAh": [500.0, 1000.0],
+                "Step Discharging Capacity / mAh": [0.0, 0.0],
+                "Current / A": [0.0, 0.0],
+                "Test Time / s": [0.0, 1.0],
+                "Step Count / 1": [0, 0],
             }
         )
         result = df.select(expr)
@@ -545,18 +881,32 @@ class TestColumnSetResolve:
         """resolve() computes BDF column via recipe when not directly available."""
         df = pl.DataFrame(
             {
-                "Charging Capacity / Ah": [0.0, 0.0, 0.0],
-                "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                "Step Charging Capacity / Ah": [0.0, 0.0, 0.0],
+                "Step Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                "Current / A": [0.0, 0.0, 0.0],
+                "Test Time / s": [0.0, 1.0, 2.0],
+                "Step Count / 1": [0, 0, 0],
             }
         )
         column_set = ColumnDict(df.columns)
         resolved_expr = column_set.resolve(BDF.NET_CAPACITY_AH)
-        expected_expr = _capacity_from_ch_dch(
+        expected_expr = _global_net_from_step_ch_dch(
+            BDF.STEP_CHARGING_CAPACITY_AH,
+            BDF.STEP_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
+        )(
             {
-                BDF.CHARGING_CAPACITY_AH: pl.col("Charging Capacity / Ah"),
-                BDF.DISCHARGING_CAPACITY_AH: pl.col("Discharging Capacity / Ah"),
+                BDF.STEP_CHARGING_CAPACITY_AH: pl.col("Step Charging Capacity / Ah"),
+                BDF.STEP_DISCHARGING_CAPACITY_AH: pl.col(
+                    "Step Discharging Capacity / Ah"
+                ),
+                BDF.CURRENT_AMPERE: pl.col("Current / A"),
+                BDF.TEST_TIME_SECOND: pl.col("Test Time / s"),
+                BDF.STEP_COUNT: pl.col("Step Count / 1"),
             }
-        )
+        ).alias(BDF.NET_CAPACITY_AH.name)
         assert_frame_equal(df.select(resolved_expr), df.select(expected_expr))
 
 
@@ -689,20 +1039,26 @@ class TestColumnResolvability:
             (BDF.CURRENT_AMPERE, {BDFColumn("Current", "A")}),
             # BDF member from mixed available (BDF + plain Column)
             (BDF.CURRENT_AMPERE, {BDFColumn("Voltage", "V"), Column("Current", "A")}),
-            # recipe: standard-unit deps
+            # recipe: standard-unit deps (step-level, seam-corrected)
             (
                 BDF.NET_CAPACITY_AH,
                 {
-                    Column("Charging Capacity", "Ah"),
-                    Column("Discharging Capacity", "Ah"),
+                    Column("Step Charging Capacity", "Ah"),
+                    Column("Step Discharging Capacity", "Ah"),
+                    Column("Current", "A"),
+                    Column("Test Time", "s"),
+                    Column("Step Count", "1"),
                 },
             ),
-            # recipe: non-standard-unit deps (mAh)
+            # recipe: non-standard-unit deps (step-level mAh, seam-corrected)
             (
                 BDF.NET_CAPACITY_AH,
                 {
-                    Column("Charging Capacity", "mAh"),
-                    Column("Discharging Capacity", "mAh"),
+                    Column("Step Charging Capacity", "mAh"),
+                    Column("Step Discharging Capacity", "mAh"),
+                    Column("Current", "A"),
+                    Column("Test Time", "s"),
+                    Column("Step Count", "1"),
                 },
             ),
         ],
@@ -750,34 +1106,58 @@ class TestColumnResolvability:
             # BDF target, Ah deps → base unit (scale 1)
             (
                 BDF.NET_CAPACITY_AH,
-                {BDF.DISCHARGING_CAPACITY_AH, BDF.CHARGING_CAPACITY_AH},
+                {
+                    BDF.STEP_DISCHARGING_CAPACITY_AH,
+                    BDF.STEP_CHARGING_CAPACITY_AH,
+                    BDF.CURRENT_AMPERE,
+                    BDF.TEST_TIME_SECOND,
+                    BDF.STEP_COUNT,
+                },
                 1.0,
                 {
-                    "Charging Capacity / Ah": [0, 0, 0],
-                    "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                    "Step Charging Capacity / Ah": [0, 0, 0],
+                    "Step Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                    "Current / A": [0, 0, 0],
+                    "Test Time / s": [0, 1, 2],
+                    "Step Count / 1": [0, 0, 0],
                 },
             ),
             # Column("mAh") target, Ah deps → unit conversion on result
             (
                 Column("Net Capacity", "mAh"),
-                {BDF.DISCHARGING_CAPACITY_AH, BDF.CHARGING_CAPACITY_AH},
+                {
+                    BDF.STEP_DISCHARGING_CAPACITY_AH,
+                    BDF.STEP_CHARGING_CAPACITY_AH,
+                    BDF.CURRENT_AMPERE,
+                    BDF.TEST_TIME_SECOND,
+                    BDF.STEP_COUNT,
+                },
                 1000.0,
                 {
-                    "Charging Capacity / Ah": [0, 0, 0],
-                    "Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                    "Step Charging Capacity / Ah": [0, 0, 0],
+                    "Step Discharging Capacity / Ah": [0.1, 0.2, 0.3],
+                    "Current / A": [0, 0, 0],
+                    "Test Time / s": [0, 1, 2],
+                    "Step Count / 1": [0, 0, 0],
                 },
             ),
             # BDF target, kAh deps → unit conversion of inputs (scale 1000)
             (
                 BDF.NET_CAPACITY_AH,
                 {
-                    Column("Discharging Capacity", "kAh"),
-                    Column("Charging Capacity", "kAh"),
+                    Column("Step Discharging Capacity", "kAh"),
+                    Column("Step Charging Capacity", "kAh"),
+                    BDF.CURRENT_AMPERE,
+                    BDF.TEST_TIME_SECOND,
+                    BDF.STEP_COUNT,
                 },
                 1000.0,
                 {
-                    "Charging Capacity / kAh": [0, 0, 0],
-                    "Discharging Capacity / kAh": [0.1, 0.2, 0.3],
+                    "Step Charging Capacity / kAh": [0, 0, 0],
+                    "Step Discharging Capacity / kAh": [0.1, 0.2, 0.3],
+                    "Current / A": [0, 0, 0],
+                    "Test Time / s": [0, 1, 2],
+                    "Step Count / 1": [0, 0, 0],
                 },
             ),
         ],
@@ -848,14 +1228,20 @@ class TestColumnResolvability:
     def test_resolve_bdf_non_standard_unit_deps_outputs_base_unit(self) -> None:
         """Recipe with mAh deps still outputs Net Capacity / Ah (base unit)."""
         available = {
-            Column("Charging Capacity", "mAh"),
-            Column("Discharging Capacity", "mAh"),
+            Column("Step Charging Capacity", "mAh"),
+            Column("Step Discharging Capacity", "mAh"),
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+            BDF.STEP_COUNT,
         }
         expr = BDF.NET_CAPACITY_AH.resolve(available)
         df = pl.DataFrame(
             {
-                "Charging Capacity / mAh": [1000.0, 2000.0],
-                "Discharging Capacity / mAh": [0.0, 0.0],
+                "Step Charging Capacity / mAh": [1000.0, 2000.0],
+                "Step Discharging Capacity / mAh": [0.0, 0.0],
+                "Current / A": [0.0, 0.0],
+                "Test Time / s": [0.0, 1.0],
+                "Step Count / 1": [0, 0],
             }
         )
         result = df.select(expr)
@@ -981,21 +1367,39 @@ class TestColumnDictInit:
     @pytest.mark.parametrize(
         "available, column, expected",
         [
-            # recipe resolvable (standard units)
+            # recipe resolvable (standard units, step-level, seam-corrected)
             (
-                ["Charging Capacity / Ah", "Discharging Capacity / Ah"],
+                [
+                    "Step Charging Capacity / Ah",
+                    "Step Discharging Capacity / Ah",
+                    "Current / A",
+                    "Test Time / s",
+                    "Step Count / 1",
+                ],
                 "Net Capacity / Ah",
                 True,
             ),
-            # recipe resolvable (non-standard units)
+            # recipe resolvable (non-standard units, step-level, seam-corrected)
             (
-                ["Charging Capacity / mAh", "Discharging Capacity / mAh"],
+                [
+                    "Step Charging Capacity / mAh",
+                    "Step Discharging Capacity / mAh",
+                    "Current / A",
+                    "Test Time / s",
+                    "Step Count / 1",
+                ],
                 "Net Capacity / Ah",
                 True,
             ),
-            # recipe + unit conversion on result
+            # recipe + unit conversion on result (step-level, seam-corrected)
             (
-                ["Charging Capacity / mAh", "Discharging Capacity / mAh"],
+                [
+                    "Step Charging Capacity / mAh",
+                    "Step Discharging Capacity / mAh",
+                    "Current / A",
+                    "Test Time / s",
+                    "Step Count / 1",
+                ],
                 "Net Capacity / mAh",
                 True,
             ),
