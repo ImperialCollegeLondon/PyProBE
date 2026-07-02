@@ -15,7 +15,7 @@ Functions
 
 All calculations should be conducted inside methods. These are called by the user with
 any additional information required to perform the analysis, and always return 
-:class:`~pyprobe.result.Result` objects. We will use the 
+:class:`~pyprobe.result.Table` objects. We will use the 
 :func:`~pyprobe.analysis.differentiation.Differentiation.gradient` method as an example. 
 
 It is recommended to use pydantic's `validate_call <https://docs.pydantic.dev/latest/api/validate_call/#pydantic.validate_call_decorator.validate_call>`_ 
@@ -41,7 +41,7 @@ The steps to write a method are as follows:
    in the :mod:`pyprobe.analysis.base` module that process only numpy arrays. This
    keeps the mathematical underpinnings of PyProBE analysis methods readable, portable and
    testable.
-5. Create a result object to return. This is easily done with the :func:`~pyprobe.result.Result.clean_copy`
+5. Create a result object to return. This is easily done with the :func:`~pyprobe.result.Table.clean_copy`
    method, which provides a copy of the input data including the `info` attribute but
    replacing the data stored with a dataframe created from the provided dictionary.
 6. Add column definitions to the created result object.

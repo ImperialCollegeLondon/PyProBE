@@ -53,17 +53,17 @@ It is possible to filter data by a number of methods:
    index count is reset after applying every filter, i.e. the first discharge of any 
    cycle is accessed with :code:`discharge(0)`.
 
-RawData objects
----------------
-Any filter applied to a cell returns a :class:`~pyprobe.rawdata.RawData` object. This is
-a special type of :class:`~pyprobe.result.Result` object that is designed to hold cell
-experimental data processed by PyProBE. It therefore has all the attributes of the
-:class:`~pyprobe.result.Result` class. This includes:
+CyclingData objects
+-------------------
+Any filter applied to a cell returns a :class:`~pyprobe.rawdata.CyclingData` object.
+This is a special type of :class:`~pyprobe.result.Table` object that is designed to
+hold cell experimental data processed by PyProBE. It therefore has all the
+attributes of the :class:`~pyprobe.result.Table` class. This includes:
 
-* :attr:`~pyprobe.result.Result.data` attribute
+* :attr:`~pyprobe.result.Table.data` attribute
    a `polars Dataframe <https://docs.pola.rs/py-polars/html/reference/dataframe/index.html>`_
    containing the filtered data.
-* :attr:`~pyprobe.result.Result.info` attribute
+* :attr:`~pyprobe.result.Table.info` attribute
    the cell's `info` dictionary.
 
 To access the data, you can access the full polars Dataframe:
@@ -73,7 +73,7 @@ To access the data, you can access the full polars Dataframe:
    dataframe = cell.procedure['Procedure Name'].experiment('Experiment Name').cycle(1).step(1).data
 
 Or you can access individual columns as 1D numpy arrays by calling the 
-:func:`~pyprobe.result.Result.get` method:
+:func:`~pyprobe.result.Table.get` method:
 
 .. code-block:: python
 
@@ -87,6 +87,6 @@ variants:
    current_mA = cell.procedure['Procedure Name'].experiment('Experiment Name').get("Current [mA]")
 
 To retrieve more than one column, simply pass multiple column names to 
-:func:`~pyprobe.result.Result.get`.
+:func:`~pyprobe.result.Table.get`.
 
 .. footbibliography::

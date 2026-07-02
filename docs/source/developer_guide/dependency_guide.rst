@@ -20,7 +20,7 @@ Pydantic
 --------
 
 `Pydantic <https://docs.pydantic.dev/latest/>`_ is used across PyProBE for class and function input
-validation. :class:`~pyprobe.result.Result`, :class:`~pyprobe.rawdata.RawData` and 
+validation. :class:`~pyprobe.result.Table`, :class:`~pyprobe.rawdata.CyclingData` and 
 all of the classes in the :mod:`~pyprobe.filters` module inherit from Pydantic 
 `BaseModel <https://docs.pydantic.dev/latest/api/base_model/>`_. This means all of their
 inputs are type-validated automatically. 

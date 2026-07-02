@@ -5,7 +5,7 @@ Plotting
 
 PyProBE includes plotting methods that integrate directly with popular Python visualisation
 tools. Using a backend powered by `Pandas <https://pandas.pydata.org/>`_ and `matplotlib <https://matplotlib.org/>`_, you can call the 
-:func:`~pyprobe.result.Result.plot` method on any :class:`~pyprobe.result.Result` object.
+:func:`~pyprobe.result.Table.plot` method on any :class:`~pyprobe.result.Table` object.
 
 For more interactive plotting, you can use install the optional dependency `hvPlot <https://hvplot.holoviz.org/>`_:
 
@@ -13,10 +13,10 @@ For more interactive plotting, you can use install the optional dependency `hvPl
 
     pip install 'PyProBE-Data[hvplot]'
 
-This enables the :func:`~pyprobe.result.Result.hvplot` method which creates interactive plots for
+This enables the :func:`~pyprobe.result.Table.hvplot` method which creates interactive plots for
 visual inspection.
 
-The :func:`~pyprobe.result.Result.plot` and :func:`~pyprobe.result.Result.hvplot` 
+The :func:`~pyprobe.result.Table.plot` and :func:`~pyprobe.result.Table.hvplot` 
 interfaces are very similar. For example, the creation of a simple plot might look like:
 
 .. code-block:: python
@@ -31,7 +31,7 @@ interfaces are very similar. For example, the creation of a simple plot might lo
 
 
 PyProBE also includes a wrapper for the `Seaborn <https://seaborn.pydata.org/index.html>`_ 
-package. This allows you to pass any :class:`~pyprobe.result.Result` object to the `data`
+package. This allows you to pass any :class:`~pyprobe.result.Table` object to the `data`
 argument of any seaborn method:
 
 .. code-block:: python

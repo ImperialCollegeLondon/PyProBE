@@ -31,7 +31,7 @@ or for the performing differentiation using the :func:`pyprobe.analysis.differen
                                        x = "Capacity [Ah]",
                                        y = "Voltage [V]")
 
-Methods within analysis modules and classes always return :class:`~pyprobe.result.Result` objects, 
+Methods within analysis modules and classes always return :class:`~pyprobe.result.Table` objects,
 which allows direct integration with other PyProBE functionality such as plotting, and
 other methods.
 
