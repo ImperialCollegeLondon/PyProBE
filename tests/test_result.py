@@ -1,5 +1,6 @@
 """Tests for the result module - organized into logical test classes."""
 
+import warnings
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
@@ -8,11 +9,20 @@ import numpy.testing as np_testing
 import polars as pl
 import polars.testing as pl_testing
 import pytest
+from scipy.interpolate import (
+    Akima1DInterpolator,
+    CubicSpline,
+    PchipInterpolator,
+    make_smoothing_spline,
+)
 from scipy.io import loadmat
 from tzlocal import get_localzone
 
-from pyprobe.columns import BDF, Column
+from pyprobe.analysis import differentiation, smoothing
+from pyprobe.columns import BDF, Column, ColumnResolutionError
+from pyprobe.rawdata import CyclingData, RawData
 from pyprobe.result import (
+    Curve,
     Quantified,
     Result,
     Table,
@@ -1555,6 +1565,40 @@ def reduction_table():
     )
 
 
+@pytest.fixture
+def table():
+    """A Table with a monotonic time axis and a smooth voltage signal."""
+    time = np.linspace(0.0, 10.0, 51)
+    voltage = 3.0 + 0.1 * time
+    return Table(
+        lf=pl.DataFrame(
+            {
+                BDF.TEST_TIME_SECOND.name: time,
+                BDF.VOLTAGE_VOLT.name: voltage,
+            }
+        ).lazy(),
+        metadata={"cell_id": "test"},
+    )
+
+
+@pytest.fixture
+def cycling_data():
+    """A CyclingData object with net capacity and net energy columns."""
+    capacity = np.array([0.0, 1.0, 2.0, 1.5, 3.0])
+    return CyclingData(
+        lf=pl.DataFrame(
+            {
+                BDF.UNIX_TIME_SECOND.name: [0.0, 1.0, 2.0, 3.0, 4.0],
+                BDF.CURRENT_AMPERE.name: [1.0] * 5,
+                BDF.VOLTAGE_VOLT.name: [3.0] * 5,
+                BDF.NET_CAPACITY_AH.name: capacity,
+                BDF.NET_ENERGY_WH.name: capacity * 3.7,
+            }
+        ).lazy(),
+        metadata={},
+    )
+
+
 class TestTableReducibleColumns:
     """Tests for _reducible_columns on Table."""
 
@@ -1571,7 +1615,7 @@ class TestTableReducibleColumns:
 
 
 class TestTableReductions:
-    """Tests for delta, mean, maximum, minimum, start, end on Table."""
+    """Tests for delta, range, mean, maximum, minimum, start, and end on Table."""
 
     def test_delta_equals_last_minus_first(self, reduction_table: Table) -> None:
         """delta() returns last − first for each column."""
@@ -1617,6 +1661,49 @@ class TestTableReductions:
         result = reduction_table.delta("Net Capacity / Ah")
         assert result.data.columns == ["Net Capacity / Ah"]
 
+    def test_delta_accepts_column_objects(self) -> None:
+        """Reducer methods accept Column-like objects directly."""
+        table = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 1.0, 0.5, 1.5, 0.0]}))
+        result = table.delta(BDF.CUMULATIVE_CAPACITY_AH)
+        assert result.data.columns == [BDF.CUMULATIVE_CAPACITY_AH.name]
+        assert result.item() == pytest.approx(4.0)
+
+    def test_range_equals_absolute_delta_on_monotonic_discharge(
+        self, BreakinCycles_fixture
+    ) -> None:
+        """range() is non-negative while delta() retains discharge sign."""
+        discharge = BreakinCycles_fixture.cycle(0).discharge(0)
+        range_value = discharge.range("Net Capacity / Ah").item()
+        delta_value = discharge.delta("Net Capacity / Ah").item()
+        assert range_value == pytest.approx(abs(delta_value))
+        assert range_value >= 0
+        assert delta_value < 0
+
+    def test_range_over_full_cycle_is_non_zero_when_delta_is_near_zero(self) -> None:
+        """range() captures extent over a full cycle even when delta cancels out."""
+        table = Table(
+            lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 1.2, 0.1, 1.3, 0.0]}),
+        )
+        assert table.delta("Net Capacity / Ah").item() == pytest.approx(0.0)
+        assert table.range("Net Capacity / Ah").item() == pytest.approx(1.3)
+
+    def test_range_no_arg_reduces_all_reducible_columns(
+        self, reduction_table: Table
+    ) -> None:
+        """No-arg range includes reducible numeric columns only."""
+        result = reduction_table.range()
+        assert "Net Capacity / Ah" in result.data.columns
+        assert "Voltage / V" in result.data.columns
+        assert "Step Count / 1" in result.data.columns
+        assert "Step ID" not in result.data.columns
+        assert "Step Type" not in result.data.columns
+
+    def test_range_unknown_column_raises_column_resolution_error(self) -> None:
+        """Unknown columns still fail through the shared resolution path."""
+        table = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 1.0]}))
+        with pytest.raises(ColumnResolutionError, match="Cannot resolve"):
+            table.range("Missing / Ah")
+
     def test_mean_returns_correct_single_row(self, reduction_table: Table) -> None:
         """mean() returns column-wise mean as a single row."""
         result = reduction_table.mean("Net Capacity / Ah")
@@ -1635,14 +1722,14 @@ class TestTableReductions:
         result = reduction_table.minimum("Net Capacity / Ah")
         assert result.get("Net Capacity / Ah") == pytest.approx([0.0])
 
-    def test_start_returns_first_value(self, reduction_table: Table) -> None:
-        """start() returns the first value of each column."""
-        result = reduction_table.start("Net Capacity / Ah")
+    def test_first_returns_first_value(self, reduction_table: Table) -> None:
+        """first() returns the first value of each column."""
+        result = reduction_table.first("Net Capacity / Ah")
         assert result.get("Net Capacity / Ah") == pytest.approx([0.0])
 
-    def test_end_returns_last_value(self, reduction_table: Table) -> None:
-        """end() returns the last value of each column."""
-        result = reduction_table.end("Net Capacity / Ah")
+    def test_last_returns_last_value(self, reduction_table: Table) -> None:
+        """last() returns the last value of each column."""
+        result = reduction_table.last("Net Capacity / Ah")
         assert result.get("Net Capacity / Ah") == pytest.approx([1.5])
 
     def test_delta_result_is_gettable_via_get(self, reduction_table: Table) -> None:
@@ -1651,6 +1738,43 @@ class TestTableReductions:
         arr = result.get("Voltage / V")
         assert len(arr) == 1
         assert arr[0] == pytest.approx(3.8 - 3.0)
+
+    def test_item_returns_scalar_from_single_column_reduction(self) -> None:
+        """item() returns a float from a single-column reduction chain."""
+        table = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 1.0, 0.5, 1.5]}))
+        assert table.range("Net Capacity / Ah").item() == pytest.approx(1.5)
+
+    def test_item_returns_named_column_from_multi_column_reduction(
+        self, reduction_table: Table
+    ) -> None:
+        """item(column) extracts a named value from a multi-column reduction."""
+        assert reduction_table.delta().item("Net Capacity / Ah") == pytest.approx(1.5)
+
+    def test_item_rejects_multi_row_tables(self, reduction_table: Table) -> None:
+        """item() rejects tables that have more than one row."""
+        with pytest.raises(ValueError, match="exactly one row"):
+            reduction_table.item()
+
+    def test_item_rejects_ambiguous_column_selection(
+        self, reduction_table: Table
+    ) -> None:
+        """item() names the available columns when column is ambiguous."""
+        reduction = reduction_table.delta()
+        with pytest.raises(ValueError, match="Available columns:"):
+            reduction.item()
+
+    def test_item_raises_key_error_for_missing_column(
+        self, reduction_table: Table
+    ) -> None:
+        """item() requires an exact schema column name."""
+        with pytest.raises(KeyError, match="Missing / Ah"):
+            reduction_table.delta().item("Missing / Ah")
+
+    def test_item_raises_type_error_for_non_numeric_values(self) -> None:
+        """item() rejects non-numeric single-row values."""
+        table = Table(lf=pl.LazyFrame({"Label": ["charge"]}))
+        with pytest.raises(TypeError, match="numeric value"):
+            table.item()
 
 
 class TestTableSummary:
@@ -1671,6 +1795,7 @@ class TestTableSummary:
         assert result.data.shape[0] == 2
         assert "Step Count / 1" in result.data.columns
         assert "delta Net Capacity / Ah" in result.data.columns
+        assert "range Net Capacity / Ah" in result.data.columns
         assert "mean Net Capacity / Ah" in result.data.columns
 
     def test_summary_explicit_column_and_by(self) -> None:
@@ -1728,3 +1853,156 @@ class TestTableSummary:
         )
         result = t.summary("Cumulative Capacity / Ah")
         assert "delta Cumulative Capacity / Ah" in result.data.columns
+
+    def test_summary_includes_range_with_groupwise_extent(self) -> None:
+        """summary() includes range columns computed as max minus min."""
+        table = Table(
+            lf=pl.LazyFrame(
+                {
+                    "Net Capacity / Ah": [0.0, 0.4, 0.2, 1.0, 0.6],
+                    "Step Count / 1": pl.Series([0, 0, 0, 1, 1], dtype=pl.UInt64),
+                }
+            )
+        )
+        result = table.summary("Net Capacity / Ah")
+        assert result.data["range Net Capacity / Ah"].to_list() == pytest.approx(
+            [0.4, 0.4]
+        )
+
+
+class TestTableCurveOperations:
+    """Tests for flat Table operations that delegate to analysis helpers."""
+
+    @pytest.mark.parametrize(
+        "fit",
+        [PchipInterpolator, CubicSpline, Akima1DInterpolator, make_smoothing_spline],
+    )
+    def test_to_curve_returns_labelled_curve(self, table: Table, fit) -> None:
+        """Each scipy fit callable returns a labelled Curve."""
+        curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND, fit=fit)
+        assert isinstance(curve, Curve)
+        assert curve.columns.x.name == BDF.TEST_TIME_SECOND.name
+        assert curve.columns.y.name == BDF.VOLTAGE_VOLT.name
+
+    def test_to_curve_default_fit_is_pchip(self, table: Table) -> None:
+        """The default fit is PchipInterpolator, recorded in metadata."""
+        curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
+        assert isinstance(curve, Curve)
+        assert curve.metadata["curve_method"] == "PchipInterpolator"
+
+    def test_to_curve_interpolator_passes_through_points(self, table: Table) -> None:
+        """An interpolating curve passes through the supplied data points."""
+        x, y = table.get(BDF.TEST_TIME_SECOND.name, BDF.VOLTAGE_VOLT.name)
+        curve = table.to_curve(
+            BDF.VOLTAGE_VOLT,
+            x=BDF.TEST_TIME_SECOND,
+            fit=CubicSpline,
+        )
+        np.testing.assert_allclose(curve(x), y, atol=1e-6)
+
+    def test_to_curve_forwards_kwargs(self, table: Table) -> None:
+        """Extra kwargs are forwarded to the fit callable."""
+        curve = table.to_curve(
+            BDF.VOLTAGE_VOLT,
+            x=BDF.TEST_TIME_SECOND,
+            fit=CubicSpline,
+            bc_type="natural",
+        )
+        assert isinstance(curve, Curve)
+
+    def test_to_curve_non_conforming_fit_raises_typeerror(self, table: Table) -> None:
+        """A fit returning neither PPoly nor BSpline raises TypeError."""
+        with pytest.raises(TypeError):
+            table.to_curve(
+                BDF.VOLTAGE_VOLT,
+                x=BDF.TEST_TIME_SECOND,
+                fit=lambda x, y: "not a poly",
+            )
+
+    def test_savgol_returns_table_matching_standalone(self, table: Table) -> None:
+        """Savgol returns a Table equal to the standalone function."""
+        result = table.savgol(BDF.VOLTAGE_VOLT.name, window_length=5, polyorder=2)
+        expected = smoothing.savgol_smoothing(
+            table, BDF.VOLTAGE_VOLT.name, window_length=5, polyorder=2
+        )
+        assert isinstance(result, Table)
+        pl_testing.assert_frame_equal(result.data, expected.data)
+
+    def test_downsample_returns_table_matching_standalone(self, table: Table) -> None:
+        """Downsample returns a Table equal to the standalone function."""
+        result = table.downsample(BDF.TEST_TIME_SECOND.name, sampling_interval=1.0)
+        expected = smoothing.downsample(
+            table, BDF.TEST_TIME_SECOND.name, sampling_interval=1.0
+        )
+        assert isinstance(result, Table)
+        pl_testing.assert_frame_equal(result.data, expected.data)
+
+    def test_gradient_returns_table_matching_standalone(self, table: Table) -> None:
+        """Gradient returns a Table matching the standalone function."""
+        result = table.gradient(y=BDF.VOLTAGE_VOLT.name, x=BDF.TEST_TIME_SECOND.name)
+        expected = differentiation.gradient(
+            table, x=BDF.TEST_TIME_SECOND.name, y=BDF.VOLTAGE_VOLT.name
+        )
+        assert isinstance(result, Table)
+        pl_testing.assert_frame_equal(result.data, expected.data)
+
+
+class TestCyclingDataReductions:
+    """Generic reduction helpers cover the old CyclingData scalar quantities."""
+
+    def test_range_net_capacity_is_extent(self, cycling_data: CyclingData) -> None:
+        """range().item() returns max minus min of the net capacity."""
+        capacity = np.asarray(cycling_data.get(BDF.NET_CAPACITY_AH.name))
+        value = cycling_data.range(BDF.NET_CAPACITY_AH).item()
+        assert isinstance(value, float)
+        assert value == pytest.approx(capacity.max() - capacity.min())
+
+    def test_range_net_energy_is_extent(self, cycling_data: CyclingData) -> None:
+        """range().item() returns max minus min of the net energy."""
+        energy = np.asarray(cycling_data.get(BDF.NET_ENERGY_WH.name))
+        assert cycling_data.range(BDF.NET_ENERGY_WH).item() == pytest.approx(
+            energy.max() - energy.min()
+        )
+
+    def test_delta_capacity_throughput_uses_cumulative_recipe(
+        self, cycling_data: CyclingData
+    ) -> None:
+        """delta().item() returns the cumulative capacity throughput."""
+        capacity = cycling_data.get(BDF.NET_CAPACITY_AH.name)
+        assert cycling_data.delta(BDF.CUMULATIVE_CAPACITY_AH).item() == pytest.approx(
+            np.abs(np.diff(capacity)).sum()
+        )
+
+    def test_delta_energy_throughput_uses_cumulative_recipe(
+        self, cycling_data: CyclingData
+    ) -> None:
+        """delta().item() returns the cumulative energy throughput."""
+        energy = cycling_data.get(BDF.NET_ENERGY_WH.name)
+        assert cycling_data.delta(BDF.CUMULATIVE_ENERGY_WH).item() == pytest.approx(
+            np.abs(np.diff(energy)).sum()
+        )
+
+
+class TestRawDataAlias:
+    """RawData is a deprecated alias of CyclingData."""
+
+    def test_isinstance_holds_for_any_cycling_data(
+        self, cycling_data: CyclingData
+    ) -> None:
+        """isinstance(obj, RawData) is True for any CyclingData instance."""
+        assert isinstance(cycling_data, RawData)
+
+    def test_construction_warns(self, cycling_data: CyclingData) -> None:
+        """Constructing RawData directly emits a DeprecationWarning."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            RawData(lf=cycling_data.lf, metadata={})
+        assert any(issubclass(w.category, DeprecationWarning) for w in caught)
+
+    def test_capacity_matches_range_and_warns(self, cycling_data: CyclingData) -> None:
+        """The deprecated capacity property returns the generic range and warns."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            value = cycling_data.capacity
+        assert value == cycling_data.range(BDF.NET_CAPACITY_AH).item()
+        assert any(issubclass(w.category, DeprecationWarning) for w in caught)

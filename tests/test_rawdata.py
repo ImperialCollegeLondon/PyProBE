@@ -47,6 +47,12 @@ def test_capacity(BreakinCycles_fixture):
     assert np.isclose(capacity, 41.08565 / 1000)
 
 
+def test_range(BreakinCycles_fixture):
+    """Test the generic range reduction."""
+    charge = BreakinCycles_fixture.cycle(0).charge(0)
+    assert np.isclose(charge.range(BDF.NET_CAPACITY_AH).item(), 41.08565 / 1000)
+
+
 def test_set_SOC(BreakinCycles_fixture):
     """Test the set_soc method."""
     with_charge_specified = copy.deepcopy(BreakinCycles_fixture)

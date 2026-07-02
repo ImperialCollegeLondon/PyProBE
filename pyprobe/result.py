@@ -7,7 +7,7 @@ from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Literal, Protocol, Union, runtime_checkable
+from typing import Any, Literal, Protocol, Union, cast, runtime_checkable
 
 import numpy as np
 import pandas as pd
@@ -62,17 +62,31 @@ class Quantified(Protocol):
 
 
 def _derived_quantity(y_quantity: Column, x_quantity: Column) -> Column:
-    """Return the quantity representing ``d(y)/d(x)``.
+    """Return a parser-safe quantity representing ``d(y)/d(x)``.
 
     Args:
         y_quantity: The y-axis quantity descriptor.
         x_quantity: The x-axis quantity descriptor.
 
     Returns:
-        A dimensionless :class:`~pyprobe.columns.Column` labelled
-        ``d(<y>)/d(<x>)``.
+        A :class:`~pyprobe.columns.Column` labelled
+        ``d(<y>)_d(<x>) / <derived unit>`` with a unit derived from the ratio
+        of the input units.
     """
-    return Column(f"d({y_quantity.quantity})/d({x_quantity.quantity})", "1")
+    y_unit = y_quantity.unit or "1"
+    x_unit = x_quantity.unit or "1"
+
+    if y_unit == "1":
+        derived_unit = "1" if x_unit == "1" else f"{x_unit}^-1"
+    elif x_unit == "1":
+        derived_unit = y_unit
+    else:
+        derived_unit = f"{y_unit} {x_unit}^-1"
+
+    return Column(
+        f"d({y_quantity.quantity})_d({x_quantity.quantity})",
+        derived_unit,
+    )
 
 
 class Curve(Quantified, PPoly):
@@ -248,11 +262,12 @@ class Curve(Quantified, PPoly):
 
 _STAT_SUITE: dict[str, Callable[[pl.Expr], pl.Expr]] = {
     "delta": lambda e: e.last() - e.first(),
+    "range": lambda e: e.max() - e.min(),
     "mean": lambda e: e.mean(),
     "max": lambda e: e.max(),
     "min": lambda e: e.min(),
-    "start": lambda e: e.first(),
-    "end": lambda e: e.last(),
+    "first": lambda e: e.first(),
+    "last": lambda e: e.last(),
 }
 """Shared aggregation registry used by reduction methods and :meth:`~Table.summary`."""
 
@@ -486,7 +501,7 @@ class Table:
     def _aggregate(
         self,
         agg: Callable[[pl.Expr], pl.Expr],
-        *columns: str,
+        *columns: str | Column,
         by: str | None = None,
     ) -> "Table":
         """Aggregate columns using ``agg``, optionally grouped by a column.
@@ -511,12 +526,16 @@ class Table:
             ColumnResolutionError: If any column in ``columns`` cannot be
                 resolved.
         """
-        cols: list[str] = list(columns) if columns else self._reducible_columns()
+        cols: list[str | Column] = (
+            list(columns)
+            if columns
+            else cast("list[str | Column]", self._reducible_columns())
+        )
         if by is not None and by in cols:
             cols.remove(by)
         pre = [self.columns.resolve(c) for c in cols]
         lf = self.lf.with_columns(pre)
-        exprs = [agg(pl.col(c)).alias(c) for c in cols]
+        exprs = [agg(pl.col(str(c))).alias(str(c)) for c in cols]
         if by is not None:
             lf = lf.group_by(by, maintain_order=True).agg(exprs)
         else:
@@ -525,7 +544,7 @@ class Table:
             lf, metadata=self.metadata, column_definitions=self.column_definitions
         )
 
-    def delta(self, *columns: str) -> "Table":
+    def delta(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by computing ``last − first``.
 
         Args:
@@ -540,14 +559,30 @@ class Table:
 
         Examples:
             >>> import polars as pl
-            >>> from pyprobe.result import Table
+            >>> from pyprobe import Table
             >>> t = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 0.5, 1.0]}))
             >>> t.delta().get("Net Capacity / Ah")
             array([1.])
         """
         return self._aggregate(_STAT_SUITE["delta"], *columns)
 
-    def mean(self, *columns: str) -> "Table":
+    def range(self, *columns: str | Column) -> "Table":
+        """Collapse the frame to a single row by computing ``max - min``.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the non-negative range for each
+            column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        return self._aggregate(_STAT_SUITE["range"], *columns)
+
+    def mean(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by computing the column-wise mean.
 
         Args:
@@ -562,7 +597,7 @@ class Table:
         """
         return self._aggregate(_STAT_SUITE["mean"], *columns)
 
-    def maximum(self, *columns: str) -> "Table":
+    def maximum(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by computing the column-wise maximum.
 
         Args:
@@ -577,7 +612,7 @@ class Table:
         """
         return self._aggregate(_STAT_SUITE["max"], *columns)
 
-    def minimum(self, *columns: str) -> "Table":
+    def minimum(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by computing the column-wise minimum.
 
         Args:
@@ -592,7 +627,7 @@ class Table:
         """
         return self._aggregate(_STAT_SUITE["min"], *columns)
 
-    def start(self, *columns: str) -> "Table":
+    def first(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by taking the first value.
 
         Args:
@@ -605,9 +640,9 @@ class Table:
         Raises:
             ColumnResolutionError: If any named column cannot be resolved.
         """
-        return self._aggregate(_STAT_SUITE["start"], *columns)
+        return self._aggregate(_STAT_SUITE["first"], *columns)
 
-    def end(self, *columns: str) -> "Table":
+    def last(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by taking the last value.
 
         Args:
@@ -620,17 +655,62 @@ class Table:
         Raises:
             ColumnResolutionError: If any named column cannot be resolved.
         """
-        return self._aggregate(_STAT_SUITE["end"], *columns)
+        return self._aggregate(_STAT_SUITE["last"], *columns)
+
+    def item(self, column: str | None = None) -> float:
+        """Return a scalar from a single-row table.
+
+        This method triggers :meth:`collect`.
+
+        Args:
+            column: Exact schema column name to extract. When omitted, the
+                table must contain exactly one column.
+
+        Returns:
+            The selected scalar value as a ``float``.
+
+        Raises:
+            ValueError: If the table does not have exactly one row, or if
+                ``column`` is omitted and the table has multiple columns.
+            KeyError: If ``column`` is provided but does not exist.
+            TypeError: If the selected value is not numeric.
+        """
+        data = self.collect()
+        if data.height != 1:
+            raise ValueError(
+                f"item() requires exactly one row, found {data.height} rows."
+            )
+
+        if column is None:
+            if data.width != 1:
+                columns = ", ".join(data.columns)
+                raise ValueError(
+                    "item() requires exactly one column when column is omitted. "
+                    f"Available columns: {columns}"
+                )
+            column = data.columns[0]
+        elif column not in data.columns:
+            raise KeyError(column)
+
+        value = data[column][0]
+        if isinstance(value, bool) or not isinstance(
+            value,
+            (int, float, np.integer, np.floating),
+        ):
+            raise TypeError(
+                f"item() requires a numeric value, got {type(value).__name__}."
+            )
+        return float(value)
 
     def summary(
         self,
-        *columns: str,
+        *columns: str | Column,
         by: str = BDF.STEP_COUNT.name,
     ) -> "Table":
         """Grouped multi-statistic reduction of the frame.
 
-        Applies the full aggregation suite (``delta``, ``mean``, ``max``,
-        ``min``, ``start``, ``end``) to each column, grouped by ``by``.
+        Applies the full aggregation suite (``delta``, ``range``, ``mean``,
+        ``max``, ``min``, ``first``, ``last``) to each column, grouped by ``by``.
         Output columns are named ``"{stat} {column}"``, e.g.
         ``"delta Net Capacity / Ah"``. When ``Step ID`` is present in the
         frame it is retained as a per-group descriptor (``first()``), not
@@ -653,13 +733,17 @@ class Table:
         Raises:
             ColumnResolutionError: If any named column cannot be resolved.
         """
-        cols: list[str] = list(columns) if columns else self._reducible_columns()
+        cols: list[str | Column] = (
+            list(columns)
+            if columns
+            else cast("list[str | Column]", self._reducible_columns())
+        )
         if by in cols:
             cols.remove(by)
         pre = [self.columns.resolve(c) for c in cols]
         lf = self.lf.with_columns(pre)
         agg_exprs: list[pl.Expr] = [
-            fn(pl.col(c)).alias(f"{stat} {c}")
+            fn(pl.col(str(c))).alias(f"{stat} {c}")
             for c in cols
             for stat, fn in _STAT_SUITE.items()
         ]
@@ -690,7 +774,7 @@ class Table:
 
         Examples:
             >>> import polars as pl
-            >>> from pyprobe.result import Table
+            >>> from pyprobe import Table
             >>> r = Table(lf=pl.LazyFrame({"Current / A": [1.0]}))
             >>> r.columns.names
             ('Current / A',)
