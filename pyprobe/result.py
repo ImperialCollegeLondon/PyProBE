@@ -19,6 +19,7 @@ from scipy.interpolate import BSpline, PchipInterpolator, PPoly
 from scipy.io import savemat
 
 from pyprobe.columns import (
+    BDF,
     Column,
     ColumnDict,
     CurveColumns,
@@ -245,6 +246,17 @@ class Curve(Quantified, PPoly):
         )
 
 
+_STAT_SUITE: dict[str, Callable[[pl.Expr], pl.Expr]] = {
+    "delta": lambda e: e.last() - e.first(),
+    "mean": lambda e: e.mean(),
+    "max": lambda e: e.max(),
+    "min": lambda e: e.min(),
+    "start": lambda e: e.first(),
+    "end": lambda e: e.last(),
+}
+"""Shared aggregation registry used by reduction methods and :meth:`~Table.summary`."""
+
+
 class Table:
     """A class for holding any tabular data in PyProBE.
 
@@ -453,6 +465,211 @@ class Table:
         from pyprobe.analysis.differentiation import gradient
 
         return gradient(self, x=x, y=y)
+
+    def _reducible_columns(self) -> list[str]:
+        """Return all numeric column names from the frame schema, excluding Step ID.
+
+        Float and integer columns are included; ``Step ID`` and non-numeric columns
+        are excluded.
+
+        Returns:
+            List of column name strings eligible for reduction.
+        """
+        schema = self.lf.collect_schema()
+        excluded = {BDF.STEP_ID.name}
+        return [
+            name
+            for name, dtype in schema.items()
+            if name not in excluded and (dtype.is_float() or dtype.is_integer())
+        ]
+
+    def _aggregate(
+        self,
+        agg: Callable[[pl.Expr], pl.Expr],
+        *columns: str,
+        by: str | None = None,
+    ) -> "Table":
+        """Aggregate columns using ``agg``, optionally grouped by a column.
+
+        Pre-computes each named (or default reducible) column via
+        ``with_columns`` before aggregating, so windowed recipes such as
+        ``cumsum``/``diff`` are evaluated over the full slice rather than
+        per group.
+
+        Args:
+            agg: Aggregation function mapping a ``pl.Expr`` to a ``pl.Expr``
+                (e.g. ``lambda e: e.last() - e.first()``).
+            *columns: Column names to aggregate. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+            by: Column name to group by. If ``None``, a single-row result is
+                returned via ``select``.
+
+        Returns:
+            A new :class:`Table` carrying the original metadata.
+
+        Raises:
+            ColumnResolutionError: If any column in ``columns`` cannot be
+                resolved.
+        """
+        cols: list[str] = list(columns) if columns else self._reducible_columns()
+        if by is not None and by in cols:
+            cols.remove(by)
+        pre = [self.columns.resolve(c) for c in cols]
+        lf = self.lf.with_columns(pre)
+        exprs = [agg(pl.col(c)).alias(c) for c in cols]
+        if by is not None:
+            lf = lf.group_by(by, maintain_order=True).agg(exprs)
+        else:
+            lf = lf.select(exprs)
+        return Table(
+            lf, metadata=self.metadata, column_definitions=self.column_definitions
+        )
+
+    def delta(self, *columns: str) -> "Table":
+        """Collapse the frame to a single row by computing ``last − first``.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the signed delta for each column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+
+        Examples:
+            >>> import polars as pl
+            >>> from pyprobe.result import Table
+            >>> t = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 0.5, 1.0]}))
+            >>> t.delta().get("Net Capacity / Ah")
+            array([1.])
+        """
+        return self._aggregate(_STAT_SUITE["delta"], *columns)
+
+    def mean(self, *columns: str) -> "Table":
+        """Collapse the frame to a single row by computing the column-wise mean.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the mean for each column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        return self._aggregate(_STAT_SUITE["mean"], *columns)
+
+    def maximum(self, *columns: str) -> "Table":
+        """Collapse the frame to a single row by computing the column-wise maximum.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the maximum for each column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        return self._aggregate(_STAT_SUITE["max"], *columns)
+
+    def minimum(self, *columns: str) -> "Table":
+        """Collapse the frame to a single row by computing the column-wise minimum.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the minimum for each column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        return self._aggregate(_STAT_SUITE["min"], *columns)
+
+    def start(self, *columns: str) -> "Table":
+        """Collapse the frame to a single row by taking the first value.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the first value for each column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        return self._aggregate(_STAT_SUITE["start"], *columns)
+
+    def end(self, *columns: str) -> "Table":
+        """Collapse the frame to a single row by taking the last value.
+
+        Args:
+            *columns: Column names to reduce. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+
+        Returns:
+            A single-row :class:`Table` with the last value for each column.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        return self._aggregate(_STAT_SUITE["end"], *columns)
+
+    def summary(
+        self,
+        *columns: str,
+        by: str = BDF.STEP_COUNT.name,
+    ) -> "Table":
+        """Grouped multi-statistic reduction of the frame.
+
+        Applies the full aggregation suite (``delta``, ``mean``, ``max``,
+        ``min``, ``start``, ``end``) to each column, grouped by ``by``.
+        Output columns are named ``"{stat} {column}"``, e.g.
+        ``"delta Net Capacity / Ah"``. When ``Step ID`` is present in the
+        frame it is retained as a per-group descriptor (``first()``), not
+        reduced.
+
+        Pre-computes named columns via ``with_columns`` before grouping so
+        windowed recipes (e.g. ``Cumulative Capacity / Ah``) are materialised
+        over the full slice.
+
+        Args:
+            *columns: Column names to summarise. Defaults to all numeric
+                columns from :meth:`_reducible_columns` when omitted.
+            by: Column name to group by. Defaults to
+                ``"Step Count / 1"`` (:attr:`~pyprobe.columns.BDF.STEP_COUNT`).
+
+        Returns:
+            A :class:`Table` with one row per ``by`` group and one output
+            column per (statistic, input column) combination.
+
+        Raises:
+            ColumnResolutionError: If any named column cannot be resolved.
+        """
+        cols: list[str] = list(columns) if columns else self._reducible_columns()
+        if by in cols:
+            cols.remove(by)
+        pre = [self.columns.resolve(c) for c in cols]
+        lf = self.lf.with_columns(pre)
+        agg_exprs: list[pl.Expr] = [
+            fn(pl.col(c)).alias(f"{stat} {c}")
+            for c in cols
+            for stat, fn in _STAT_SUITE.items()
+        ]
+        step_id_name = BDF.STEP_ID.name
+        if step_id_name in self.lf.collect_schema().names():
+            agg_exprs.append(pl.col(step_id_name).first())
+        lf = lf.group_by(by, maintain_order=True).agg(agg_exprs)
+        return Table(
+            lf, metadata=self.metadata, column_definitions=self.column_definitions
+        )
 
     @property
     def columns(self) -> ColumnDict:

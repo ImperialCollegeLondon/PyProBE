@@ -1537,3 +1537,194 @@ class TestQuantifiedTraitAndAlias:
         """isinstance(table, Result) stays True for the deprecated alias."""
         table = Table(lf=pl.LazyFrame({"Current / A": [1.0]}))
         assert isinstance(table, Result)
+
+
+@pytest.fixture
+def reduction_table():
+    """Table with numeric, integer, and string columns for reduction tests."""
+    return Table(
+        lf=pl.LazyFrame(
+            {
+                "Net Capacity / Ah": [0.0, 1.0, 0.5, 1.5],
+                "Voltage / V": [3.0, 3.5, 4.0, 3.8],
+                "Step Count / 1": pl.Series([0, 1, 1, 2], dtype=pl.UInt64),
+                "Step ID": pl.Series([1, 1, 2, 2], dtype=pl.UInt64),
+                "Step Type": ["rest", "charge", "charge", "discharge"],
+            }
+        )
+    )
+
+
+class TestTableReducibleColumns:
+    """Tests for _reducible_columns on Table."""
+
+    def test_reducible_columns_excludes_step_id_and_strings(
+        self, reduction_table: Table
+    ) -> None:
+        """Numeric columns included; Step ID and string columns excluded."""
+        cols = reduction_table._reducible_columns()
+        assert "Net Capacity / Ah" in cols
+        assert "Voltage / V" in cols
+        assert "Step Count / 1" in cols
+        assert "Step ID" not in cols
+        assert "Step Type" not in cols
+
+
+class TestTableReductions:
+    """Tests for delta, mean, maximum, minimum, start, end on Table."""
+
+    def test_delta_equals_last_minus_first(self, reduction_table: Table) -> None:
+        """delta() returns last − first for each column."""
+        result = reduction_table.delta()
+        assert result.data.shape[0] == 1
+        assert result.get("Net Capacity / Ah") == pytest.approx([1.5 - 0.0])
+
+    def test_delta_chains_after_filter(self, BreakinCycles_fixture) -> None:
+        """delta() on a filtered discharge slice returns signed net capacity delta."""
+        discharge = BreakinCycles_fixture.cycle(0).discharge(0)
+        result = discharge.delta("Net Capacity / Ah")
+        assert result.data.shape[0] == 1
+        cap = result.get("Net Capacity / Ah")
+        assert cap[0] < 0
+
+    def test_delta_no_arg_excludes_step_id_and_step_type(
+        self, reduction_table: Table
+    ) -> None:
+        """No-arg delta includes Step Count but excludes Step ID and Step Type."""
+        result = reduction_table.delta()
+        assert "Step Count / 1" in result.data.columns
+        assert "Step ID" not in result.data.columns
+        assert "Step Type" not in result.data.columns
+
+    def test_delta_named_cumulative_column_materialises_recipe(self) -> None:
+        """delta('Cumulative Capacity / Ah') materialises recipe before reducing."""
+        t = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 1.0, 0.5, 1.5, 0.0]}))
+        result = t.delta("Cumulative Capacity / Ah")
+        assert result.data.columns == ["Cumulative Capacity / Ah"]
+        assert result.get("Cumulative Capacity / Ah") == pytest.approx([4.0])
+
+    def test_delta_named_column_with_unit_conversion(self) -> None:
+        """delta('Cumulative Capacity / mAh') applies unit conversion."""
+        t = Table(lf=pl.LazyFrame({"Net Capacity / Ah": [0.0, 1.0, 0.5, 1.5, 0.0]}))
+        result = t.delta("Cumulative Capacity / mAh")
+        assert result.data.columns == ["Cumulative Capacity / mAh"]
+        assert result.get("Cumulative Capacity / mAh") == pytest.approx([4000.0])
+
+    def test_delta_named_column_only_that_column_in_result(
+        self, reduction_table: Table
+    ) -> None:
+        """Explicit column arg produces result with only that column."""
+        result = reduction_table.delta("Net Capacity / Ah")
+        assert result.data.columns == ["Net Capacity / Ah"]
+
+    def test_mean_returns_correct_single_row(self, reduction_table: Table) -> None:
+        """mean() returns column-wise mean as a single row."""
+        result = reduction_table.mean("Net Capacity / Ah")
+        assert result.data.shape[0] == 1
+        assert result.get("Net Capacity / Ah") == pytest.approx(
+            [np.mean([0.0, 1.0, 0.5, 1.5])]
+        )
+
+    def test_maximum_returns_correct_single_row(self, reduction_table: Table) -> None:
+        """maximum() returns column-wise maximum as a single row."""
+        result = reduction_table.maximum("Net Capacity / Ah")
+        assert result.get("Net Capacity / Ah") == pytest.approx([1.5])
+
+    def test_minimum_returns_correct_single_row(self, reduction_table: Table) -> None:
+        """minimum() returns column-wise minimum as a single row."""
+        result = reduction_table.minimum("Net Capacity / Ah")
+        assert result.get("Net Capacity / Ah") == pytest.approx([0.0])
+
+    def test_start_returns_first_value(self, reduction_table: Table) -> None:
+        """start() returns the first value of each column."""
+        result = reduction_table.start("Net Capacity / Ah")
+        assert result.get("Net Capacity / Ah") == pytest.approx([0.0])
+
+    def test_end_returns_last_value(self, reduction_table: Table) -> None:
+        """end() returns the last value of each column."""
+        result = reduction_table.end("Net Capacity / Ah")
+        assert result.get("Net Capacity / Ah") == pytest.approx([1.5])
+
+    def test_delta_result_is_gettable_via_get(self, reduction_table: Table) -> None:
+        """Single-row result of delta flows through get() as a length-1 array."""
+        result = reduction_table.delta("Voltage / V")
+        arr = result.get("Voltage / V")
+        assert len(arr) == 1
+        assert arr[0] == pytest.approx(3.8 - 3.0)
+
+
+class TestTableSummary:
+    """Tests for Table.summary grouped multi-statistic reduction."""
+
+    def test_summary_groups_by_step_count(self) -> None:
+        """summary() groups by Step Count / 1 by default, one row per group."""
+        t = Table(
+            lf=pl.LazyFrame(
+                {
+                    "Net Capacity / Ah": [0.0, 0.5, 0.5, 1.0],
+                    "Voltage / V": [3.0, 3.5, 4.0, 3.8],
+                    "Step Count / 1": pl.Series([0, 0, 1, 1], dtype=pl.UInt64),
+                }
+            )
+        )
+        result = t.summary()
+        assert result.data.shape[0] == 2
+        assert "Step Count / 1" in result.data.columns
+        assert "delta Net Capacity / Ah" in result.data.columns
+        assert "mean Net Capacity / Ah" in result.data.columns
+
+    def test_summary_explicit_column_and_by(self) -> None:
+        """Summary with explicit column and by='Cycle Count / 1'."""
+        t = Table(
+            lf=pl.LazyFrame(
+                {
+                    "Net Capacity / Ah": [0.0, 1.0, 0.5, 2.0],
+                    "Cycle Count / 1": pl.Series([0, 0, 1, 1], dtype=pl.UInt64),
+                }
+            )
+        )
+        result = t.summary("Net Capacity / Ah", by="Cycle Count / 1")
+        assert result.data.shape[0] == 2
+        assert "delta Net Capacity / Ah" in result.data.columns
+
+    def test_summary_capacity_delta_is_last_minus_first(self) -> None:
+        """Capacity delta in summary equals last − first, not max − min."""
+        t = Table(
+            lf=pl.LazyFrame(
+                {
+                    "Net Capacity / Ah": [0.0, 1.0, 0.8],
+                    "Step Count / 1": pl.Series([0, 0, 0], dtype=pl.UInt64),
+                }
+            )
+        )
+        result = t.summary("Net Capacity / Ah")
+        delta_val = result.data["delta Net Capacity / Ah"][0]
+        assert delta_val == pytest.approx(0.8)
+
+    def test_summary_retains_step_id_as_descriptor(self) -> None:
+        """Step ID appears in summary result as first value per group."""
+        t = Table(
+            lf=pl.LazyFrame(
+                {
+                    "Net Capacity / Ah": [0.0, 1.0, 0.5, 2.0],
+                    "Step Count / 1": pl.Series([0, 0, 1, 1], dtype=pl.UInt64),
+                    "Step ID": pl.Series([1, 1, 2, 2], dtype=pl.UInt64),
+                }
+            )
+        )
+        result = t.summary("Net Capacity / Ah")
+        assert "Step ID" in result.data.columns
+        assert "delta Step ID" not in result.data.columns
+
+    def test_summary_throughput_from_cumulative_recipe(self) -> None:
+        """Summary with Cumulative Capacity materialises recipe before grouping."""
+        t = Table(
+            lf=pl.LazyFrame(
+                {
+                    "Net Capacity / Ah": [0.0, 1.0, 0.5, 1.5],
+                    "Step Count / 1": pl.Series([0, 0, 1, 1], dtype=pl.UInt64),
+                }
+            )
+        )
+        result = t.summary("Cumulative Capacity / Ah")
+        assert "delta Cumulative Capacity / Ah" in result.data.columns
