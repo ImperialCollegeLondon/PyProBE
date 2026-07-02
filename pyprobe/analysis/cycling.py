@@ -6,7 +6,7 @@ from pyprobe.analysis.utils import build_result, validate_columns
 from pyprobe.columns import BDF
 from pyprobe.filters import get_cycle_column
 from pyprobe.pyprobe_types import FilterToCycleType
-from pyprobe.result import Table
+from pyprobe.result import _STAT_SUITE, Table
 
 
 def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Table:
@@ -23,74 +23,53 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Tabl
     Raises:
         ColumnResolutionError: If required columns cannot be resolved from `input_data`.
     """
-    validate_columns(input_data, BDF.NET_CAPACITY_AH, BDF.TEST_TIME_SECOND)
-    input_data.lf = get_cycle_column(input_data)
+    validate_columns(input_data, BDF.NET_CAPACITY_AH, BDF.TEST_TIME_SECOND, BDF.STEP_ID)
 
-    cumulative_expr = input_data.columns.resolve(BDF.CUMULATIVE_CAPACITY_AH)
-    input_data.lf = input_data.lf.with_columns(cumulative_expr)
-    lf_capacity_throughput = (
-        input_data.lf.group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
-        .agg(pl.col(BDF.CUMULATIVE_CAPACITY_AH.name).first())
-        .rename({BDF.CUMULATIVE_CAPACITY_AH.name: "Capacity Throughput / Ah"})
+    cycle_lf = Table(
+        lf=get_cycle_column(input_data),
+        metadata=input_data.metadata,
+        column_definitions=input_data.column_definitions,
     )
-    time_expr = input_data.columns.resolve(BDF.TEST_TIME_SECOND)
-    lf_time = (
-        input_data.lf.with_columns(time_expr)
-        .group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
-        .agg(pl.col(BDF.TEST_TIME_SECOND.name).first().alias(BDF.TEST_TIME_SECOND.name))
-    )
-
-    lf_charge = (
-        input_data.charge()
-        .lf.group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
-        .agg(
-            pl.col(BDF.NET_CAPACITY_AH.name).max()
-            - pl.col(BDF.NET_CAPACITY_AH.name).min()
-        )
-        .rename({BDF.NET_CAPACITY_AH.name: "Charge Capacity / Ah"})
-    )
-    lf_discharge = (
-        input_data.discharge()
-        .lf.group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
-        .agg(
-            pl.col(BDF.NET_CAPACITY_AH.name).max()
-            - pl.col(BDF.NET_CAPACITY_AH.name).min()
-        )
-        .rename({BDF.NET_CAPACITY_AH.name: "Discharge Capacity / Ah"})
-    )
-
+    resolved_exprs = [
+        cycle_lf.columns.resolve(BDF.CUMULATIVE_CAPACITY_AH),
+        cycle_lf.columns.resolve(BDF.TEST_TIME_SECOND),
+        cycle_lf.columns.resolve(BDF.CYCLE_CHARGING_CAPACITY_AH),
+        cycle_lf.columns.resolve(BDF.CYCLE_DISCHARGING_CAPACITY_AH),
+    ]
     lf = (
-        lf_capacity_throughput.join(
-            lf_time, on=BDF.CYCLE_COUNT.name, how="outer_coalesce"
+        cycle_lf.lf.with_columns(resolved_exprs)
+        .group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
+        .agg(
+            pl.col(BDF.CUMULATIVE_CAPACITY_AH.name)
+            .first()
+            .alias("Capacity Throughput / Ah"),
+            pl.col(BDF.TEST_TIME_SECOND.name).first().alias(BDF.TEST_TIME_SECOND.name),
+            _STAT_SUITE["delta"](pl.col(BDF.CYCLE_CHARGING_CAPACITY_AH.name)).alias(
+                "Charge Capacity / Ah"
+            ),
+            _STAT_SUITE["delta"](pl.col(BDF.CYCLE_DISCHARGING_CAPACITY_AH.name)).alias(
+                "Discharge Capacity / Ah"
+            ),
         )
-        .join(lf_charge, on=BDF.CYCLE_COUNT.name, how="outer_coalesce")
-        .join(lf_discharge, on=BDF.CYCLE_COUNT.name, how="outer_coalesce")
-    ).sort(BDF.CYCLE_COUNT.name)
+        .sort(BDF.CYCLE_COUNT.name)
+    )
 
+    coulombic_efficiency_expr = (
+        pl.col("Discharge Capacity / Ah") / pl.col("Charge Capacity / Ah").shift()
+        if dchg_before_chg
+        else pl.col("Discharge Capacity / Ah").shift() / pl.col("Charge Capacity / Ah")
+    )
     lf = lf.with_columns(
         (pl.col("Charge Capacity / Ah") / pl.first("Charge Capacity / Ah") * 100).alias(
             "SOH Charge / %",
         ),
-    )
-    lf = lf.with_columns(
         (
             pl.col("Discharge Capacity / Ah")
             / pl.first("Discharge Capacity / Ah")
             * 100
         ).alias("SOH Discharge / %"),
+        coulombic_efficiency_expr.alias("Coulombic Efficiency"),
     )
-
-    if dchg_before_chg:
-        lf = lf.with_columns(
-            (
-                pl.col("Discharge Capacity / Ah")
-                / pl.col("Charge Capacity / Ah").shift()
-            ).alias("Coulombic Efficiency"),
-        )
-    else:
-        (
-            pl.col("Discharge Capacity / Ah").shift() / pl.col("Charge Capacity / Ah")
-        ).alias("Coulombic Efficiency")
     column_definitions = {
         "Cycle": "The cycle number.",
         "Capacity Throughput": "The cumulative capacity throughput.",
