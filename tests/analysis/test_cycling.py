@@ -2,37 +2,8 @@
 
 import math
 
-import pytest
-
 from pyprobe.analysis import cycling
-from pyprobe.filters import Experiment
 from pyprobe.result import Result
-
-
-@pytest.fixture
-def Cycling_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
-    """Return a Cycling instance."""
-    input_data = Experiment(
-        lf=lazyframe_fixture,
-        metadata=info_fixture,
-        step_descriptions=step_descriptions_fixture,
-        cycle_info=[],
-    )
-    return input_data
-
-
-def test_set_capacity_throughput(Cycling_fixture):
-    """Test the set_capacity_throughput method."""
-    result = cycling._create_capacity_throughput(
-        Cycling_fixture.lf,
-    ).collect()
-    assert "Capacity Throughput / Ah" in result.columns
-    assert result["Capacity Throughput / Ah"].head(1)[0] == 0
-    assert math.isclose(
-        result["Capacity Throughput / Ah"].tail(1)[0],
-        0.472115,
-        rel_tol=1e-5,
-    )
 
 
 def test_summary(BreakinCycles_fixture):

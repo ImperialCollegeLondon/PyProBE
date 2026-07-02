@@ -9,30 +9,6 @@ from pyprobe.pyprobe_types import FilterToCycleType
 from pyprobe.result import Table
 
 
-def _create_capacity_throughput(
-    data: pl.DataFrame | pl.LazyFrame,
-) -> pl.DataFrame | pl.LazyFrame:
-    """Add a column to the input data with the cumulative capacity throughput.
-
-    Args:
-        data: The input data.
-
-    Returns:
-        pl.DataFrame: The input data with the cumulative capacity throughput.
-    """
-    return data.with_columns(
-        [
-            (
-                pl.col(BDF.NET_CAPACITY_AH.name)
-                .diff()
-                .fill_null(strategy="zero")
-                .abs()
-                .cum_sum()
-            ).alias("Capacity Throughput / Ah"),
-        ],
-    )
-
-
 def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Table:
     """Calculate the state of health of the battery.
 
@@ -50,11 +26,13 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Tabl
     validate_columns(input_data, BDF.NET_CAPACITY_AH, BDF.TEST_TIME_SECOND)
     input_data.lf = get_cycle_column(input_data)
 
-    input_data.lf = _create_capacity_throughput(input_data.lf)
-    lf_capacity_throughput = input_data.lf.group_by(
-        BDF.CYCLE_COUNT.name,
-        maintain_order=True,
-    ).agg(pl.col("Capacity Throughput / Ah").first())
+    cumulative_expr = input_data.columns.resolve(BDF.CUMULATIVE_CAPACITY_AH)
+    input_data.lf = input_data.lf.with_columns(cumulative_expr)
+    lf_capacity_throughput = (
+        input_data.lf.group_by(BDF.CYCLE_COUNT.name, maintain_order=True)
+        .agg(pl.col(BDF.CUMULATIVE_CAPACITY_AH.name).first())
+        .rename({BDF.CUMULATIVE_CAPACITY_AH.name: "Capacity Throughput / Ah"})
+    )
     time_expr = input_data.columns.resolve(BDF.TEST_TIME_SECOND)
     lf_time = (
         input_data.lf.with_columns(time_expr)
