@@ -231,6 +231,8 @@ class MetadataManager:
                 and pf.metadata.row_group(0).num_columns > 0
                 else "snappy"
             )
+            if original_compression == "uncompressed":
+                original_compression = "none"
             table = pf.read()
             existing: dict[bytes, bytes] = table.schema.metadata or {}
             combined_meta = {
