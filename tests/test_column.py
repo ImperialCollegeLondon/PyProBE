@@ -534,6 +534,88 @@ class TestTrapzIntegralRecipe:
         assert result.to_list() == pytest.approx([0.0, 1.0])
 
 
+class TestChargeDischargeFromNet:
+    """Tests for the from-net charging/discharging component recipes."""
+
+    @pytest.mark.parametrize(
+        "target,expected",
+        [
+            (BDF.CHARGING_CAPACITY_AH, [0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0]),
+            (BDF.DISCHARGING_CAPACITY_AH, [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0]),
+        ],
+    )
+    def test_global_component_from_net_only_resolves(
+        self, target: BDF, expected: list[float]
+    ) -> None:
+        """Global charging/discharging resolve from net capacity alone."""
+        cs = ColumnDict(["Net Capacity / Ah"])
+        df = pl.DataFrame(
+            {"Net Capacity / Ah": [0.0, 1.0, 2.0, 3.0, 3.0, 1.0, -1.0, -3.0]}
+        )
+        result = df.select(cs.resolve(target))[target.name]
+        assert result.to_list() == pytest.approx(expected)
+
+    @pytest.mark.parametrize(
+        "target", [BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH]
+    )
+    def test_global_energy_component_from_net_only_resolves(self, target: BDF) -> None:
+        """Global charging/discharging energy resolve from net energy alone."""
+        cs = ColumnDict(["Net Energy / Wh"])
+        assert cs.can_resolve(target) is True
+
+    @pytest.mark.parametrize(
+        "target,expected",
+        [
+            (BDF.STEP_CHARGING_CAPACITY_AH, [0.0, 0.0, 0.0, 0.0, 1.0, 2.0]),
+            (BDF.STEP_DISCHARGING_CAPACITY_AH, [0.0, 2.0, 4.0, 0.0, 0.0, 0.0]),
+        ],
+    )
+    def test_step_component_from_scoped_net_ignores_reset_jump(
+        self, target: BDF, expected: list[float]
+    ) -> None:
+        """The step-boundary reset of a scoped net creates no spurious charge.
+
+        Step net jumps from -4 back to 0 at the boundary; a diff that is not
+        scoped to the step key would book that +4 jump as charging.
+        """
+        cs = ColumnDict(["Step Net Capacity / Ah", "Step Count / 1"])
+        df = pl.DataFrame(
+            {
+                "Step Net Capacity / Ah": [0.0, -2.0, -4.0, 0.0, 1.0, 2.0],
+                "Step Count / 1": [0, 0, 0, 1, 1, 1],
+            }
+        )
+        result = df.select(cs.resolve(target))[target.name]
+        assert result.to_list() == pytest.approx(expected)
+
+    def test_resolution_prefers_recipe_with_recorded_inputs(self) -> None:
+        """A recipe fed by recorded columns outranks a derivation chain.
+
+        With zero current, the trapz-of-current chain behind the scope_reset
+        recipe would yield all zeros; the recorded step net must win.
+        """
+        cs = ColumnDict(
+            [
+                "Step Net Capacity / Ah",
+                "Step Count / 1",
+                "Current / A",
+                "Test Time / s",
+            ]
+        )
+        df = pl.DataFrame(
+            {
+                "Step Net Capacity / Ah": [0.0, 1.0, 2.0],
+                "Step Count / 1": [0, 0, 0],
+                "Current / A": [0.0, 0.0, 0.0],
+                "Test Time / s": [0.0, 3600.0, 7200.0],
+            }
+        )
+        result = df.select(cs.resolve(BDF.STEP_CHARGING_CAPACITY_AH))[
+            BDF.STEP_CHARGING_CAPACITY_AH.name
+        ]
+        assert result.to_list() == pytest.approx([0.0, 1.0, 2.0])
+
+
 class TestSplitQuantityUnit:
     """Tests for _split_quantity_unit helper."""
 
