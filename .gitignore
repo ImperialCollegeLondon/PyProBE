@@ -145,6 +145,9 @@ tests/sample_data/test_data.csv
 *claude*
 *gemini*
 *agents*
+*agent*
+*codex*
+.agent/
 openspec
 
 # Git/GitHub
