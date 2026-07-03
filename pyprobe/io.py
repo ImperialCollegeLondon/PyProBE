@@ -38,7 +38,7 @@ from pyprobe.columns import (
 if TYPE_CHECKING:
     import pandas as pd
 
-_PARQUET_METADATA_KEY: bytes = b"bdx_metadata"
+_PARQUET_METADATA_KEY: bytes = b"bdf_metadata"
 """Key used to store user metadata in Parquet footer."""
 
 _REQUIRED_BDF_COLUMNS: list[BDF] = [
@@ -422,8 +422,8 @@ def is_pyprobe_file(path: Path | str) -> bool:
 
         from pyprobe.io import is_pyprobe_file
 
-        if is_pyprobe_file("data.bdx.parquet"):
-            procedure = Procedure.load("data.bdx.parquet")
+        if is_pyprobe_file("data.bdf.parquet"):
+            procedure = Procedure.load("data.bdf.parquet")
     """
     file_path = Path(path)
     if not file_path.exists():
@@ -514,14 +514,14 @@ def process_cycler(
 
     Reads one or more raw cycler files (via a file path or glob pattern),
     normalises columns to BDF standard using ``batterydf``, and writes the
-    result to a ``.bdx.parquet`` file.
+    result to a ``.bdf.parquet`` file.
 
     Args:
         source: Path to the raw cycler file, or a glob pattern matching multiple
             files (e.g. ``"data/session_*.csv"``).
         output_path: Full destination path for the output Parquet file (must end
             with ``.parquet``). When ``None``, defaults to
-            ``<source_parent>/<stem>.bdx.parquet`` where *stem* comes from
+            ``<source_parent>/<stem>.bdf.parquet`` where *stem* comes from
             *source* (or the first sorted glob match for glob patterns).
         plugin: BatteryDF plugin name for reading. ``None`` triggers auto-detection.
         overwrite_data: When ``False`` (default), return the cached Parquet path
@@ -541,7 +541,7 @@ def process_cycler(
             raises inside ``bdf``).
 
     Returns:
-        Path to the written ``.bdx.parquet`` file.
+        Path to the written ``.bdf.parquet`` file.
 
     Raises:
         FileNotFoundError: If *source* is a glob pattern that matches no files.
@@ -554,13 +554,13 @@ def process_cycler(
             from the source data.
 
     Example:
-        Basic usage (writes ``data.bdx.parquet`` next to source)::
+        Basic usage (writes ``data.bdf.parquet`` next to source)::
 
             path = process_cycler("data.xlsx")
 
         Output to a specific path::
 
-            path = process_cycler("data.xlsx", output_path="cache/data.bdx.parquet")
+            path = process_cycler("data.xlsx", output_path="cache/data.bdf.parquet")
 
         Add a column not auto-resolved by ``bdf``::
 
@@ -586,7 +586,7 @@ def process_cycler(
         candidate = Path(output_path)
         if candidate.suffix == "":
             # Treat as a directory; auto-generate the filename within it.
-            resolved_output_path = candidate / (first_file.stem + ".bdx.parquet")
+            resolved_output_path = candidate / (first_file.stem + ".bdf.parquet")
         elif candidate.suffix != ".parquet":
             raise ValueError(
                 f"output_path must end with '.parquet', got: '{output_path}'"
@@ -594,7 +594,7 @@ def process_cycler(
         else:
             resolved_output_path = candidate
     else:
-        resolved_output_path = first_file.parent / (first_file.stem + ".bdx.parquet")
+        resolved_output_path = first_file.parent / (first_file.stem + ".bdf.parquet")
 
     if not overwrite_data:
         cached = _handle_existing_cached_file(resolved_output_path)
@@ -659,7 +659,7 @@ def read_metadata(
 ) -> dict[str, Any]:
     r"""Read metadata from a Parquet file's footer or a ``.json`` sidecar.
 
-    Checks both the Parquet footer (stored under \"bdx_metadata\") and a ``.json``
+    Checks both the Parquet footer (stored under \"bdf_metadata\") and a ``.json``
     sidecar (derived from *path* by replacing the ``.parquet`` suffix with
     ``.json``). When both sources contain metadata, *prefer* controls which is
     returned. When only one source has metadata, that source is returned
@@ -685,11 +685,11 @@ def read_metadata(
             from pyprobe.io import read_metadata
 
             # Prefer Parquet footer metadata (default)
-            meta = read_metadata("data.bdx.parquet")
+            meta = read_metadata("data.bdf.parquet")
             print(meta["cell_id"])  # 'C001'
 
             # Or prefer JSON sidecar if both exist
-            meta = read_metadata("data.bdx.parquet", prefer="json")
+            meta = read_metadata("data.bdf.parquet", prefer="json")
     """
     if prefer not in ("parquet", "json"):
         raise ValueError(f"prefer must be 'parquet' or 'json', got '{prefer}'.")

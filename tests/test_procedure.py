@@ -53,7 +53,7 @@ def test_init(procedure_fixture, step_descriptions_fixture):
 def test_experiment_no_description():
     """Test creating a procedure with no step descriptions."""
     procedure = Procedure.load(
-        "tests/sample_data/neware/sample_data_neware.bdx.parquet",
+        "tests/sample_data/neware/sample_data_neware.bdf.parquet",
         readme_path="tests/sample_data/neware/README_total_steps.yaml",
     )
     assert np.all(np.isnan(procedure.step_descriptions["Description"]))
@@ -80,7 +80,7 @@ class TestProcedureLoad:
             }
         )
 
-        parquet_path = tmp_path / "data.bdx.parquet"
+        parquet_path = tmp_path / "data.bdf.parquet"
         df.write_parquet(parquet_path)
 
         readme_path = tmp_path / "README.yaml"
@@ -103,7 +103,7 @@ class TestProcedureLoad:
             }
         )
 
-        parquet_path = tmp_path / "data.bdx.parquet"
+        parquet_path = tmp_path / "data.bdf.parquet"
         df.write_parquet(parquet_path)
 
         procedure = Procedure.load(parquet_path, readme_path=None)
@@ -123,7 +123,7 @@ class TestProcedureLoad:
             }
         )
 
-        parquet_path = tmp_path / "data.bdx.parquet"
+        parquet_path = tmp_path / "data.bdf.parquet"
         df.write_parquet(parquet_path)
 
         readme_path = tmp_path / "custom_readme.yaml"
@@ -137,7 +137,7 @@ class TestProcedureLoad:
         """Procedure.load raises FileNotFoundError if parquet file doesn't exist."""
         from pyprobe.filters import Procedure
 
-        missing_path = tmp_path / "missing.bdx.parquet"
+        missing_path = tmp_path / "missing.bdf.parquet"
 
         with pytest.raises(FileNotFoundError):
             Procedure.load(missing_path)
@@ -151,7 +151,7 @@ class TestProcedureLoad:
                 "Voltage / V": [3.7, 3.6, 3.8],
             }
         )
-        parquet_path = tmp_path / "data.bdx.parquet"
+        parquet_path = tmp_path / "data.bdf.parquet"
         df.write_parquet(parquet_path)
 
         procedure = Procedure.load(parquet_path)

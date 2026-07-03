@@ -1130,9 +1130,9 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
 
                 from pyprobe.filters import Procedure
 
-                procedure = Procedure.load("data.bdx.parquet")
+                procedure = Procedure.load("data.bdf.parquet")
                 procedure = Procedure.load(
-                    "data.bdx.parquet", readme_path="README.yaml"
+                    "data.bdf.parquet", readme_path="README.yaml"
                 )
 
             Load from a LazyFrame::

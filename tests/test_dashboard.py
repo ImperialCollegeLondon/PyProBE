@@ -274,7 +274,7 @@ def test_dashboard_run(cell_fixture):
 
         cell = Cell()
         readme = "tests/sample_data/neware/README.yaml"
-        parquet = "tests/sample_data/neware/sample_data_neware.bdx.parquet"
+        parquet = "tests/sample_data/neware/sample_data_neware.bdf.parquet"
         cell.add_procedure("Sample", Procedure.load(parquet, readme_path=readme))
         cell.add_procedure("Sample 2", Procedure.load(parquet, readme_path=readme))
 

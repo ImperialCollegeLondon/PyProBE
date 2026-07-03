@@ -139,7 +139,7 @@ class TestProcessCyclerOutputPath:
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=tmp_path)
 
-        expected_output = tmp_path / "fake.bdx.parquet"
+        expected_output = tmp_path / "fake.bdf.parquet"
         assert expected_output.exists()
         assert isinstance(result, Path)
         result = pl.scan_parquet(result).collect()
@@ -148,11 +148,11 @@ class TestProcessCyclerOutputPath:
     def test_process_cycler_output_file_naming(
         self, tmp_path: Path, bdf_df: pd.DataFrame
     ) -> None:
-        """process_cycler names output file as {source_stem}.bdx.parquet."""
+        """process_cycler names output file as {source_stem}.bdf.parquet."""
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("data.xlsx", output_path=tmp_path)
 
-        expected_output = tmp_path / "data.bdx.parquet"
+        expected_output = tmp_path / "data.bdf.parquet"
         assert expected_output.exists()
         assert isinstance(result, Path)
 
@@ -173,7 +173,7 @@ class TestProcessCyclerOutputPath:
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler("fake.csv", output_path=str(tmp_path))
 
-        expected_output = tmp_path / "fake.bdx.parquet"
+        expected_output = tmp_path / "fake.bdf.parquet"
         assert expected_output.exists()
         assert isinstance(result, Path)
 
@@ -187,7 +187,7 @@ class TestProcessCyclerOutputPath:
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(source_file)
 
-        expected_output = tmp_path / "data.bdx.parquet"
+        expected_output = tmp_path / "data.bdf.parquet"
         assert expected_output.exists()
         assert isinstance(result, Path)
 
@@ -592,7 +592,7 @@ class TestCorruptedParquetMetadataRecovery:
 
         # Inject corrupted (non-JSON) metadata
         corrupted_metadata: dict[bytes, bytes] = {
-            b"bdx_metadata": b"this is not valid json }{[",
+            b"bdf_metadata": b"this is not valid json }{[",
         }
         table = table.replace_schema_metadata(corrupted_metadata)
         pq.write_table(table, output_file)
@@ -616,7 +616,7 @@ class TestCorruptedParquetMetadataRecovery:
 
         # Inject invalid UTF-8 sequence as metadata
         corrupted_metadata: dict[bytes, bytes] = {
-            b"bdx_metadata": b"\x80\x81\x82\x83",
+            b"bdf_metadata": b"\x80\x81\x82\x83",
         }
         table = table.replace_schema_metadata(corrupted_metadata)
         pq.write_table(table, output_file)
@@ -640,7 +640,7 @@ class TestCorruptedParquetMetadataRecovery:
 
         # Parquet metadata is corrupted
         corrupted_metadata: dict[bytes, bytes] = {
-            b"bdx_metadata": b"invalid json",
+            b"bdf_metadata": b"invalid json",
         }
         table = table.replace_schema_metadata(corrupted_metadata)
         pq.write_table(table, output_file)
@@ -664,7 +664,7 @@ class TestCorruptedParquetMetadataRecovery:
 
         # Parquet metadata is corrupted
         corrupted_metadata: dict[bytes, bytes] = {
-            b"bdx_metadata": b"invalid json",
+            b"bdf_metadata": b"invalid json",
         }
         table = table.replace_schema_metadata(corrupted_metadata)
         pq.write_table(table, output_file)
@@ -692,7 +692,7 @@ class TestAttachMetadata:
                 "Voltage / V": [3.7, 3.6, 3.8],
             }
         )
-        output_file = tmp_path / "test.bdx.parquet"
+        output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
         metadata = {"cell_id": "C001", "cycler": "neware"}
@@ -711,13 +711,13 @@ class TestAttachMetadata:
                 "Voltage / V": [3.7, 3.6, 3.8],
             }
         )
-        output_file = tmp_path / "test.bdx.parquet"
+        output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
         metadata = {"cell_id": "C001", "cycler": "neware"}
         attach_metadata(output_file, metadata, metadata_format="json")
 
-        sidecar = tmp_path / "test.bdx.json"
+        sidecar = tmp_path / "test.bdf.json"
         assert sidecar.exists()
         loaded = json.loads(sidecar.read_text())
         assert loaded == metadata
@@ -725,7 +725,7 @@ class TestAttachMetadata:
     def test_attach_metadata_merges_with_existing(self, tmp_path: Path) -> None:
         """attach_metadata merges with existing metadata."""
         df = pl.DataFrame({"x": [1, 2, 3]})
-        output_file = tmp_path / "test.bdx.parquet"
+        output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
         attach_metadata(output_file, {"cell_id": "A"}, metadata_format="parquet")
@@ -738,7 +738,7 @@ class TestAttachMetadata:
     def test_attach_metadata_no_write_when_unchanged(self, tmp_path: Path) -> None:
         """attach_metadata skips file write when metadata is already up to date."""
         df = pl.DataFrame({"x": [1, 2, 3]})
-        output_file = tmp_path / "test.bdx.parquet"
+        output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
         metadata = {"cell_id": "C001"}
@@ -789,7 +789,7 @@ class TestProcessCyclerGlob:
         ):
             result = process_cycler(
                 pattern,
-                output_path=tmp_path / "out.bdx.parquet",
+                output_path=tmp_path / "out.bdf.parquet",
             )
 
         result_df = pl.scan_parquet(result).collect()
@@ -845,7 +845,7 @@ class TestProcessCyclerExtraColumns:
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)) as mock_read:
             process_cycler(
                 "fake.csv",
-                output_path=tmp_path / "out.bdx.parquet",
+                output_path=tmp_path / "out.bdf.parquet",
                 extra_columns={"Pressure(kPa)": "Pressure / kPa"},
             )
 
@@ -867,7 +867,7 @@ class TestProcessCyclerExtraColumns:
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(
                 "fake.csv",
-                output_path=tmp_path / "out.bdx.parquet",
+                output_path=tmp_path / "out.bdf.parquet",
                 extra_columns={"Pressure(kPa)": "Pressure / kPa"},
             )
 
@@ -895,7 +895,7 @@ class TestProcessCyclerCompression:
         with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
             result = process_cycler(
                 "fake.csv",
-                output_path=tmp_path / "out.bdx.parquet",
+                output_path=tmp_path / "out.bdf.parquet",
                 compression_priority="file size",
             )
 
@@ -950,7 +950,7 @@ class TestProcessGeneric:
             "Current / A": "Current [A]",
             "Voltage / V": "Voltage [V]",
         }
-        output_path = tmp_path / "output.bdx.parquet"
+        output_path = tmp_path / "output.bdf.parquet"
 
         result = process_generic(input_data, column_map, output_path)
 
@@ -976,7 +976,7 @@ class TestProcessGeneric:
             "Test Time / s": "Time [s]",
             "Current / A": "Current [A]",
         }
-        output_path = tmp_path / "output.bdx.parquet"
+        output_path = tmp_path / "output.bdf.parquet"
 
         with pytest.raises(
             ValueError, match="Required BDF column 'Voltage' could not be resolved"
@@ -998,7 +998,7 @@ class TestProcessGeneric:
             "Current / A": "i",
             "Voltage / V": "v",
         }
-        output_path = tmp_path / "output.bdx.parquet"
+        output_path = tmp_path / "output.bdf.parquet"
 
         result = process_generic(df, column_map, output_path)
         result_df = pl.scan_parquet(result).collect()
@@ -1025,7 +1025,7 @@ class TestProcessGeneric:
             "Current / A": "Current / A",
             "Voltage / V": "Voltage / V",
         }
-        output_path = tmp_path / "output.bdx.parquet"
+        output_path = tmp_path / "output.bdf.parquet"
 
         result = process_generic(df, column_map, output_path)
 
@@ -1048,7 +1048,7 @@ class TestProcessGeneric:
             "Current / A": "Current / A",
             "Voltage / V": "Voltage / V",
         }
-        output_path = tmp_path / "output.bdx.parquet"
+        output_path = tmp_path / "output.bdf.parquet"
 
         result = process_generic(
             df,

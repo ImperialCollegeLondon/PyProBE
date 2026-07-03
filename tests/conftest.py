@@ -32,13 +32,13 @@ def info_fixture():
 @pytest.fixture
 def lazyframe_fixture():
     """Pytest fixture for example lazyframe."""
-    return pl.scan_parquet("tests/sample_data/neware/sample_data_neware.bdx.parquet")
+    return pl.scan_parquet("tests/sample_data/neware/sample_data_neware.bdf.parquet")
 
 
 @pytest.fixture
 def sample_data_neware_parquet():
     """Pytest fixture for sample neware parquet file path."""
-    return "tests/sample_data/neware/sample_data_neware.bdx.parquet"
+    return "tests/sample_data/neware/sample_data_neware.bdf.parquet"
 
 
 @pytest.fixture
@@ -120,7 +120,7 @@ def cell_fixture(sample_data_neware_parquet):
 def procedure_fixture():
     """Pytest fixture for example procedure."""
     return Procedure.load(
-        "tests/sample_data/neware/sample_data_neware.bdx.parquet",
+        "tests/sample_data/neware/sample_data_neware.bdf.parquet",
         readme_path="tests/sample_data/neware/README.yaml",
     )
 
