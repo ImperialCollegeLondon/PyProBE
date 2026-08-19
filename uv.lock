@@ -135,7 +135,7 @@ wheels = [
 [[package]]
 name = "batterydf"
 version = "0.1.0"
-source = { git = "ssh://git@github.com/battery-data-alliance/battery-data-format.git#a7b18cda198198fe30aaf4bfbcfcdb50387fdc71" }
+source = { git = "https://github.com/battery-data-alliance/battery-data-format.git#a7b18cda198198fe30aaf4bfbcfcdb50387fdc71" }
 dependencies = [
     { name = "matplotlib" },
     { name = "nbformat" },
@@ -2058,7 +2058,7 @@ seaborn = [
 
 [package.metadata]
 requires-dist = [
-    { name = "batterydf", git = "ssh://git@github.com/battery-data-alliance/battery-data-format.git" },
+    { name = "batterydf", git = "https://github.com/battery-data-alliance/battery-data-format.git" },
     { name = "distinctipy", specifier = ">=1.3.4" },
     { name = "fastexcel", specifier = ">=0.12.0" },
     { name = "hvplot", marker = "extra == 'hvplot'", specifier = ">=0.11.2" },
