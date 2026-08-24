@@ -824,21 +824,21 @@ class TestProcessCyclerGlob:
 class TestProcessCyclerExtraColumns:
     """Tests for extra_columns parameter in process_cycler.
 
-    process_cycler is a thin wrapper: extra_columns is forwarded verbatim to
-    bdf.io.read's own ``extra_columns`` argument, which performs the aliasing
-    (and all validation) inside bdf. These tests mock bdf.io.read to already
-    return the aliased column, mirroring what real bdf would produce, and
-    assert process_cycler forwards the argument unchanged.
+    extra_columns is applied as a rename operation after bdf.io.read returns.
+    bdf.io.read is called with include_unknown=True to preserve source columns,
+    then the rename is applied. These tests mock bdf.io.read to return the
+    source columns, verify that include_unknown is True, and verify that the
+    rename operation produces the expected output columns.
     """
 
     def test_extra_columns_forwarded_to_bdf_io_read(self, tmp_path: Path) -> None:
-        """extra_columns is passed straight through to bdf.io.read."""
+        """extra_columns rename is applied after bdf.io.read returns."""
         bdf_df = pd.DataFrame(
             {
                 "Test Time / s": [0.0, 1.0],
                 "Current / A": [1.0, -1.0],
                 "Voltage / V": [3.7, 3.6],
-                "Pressure / kPa": [101.3, 101.4],
+                "Pressure(kPa)": [101.3, 101.4],
             }
         )
 
@@ -849,9 +849,8 @@ class TestProcessCyclerExtraColumns:
                 extra_columns={"Pressure(kPa)": "Pressure / kPa"},
             )
 
-        assert mock_read.call_args.kwargs["extra_columns"] == {
-            "Pressure(kPa)": "Pressure / kPa"
-        }
+        assert "extra_columns" not in mock_read.call_args.kwargs
+        assert mock_read.call_args.kwargs["include_unknown"] is True
 
     def test_extra_columns_appends_new_column(self, tmp_path: Path) -> None:
         """extra_columns can add new columns not in auto-resolved set."""
@@ -860,7 +859,7 @@ class TestProcessCyclerExtraColumns:
                 "Test Time / s": [0.0, 1.0],
                 "Current / A": [1.0, -1.0],
                 "Voltage / V": [3.7, 3.6],
-                "Pressure / kPa": [101.3, 101.4],
+                "Pressure(kPa)": [101.3, 101.4],
             }
         )
 
