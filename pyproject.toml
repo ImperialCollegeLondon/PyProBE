@@ -171,4 +171,4 @@ exclude_also = [
 ]
 
 [tool.uv.sources]
-batterydf = { git = "ssh://git@github.com/battery-data-alliance/battery-data-format.git" }
+batterydf = { git = "https://github.com/battery-data-alliance/battery-data-format.git", rev = "1412b982672fb90c0ec66fc8b2d453bd094384b4" }
