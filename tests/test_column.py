@@ -1061,7 +1061,7 @@ class TestBDFEnum:
             ("Voltage", "V"),
             ("Net Capacity", "Ah"),
             ("Step Count", "1"),
-            ("Step Index", "1"),
+            ("Step Record Index", "1"),
         ],
     )
     def test_bdf_column_membership(self, quantity: str, unit: str) -> None:

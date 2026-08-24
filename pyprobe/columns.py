@@ -678,7 +678,7 @@ class BDF(BDFColumn, Enum):
     CYCLE_COUNT = "Cycle Count", "1"
     STEP_COUNT = "Step Count", "1"
     STEP_ID = "Step ID", None
-    STEP_INDEX = "Step Index", "1"
+    STEP_RECORD_INDEX = "Step Record Index", "1"
     STEP_TYPE = "Step Type", None
     RECORD_INDEX = "Record Index", "1"
     POWER_WATT = "Power", "W"
@@ -704,6 +704,8 @@ class BDF(BDFColumn, Enum):
     CYCLE_DISCHARGING_CAPACITY_AH = "Cycle Discharging Capacity", "Ah"
     CYCLE_NET_CAPACITY_AH = "Cycle Net Capacity", "Ah"
     CYCLE_CUMULATIVE_CAPACITY_AH = "Cycle Cumulative Capacity", "Ah"
+    SCHEDULE_CHARGING_CAPACITY_AH = "Schedule Charging Capacity", "Ah"
+    SCHEDULE_DISCHARGING_CAPACITY_AH = "Schedule Discharging Capacity", "Ah"
     CHARGING_ENERGY_WH = "Charging Energy", "Wh"
     DISCHARGING_ENERGY_WH = "Discharging Energy", "Wh"
     NET_ENERGY_WH = "Net Energy", "Wh"
@@ -716,6 +718,8 @@ class BDF(BDFColumn, Enum):
     CYCLE_DISCHARGING_ENERGY_WH = "Cycle Discharging Energy", "Wh"
     CYCLE_NET_ENERGY_WH = "Cycle Net Energy", "Wh"
     CYCLE_CUMULATIVE_ENERGY_WH = "Cycle Cumulative Energy", "Wh"
+    SCHEDULE_CHARGING_ENERGY_WH = "Schedule Charging Energy", "Wh"
+    SCHEDULE_DISCHARGING_ENERGY_WH = "Schedule Discharging Energy", "Wh"
     INTERNAL_RESISTANCE_OHM = "Internal Resistance", "ohm"
     AC_INTERNAL_RESISTANCE_OHM = "AC Internal Resistance", "ohm"
     DC_INTERNAL_RESISTANCE_OHM = "DC Internal Resistance", "ohm"
