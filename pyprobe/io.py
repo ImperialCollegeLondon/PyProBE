@@ -332,17 +332,17 @@ def _load_raw_dataframes(
 
     Expands *source* via :func:`_resolve_glob`, then reads each file using
     :func:`bdf.io.read`, optionally normalising to BDF column names.
-    :func:`bdf.io.read` returns a ``(LazyFrame, metadata)`` tuple; only the
-    LazyFrame is retained here.
+    :func:`bdf.io.read` returns a ``(DataFrame, metadata)`` tuple; the
+    DataFrame is converted to a LazyFrame.
 
     Args:
         source: A file path or glob pattern.
         plugin: BatteryDF plugin name. ``None`` triggers auto-detection.
         normalize: When ``True`` (default), normalise to BDF column names.
             When ``False``, preserve original source column names.
-        extra_columns: Passed straight through to :func:`bdf.io.read` as its
-            own ``extra_columns`` argument (mapping of source column name to
-            output alias). ``bdf`` handles all validation.
+        extra_columns: Mapping of source column name to output alias. When
+            provided, ``include_unknown=True`` is passed to :func:`bdf.io.read`
+            to preserve source columns, then a rename operation is applied.
 
     Returns:
         One LazyFrame per resolved file, in sorted order.
@@ -354,10 +354,12 @@ def _load_raw_dataframes(
             str(f),
             plugin=plugin,
             normalize=normalize,
-            extra_columns=extra_columns,
-            lazy=True,
+            include_unknown=bool(extra_columns),
         )
-        frames.append(df if isinstance(df, pl.LazyFrame) else df.lazy())
+        df = df.lazy()
+        if extra_columns:
+            df = df.rename(extra_columns)
+        frames.append(df)
     return frames
 
 
@@ -533,12 +535,11 @@ def process_cycler(
             - ``"file size"`` — uses ``zstd`` for smaller files.
             - ``"uncompressed"`` — no compression.
 
-        extra_columns: Mapping from source column name to output alias.
-            Passed straight through to :func:`bdf.io.read`'s own
-            ``extra_columns`` argument; ``bdf`` performs the aliasing and all
-            validation. Can only add columns not already auto-resolved by
-            ``bdf`` (an alias colliding with an auto-resolved BDF column
-            raises inside ``bdf``).
+        extra_columns: Mapping of source column name to output alias. When
+            provided, ``include_unknown=True`` is passed to :func:`bdf.io.read`
+            to preserve source columns, then a rename operation is applied.
+            Can only add columns not already auto-resolved by ``bdf`` (an alias
+            colliding with an auto-resolved BDF column is silently overwritten).
 
     Returns:
         Path to the written ``.bdf.parquet`` file.
