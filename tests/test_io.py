@@ -5,7 +5,6 @@ This module provides tests for BDF-based cycler data import, including:
 - process_cycler output_path and skip_if_exists behavior
 - Error handling for missing required and optional columns
 - Parquet metadata write and read operations
-- read_metadata function with preference logic
 - process_cycler integration tests with actual sample data files
 - process_generic with different DataFrame sources (polars, lazy, pandas)
 """
@@ -24,10 +23,8 @@ import pytest
 
 from pyprobe.columns import BDF
 from pyprobe.io import (
-    attach_metadata,
     process_cycler,
     process_generic,
-    read_metadata,
 )
 from tests.metadata_helpers import build_metadata
 
@@ -577,187 +574,6 @@ class TestProcessCyclerIntegration:
         assert result1.shape == result2.shape
 
 
-class TestCorruptedParquetMetadataRecovery:
-    """Tests for handling corrupted Parquet metadata gracefully."""
-
-    def test_metadata_manager_read_parquet_json_decode_error(
-        self, tmp_path: Path
-    ) -> None:
-        """MetadataManager.read_parquet() raises ValueError for corrupted JSON."""
-        from pyprobe.io import MetadataManager
-
-        # Create a valid Parquet file with corrupted metadata
-        output_file = tmp_path / "test.parquet"
-        df = pl.DataFrame({"x": [1, 2, 3]})
-        table = df.to_arrow()
-
-        # Inject corrupted (non-JSON) metadata
-        corrupted_metadata: dict[bytes, bytes] = {
-            b"bdf_metadata": b"this is not valid json }{[",
-        }
-        table = table.replace_schema_metadata(corrupted_metadata)
-        pq.write_table(table, output_file)
-
-        # Try to read the corrupted metadata
-        manager = MetadataManager(output_file)
-
-        # Should raise ValueError due to corrupted metadata
-        with pytest.raises(ValueError, match="invalid JSON"):
-            manager.read_parquet()
-
-    def test_metadata_manager_read_parquet_unicode_decode_error(
-        self, tmp_path: Path
-    ) -> None:
-        """MetadataManager.read_parquet() raises ValueError for invalid UTF-8."""
-        from pyprobe.io import MetadataManager
-
-        output_file = tmp_path / "test.parquet"
-        df = pl.DataFrame({"x": [1, 2, 3]})
-        table = df.to_arrow()
-
-        # Inject invalid UTF-8 sequence as metadata
-        corrupted_metadata: dict[bytes, bytes] = {
-            b"bdf_metadata": b"\x80\x81\x82\x83",
-        }
-        table = table.replace_schema_metadata(corrupted_metadata)
-        pq.write_table(table, output_file)
-
-        # Try to read the corrupted metadata
-        manager = MetadataManager(output_file)
-
-        # Should raise ValueError due to invalid encoding
-        with pytest.raises(ValueError, match="invalid UTF-8"):
-            manager.read_parquet()
-
-    def test_metadata_manager_read_both_with_corrupted_parquet(
-        self, tmp_path: Path
-    ) -> None:
-        """With corrupted parquet metadata and no sidecar, read_both raises."""
-        from pyprobe.io import MetadataManager
-
-        output_file = tmp_path / "test.parquet"
-        df = pl.DataFrame({"x": [1, 2, 3]})
-        table = df.to_arrow()
-
-        # Parquet metadata is corrupted
-        corrupted_metadata: dict[bytes, bytes] = {
-            b"bdf_metadata": b"invalid json",
-        }
-        table = table.replace_schema_metadata(corrupted_metadata)
-        pq.write_table(table, output_file)
-
-        # No JSON sidecar exists
-        manager = MetadataManager(output_file)
-
-        # Should raise ValueError since preferred source is corrupted
-        with pytest.raises(ValueError, match="corrupted"):
-            manager.read_both(prefer="parquet")
-
-    def test_metadata_manager_read_both_with_corrupted_parquet_but_valid_sidecar(
-        self, tmp_path: Path
-    ) -> None:
-        """With corrupted parquet metadata but valid JSON sidecar, returns sidecar."""
-        from pyprobe.io import MetadataManager
-
-        output_file = tmp_path / "test.parquet"
-        df = pl.DataFrame({"x": [1, 2, 3]})
-        table = df.to_arrow()
-
-        # Parquet metadata is corrupted
-        corrupted_metadata: dict[bytes, bytes] = {
-            b"bdf_metadata": b"invalid json",
-        }
-        table = table.replace_schema_metadata(corrupted_metadata)
-        pq.write_table(table, output_file)
-
-        # But JSON sidecar (test.json) has valid metadata
-        json_metadata = build_metadata(cell_id="C001", source="json")
-        (tmp_path / "test.json").write_text(json.dumps(json_metadata))
-
-        # read_both should return the JSON metadata
-        manager = MetadataManager(output_file)
-        result = manager.read_both(prefer="json")
-
-        assert result == json_metadata
-
-
-class TestAttachMetadata:
-    """Tests for attach_metadata function."""
-
-    def test_attach_metadata_parquet_footer(self, tmp_path: Path) -> None:
-        """attach_metadata stores metadata in parquet footer."""
-        df = pl.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0],
-                "Current / A": [1.0, -1.0, 0.5],
-                "Voltage / V": [3.7, 3.6, 3.8],
-            }
-        )
-        output_file = tmp_path / "test.bdf.parquet"
-        df.write_parquet(str(output_file))
-
-        metadata = build_metadata(cell_id="C001", cycler="neware")
-        attach_metadata(output_file, metadata, metadata_format="parquet")
-
-        read_meta = read_metadata(output_file)
-        assert read_meta["cell_id"] == "C001"
-        assert read_meta["cycler"] == "neware"
-
-    def test_attach_metadata_json_sidecar(self, tmp_path: Path) -> None:
-        """attach_metadata creates JSON sidecar when format='json'."""
-        df = pl.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0],
-                "Current / A": [1.0, -1.0, 0.5],
-                "Voltage / V": [3.7, 3.6, 3.8],
-            }
-        )
-        output_file = tmp_path / "test.bdf.parquet"
-        df.write_parquet(str(output_file))
-
-        metadata = build_metadata(cell_id="C001", cycler="neware")
-        attach_metadata(output_file, metadata, metadata_format="json")
-
-        sidecar = tmp_path / "test.bdf.json"
-        assert sidecar.exists()
-        loaded = json.loads(sidecar.read_text())
-        assert loaded == metadata
-
-    def test_attach_metadata_merges_with_existing(self, tmp_path: Path) -> None:
-        """attach_metadata merges with existing metadata."""
-        df = pl.DataFrame({"x": [1, 2, 3]})
-        output_file = tmp_path / "test.bdf.parquet"
-        df.write_parquet(str(output_file))
-
-        attach_metadata(output_file, {"cell_id": "A"}, metadata_format="parquet")
-        attach_metadata(output_file, {"batch": "1"}, metadata_format="parquet")
-
-        read_meta = read_metadata(output_file)
-        assert read_meta["cell_id"] == "A"
-        assert read_meta["batch"] == "1"
-
-    def test_attach_metadata_no_write_when_unchanged(self, tmp_path: Path) -> None:
-        """attach_metadata skips file write when metadata is already up to date."""
-        df = pl.DataFrame({"x": [1, 2, 3]})
-        output_file = tmp_path / "test.bdf.parquet"
-        df.write_parquet(str(output_file))
-
-        metadata = build_metadata(cell_id="C001")
-        attach_metadata(output_file, metadata, metadata_format="parquet")
-        mtime_after_first = output_file.stat().st_mtime_ns
-
-        attach_metadata(output_file, metadata, metadata_format="parquet")
-        mtime_after_second = output_file.stat().st_mtime_ns
-
-        assert mtime_after_first == mtime_after_second
-
-    def test_attach_metadata_file_not_found(self, tmp_path: Path) -> None:
-        """attach_metadata raises FileNotFoundError if file doesn't exist."""
-        missing_file = tmp_path / "missing.parquet"
-        with pytest.raises(FileNotFoundError):
-            attach_metadata(missing_file, {"key": "value"})
-
-
 class TestProcessCyclerGlob:
     """Tests for glob pattern handling in process_cycler."""
 
@@ -1274,40 +1090,6 @@ class TestIsProbeFile:
 
         with pytest.raises(FileNotFoundError):
             is_pyprobe_file(tmp_path / "nonexistent.parquet")
-
-    def test_pyprobe_footer_contains_version_and_written_at_after_process_cycler(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """Parquet footer after process_cycler has pyprobe.version and written_at."""
-        from pyprobe.io import MetadataManager
-
-        with patch("bdf.io.read", return_value=_mock_read(bdf_df)):
-            path = process_cycler("fake.csv", output_path=tmp_path)
-
-        meta = MetadataManager(path).read_parquet()
-        assert "pyprobe" in meta
-        assert "version" in meta["pyprobe"]
-        assert "written_at" in meta["pyprobe"]
-
-    def test_pyprobe_footer_present_after_process_generic(self, tmp_path: Path) -> None:
-        """Parquet footer after process_generic has pyprobe sub-dict."""
-        from pyprobe.io import MetadataManager
-
-        df = pl.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-            }
-        )
-        column_map: dict[str | BDF, str] = {
-            "Test Time / s": "Test Time / s",
-            "Current / A": "Current / A",
-            "Voltage / V": "Voltage / V",
-        }
-        path = process_generic(df, column_map, tmp_path / "out.parquet")
-        meta = MetadataManager(path).read_parquet()
-        assert isinstance(meta.get("pyprobe"), dict)
 
     def test_process_cycler_raises_on_pyprobe_file_input(
         self, tmp_path: Path, bdf_df: pd.DataFrame

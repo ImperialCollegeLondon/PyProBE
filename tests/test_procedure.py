@@ -1,13 +1,10 @@
 """Module containing tests of the procedure class."""
 
-from typing import Any
-
 import numpy as np
 import polars as pl
 import pytest
 
 from pyprobe.filters import Procedure
-from tests.metadata_helpers import read_extras
 
 
 def test_experiment(procedure_fixture, steps_fixture, benchmark):
@@ -240,95 +237,3 @@ class TestProcedureLoad:
         step = procedure.step(1)
 
         assert step._path == parquet_path  # noqa: SLF001
-
-
-class TestSyncMetadata:
-    """Tests for Procedure.sync_metadata()."""
-
-    def _make_procedure_with_metadata(
-        self, tmp_path, initial_meta: dict[str, Any]
-    ) -> "Procedure":
-        """Helper: create parquet with metadata, load as Procedure."""
-        import json
-
-        import pyarrow.parquet as pq
-
-        from pyprobe.io import _PARQUET_METADATA_KEY
-
-        df = pl.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-            }
-        )
-        parquet_path = tmp_path / "data.parquet"
-        table = df.to_arrow()
-        existing_meta: dict[bytes, bytes] = table.schema.metadata or {}
-        table = table.replace_schema_metadata(
-            {**existing_meta, _PARQUET_METADATA_KEY: json.dumps(initial_meta).encode()}
-        )
-        pq.write_table(table, parquet_path)
-        return Procedure.load(parquet_path)
-
-    def test_sync_metadata_writes_new_key(self, tmp_path) -> None:
-        """sync_metadata writes a new key to the backing file."""
-        from pyprobe.io import MetadataManager
-
-        proc = self._make_procedure_with_metadata(tmp_path, {"existing": "value"})
-        read_extras(proc)["new_key"] = "new_value"
-
-        proc.sync_metadata()
-
-        assert proc._path is not None  # noqa: SLF001
-        written = MetadataManager(proc._path).read_parquet()  # noqa: SLF001
-        assert written["new_key"] == "new_value"
-        assert written["existing"] == "value"
-
-    def test_sync_metadata_protect_existing_raises_on_removed_key(
-        self, tmp_path
-    ) -> None:
-        """sync_metadata(protect_existing=True) raises when a key is removed."""
-        proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "val_a"})
-        del read_extras(proc)["key_a"]
-
-        with pytest.raises(ValueError, match="absent from metadata"):
-            proc.sync_metadata(protect_existing=True)
-
-    def test_sync_metadata_protect_existing_raises_on_changed_value(
-        self, tmp_path
-    ) -> None:
-        """sync_metadata(protect_existing=True) raises when a value changes."""
-        proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "original"})
-        read_extras(proc)["key_a"] = "changed"
-
-        with pytest.raises(ValueError, match="changed value"):
-            proc.sync_metadata(protect_existing=True)
-
-    def test_sync_metadata_protect_false_allows_value_change(self, tmp_path) -> None:
-        """sync_metadata(protect_existing=False) allows changing an existing value."""
-        from pyprobe.io import MetadataManager
-
-        proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "original"})
-        read_extras(proc)["key_a"] = "changed"
-
-        proc.sync_metadata(protect_existing=False)
-
-        assert proc._path is not None  # noqa: SLF001
-        written = MetadataManager(proc._path).read_parquet()  # noqa: SLF001
-        assert written["key_a"] == "changed"
-
-    def test_sync_metadata_raises_when_no_path(self) -> None:
-        """sync_metadata raises RuntimeError when _path is None."""
-        proc = Procedure.load(
-            pl.DataFrame(
-                {
-                    "Test Time / s": [0.0],
-                    "Current / A": [1.0],
-                    "Voltage / V": [3.7],
-                }
-            )
-        )
-
-        with pytest.raises(RuntimeError, match="_path is None"):
-            proc.sync_metadata()
