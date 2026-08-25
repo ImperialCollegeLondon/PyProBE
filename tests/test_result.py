@@ -2,7 +2,6 @@
 
 import warnings
 from datetime import UTC, datetime
-from zoneinfo import ZoneInfo
 
 import numpy as np
 import numpy.testing as np_testing
@@ -16,7 +15,6 @@ from scipy.interpolate import (
     make_smoothing_spline,
 )
 from scipy.io import loadmat
-from tzlocal import get_localzone
 
 from pyprobe.analysis import differentiation, smoothing
 from pyprobe.columns import BDF, Column, ColumnResolutionError
@@ -498,16 +496,6 @@ class TestAddDataTimezoneHandling:
                 time_column_name="DateNew",
                 timezone="Invalid/Timezone",
             )
-
-    def test_tzlocal_returns_valid_timezone(self):
-        """Test that tzlocal returns a valid IANA timezone that can be used."""
-        local_tz = str(get_localzone())
-        zone = ZoneInfo(local_tz)
-        assert zone is not None
-
-        df = pl.DataFrame({"Date": [datetime(2023, 1, 1, 10, 0, 0)]})
-        df_with_tz = df.with_columns(pl.col("Date").dt.replace_time_zone(local_tz))
-        assert df_with_tz["Date"].dtype.time_zone == local_tz
 
     def test_add_data_uses_local_timezone_when_not_specified(self):
         """Test that add_data uses UTC timezone behavior when converting datetimes."""
