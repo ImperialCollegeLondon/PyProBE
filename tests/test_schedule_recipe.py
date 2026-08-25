@@ -18,7 +18,7 @@ class TestScheduleRecipes:
     """Tests for schedule-level accumulator recipes."""
 
     def test_net_with_charge_segment_and_discharge_segment(self) -> None:
-        """Net column reconstructs correctly from schedule accumulators with charge and discharge.
+        """Net column reconstructs from charge and discharge accumulators.
 
         Frame: t=[0,1,2,3], I=[1.0,2.0,1.5,1.0], ch=[0,0.01,0,0], dch=[0,0,0,0.01].
         ch decreases at row 2 (0.01 → 0), so segment key is [0,0,1,1] and row 2
@@ -27,7 +27,8 @@ class TestScheduleRecipes:
         Row 1: diff(ch)=0.01, diff(dch)=0, seam=0 → net = 0.01.
         Row 2: diff(ch)=-0.01 (clipped to 0), diff(dch)=0, seam=0.0004861111 →
         net = 0.01 + 0.0004861111 = 0.0104861111.
-        Row 3: diff(ch)=0, diff(dch)=0.01, seam=0 → net = 0.0104861111 - 0.01 = 0.0004861111.
+        Row 3: diff(ch)=0, diff(dch)=0.01, seam=0 →
+        net = 0.0104861111 - 0.01 = 0.0004861111.
         """
         df = pl.DataFrame(
             {
@@ -61,7 +62,8 @@ class TestScheduleRecipes:
         Frame: t=[0,1,2,3], I=[1.0,2.0,1.5,1.0], ch=[0,0.01,0,0], dch=[0,0,0,0.01].
         ch decreases at row 2, so segment key is [0,0,1,1] and row 2 is a
         boundary. Seam at row 2 is 0.5 * (1.5 + 2.0) * 1.0 / 3600 = 0.0004861111.
-        Row 1: ch.cumsum()=0.01, dch.cumsum()=0, seam.abs().cumsum()=0 → cumulative = 0.01.
+        Row 1: ch.cumsum()=0.01, dch.cumsum()=0, seam.abs().cumsum()=0 →
+        cumulative = 0.01.
         Row 2: ch.cumsum()=0.01, dch.cumsum()=0, seam.abs().cumsum()=0.0004861111 →
         cumulative = 0.01 + 0.0004861111 = 0.0104861111.
         Row 3: ch.cumsum()=0.01, dch.cumsum()=0.01, seam.abs().cumsum()=0.0004861111 →
