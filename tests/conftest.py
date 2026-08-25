@@ -129,3 +129,22 @@ def procedure_fixture():
 def BreakinCycles_fixture(procedure_fixture):
     """Pytest fixture for example cycling experiment."""
     return procedure_fixture.experiment("Break-in Cycles")
+
+
+@pytest.fixture
+def cycling_frame() -> pl.DataFrame:
+    """Pytest fixture for a frame with the required BDF columns and three steps."""
+    return pl.DataFrame(
+        {
+            "Test Time / s": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            "Current / A": [1.0, 1.0, -1.0, -1.0, 0.0, 0.0],
+            "Voltage / V": [3.7, 3.8, 3.6, 3.5, 3.55, 3.56],
+            "Step ID": [1, 1, 2, 2, 3, 3],
+        },
+    )
+
+
+@pytest.fixture
+def procedure(cycling_frame: pl.DataFrame) -> Procedure:
+    """Pytest fixture for a procedure over the cycling frame."""
+    return Procedure.load(cycling_frame)
