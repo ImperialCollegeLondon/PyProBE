@@ -654,6 +654,26 @@ def process_cycler(
     return resolved_output_path
 
 
+def read_sidecar(path: str | Path) -> bdf.Metadata:
+    """Read the BDF metadata sidecar that sits beside a data file.
+
+    The sidecar is ``<stem>.metadata.json``, which ``bdf.io.save`` writes with
+    the data file.
+
+    Args:
+        path: Path to the data file.
+
+    Returns:
+        bdf.Metadata: The record the sidecar holds, or an empty record where
+            the data file has no sidecar.
+
+    Raises:
+        FileNotFoundError: If the data file does not exist.
+        bdf.BDFMetadataError: If the sidecar does not parse.
+    """
+    raise NotImplementedError
+
+
 def read_metadata(
     path: str | Path,
     prefer: Literal["parquet", "json"] = "parquet",

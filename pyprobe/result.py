@@ -25,6 +25,7 @@ from pyprobe.columns import (
     CurveColumns,
     column_factory_from_string,
 )
+from pyprobe.protocol import Step
 from pyprobe.utils import deprecated, validate_timezone
 
 try:
@@ -300,6 +301,13 @@ class Table:
         - :attr:`columns`: A :class:`~pyprobe.columns.ColumnDict` object providing
           column name access (via ``.names``) and BDF-aware resolution (via
           ``.resolve()`` and ``.can_resolve()``).
+    """
+
+    _protocol_node: "Step | None" = None
+    """The test protocol node that this object was filtered to.
+
+    A ``Procedure`` holds a synthetic root node over the whole method. A
+    structural filter reduces this node, and a condition filter keeps it.
     """
 
     def __init__(
@@ -1482,6 +1490,43 @@ class Table:
         if isinstance(data, pl.DataFrame):
             data = data.lazy()
         return cls(lf=data, metadata=info)
+
+    def save(
+        self,
+        path: str | Path,
+        *,
+        overwrite: bool = False,
+        labels: Literal["preferred", "machine", "unchanged"] = "unchanged",
+        compression_priority: Literal[
+            "performance",
+            "file size",
+            "uncompressed",
+        ] = "performance",
+    ) -> Path:
+        """Write the object to a BDF artifact.
+
+        The write produces the Parquet data file and the
+        ``<stem>.metadata.json`` sidecar together. It records the PyProBE
+        version and the write time under ``metadata.extras["pyprobe"]``.
+
+        Args:
+            path: The path of the Parquet data file to write.
+            overwrite: When ``True``, replace an existing data file.
+            labels: The column label form that the data file holds.
+            compression_priority: The trade-off between write speed and file
+                size that selects the Parquet compression algorithm.
+
+        Returns:
+            Path: The path of the data file that was written.
+
+        Raises:
+            ValueError: If *path* does not end with ``.parquet``. The message
+                names the suffix.
+            FileExistsError: If the data file exists and *overwrite* is
+                ``False``.
+            bdf.BDFValidationError: If a required BDF column is absent.
+        """
+        raise NotImplementedError
 
     def export_to_mat(self, filename: str) -> None:
         """Export the data to a .mat file.

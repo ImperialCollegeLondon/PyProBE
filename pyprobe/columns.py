@@ -32,7 +32,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import cache
 from types import MappingProxyType
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import bdf.spec as _bdf_spec
 import pint
@@ -790,6 +790,28 @@ class BDF(BDFColumn, Enum):
         if match is None:
             raise KeyError(f"No BDF column for quantity '{quantity}'")
         return match
+
+
+CORE_COLUMNS: dict[BDF, Literal["required", "optional", "silent"]] = {}
+"""The core PyProBE columns that each stand alone, in output order.
+
+A ``"required"`` column must resolve, and the read fails where it does not. An
+``"optional"`` column is kept where it resolves, and its absence logs one
+warning. A ``"silent"`` column is kept where it resolves, and its absence is
+not reported.
+"""
+
+CORE_COLUMN_GROUPS: dict[
+    tuple[BDF, ...],
+    Literal["required", "optional", "silent"],
+] = {}
+"""The core PyProBE columns that satisfy one status together.
+
+A group holds its status where at least one column of the tuple resolves, and
+the reader prefers the first column of the tuple that resolves. A required
+group that resolves no column fails the read, and the error names every column
+of the group.
+"""
 
 
 def _seam_charge(current: pl.Expr, time: pl.Expr, key: pl.Expr) -> pl.Expr:

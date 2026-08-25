@@ -6,6 +6,7 @@ import yaml
 from loguru import logger
 
 from pyprobe import utils
+from pyprobe.protocol import Step
 
 
 class ReadmeModel:
@@ -123,3 +124,24 @@ def process_readme(
     with open(readme_path) as file:
         readme_dict = yaml.safe_load(file)
     return ReadmeModel(readme_dict=readme_dict)
+
+
+def readme_to_method(readme: dict[str, Any]) -> list[Step]:
+    """Convert a legacy README dictionary to a test protocol tree.
+
+    Each experiment of the README becomes a group node that carries the
+    experiment name as its description. Each step becomes a leaf node under
+    that group, and it carries its step number as a ``"step_id:"`` tag. Each
+    cycle becomes a ``count`` on the group that repeats.
+
+    Args:
+        readme: The dictionary that a README.yaml file holds.
+
+    Returns:
+        list[Step]: The protocol tree, with one group node per experiment.
+
+    Raises:
+        ValueError: If a cycle does not bound a contiguous group of steps.
+            The message names the experiment and the cycle key.
+    """
+    raise NotImplementedError

@@ -1030,6 +1030,45 @@ class CycleFiltersMixin:
         )
 
 
+class ExperimentFiltersMixin:
+    """Mixin providing experiment-level filter methods."""
+
+    def experiment(
+        self,
+        *experiment_names: str,
+        include_preceding_row: bool = False,
+    ) -> "Experiment":
+        """Return an experiment object from the object.
+
+        The name resolves against the groups at the current level of the
+        protocol tree alone, so an experiment can hold a further experiment.
+
+        Args:
+            experiment_names: Variable-length argument list of experiment names.
+            include_preceding_row: When ``True``, prepend the data point
+                immediately before the experiment's first row.
+
+        Returns:
+            Experiment: An experiment object holding the data and the protocol
+                node of the named experiments.
+
+        Raises:
+            ValueError: If the current level holds no group with that
+                description, or if every leaf below the resolved group carries
+                no step identifier. The message names the experiment.
+        """
+        raise NotImplementedError
+
+    @property
+    def experiment_names(self) -> list[str]:
+        """The descriptions of the groups at the current protocol tree level.
+
+        Returns:
+            list[str]: The names of the experiments below this object.
+        """
+        raise NotImplementedError
+
+
 class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     """A class for a procedure in a battery experiment."""
 
@@ -1191,6 +1230,22 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
         )
         procedure._path = resolved_path
         return procedure
+
+    def attach_legacy_readme(self, readme_path: str | Path) -> None:
+        """Convert a legacy README.yaml file and attach it as the protocol.
+
+        The converted tree replaces the current
+        ``metadata.battinfo_test_protocol.method``.
+
+        Args:
+            readme_path: The path to the README.yaml file.
+
+        Raises:
+            FileNotFoundError: If the README file does not exist.
+            ValueError: If a cycle does not bound a contiguous group of steps.
+                The message names the experiment and the cycle key.
+        """
+        raise NotImplementedError
 
     def sync_metadata(self, *, protect_existing: bool = True) -> None:
         """Write ``self.metadata`` back to the backing Parquet file.
