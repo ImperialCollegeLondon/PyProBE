@@ -26,6 +26,7 @@ from pyprobe.result import (
     Table,
     combine_results,
 )
+from tests.metadata_helpers import build_metadata
 
 
 @pytest.fixture
@@ -51,7 +52,7 @@ def reduced_result_fixture():
     )
     return Result(
         lf=data.lazy(),
-        metadata={"test": "metadata"},
+        metadata=build_metadata(test="metadata"),
         column_definitions={
             "Voltage": "Voltage definition",
             "Current": "Current definition",
@@ -70,7 +71,7 @@ class TestResultInit:
 
     def test_init_accepts_dataframe(self):
         """Test that DataFrame input is converted to LazyFrame at construction."""
-        result = Result(lf=pl.DataFrame({"a": [1, 2, 3]}), metadata={})
+        result = Result(lf=pl.DataFrame({"a": [1, 2, 3]}), metadata=build_metadata())
         assert isinstance(result.lf, pl.LazyFrame)
         pl_testing.assert_frame_equal(result.data, pl.DataFrame({"a": [1, 2, 3]}))
 
@@ -236,7 +237,7 @@ class TestResultBuild:
         """Test the build method."""
         data1 = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
         data2 = pl.DataFrame({"x": [7, 8, 9], "y": [10, 11, 12]})
-        metadata = {"test": "metadata"}
+        metadata = build_metadata(test="metadata")
         result = Result.build([data1, data2], metadata)
         assert isinstance(result, Result)
         expected_data = pl.DataFrame(
@@ -281,7 +282,7 @@ class TestAddDataBasic:
                 "Data 2": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
             },
         )
-        result_object = Result(lf=existing_data, metadata={})
+        result_object = Result(lf=existing_data, metadata=build_metadata())
         result_object.add_data(
             new_data,
             time_column_name="DateTime",
@@ -310,7 +311,7 @@ class TestAddDataBasic:
 
         new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateStr",
@@ -344,7 +345,7 @@ class TestAddDataTimezoneHandling:
             }
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(new_data, time_column_name="DateUTC", timezone="UTC")
 
         schema = result.lf.collect_schema()
@@ -367,7 +368,7 @@ class TestAddDataTimezoneHandling:
             }
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data_london,
             time_column_name="DateTime",
@@ -398,7 +399,7 @@ class TestAddDataTimezoneHandling:
             }
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data_newyork,
             time_column_name="DateTime",
@@ -427,7 +428,7 @@ class TestAddDataTimezoneHandling:
 
         new_data = pl.LazyFrame({"DateTime": [naive_time], "Data": [10]})
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -465,7 +466,7 @@ class TestAddDataTimezoneHandling:
             }
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -488,7 +489,7 @@ class TestAddDataTimezoneHandling:
         new_data = pl.LazyFrame(
             {"DateNew": [datetime(2023, 1, 1, 10, 0, 0)], "Ext": [10]}
         )
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
 
         with pytest.raises(ValueError, match="Invalid timezone"):
             result.add_data(
@@ -510,7 +511,7 @@ class TestAddDataTimezoneHandling:
             }
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(new_data, time_column_name="DateUTC")
 
         schema = result.lf.collect_schema()
@@ -543,7 +544,7 @@ class TestAddDataJoinStrategies:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -585,7 +586,7 @@ class TestAddDataJoinStrategies:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -621,7 +622,7 @@ class TestAddDataJoinStrategies:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -661,7 +662,7 @@ class TestAddDataFillStrategies:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -697,7 +698,7 @@ class TestAddDataFillStrategies:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -734,7 +735,7 @@ class TestAddDataFillStrategies:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -770,7 +771,7 @@ class TestAddDataValidation:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         with pytest.raises(
             ValueError,
             match=(
@@ -801,7 +802,7 @@ class TestAddDataValidation:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         with pytest.raises(
             ValueError,
             match=(
@@ -841,7 +842,7 @@ class TestAddDataComplexScenarios:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -905,7 +906,7 @@ class TestAddDataComplexScenarios:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -957,7 +958,7 @@ class TestAddDataColumnMapping:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -998,7 +999,7 @@ class TestAddDataColumnMapping:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -1043,7 +1044,7 @@ class TestAddDataColumnMapping:
             },
         )
 
-        result = Result(lf=existing_data, metadata={})
+        result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
             new_data,
             time_column_name="DateTime",
@@ -1087,7 +1088,7 @@ class TestAddDataAlignment:
             }
         )
 
-        result = Result(lf=base_df.lazy(), metadata={})
+        result = Result(lf=base_df.lazy(), metadata=build_metadata())
 
         result.add_data(
             new_df,
@@ -1114,7 +1115,7 @@ class TestAddDataAlignment:
                 "Other [A]": [1.0],
             }
         )
-        result = Result(lf=base_df.lazy(), metadata={})
+        result = Result(lf=base_df.lazy(), metadata=build_metadata())
 
         with pytest.raises(ValueError):
             result.add_data(
@@ -1199,7 +1200,7 @@ class TestResultFrameOperations:
         )
         other_result = Result(
             lf=other_data.lazy(),
-            metadata={"test": "metadata"},
+            metadata=build_metadata(test="metadata"),
             column_definitions={"Voltage": "Voltage definition"},
         )
         reduced_result_fixture.join(other_result, on="Current [A]", how="left")
@@ -1229,7 +1230,7 @@ class TestResultFrameOperations:
         )
         other_result = Result(
             lf=other_data.lazy(),
-            metadata={"test": "metadata"},
+            metadata=build_metadata(test="metadata"),
             column_definitions={"Voltage": "Voltage definition"},
         )
         reduced_result_fixture.extend(other_result)
@@ -1259,7 +1260,7 @@ class TestResultFrameOperations:
         )
         other_result = Result(
             lf=other_data.lazy(),
-            metadata={"test": "metadata"},
+            metadata=build_metadata(test="metadata"),
             column_definitions={
                 "Voltage": "New voltage definition",
                 "Capacity": "Capacity definition",
@@ -1294,11 +1295,11 @@ class TestResultFrameOperations:
         """Test the combine results method."""
         result1 = Result(
             lf=pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).lazy(),
-            metadata={"test index": 1.0},
+            metadata=build_metadata(**{"test index": 1.0}),
         )
         result2 = Result(
             lf=pl.DataFrame({"a": [7, 8, 9], "b": [10, 11, 12]}).lazy(),
-            metadata={"test index": 2.0},
+            metadata=build_metadata(**{"test index": 2.0}),
         )
         combined_result = combine_results([result1, result2])
         expected_data = pl.DataFrame(
@@ -1389,7 +1390,7 @@ class TestResultPolarsIO:
         test_df.write_csv(csv_path)
 
         result = Result.from_polars_io(
-            metadata={"test": "metadata"},
+            metadata=build_metadata(test="metadata"),
             column_definitions={"a": "Column A"},
             polars_io_func=pl.read_csv,
             source=str(csv_path),
@@ -1400,7 +1401,7 @@ class TestResultPolarsIO:
         pl_testing.assert_frame_equal(result.data, test_df)
 
         result_lazy = Result.from_polars_io(
-            metadata={"test": "lazy"},
+            metadata=build_metadata(test="lazy"),
             column_definitions={},
             polars_io_func=pl.scan_csv,
             source=str(csv_path),
@@ -1409,7 +1410,7 @@ class TestResultPolarsIO:
         assert isinstance(result_lazy.lf, pl.LazyFrame)
 
         result_with_kwargs = Result.from_polars_io(
-            metadata={"test": "kwargs"},
+            metadata=build_metadata(test="kwargs"),
             column_definitions={"a": "Column A with kwargs"},
             polars_io_func=pl.read_csv,
             source=str(csv_path),
@@ -1441,7 +1442,7 @@ class TestResultPolarsIO:
             test_file = tmp_path / "test.parquet"
             test_df.write_parquet(test_file)
 
-        metadata = {"source": io_function.__name__}
+        metadata = build_metadata(source=io_function.__name__)
 
         result = Result.from_polars_io(
             polars_io_func=io_function,
@@ -1459,7 +1460,7 @@ class TestResultPolarsIO:
         """Test from_polars_io with a Python object."""
         test_df = pl.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
-        metadata = {"source": "python_object"}
+        metadata = build_metadata(source="python_object")
 
         result = Result.from_polars_io(
             polars_io_func=pl.from_pandas,
@@ -1565,7 +1566,7 @@ def table():
                 BDF.VOLTAGE_VOLT.name: voltage,
             }
         ).lazy(),
-        metadata={"cell_id": "test"},
+        metadata=build_metadata(cell_id="test"),
     )
 
 
@@ -1583,7 +1584,7 @@ def cycling_data():
                 BDF.NET_ENERGY_WH.name: capacity * 3.7,
             }
         ).lazy(),
-        metadata={},
+        metadata=build_metadata(),
     )
 
 
@@ -1984,7 +1985,7 @@ class TestRawDataAlias:
         """Constructing RawData directly emits a DeprecationWarning."""
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            RawData(lf=cycling_data.lf, metadata={})
+            RawData(lf=cycling_data.lf, metadata=build_metadata())
         assert any(issubclass(w.category, DeprecationWarning) for w in caught)
 
     def test_capacity_matches_range_and_warns(self, cycling_data: CyclingData) -> None:

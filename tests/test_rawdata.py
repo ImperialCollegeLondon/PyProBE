@@ -8,6 +8,7 @@ import pytest
 
 from pyprobe.columns import BDF, Column
 from pyprobe.rawdata import RawData
+from tests.metadata_helpers import build_metadata
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ def test_init(RawData_fixture, step_descriptions_fixture):
     # test with incorrect data
     data = pl.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     with pytest.raises(ValueError):
-        RawData(lf=data.lazy(), metadata={"test": 1})
+        RawData(lf=data.lazy(), metadata=build_metadata(test=1))
 
 
 def test_data(RawData_fixture):
@@ -195,7 +196,7 @@ def test_pybamm_experiment():
 
     raw_data = RawData(
         lf=test_data.lazy(),
-        metadata={},
+        metadata=build_metadata(),
         step_descriptions=step_descriptions,
     )
 
@@ -226,7 +227,7 @@ def test_pybamm_experiment_missing_descriptions():
 
     raw_data = RawData(
         lf=test_data.lazy(),
-        metadata={},
+        metadata=build_metadata(),
         step_descriptions=step_descriptions,
     )
 
@@ -257,7 +258,7 @@ def test_pybamm_experiment_multiple_conditions():
 
     raw_data = RawData(
         lf=test_data.lazy(),
-        metadata={},
+        metadata=build_metadata(),
         step_descriptions=step_descriptions,
     )
 
@@ -287,7 +288,11 @@ def test_pybamm_experiment_with_loops():
         "Description": ["Discharge at C/10", "Rest for 1 hour"],
     }
 
-    data = RawData(lf=base_df.lazy(), metadata={}, step_descriptions=step_descriptions)
+    data = RawData(
+        lf=base_df.lazy(),
+        metadata=build_metadata(),
+        step_descriptions=step_descriptions,
+    )
 
     expected = [
         "Discharge at C/10",  # Step 1
@@ -367,8 +372,8 @@ class TestRawDataColumnValidation:
         test_data = pl.DataFrame(columns)
 
         if should_pass:
-            raw_data = RawData(lf=test_data.lazy(), metadata={})
+            raw_data = RawData(lf=test_data.lazy(), metadata=build_metadata())
             assert isinstance(raw_data, RawData)
         else:
             with pytest.raises(ValueError, match="Required"):
-                RawData(lf=test_data.lazy(), metadata={})
+                RawData(lf=test_data.lazy(), metadata=build_metadata())

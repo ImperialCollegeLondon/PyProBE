@@ -5,6 +5,7 @@ import polars as pl
 
 from pyprobe.analysis.time_series import align_data
 from pyprobe.result import Result
+from tests.metadata_helpers import build_metadata
 
 
 def test_align_data():
@@ -49,8 +50,8 @@ def test_align_data():
         }
     ).lazy()
 
-    result1 = Result(lf=df1, metadata={})
-    result2 = Result(lf=df2, metadata={})
+    result1 = Result(lf=df1, metadata=build_metadata())
+    result2 = Result(lf=df2, metadata=build_metadata())
 
     r1, r2 = align_data(result1, result2, "Signal / 1", "Signal 2 / 1")
 

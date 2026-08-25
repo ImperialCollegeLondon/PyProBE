@@ -29,6 +29,7 @@ from pyprobe.io import (
     process_generic,
     read_metadata,
 )
+from tests.metadata_helpers import build_metadata
 
 
 def _mock_read(
@@ -670,7 +671,7 @@ class TestCorruptedParquetMetadataRecovery:
         pq.write_table(table, output_file)
 
         # But JSON sidecar (test.json) has valid metadata
-        json_metadata = {"cell_id": "C001", "source": "json"}
+        json_metadata = build_metadata(cell_id="C001", source="json")
         (tmp_path / "test.json").write_text(json.dumps(json_metadata))
 
         # read_both should return the JSON metadata
@@ -695,7 +696,7 @@ class TestAttachMetadata:
         output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
-        metadata = {"cell_id": "C001", "cycler": "neware"}
+        metadata = build_metadata(cell_id="C001", cycler="neware")
         attach_metadata(output_file, metadata, metadata_format="parquet")
 
         read_meta = read_metadata(output_file)
@@ -714,7 +715,7 @@ class TestAttachMetadata:
         output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
-        metadata = {"cell_id": "C001", "cycler": "neware"}
+        metadata = build_metadata(cell_id="C001", cycler="neware")
         attach_metadata(output_file, metadata, metadata_format="json")
 
         sidecar = tmp_path / "test.bdf.json"
@@ -741,7 +742,7 @@ class TestAttachMetadata:
         output_file = tmp_path / "test.bdf.parquet"
         df.write_parquet(str(output_file))
 
-        metadata = {"cell_id": "C001"}
+        metadata = build_metadata(cell_id="C001")
         attach_metadata(output_file, metadata, metadata_format="parquet")
         mtime_after_first = output_file.stat().st_mtime_ns
 

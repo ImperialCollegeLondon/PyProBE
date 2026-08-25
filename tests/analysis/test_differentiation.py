@@ -6,6 +6,7 @@ import pytest
 
 from pyprobe.analysis import differentiation
 from pyprobe.result import Result
+from tests.metadata_helpers import build_metadata
 
 x_data = np.array([1, 2, 3, 4, 5])
 y_data = np.array([2, 4, 6, 8, 10])
@@ -16,7 +17,7 @@ def differentiation_fixture():
     """Return a Differentiation instance."""
     input_data = Result(
         lf=pl.DataFrame({"x": x_data, "y": y_data}),
-        metadata={},
+        metadata=build_metadata(),
     )
     input_data.column_definitions = {"x": "The x data", "y": "The y data"}
     return input_data

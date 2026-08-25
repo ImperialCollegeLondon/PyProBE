@@ -13,6 +13,7 @@ import pyprobe.analysis.degradation_mode_analysis as dma
 from pyprobe.analysis import smoothing
 from pyprobe.analysis.degradation_mode_analysis import OCP, CompositeOCP, _get_gradient
 from pyprobe.result import Result
+from tests.metadata_helpers import build_metadata
 
 """Tests for the OCP class in the degradation mode analysis module."""
 
@@ -258,7 +259,7 @@ def test_run_ocv_curve_fit(ne_ocp_fixture, pe_ocp_fixture):
 
     input_data = Result(
         lf=pl.DataFrame({"Voltage / V": ocv_target, "Net Capacity / Ah": soc}),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     d_ocv_target = np.gradient(ocv_target, soc)
@@ -330,7 +331,7 @@ def test_run_ocv_curve_fit_dQdV(ne_ocp_fixture, pe_ocp_fixture):
 
     input_data = Result(
         lf=pl.DataFrame({"Voltage / V": ocv_target, "Net Capacity / Ah": soc}),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     limits, fit = dma.run_ocv_curve_fit(
@@ -410,7 +411,7 @@ def test_run_ocv_curve_fit_dVdQ(ne_ocp_fixture, pe_ocp_fixture):
 
     input_data = Result(
         lf=pl.DataFrame({"Voltage / V": ocv_target, "Net Capacity / Ah": soc}),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     limits, fit = dma.run_ocv_curve_fit(
@@ -480,7 +481,7 @@ def test_run_batch_dma():
             lf=pl.DataFrame(
                 {"Voltage / V": ocv_target, "Net Capacity / Ah": soc},
             ),
-            metadata={},
+            metadata=build_metadata(),
             column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
         )
         for ocv_target in ocv_target_list
@@ -548,7 +549,7 @@ def test_run_batch_dma():
     # test with invalid input
     with pytest.raises(ValueError):
         dma.run_batch_dma_parallel(
-            input_data_list=[Result(lf=pl.DataFrame({}), metadata={})],
+            input_data_list=[Result(lf=pl.DataFrame({}), metadata=build_metadata())],
             ocp_ne=np.ones(10),
             ocp_pe=OCP(nmc_LGM50_ocp_Chen2020),
             fitting_target="OCV",
@@ -633,7 +634,7 @@ def bol_stoich_fixture(
                 "Li Inventory [Ah]": bol_capacity_fixture[3],
             },
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
     return stoichiometry_limits
 
@@ -658,7 +659,7 @@ def eol_stoich_fixture(
                 "Li Inventory [Ah]": eol_capacity_fixture[3],
             },
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
     return stoichiometry_limits
 
@@ -708,7 +709,7 @@ def test_quantify_degradation_modes(
                 "Net Capacity / Ah": np.linspace(0, 1, 10),
             },
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     with pytest.raises(ValueError):
@@ -797,7 +798,7 @@ def test_run_batch_dma_sequential_basic():
     input_data_list = [
         Result(
             lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
-            metadata={},
+            metadata=build_metadata(),
         )
         for ocv in ocv_target_list
     ]
@@ -837,7 +838,7 @@ def test_run_batch_dma_sequential_multiple_optimizers():
     input_data_list = [
         Result(
             lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
-            metadata={},
+            metadata=build_metadata(),
         )
         for ocv in ocv_target_list
     ]
@@ -871,7 +872,7 @@ def test_run_batch_dma_sequential_linked_results():
     input_data_list = [
         Result(
             lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
-            metadata={},
+            metadata=build_metadata(),
         )
         for ocv in ocv_target_list
     ]
@@ -896,7 +897,7 @@ def test_run_batch_dma_sequential_invalid_inputs():
     ocv = get_sample_ocv_data([0.83, 0.1, 0.1, 0.73])
     input_data = Result(
         lf=pl.DataFrame({"Voltage / V": ocv, "Net Capacity / Ah": soc}),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # Test empty input list

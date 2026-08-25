@@ -17,6 +17,7 @@ from pyprobe.filters import (
     _RankExprs,
     _span_mask,
 )
+from tests.metadata_helpers import build_metadata
 
 
 @pytest.fixture
@@ -70,7 +71,7 @@ def generic_experiment():
     cycle_info = [(1, 4, 2), (1, 2, 2)]
     return filters.Experiment(
         lf=dataframe,
-        metadata={},
+        metadata=build_metadata(),
         step_descriptions=step_descriptions,
         cycle_info=cycle_info,
     )
@@ -111,7 +112,7 @@ def _make_multilevel_experiment(
     )
     return filters.Experiment(
         lf=df,
-        metadata={},
+        metadata=build_metadata(),
         step_descriptions={"Step ID": [0], "Description": ["Test"]},
         cycle_info=[],
     )
@@ -897,7 +898,7 @@ class TestIterators:
         )
         exp = filters.Experiment(
             lf=df,
-            metadata={},
+            metadata=build_metadata(),
             step_descriptions={"Step ID": [1, 2], "Description": ["A", "B"]},
             cycle_info=[],
         )
@@ -1083,7 +1084,7 @@ class TestParametricConstantFilters:
         )
         exp = filters.Experiment(
             lf=df,
-            metadata={},
+            metadata=build_metadata(),
             step_descriptions={"Step ID": [0], "Description": ["Test"]},
             cycle_info=[],
         )

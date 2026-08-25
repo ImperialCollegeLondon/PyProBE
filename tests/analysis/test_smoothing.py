@@ -7,6 +7,7 @@ from scipy import interpolate
 
 from pyprobe.analysis import smoothing
 from pyprobe.result import Result
+from tests.metadata_helpers import build_metadata
 
 
 @pytest.fixture
@@ -18,7 +19,7 @@ def noisy_data():
 
     return Result(
         lf=pl.LazyFrame({"x": x, "y": y}),
-        metadata={},
+        metadata=build_metadata(),
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -33,7 +34,7 @@ def noisy_data_reversed():
     flipped_y = np.flip(y)
     return Result(
         lf=pl.LazyFrame({"x": flipped_x, "y": flipped_y}),
-        metadata={},
+        metadata=build_metadata(),
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -286,7 +287,7 @@ def test_downsample_non_monotonic(benchmark):
 
     data = Result(
         lf=pl.LazyFrame({"x": x, "y": y}),
-        metadata={},
+        metadata=build_metadata(),
         column_definitions={"x": "The x data", "y": "The y data"},
     )
 
@@ -311,7 +312,7 @@ def test_downsample_intervals():
     values = times
     test_data = Result(
         lf=pl.LazyFrame({"Time [s]": times, "values": values}),
-        metadata={},
+        metadata=build_metadata(),
         column_definitions={"Time": "time", "values": "test values"},
     )
 
@@ -331,7 +332,7 @@ def test_downsample_metadata_preservation():
     values = np.array([0, 1, 2, 3, 4, 5])
     test_data = Result(
         lf=pl.LazyFrame({"Time [s]": times, "values": values}),
-        metadata={"test_info": "test"},
+        metadata=build_metadata(test_info="test"),
         column_definitions={"Time": "time", "values": "test values"},
     )
 

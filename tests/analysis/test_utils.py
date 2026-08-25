@@ -10,6 +10,7 @@ import pyprobe.analysis.utils as utils
 from pyprobe.analysis import differentiation, pulsing, smoothing
 from pyprobe.columns import BDF, Column, ColumnResolutionError
 from pyprobe.result import Result, Table
+from tests.metadata_helpers import build_metadata
 
 
 @pytest.fixture
@@ -23,7 +24,7 @@ def result():
                 BDF.TEST_TIME_SECOND.name: [0.0, 1.0, 2.0],
             }
         ),
-        metadata={"cell_id": "test"},
+        metadata=build_metadata(cell_id="test"),
         column_definitions={"Current": "current def", "Voltage": "voltage def"},
     )
 
@@ -41,7 +42,7 @@ def result_with_recipe_cols():
                 BDF.STEP_COUNT.name: [0, 0, 0],
             }
         ),
-        metadata={},
+        metadata=build_metadata(),
         column_definitions={},
     )
 
@@ -229,7 +230,8 @@ _PULSING_COLS = {
 
 def _strip(cols: dict[str, list[float]], drop: str) -> Result:
     return Result(
-        lf=pl.LazyFrame({k: v for k, v in cols.items() if k != drop}), metadata={}
+        lf=pl.LazyFrame({k: v for k, v in cols.items() if k != drop}),
+        metadata=build_metadata(),
     )
 
 
@@ -305,7 +307,7 @@ def test_quantify_degradation_modes_raises_on_missing_column():
     }
     stripped = Result(
         lf=pl.LazyFrame({k: v for k, v in full.items() if k != "Cell Capacity [Ah]"}),
-        metadata={},
+        metadata=build_metadata(),
     )
     with pytest.raises(ColumnResolutionError):
         dma.quantify_degradation_modes([stripped])
@@ -327,7 +329,7 @@ class TestValidateQuantity:
                     BDF.VOLTAGE_VOLT.name: [3.0, 3.5, 4.0],
                 }
             ),
-            metadata={},
+            metadata=build_metadata(),
         )
         curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
         utils.validate_quantity(curve, BDF.TEST_TIME_SECOND, BDF.VOLTAGE_VOLT)

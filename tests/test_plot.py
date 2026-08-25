@@ -6,6 +6,7 @@ import pytest
 
 from pyprobe import plot
 from pyprobe.result import Result
+from tests.metadata_helpers import build_metadata
 
 
 def test_get_plotting_data_args():
@@ -18,7 +19,7 @@ def test_get_plotting_data_args():
             "Time / s": [7, 8, 9],
         }
     )
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     # Test with args only
     args = ["Current / A", "Voltage / V"]
@@ -39,7 +40,7 @@ def test_get_plotting_data_kwargs():
             "Voltage / V": [7, 8, 9],
         }
     )
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     # Test with kwargs only
     args = []
@@ -60,7 +61,7 @@ def test_get_plotting_data_mixed():
             "Capacity / Ah": [7, 8, 9],
         }
     )
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     args = ["Current / A"]
     kwargs = {"col": "Voltage / V"}
@@ -79,7 +80,7 @@ def test_get_plotting_data_lazy():
             "Current / A": [4, 5, 6],
         }
     ).lazy()
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     args = ["Time / s"]
     kwargs = {"y_col": "Current / A"}
@@ -98,7 +99,7 @@ def test_get_plotting_data_intersection():
             "Voltage / V": [4, 5, 6],
         }
     )
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     # Request columns including ones that don't exist
     args = ["Current / A", "Nonexistent / A"]
@@ -121,7 +122,7 @@ def test_get_plotting_data_no_columns():
             "Voltage / V": [4, 5, 6],
         }
     )
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     # Request columns that don't exist
     args = ["Nonexistent / A"]
@@ -139,7 +140,7 @@ def test_get_plotting_data_with_unit_conversion():
             "Voltage / V": [4.0, 5.0, 6.0],
         }
     )
-    result = Result(lf=data, metadata={})
+    result = Result(lf=data, metadata=build_metadata())
 
     args = ["Current / mA"]
     kwargs = {"y_col": "Voltage / kV"}
@@ -172,7 +173,7 @@ def test_seaborn_wrapper_data_conversion(mocker):
                 "Current / A": [4, 5, 6],
             }
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
     data = result.data.to_pandas()
     pyprobe_seaborn_plot = plot.seaborn.lineplot(
@@ -236,7 +237,7 @@ def test_result_plot_method():
                 "Voltage / V": [7, 8, 9],
             }
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # Basic plot call should work
@@ -254,7 +255,7 @@ def test_result_plot_method_with_lazy():
                 "Current / A": [4, 5, 6],
             }
         ).lazy(),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # Plot should work with LazyFrame too
@@ -272,7 +273,7 @@ def test_result_plot_method_missing_column():
                 "Current / A": [4, 5, 6],
             }
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # Should raise KeyError from pandas when column doesn't exist
@@ -291,7 +292,7 @@ def test_result_hvplot_method():
                 "Voltage / V": [7, 8, 9],
             }
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # Basic hvplot call should work
@@ -309,7 +310,7 @@ def test_result_hvplot_method_with_lazy():
                 "Current / A": [4, 5, 6],
             }
         ).lazy(),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # hvplot should work with LazyFrame too
@@ -327,7 +328,7 @@ def test_result_hvplot_method_missing_column():
                 "Current / A": [4, 5, 6],
             }
         ),
-        metadata={},
+        metadata=build_metadata(),
     )
 
     # Should raise ValueError if column doesn't exist
