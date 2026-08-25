@@ -6,6 +6,7 @@ from scipy.interpolate import PchipInterpolator, PPoly, make_smoothing_spline
 
 from pyprobe.columns import BDF, column_factory_from_string
 from pyprobe.result import Curve, Quantified, Table
+from tests.metadata_helpers import read_extras
 
 
 @pytest.fixture
@@ -60,7 +61,7 @@ def test_from_poly_accepts_ppoly(xy):
         y_quantity="Voltage / V",
     )
     assert isinstance(curve, PPoly)
-    assert curve.metadata["curve_method"] == "PchipInterpolator"
+    assert read_extras(curve)["curve_method"] == "PchipInterpolator"
 
 
 def test_from_poly_accepts_bspline(xy):
@@ -73,7 +74,7 @@ def test_from_poly_accepts_bspline(xy):
         y_quantity="Voltage / V",
     )
     assert isinstance(curve, PPoly)
-    assert curve.metadata["curve_method"] == "smoothing_spline"
+    assert read_extras(curve)["curve_method"] == "smoothing_spline"
     # value round-trips within tolerance of the original BSpline
     np.testing.assert_allclose(curve(x), bspline(x), atol=1e-8)
 

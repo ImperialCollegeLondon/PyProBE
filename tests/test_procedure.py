@@ -7,6 +7,7 @@ import polars as pl
 import pytest
 
 from pyprobe.filters import Procedure
+from tests.metadata_helpers import read_extras
 
 
 def test_experiment(procedure_fixture, steps_fixture, benchmark):
@@ -275,7 +276,7 @@ class TestSyncMetadata:
         from pyprobe.io import MetadataManager
 
         proc = self._make_procedure_with_metadata(tmp_path, {"existing": "value"})
-        proc.metadata["new_key"] = "new_value"
+        read_extras(proc)["new_key"] = "new_value"
 
         proc.sync_metadata()
 
@@ -289,7 +290,7 @@ class TestSyncMetadata:
     ) -> None:
         """sync_metadata(protect_existing=True) raises when a key is removed."""
         proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "val_a"})
-        del proc.metadata["key_a"]
+        del read_extras(proc)["key_a"]
 
         with pytest.raises(ValueError, match="absent from metadata"):
             proc.sync_metadata(protect_existing=True)
@@ -299,7 +300,7 @@ class TestSyncMetadata:
     ) -> None:
         """sync_metadata(protect_existing=True) raises when a value changes."""
         proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "original"})
-        proc.metadata["key_a"] = "changed"
+        read_extras(proc)["key_a"] = "changed"
 
         with pytest.raises(ValueError, match="changed value"):
             proc.sync_metadata(protect_existing=True)
@@ -309,7 +310,7 @@ class TestSyncMetadata:
         from pyprobe.io import MetadataManager
 
         proc = self._make_procedure_with_metadata(tmp_path, {"key_a": "original"})
-        proc.metadata["key_a"] = "changed"
+        read_extras(proc)["key_a"] = "changed"
 
         proc.sync_metadata(protect_existing=False)
 

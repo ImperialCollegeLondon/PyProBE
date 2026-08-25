@@ -26,7 +26,7 @@ from pyprobe.result import (
     Table,
     combine_results,
 )
-from tests.metadata_helpers import build_metadata
+from tests.metadata_helpers import build_metadata, read_extras
 
 
 @pytest.fixture
@@ -1877,7 +1877,7 @@ class TestTableCurveOperations:
         """The default fit is PchipInterpolator, recorded in metadata."""
         curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
         assert isinstance(curve, Curve)
-        assert curve.metadata["curve_method"] == "PchipInterpolator"
+        assert read_extras(curve)["curve_method"] == "PchipInterpolator"
 
     def test_to_curve_interpolator_passes_through_points(self, table: Table) -> None:
         """An interpolating curve passes through the supplied data points."""
