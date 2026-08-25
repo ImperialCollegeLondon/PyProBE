@@ -22,10 +22,6 @@ from pyprobe.result import Table
 class TestTypedRecord:
     """Every object holds one typed record."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table holds a metadata dictionary rather than a bdf.Metadata",
-    )
     def test_object_without_metadata_holds_an_empty_record(
         self,
         cycling_frame: pl.DataFrame,
@@ -35,10 +31,6 @@ class TestTypedRecord:
 
         assert table.metadata == bdf.Metadata()
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table holds a metadata dictionary rather than a bdf.Metadata",
-    )
     def test_dictionary_metadata_raises(self, cycling_frame: pl.DataFrame) -> None:
         """A dictionary as the metadata fails and names the expected type."""
         with pytest.raises(TypeError, match="Metadata"):
@@ -61,20 +53,12 @@ class TestTypedRecord:
 class TestExtras:
     """The free-form keys live under the extras field."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.info returns the metadata rather than its extras",
-    )
     def test_info_returns_the_extras_mapping(self, procedure: Procedure) -> None:
         """The information mapping is the extras mapping of the record."""
         procedure.metadata = bdf.Metadata(extras={"Name": "A", "Channel": 3})
 
         assert procedure.info == {"Name": "A", "Channel": 3}
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.info returns the metadata rather than its extras",
-    )
     def test_object_without_extras_returns_an_empty_mapping(
         self,
         procedure: Procedure,
@@ -134,10 +118,6 @@ class TestSidecarStore:
 
         assert loaded.metadata.raw == {"Name": "A"}  # type: ignore[attr-defined]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load does not read the BDF sidecar",
-    )
     def test_absent_sidecar_gives_an_empty_record(
         self,
         tmp_path: Path,

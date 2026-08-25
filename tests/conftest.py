@@ -7,6 +7,7 @@ from loguru import logger
 
 from pyprobe.cell import Cell
 from pyprobe.filters import Procedure
+from tests.metadata_helpers import build_metadata
 
 
 @pytest.fixture
@@ -25,8 +26,8 @@ def caplog(caplog: LogCaptureFixture):
 
 @pytest.fixture
 def info_fixture():
-    """Pytest fixture for simple cell info."""
-    return {"Name": "Test_Cell"}
+    """Pytest fixture for a simple cell metadata record."""
+    return build_metadata(Name="Test_Cell")
 
 
 @pytest.fixture

@@ -4,6 +4,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Optional
 
+import bdf
 import polars as pl
 from loguru import logger
 
@@ -56,7 +57,7 @@ class CyclingData(Table):
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None],
+        metadata: bdf.Metadata,
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         _path: Path | None = None,

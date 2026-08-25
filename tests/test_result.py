@@ -3,6 +3,7 @@
 import warnings
 from datetime import UTC, datetime
 
+import bdf
 import numpy as np
 import numpy.testing as np_testing
 import polars as pl
@@ -67,7 +68,7 @@ class TestResultInit:
         """Test the __init__ method."""
         assert isinstance(Result_fixture, Result)
         assert isinstance(Result_fixture.lf, pl.LazyFrame)
-        assert isinstance(Result_fixture.metadata, dict)
+        assert isinstance(Result_fixture.metadata, bdf.Metadata)
 
     def test_init_accepts_dataframe(self):
         """Test that DataFrame input is converted to LazyFrame at construction."""
@@ -237,7 +238,7 @@ class TestResultBuild:
         """Test the build method."""
         data1 = pl.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
         data2 = pl.DataFrame({"x": [7, 8, 9], "y": [10, 11, 12]})
-        metadata = build_metadata(test="metadata")
+        metadata = {"test": "metadata"}
         result = Result.build([data1, data2], metadata)
         assert isinstance(result, Result)
         expected_data = pl.DataFrame(
@@ -1396,7 +1397,7 @@ class TestResultPolarsIO:
             source=str(csv_path),
         )
         assert isinstance(result, Result)
-        assert result.metadata == {"test": "metadata"}
+        assert result.info == {"test": "metadata"}
         assert result.column_definitions == {"a": "Column A"}
         pl_testing.assert_frame_equal(result.data, test_df)
 
@@ -1522,7 +1523,7 @@ class TestQuantifiedTraitAndAlias:
         table = Table(lf=pl.LazyFrame({"Current / A": [1.0, 2.0]}))
         assert isinstance(table, Quantified)
         assert table.columns.names == ("Current / A",)
-        assert isinstance(table.metadata, dict)
+        assert isinstance(table.metadata, bdf.Metadata)
         assert isinstance(table.column_definitions, dict)
 
     def test_result_alias_resolves_to_table_and_warns(self):
@@ -1878,6 +1879,11 @@ class TestTableCurveOperations:
         curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
         assert isinstance(curve, Curve)
         assert read_extras(curve)["curve_method"] == "PchipInterpolator"
+
+    def test_to_curve_carries_source_extras(self, table: Table) -> None:
+        """A fitted curve carries the source table's extras, not its record."""
+        curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
+        assert curve.metadata["cell_id"] == "test"
 
     def test_to_curve_interpolator_passes_through_points(self, table: Table) -> None:
         """An interpolating curve passes through the supplied data points."""

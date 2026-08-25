@@ -7,6 +7,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+import bdf
 import polars as pl
 
 from pyprobe import utils
@@ -307,7 +308,7 @@ def _build_result(
         cycle_info = obj.cycle_info[1:] if len(obj.cycle_info) > 1 else []
         return Cycle(
             lf=filtered_lf,
-            metadata=obj.info,
+            metadata=obj.metadata,
             column_definitions=obj.column_definitions,
             step_descriptions=obj.step_descriptions,
             cycle_info=cycle_info,
@@ -315,7 +316,7 @@ def _build_result(
         )
     return Step(
         lf=filtered_lf,
-        metadata=obj.info,
+        metadata=obj.metadata,
         column_definitions=obj.column_definitions,
         step_descriptions=obj.step_descriptions,
         _path=path,
@@ -1075,7 +1076,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None],
+        metadata: bdf.Metadata,
         readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]],
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
@@ -1085,8 +1086,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: Dictionary containing metadata about the procedure and
-                data source.
+            metadata: The metadata record for the procedure.
             readme_dict: Experiment definitions from README.
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
@@ -1224,7 +1224,11 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             else:
                 logger.warning("README path provided but not found: {}", readme_path)
 
-        procedure = cls(lf=lf, metadata=parquet_metadata, readme_dict=readme_dict)
+        procedure = cls(
+            lf=lf,
+            metadata=bdf.Metadata(extras=parquet_metadata or None),
+            readme_dict=readme_dict,
+        )
         procedure.lf = procedure.lf.with_columns(
             procedure.columns.resolve(BDF.TEST_TIME_SECOND)
         )
@@ -1246,53 +1250,6 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
                 The message names the experiment and the cycle key.
         """
         raise NotImplementedError
-
-    def sync_metadata(self, *, protect_existing: bool = True) -> None:
-        """Write ``self.metadata`` back to the backing Parquet file.
-
-        Args:
-            protect_existing: When ``True`` (default), raises ``ValueError`` if
-                any key present in the file metadata is absent from
-                ``self.metadata`` or has a changed value. Set to ``False`` to
-                allow removing or changing existing keys.
-
-        Raises:
-            RuntimeError: If ``self._path`` is ``None`` (no backing file).
-            ValueError: If *protect_existing* is ``True`` and a destructive
-                change would be made.
-        """
-        if self._path is None:
-            raise RuntimeError(
-                "sync_metadata requires a backing Parquet file but _path is None. "
-                "Load the Procedure from a file path to enable sync_metadata."
-            )
-
-        from pyprobe.io import MetadataManager
-
-        manager = MetadataManager(self._path)
-
-        if protect_existing:
-            file_meta = manager.read_parquet()
-            conflicts: list[str] = []
-            for key, value in file_meta.items():
-                if key not in self.metadata:
-                    conflicts.append(
-                        f"key '{key}' is present in file but absent from metadata"
-                    )
-                elif self.metadata[key] != value:
-                    conflicts.append(
-                        f"key '{key}' has a changed value "
-                        f"(file={value!r}, memory={self.metadata[key]!r})"
-                    )
-            if conflicts:
-                raise ValueError(
-                    "sync_metadata(protect_existing=True) would overwrite existing "
-                    "file metadata. Conflicts:\n"
-                    + "\n".join(f"  - {c}" for c in conflicts)
-                )
-
-        manager.write(self.metadata)
-        logger.info("Synced metadata to '{}'.", self._path)
 
     def experiment(
         self,
@@ -1405,7 +1362,7 @@ class Experiment(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None],
+        metadata: bdf.Metadata,
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
@@ -1415,8 +1372,7 @@ class Experiment(CycleFiltersMixin, StepFiltersMixin, CyclingData):
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: Dictionary containing metadata about the experiment and
-                data source.
+            metadata: The metadata record for the experiment.
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
             cycle_info: Cycle boundary information.
@@ -1445,7 +1401,7 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None],
+        metadata: bdf.Metadata,
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         cycle_info: list[tuple[int, int, int]] | None = None,
@@ -1455,7 +1411,7 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: Dictionary containing metadata about the cycle and data source.
+            metadata: The metadata record for the cycle.
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
             cycle_info: Cycle boundary information.
@@ -1477,7 +1433,7 @@ class Step(StepFiltersMixin, CyclingData):
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None],
+        metadata: bdf.Metadata,
         column_definitions: dict[str, str] | None = None,
         step_descriptions: dict[str, list[str | int | None]] | None = None,
         _path: Path | None = None,
@@ -1486,7 +1442,7 @@ class Step(StepFiltersMixin, CyclingData):
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: Dictionary containing metadata about the step and data source.
+            metadata: The metadata record for the step.
             column_definitions: Column descriptions.
             step_descriptions: Step-by-step descriptions.
             _path: Optional path to the backing Parquet file.

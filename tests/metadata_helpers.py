@@ -3,20 +3,22 @@
 from collections.abc import Mapping
 from typing import Any
 
+import bdf
 
-def build_metadata(**keys: Any) -> dict[str, Any]:
-    """Build a metadata dictionary from keyword arguments.
+
+def build_metadata(**keys: Any) -> bdf.Metadata:
+    """Build a metadata record from keyword arguments.
 
     This helper abstracts metadata construction for tests, allowing future
     changes to metadata representation without updating every test.
 
     Args:
-        **keys: Key-value pairs to include in the metadata.
+        **keys: Key-value pairs to include in the record's extras mapping.
 
     Returns:
-        dict: A metadata dictionary.
+        bdf.Metadata: A metadata record.
     """
-    return dict(keys)
+    return bdf.Metadata(extras=dict(keys) if keys else None)
 
 
 def read_extras(obj: Any) -> Mapping[str, Any]:

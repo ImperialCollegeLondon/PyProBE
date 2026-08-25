@@ -9,6 +9,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Any, Literal, Protocol, Union, cast, runtime_checkable
 
+import bdf
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -43,17 +44,19 @@ class Quantified(Protocol):
     Any object that carries BDF quantities plus metadata satisfies ``Quantified``.
     A ``Quantified`` object exposes a :attr:`columns` accessor (a
     :class:`~pyprobe.columns.ColumnDict` or one of its variants such as
-    :class:`~pyprobe.columns.CurveColumns`), a :attr:`metadata` mapping, and a
-    :attr:`column_definitions` mapping. Both :class:`Table` (discrete) and
-    :class:`Curve` (continuous) satisfy it, so a consumer can validate the
-    quantities it received against a single surface regardless of storage.
+    :class:`~pyprobe.columns.CurveColumns`), a :attr:`metadata` record or
+    mapping, and a :attr:`column_definitions` mapping. Both :class:`Table`
+    (discrete) and :class:`Curve` (continuous) satisfy it, so a consumer can
+    validate the quantities it received against a single surface regardless of
+    storage. :class:`Table` holds a :class:`bdf.Metadata` record;
+    :class:`Curve` still holds a plain mapping.
 
     This is a structural :class:`typing.Protocol`: any object exposing the three
     members is recognised by ``isinstance(obj, Quantified)`` without explicit
     inheritance.
     """
 
-    metadata: dict[str, Any]
+    metadata: bdf.Metadata | dict[str, Any]
     column_definitions: dict[str, str]
 
     @property
@@ -256,7 +259,7 @@ class Curve(Quantified, PPoly):
         frame = pl.DataFrame({self.x_quantity.name: x_arr, self.y_quantity.name: y_arr})
         return Table(
             lf=frame.lazy(),
-            metadata=dict(self.metadata),
+            metadata=bdf.Metadata(extras=dict(self.metadata)),
             column_definitions=dict(self.column_definitions),
         )
 
@@ -294,8 +297,8 @@ class Table:
         - :meth:`get`: Get a column from the data as a NumPy array.
 
     Key attributes for describing the data:
-        - :attr:`metadata`: A dictionary containing metadata about the cell and
-          data source.
+        - :attr:`metadata`: A :class:`bdf.Metadata` record describing the cell
+          and data source. Free-form keys live under ``metadata.extras``.
         - :attr:`column_definitions`: A dictionary of column definitions.
         - :meth:`print_definitions`: Print the column definitions.
         - :attr:`columns`: A :class:`~pyprobe.columns.ColumnDict` object providing
@@ -313,7 +316,7 @@ class Table:
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: dict[str, Any | None] = {},
+        metadata: bdf.Metadata | None = None,
         column_definitions: dict[str, str] | None = None,
         _path: Path | None = None,
     ) -> None:
@@ -321,12 +324,14 @@ class Table:
 
         Args:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: Dictionary containing metadata about the result.
+            metadata: The metadata record for the result. An empty
+                ``bdf.Metadata`` is used where ``None``.
             column_definitions: Optional definitions for data columns.
             _path: Optional path to the backing Parquet file.
 
         Raises:
             ValueError: If constructor inputs do not match expected types.
+            TypeError: If ``metadata`` is neither ``None`` nor a ``bdf.Metadata``.
         """
         if isinstance(lf, str):
             lf = pl.scan_parquet(lf)
@@ -339,8 +344,10 @@ class Table:
                 raise ValueError(
                     "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
                 )
-        if not isinstance(metadata, dict):
-            raise ValueError("metadata must be a dictionary.")
+        if metadata is None:
+            metadata = bdf.Metadata()
+        elif not isinstance(metadata, bdf.Metadata):
+            raise TypeError("metadata must be a bdf.Metadata instance.")
         if column_definitions is None:
             column_definitions = {}
         elif not isinstance(column_definitions, dict):
@@ -405,7 +412,7 @@ class Table:
             obj,
             x_quantity=x,
             y_quantity=y,
-            metadata=dict(self.metadata),
+            metadata=dict(self.info),
         )
 
     def savgol(
@@ -793,12 +800,13 @@ class Table:
 
     @property
     def info(self) -> dict[str, Any | None]:
-        """Backward compatibility alias for metadata.
+        """The extras mapping of the metadata record.
 
         Returns:
-            dict: The metadata dictionary.
+            dict: The extras mapping, or an empty mapping where the record
+                holds no extras.
         """
-        return self.metadata
+        return self.metadata.extras or {}
 
     @property
     def df(self) -> pl.DataFrame:
@@ -1253,7 +1261,7 @@ class Table:
         new_data = new_data.rename({time_column_name: "Unix Time / s"})
         if isinstance(new_data, pl.DataFrame):
             new_data = new_data.lazy()
-        new_result = Table(lf=new_data, metadata={})
+        new_result = Table(lf=new_data)
 
         # Collect new data column names (excluding unix time)
         new_data_cols = [
@@ -1489,7 +1497,7 @@ class Table:
         data = pl.concat(data)
         if isinstance(data, pl.DataFrame):
             data = data.lazy()
-        return cls(lf=data, metadata=info)
+        return cls(lf=data, metadata=bdf.Metadata(extras=info))
 
     def save(
         self,
@@ -1548,7 +1556,7 @@ class Table:
         # Replace any non-alphanumeric character with an underscore in the metadata
         # dictionary keys
         renamed_metadata = {
-            re.sub(r"\W", "_", key): value for key, value in self.metadata.items()
+            re.sub(r"\W", "_", key): value for key, value in self.info.items()
         }
 
         variable_dict = {
@@ -1560,7 +1568,7 @@ class Table:
     @staticmethod
     def from_polars_io(
         polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
-        metadata: dict[str, Any | None] = {},
+        metadata: bdf.Metadata | None = None,
         column_definitions: dict[str, str] = {},
         **kwargs: Any,
     ) -> "Table":
@@ -1576,8 +1584,9 @@ class Table:
         Args:
             polars_io_func (Callable[..., pl.DataFrame | pl.LazyFrame]):
                 The Polars IO function to use to create the data.
-            metadata (dict[str, Any | None]):
-                The metadata dictionary for the new Result object. Empty by default.
+            metadata (bdf.Metadata | None):
+                The metadata record for the new Table object. An empty
+                ``bdf.Metadata`` is used where ``None``.
             column_definitions (dict[str, str]):
                 The column definitions for the new Result object. Empty by default.
             **kwargs: The keyword arguments to pass to the Polars IO function.
@@ -1592,7 +1601,7 @@ class Table:
 
             result = Table.from_polars_io(
                 pl.scan_csv,
-                metadata={"test": "test"},
+                metadata=bdf.Metadata(extras={"test": "test"}),
                 column_definitions={},
                 source="data.csv",
             )
@@ -1603,7 +1612,7 @@ class Table:
 
             result = Table.from_polars_io(
                 pl.from_pandas,
-                metadata={"test": "test"},
+                metadata=bdf.Metadata(extras={"test": "test"}),
                 column_definitions={},
                 data=pd.DataFrame({"a": [1, 2, 3]}),
             )
@@ -1614,7 +1623,7 @@ class Table:
 
             result = Table.from_polars_io(
                 pl.from_numpy,
-                metadata={"test": "test"},
+                metadata=bdf.Metadata(extras={"test": "test"}),
                 column_definitions={},
                 data=np.array([[1, 2, 3], [4, 5, 6]]),
                 schema=["a", "b"]
@@ -1697,9 +1706,7 @@ def combine_results(
         Table: A new Table object with the combined data.
     """
     for result in results:
-        instructions = [
-            pl.lit(result.metadata[key]).alias(key) for key in result.metadata
-        ]
+        instructions = [pl.lit(result.info[key]).alias(key) for key in result.info]
         result.lf = result.lf.with_columns(instructions)
     results[0].extend(results[1:], concat_method=concat_method)
     return results[0]

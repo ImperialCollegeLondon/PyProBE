@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+import bdf
 import polars as pl
 from loguru import logger
 
@@ -209,7 +210,7 @@ class Cell:
         )
         self.procedure[procedure_name] = Procedure(
             lf=lf,
-            metadata={},
+            metadata=bdf.Metadata(),
             readme_dict=experiment_dict,
         )
 
@@ -441,7 +442,7 @@ def load_archive(path: str) -> Cell:
                 ]
         cell.procedure[procedure_name] = Procedure(
             lf=os.path.join(archive_path, procedure["lf"]),
-            metadata=procedure.get("metadata", legacy_info),
+            metadata=bdf.Metadata(extras=procedure.get("metadata", legacy_info)),
             readme_dict=readme_dict,
             column_definitions=procedure.get("column_definitions"),
             step_descriptions=procedure.get("step_descriptions"),
