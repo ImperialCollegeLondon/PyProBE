@@ -923,6 +923,85 @@ def _global_cumulative_from_step_ch_dch(
     )
 
 
+def _global_net_from_resetting_ch_dch(
+    ch_col: "BDF",
+    dch_col: "BDF",
+    rate_col: "BDF",
+    time_col: "BDF",
+) -> Recipe:
+    """Recipe for global net from resetting charging/discharging columns.
+
+    Derives a synthetic key from decreases in the charging and discharging
+    columns (marking segment boundaries), then removes reset artifacts via
+    diff/clip before accumulating the signed global integral, adding back
+    the trapezoidal seam charge dropped at each reset (see :func:`_seam_charge`).
+
+    Args:
+        ch_col: Schedule-level charging :class:`BDF` column.
+        dch_col: Schedule-level discharging :class:`BDF` column.
+        rate_col: Current (or power) :class:`BDF` column for the seam term.
+        time_col: Elapsed-time :class:`BDF` column for the seam term.
+
+    Returns:
+        A :class:`Recipe` deriving the target column.
+    """
+
+    def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
+        ch = columns[ch_col].cast(pl.Float64)
+        dch = columns[dch_col].cast(pl.Float64)
+        current = columns[rate_col].cast(pl.Float64)
+        time = columns[time_col].cast(pl.Float64)
+        key = ((ch.diff() < 0) | (dch.diff() < 0)).fill_null(False).cum_sum()
+        diff_charge = ch.diff().clip(lower_bound=0).fill_null(strategy="zero")
+        diff_discharge = dch.diff().clip(lower_bound=0).fill_null(strategy="zero")
+        seam = _seam_charge(current, time, key)
+        return (diff_charge - diff_discharge + seam).cum_sum()
+
+    return Recipe(
+        required=[ch_col, dch_col, rate_col, time_col],
+        compute=_compute,
+    )
+
+
+def _global_cumulative_from_resetting_ch_dch(
+    ch_col: "BDF",
+    dch_col: "BDF",
+    rate_col: "BDF",
+    time_col: "BDF",
+) -> Recipe:
+    """Recipe for global cumulative throughput from resetting ch/dch columns.
+
+    Derives a synthetic key from decreases in the charging and discharging
+    columns (marking segment boundaries), then adds back the trapezoidal
+    seam charge dropped at each reset (see :func:`_seam_charge`).
+
+    Args:
+        ch_col: Schedule-level charging :class:`BDF` column.
+        dch_col: Schedule-level discharging :class:`BDF` column.
+        rate_col: Current (or power) :class:`BDF` column for the seam term.
+        time_col: Elapsed-time :class:`BDF` column for the seam term.
+
+    Returns:
+        A :class:`Recipe` deriving the target column.
+    """
+
+    def _compute(columns: dict["BDF", pl.Expr]) -> pl.Expr:
+        ch = columns[ch_col].cast(pl.Float64)
+        dch = columns[dch_col].cast(pl.Float64)
+        current = columns[rate_col].cast(pl.Float64)
+        time = columns[time_col].cast(pl.Float64)
+        key = ((ch.diff() < 0) | (dch.diff() < 0)).fill_null(False).cum_sum()
+        diff_charge = ch.diff().clip(lower_bound=0).fill_null(strategy="zero")
+        diff_discharge = dch.diff().clip(lower_bound=0).fill_null(strategy="zero")
+        seam = _seam_charge(current, time, key)
+        return diff_charge.cum_sum() + diff_discharge.cum_sum() + seam.abs().cum_sum()
+
+    return Recipe(
+        required=[ch_col, dch_col, rate_col, time_col],
+        compute=_compute,
+    )
+
+
 def _net_from_cumulative_current(cumul_col: "BDF", current_col: "BDF") -> Recipe:
     """Recipe for signed net from cumulative throughput and current direction.
 
@@ -1162,6 +1241,12 @@ BDF_RECIPES: dict[BDF, list[Recipe]] = {
             BDF.TEST_TIME_SECOND,
             BDF.STEP_COUNT,
         ),
+        _global_net_from_resetting_ch_dch(
+            BDF.SCHEDULE_CHARGING_CAPACITY_AH,
+            BDF.SCHEDULE_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+        ),
         _net_from_cumulative_current(BDF.CUMULATIVE_CAPACITY_AH, BDF.CURRENT_AMPERE),
         _trapz_integral_from_rate(BDF.CURRENT_AMPERE, BDF.TEST_TIME_SECOND),
     ],
@@ -1173,6 +1258,12 @@ BDF_RECIPES: dict[BDF, list[Recipe]] = {
             BDF.POWER_WATT,
             BDF.TEST_TIME_SECOND,
             BDF.STEP_COUNT,
+        ),
+        _global_net_from_resetting_ch_dch(
+            BDF.SCHEDULE_CHARGING_ENERGY_WH,
+            BDF.SCHEDULE_DISCHARGING_ENERGY_WH,
+            BDF.POWER_WATT,
+            BDF.TEST_TIME_SECOND,
         ),
         _net_from_cumulative_current(BDF.CUMULATIVE_ENERGY_WH, BDF.CURRENT_AMPERE),
         _trapz_integral_from_rate(BDF.POWER_WATT, BDF.TEST_TIME_SECOND),
@@ -1188,6 +1279,12 @@ BDF_RECIPES: dict[BDF, list[Recipe]] = {
             BDF.TEST_TIME_SECOND,
             BDF.STEP_COUNT,
         ),
+        _global_cumulative_from_resetting_ch_dch(
+            BDF.SCHEDULE_CHARGING_CAPACITY_AH,
+            BDF.SCHEDULE_DISCHARGING_CAPACITY_AH,
+            BDF.CURRENT_AMPERE,
+            BDF.TEST_TIME_SECOND,
+        ),
     ],
     BDF.CUMULATIVE_ENERGY_WH: [
         _within_cumulative(BDF.CHARGING_ENERGY_WH, BDF.DISCHARGING_ENERGY_WH),
@@ -1198,6 +1295,12 @@ BDF_RECIPES: dict[BDF, list[Recipe]] = {
             BDF.POWER_WATT,
             BDF.TEST_TIME_SECOND,
             BDF.STEP_COUNT,
+        ),
+        _global_cumulative_from_resetting_ch_dch(
+            BDF.SCHEDULE_CHARGING_ENERGY_WH,
+            BDF.SCHEDULE_DISCHARGING_ENERGY_WH,
+            BDF.POWER_WATT,
+            BDF.TEST_TIME_SECOND,
         ),
     ],
     # Global charging/discharging components

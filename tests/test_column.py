@@ -230,6 +230,8 @@ def recipe_sample_df() -> pl.DataFrame:
     registered recipe (including fallback branches) for every BDF column
     reachable from :data:`BDF_RECIPES` -- capacity and energy, step and
     cycle scope, and the global charging/discharging/net/cumulative columns.
+    The schedule accumulator columns never reset across these twenty rows, so
+    they repeat the global charging/discharging columns exactly.
 
     Returns:
         DataFrame containing 20 hand-verified rows covering all recipe inputs
@@ -274,6 +276,12 @@ def recipe_sample_df() -> pl.DataFrame:
         BDF.DISCHARGING_ENERGY_WH.name:         [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 12.0, 15.0, 18.0, 18.0, 18.0, 18.0, 18.0],  # noqa: E501
         BDF.NET_ENERGY_WH.name:                 [0.0, 2.0, 4.0, 6.0, 6.0, 3.0, 0.0, -3.0, -3.0, -1.0, 1.0, 3.0, 3.0, 0.0, -3.0, -6.0, -6.0, -6.0, -6.0, -6.0],  # noqa: E501
         BDF.CUMULATIVE_ENERGY_WH.name:          [0.0, 2.0, 4.0, 6.0, 6.0, 9.0, 12.0, 15.0, 15.0, 17.0, 19.0, 21.0, 21.0, 24.0, 27.0, 30.0, 30.0, 30.0, 30.0, 30.0],  # noqa: E501
+        # Schedule accumulators never reset across these twenty rows, so they
+        # repeat the global charging/discharging columns above exactly.
+        BDF.SCHEDULE_CHARGING_CAPACITY_AH.name:    [0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 5.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0],  # noqa: E501
+        BDF.SCHEDULE_DISCHARGING_CAPACITY_AH.name: [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 8.0, 10.0, 12.0, 12.0, 12.0, 12.0, 12.0],  # noqa: E501
+        BDF.SCHEDULE_CHARGING_ENERGY_WH.name:      [0.0, 2.0, 4.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 8.0, 10.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0],  # noqa: E501
+        BDF.SCHEDULE_DISCHARGING_ENERGY_WH.name:   [0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 12.0, 15.0, 18.0, 18.0, 18.0, 18.0, 18.0],  # noqa: E501
     })
     # fmt: on
 
