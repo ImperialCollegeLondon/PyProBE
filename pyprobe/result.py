@@ -354,7 +354,7 @@ class Table:
             raise ValueError("column_definitions must be a dictionary.")
 
         self.lf: pl.LazyFrame = lf
-        self.metadata = metadata
+        self.metadata = metadata.model_copy(deep=True)
         self.column_definitions = column_definitions.copy()
         self._path: Path | None = _path
 

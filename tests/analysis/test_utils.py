@@ -148,10 +148,11 @@ def test_build_result_inherit_and_extend(result):
 
 
 def test_build_result_deep_copies_metadata(result):
-    """build_result uses the same metadata reference (not a deep copy by default)."""
+    """build_result's Table construction gives the new object its own record."""
     lf = pl.LazyFrame({"x": [1]})
     new = utils.build_result(result, lf)
-    assert new.metadata is result.metadata
+    assert new.metadata == result.metadata
+    assert new.metadata is not result.metadata
 
 
 def test_append_columns_from_array(result):

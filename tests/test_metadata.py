@@ -36,10 +36,6 @@ class TestTypedRecord:
         with pytest.raises(TypeError, match="Metadata"):
             Table(cycling_frame, metadata={"Name": "A"})
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="a derived object shares the record of its source",
-    )
     def test_derived_object_holds_its_own_copy(self, procedure: Procedure) -> None:
         """A change to the record of a filtered object leaves the source alone."""
         procedure.metadata = bdf.Metadata(raw={"Name": "A"})
