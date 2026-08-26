@@ -83,10 +83,6 @@ class TestExtendOrder:
 class TestExtendTime:
     """The extend states how the test time crosses a boundary."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not implement the time rule",
-    )
     def test_continuous_test_time_starts_at_the_last_value(self) -> None:
         """The second test time starts at the last test time of the first."""
         first = _procedure(
@@ -104,10 +100,6 @@ class TestExtendTime:
 
         assert first.data["Test Time / s"].to_list() == [0.0, 1.0, 2.0, 2.0, 3.0, 4.0]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not implement the time rule",
-    )
     def test_elapsed_test_time_keeps_the_real_gap(self) -> None:
         """An elapsed test time follows the Unix time, so the gap survives."""
         first = _procedure(
@@ -132,10 +124,6 @@ class TestExtendTime:
             12.0,
         ]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not implement the time rule",
-    )
     def test_elapsed_test_time_without_unix_time_raises(self) -> None:
         """An elapsed test time needs a Unix time column on every object."""
         first = _procedure(
@@ -249,10 +237,6 @@ class TestExtendResult:
 class TestGlobSource:
     """A conversion of a glob loads every file it matches."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="process_cycler does not compose the load and the extend",
-    )
     def test_glob_loads_every_file_and_extends(self, tmp_path: Path) -> None:
         """Two matched files become one artifact with a continuous test time."""
         for name in ("session_2.csv", "session_10.csv"):

@@ -136,12 +136,19 @@ class CyclingData(Table):
                 ``Unix Time / s`` value of each one, falling back to the given
                 order where an object holds no such column. ``"given"`` keeps
                 the order the caller gave.
-            time: Reserved for a future rule on how the ``Test Time / s``
-                column crosses a source boundary. It has no effect yet.
+            time: How the ``Test Time / s`` column crosses a source boundary.
+                ``"continue"`` adds the last value of one source to the next.
+                ``"elapsed"`` derives the test time from ``Unix Time / s``, so
+                the real gap between sources survives. ``"keep"`` stacks the
+                recorded values verbatim.
             step_id: Reserved for a future rule on how the ``Step ID`` column
                 crosses a source boundary. It has no effect yet.
             concat_method: The method to use for concatenation. See the
                 :func:`polars.concat` documentation for the available values.
+
+        Raises:
+            ValueError: ``time`` is ``"elapsed"`` and a source holds no
+                ``Unix Time / s`` column.
         """
         if not isinstance(other, list):
             other = [other]
@@ -152,11 +159,91 @@ class CyclingData(Table):
         base_frame, other_frames = self._verify_compatible_frames(
             frames[0], frames[1:], mode="collect all"
         )
-        self.lf = pl.concat([base_frame, *other_frames], how=concat_method)
+        frames = [base_frame, *other_frames]
+        frames = self._with_time_rule(frames, time)
+        self.lf = pl.concat(frames, how=concat_method)
         original_column_definitions = self.column_definitions.copy()
         for source in other:
             self.column_definitions.update(source.column_definitions)
         self.column_definitions.update(original_column_definitions)
+
+    @staticmethod
+    def _with_time_rule(
+        frames: list[pl.LazyFrame],
+        time: Literal["continue", "elapsed", "keep"],
+    ) -> list[pl.LazyFrame]:
+        """Adjust the ``Test Time / s`` column of each frame across a boundary.
+
+        Args:
+            frames: The frames to adjust, in the order they will be
+                concatenated.
+            time: ``"continue"`` adds the last ``Test Time / s`` value of one
+                frame to the next. ``"elapsed"`` derives the test time from
+                ``Unix Time / s``, relative to the first value of the first
+                frame. ``"keep"`` returns the frames unchanged.
+
+        Returns:
+            The frames with an adjusted ``Test Time / s`` column, where
+            ``time`` calls for one.
+
+        Raises:
+            ValueError: ``time`` is ``"elapsed"`` and a frame holds no
+                ``Unix Time / s`` column.
+        """
+        if time == "keep":
+            return frames
+        test_time_col = BDF.TEST_TIME_SECOND.name
+        unix_time_col = BDF.UNIX_TIME_SECOND.name
+        if time == "elapsed":
+            for frame in frames:
+                if unix_time_col not in frame.collect_schema().names():
+                    raise ValueError(
+                        f"An elapsed test time needs a '{unix_time_col}' "
+                        "column on every source."
+                    )
+            start = frames[0].select(pl.col(unix_time_col).first()).collect().item()
+            return [
+                frame.with_columns((pl.col(unix_time_col) - start).alias(test_time_col))
+                for frame in frames
+            ]
+        # The remaining case is time == "continue".
+        return CyclingData._with_running_offset(frames, test_time_col, "last")
+
+    @staticmethod
+    def _with_running_offset(
+        frames: list[pl.LazyFrame],
+        column: str,
+        aggregate: Literal["max", "last"],
+    ) -> list[pl.LazyFrame]:
+        """Add a running offset to a column across a frame boundary.
+
+        Args:
+            frames: The frames to adjust, in the order they will be
+                concatenated.
+            column: The column to offset.
+            aggregate: How the next offset is read from a frame once it is
+                shifted. ``"max"`` reads the maximum value. ``"last"`` reads
+                the last row.
+
+        Returns:
+            The frames with the column offset, where a frame holds it. A
+            frame without the column is returned unchanged, and the running
+            offset carries over unchanged to the next frame.
+        """
+        adjusted_frames = []
+        offset = 0.0
+        for frame in frames:
+            if column not in frame.collect_schema().names():
+                adjusted_frames.append(frame)
+                continue
+            shifted = frame.with_columns((pl.col(column) + offset).alias(column))
+            if aggregate == "max":
+                aggregated = pl.col(column).max()
+            else:
+                aggregated = pl.col(column).last()
+            offset = shifted.select(aggregated).collect().item()
+            adjusted_frames.append(shifted)
+        return adjusted_frames
 
     @staticmethod
     def _ordered_by_start_time(sources: list["Table"]) -> list["Table"]:
