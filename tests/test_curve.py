@@ -1,5 +1,6 @@
 """Tests for the Curve continuous data object."""
 
+import bdf
 import numpy as np
 import pytest
 from scipy.interpolate import PchipInterpolator, PPoly, make_smoothing_spline
@@ -83,6 +84,44 @@ def test_from_poly_rejects_other_types():
     """from_poly raises TypeError for non-PPoly, non-BSpline inputs."""
     with pytest.raises(TypeError):
         Curve.from_poly(object(), x_quantity="a", y_quantity="b")
+
+
+def test_from_poly_keeps_caller_curve_method(xy):
+    """from_poly keeps a curve_method the caller already set in extras."""
+    x, y = xy
+    curve = Curve.from_poly(
+        PchipInterpolator(x, y),
+        x_quantity="Test Time / s",
+        y_quantity="Voltage / V",
+        metadata=bdf.Metadata(extras={"curve_method": "custom"}),
+    )
+    assert read_extras(curve)["curve_method"] == "custom"
+
+
+def test_curve_init_rejects_dictionary_metadata(xy):
+    """A dictionary as the metadata fails and names the expected type."""
+    x, y = xy
+    poly = PchipInterpolator(x, y)
+    with pytest.raises(TypeError, match="Metadata"):
+        Curve(
+            poly.c,
+            poly.x,
+            x_quantity="Test Time / s",
+            y_quantity="Voltage / V",
+            metadata={"Name": "A"},
+        )
+
+
+def test_from_poly_rejects_dictionary_metadata(xy):
+    """A dictionary as the metadata fails and names the expected type."""
+    x, y = xy
+    with pytest.raises(TypeError, match="Metadata"):
+        Curve.from_poly(
+            PchipInterpolator(x, y),
+            x_quantity="Test Time / s",
+            y_quantity="Voltage / V",
+            metadata={"Name": "A"},
+        )
 
 
 def test_derivative_returns_curve_with_derived_quantity(curve):

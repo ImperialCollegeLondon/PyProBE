@@ -19,15 +19,6 @@ class TestMetadataHelpers:
         metadata = build_metadata(Name="Test_Cell", test="value")
         assert metadata == bdf.Metadata(extras={"Name": "Test_Cell", "test": "value"})
 
-    def test_read_extras_from_mapping(self) -> None:
-        """read_extras returns a Mapping when metadata is a Mapping."""
-
-        class ObjWithDictMetadata:
-            metadata = {"key": "value"}
-
-        obj = ObjWithDictMetadata()
-        assert read_extras(obj) == {"key": "value"}
-
     def test_read_extras_from_bdf_metadata(self) -> None:
         """read_extras returns extras from bdf.Metadata-like object."""
 

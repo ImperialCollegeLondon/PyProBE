@@ -44,19 +44,18 @@ class Quantified(Protocol):
     Any object that carries BDF quantities plus metadata satisfies ``Quantified``.
     A ``Quantified`` object exposes a :attr:`columns` accessor (a
     :class:`~pyprobe.columns.ColumnDict` or one of its variants such as
-    :class:`~pyprobe.columns.CurveColumns`), a :attr:`metadata` record or
-    mapping, and a :attr:`column_definitions` mapping. Both :class:`Table`
-    (discrete) and :class:`Curve` (continuous) satisfy it, so a consumer can
-    validate the quantities it received against a single surface regardless of
-    storage. :class:`Table` holds a :class:`bdf.Metadata` record;
-    :class:`Curve` still holds a plain mapping.
+    :class:`~pyprobe.columns.CurveColumns`), a :attr:`metadata` record, and a
+    :attr:`column_definitions` mapping. Both :class:`Table` (discrete) and
+    :class:`Curve` (continuous) satisfy it, so a consumer can validate the
+    quantities it received against a single surface regardless of storage.
+    Every object holds its metadata as a :class:`bdf.Metadata` record.
 
     This is a structural :class:`typing.Protocol`: any object exposing the three
     members is recognised by ``isinstance(obj, Quantified)`` without explicit
     inheritance.
     """
 
-    metadata: bdf.Metadata | dict[str, Any]
+    metadata: bdf.Metadata
     column_definitions: dict[str, str]
 
     @property
@@ -93,6 +92,26 @@ def _derived_quantity(y_quantity: Column, x_quantity: Column) -> Column:
     )
 
 
+def _coerce_metadata(metadata: bdf.Metadata | None) -> bdf.Metadata:
+    """Return a valid metadata record, defaulting a ``None`` to an empty one.
+
+    Args:
+        metadata: A metadata record, or ``None``.
+
+    Returns:
+        ``metadata`` unchanged, or an empty :class:`bdf.Metadata` where
+        ``metadata`` is ``None``.
+
+    Raises:
+        TypeError: If ``metadata`` is neither ``None`` nor a ``bdf.Metadata``.
+    """
+    if metadata is None:
+        return bdf.Metadata()
+    if not isinstance(metadata, bdf.Metadata):
+        raise TypeError("metadata must be a bdf.Metadata instance.")
+    return metadata
+
+
 class Curve(Quantified, PPoly):
     """A quantity-labelled continuous data object that *is* a scipy ``PPoly``.
 
@@ -119,7 +138,7 @@ class Curve(Quantified, PPoly):
         *,
         x_quantity: str | Column,
         y_quantity: str | Column,
-        metadata: dict[str, Any] | None = None,
+        metadata: bdf.Metadata | None = None,
         column_definitions: dict[str, str] | None = None,
         extrapolate: bool | None = None,
         axis: int = 0,
@@ -131,10 +150,14 @@ class Curve(Quantified, PPoly):
             x: Breakpoints (as for :class:`scipy.interpolate.PPoly`).
             x_quantity: The x-axis quantity (string, ``Column``, or ``BDF``).
             y_quantity: The y-axis quantity (string, ``Column``, or ``BDF``).
-            metadata: Optional metadata mapping.
+            metadata: The metadata record for the curve. An empty
+                ``bdf.Metadata`` is used where ``None``.
             column_definitions: Optional column-definition mapping.
             extrapolate: Passed through to :class:`scipy.interpolate.PPoly`.
             axis: Passed through to :class:`scipy.interpolate.PPoly`.
+
+        Raises:
+            TypeError: If ``metadata`` is neither ``None`` nor a ``bdf.Metadata``.
         """
         # Call PPoly.__init__ directly: the Quantified Protocol sits ahead of
         # PPoly in the MRO and would otherwise swallow the constructor call.
@@ -149,7 +172,8 @@ class Curve(Quantified, PPoly):
             if isinstance(y_quantity, str)
             else y_quantity
         )
-        self.metadata: dict[str, Any] = metadata if metadata is not None else {}
+        metadata = _coerce_metadata(metadata)
+        self.metadata: bdf.Metadata = metadata.model_copy(deep=True)
         self.column_definitions: dict[str, str] = (
             column_definitions if column_definitions is not None else {}
         )
@@ -161,7 +185,7 @@ class Curve(Quantified, PPoly):
         *,
         x_quantity: str | Column,
         y_quantity: str | Column,
-        metadata: dict[str, Any] | None = None,
+        metadata: bdf.Metadata | None = None,
         column_definitions: dict[str, str] | None = None,
     ) -> "Curve":
         """Build a Curve from a scipy ``PPoly`` or ``BSpline``.
@@ -169,21 +193,23 @@ class Curve(Quantified, PPoly):
         A ``BSpline`` is not a ``PPoly`` (a sibling representation), so it is
         normalised once at construction via
         :meth:`scipy.interpolate.PPoly.from_spline`. The original construction
-        method is recorded in ``metadata["curve_method"]``.
+        method is recorded in ``metadata.extras["curve_method"]``.
 
         Args:
             poly: A scipy ``PPoly`` (e.g. ``PchipInterpolator``) or ``BSpline``.
             x_quantity: The x-axis quantity (string, ``Column``, or ``BDF``).
             y_quantity: The y-axis quantity (string, ``Column``, or ``BDF``).
-            metadata: Optional metadata mapping; ``curve_method`` is added if
-                not already present.
+            metadata: The metadata record for the curve. ``curve_method`` is
+                added under ``metadata.extras`` if not already present. An
+                empty ``bdf.Metadata`` is used where ``None``.
             column_definitions: Optional column-definition mapping.
 
         Returns:
             A new :class:`Curve` wrapping the (normalised) piecewise polynomial.
 
         Raises:
-            TypeError: If ``poly`` is neither a ``PPoly`` nor a ``BSpline``.
+            TypeError: If ``poly`` is neither a ``PPoly`` nor a ``BSpline``, or
+                if ``metadata`` is neither ``None`` nor a ``bdf.Metadata``.
         """
         if isinstance(poly, BSpline):
             method = "smoothing_spline"
@@ -195,14 +221,16 @@ class Curve(Quantified, PPoly):
                 "Curve.from_poly expects a scipy PPoly or BSpline, "
                 f"got {type(poly).__name__}."
             )
-        meta = dict(metadata) if metadata is not None else {}
-        meta.setdefault("curve_method", method)
+        metadata = _coerce_metadata(metadata)
+        extras = dict(metadata.extras or {})
+        extras.setdefault("curve_method", method)
+        metadata = metadata.model_copy(update={"extras": extras})
         return cls(
             poly.c,
             poly.x,
             x_quantity=x_quantity,
             y_quantity=y_quantity,
-            metadata=meta,
+            metadata=metadata,
             column_definitions=column_definitions,
             extrapolate=poly.extrapolate,
             axis=poly.axis,
@@ -239,7 +267,7 @@ class Curve(Quantified, PPoly):
             d.x,
             x_quantity=self.x_quantity,
             y_quantity=y_quantity,
-            metadata=dict(self.metadata),
+            metadata=self.metadata,
             column_definitions=dict(self.column_definitions),
             extrapolate=d.extrapolate,
             axis=d.axis,
@@ -259,7 +287,7 @@ class Curve(Quantified, PPoly):
         frame = pl.DataFrame({self.x_quantity.name: x_arr, self.y_quantity.name: y_arr})
         return Table(
             lf=frame.lazy(),
-            metadata=bdf.Metadata(extras=dict(self.metadata)),
+            metadata=self.metadata,
             column_definitions=dict(self.column_definitions),
         )
 
@@ -344,10 +372,7 @@ class Table:
                 raise ValueError(
                     "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
                 )
-        if metadata is None:
-            metadata = bdf.Metadata()
-        elif not isinstance(metadata, bdf.Metadata):
-            raise TypeError("metadata must be a bdf.Metadata instance.")
+        metadata = _coerce_metadata(metadata)
         if column_definitions is None:
             column_definitions = {}
         elif not isinstance(column_definitions, dict):
@@ -412,7 +437,7 @@ class Table:
             obj,
             x_quantity=x,
             y_quantity=y,
-            metadata=dict(self.info),
+            metadata=self.metadata,
         )
 
     def savgol(

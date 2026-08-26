@@ -1881,9 +1881,9 @@ class TestTableCurveOperations:
         assert read_extras(curve)["curve_method"] == "PchipInterpolator"
 
     def test_to_curve_carries_source_extras(self, table: Table) -> None:
-        """A fitted curve carries the source table's extras, not its record."""
+        """A fitted curve carries the source table's metadata record."""
         curve = table.to_curve(BDF.VOLTAGE_VOLT, x=BDF.TEST_TIME_SECOND)
-        assert curve.metadata["cell_id"] == "test"
+        assert read_extras(curve)["cell_id"] == "test"
 
     def test_to_curve_interpolator_passes_through_points(self, table: Table) -> None:
         """An interpolating curve passes through the supplied data points."""

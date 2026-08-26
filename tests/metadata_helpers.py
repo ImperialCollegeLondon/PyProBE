@@ -1,6 +1,5 @@
 """Helpers for building and reading test metadata."""
 
-from collections.abc import Mapping
 from typing import Any
 
 import bdf
@@ -21,33 +20,27 @@ def build_metadata(**keys: Any) -> bdf.Metadata:
     return bdf.Metadata(extras=dict(keys) if keys else None)
 
 
-def read_extras(obj: Any) -> Mapping[str, Any]:
+def read_extras(obj: Any) -> dict[str, Any]:
     """Read the extras from a metadata-bearing object.
 
     This helper abstracts metadata access for tests, allowing future
     changes to metadata representation without updating every test.
 
     Args:
-        obj: An object with metadata (e.g., Table, Result, RawData).
+        obj: An object with metadata (e.g., Table, Curve).
 
     Returns:
-        Mapping: The extras mapping.
+        dict: The extras mapping.
 
     Raises:
-        TypeError: Where metadata is neither a Mapping nor has an extras attribute.
+        TypeError: Where the object's metadata has no extras attribute.
     """
     metadata = obj.metadata
 
-    # If metadata is a Mapping (dict), return it directly
-    if isinstance(metadata, Mapping):
-        return metadata
-
-    # If metadata has an extras attribute, return it or empty dict
     try:
         extras = metadata.extras
         return extras if extras is not None else {}
     except AttributeError:
         raise TypeError(
-            f"metadata must be a Mapping or have an extras attribute, "
-            f"got {type(metadata).__name__}"
+            f"metadata must be a bdf.Metadata record, got {type(metadata).__name__}"
         ) from None
