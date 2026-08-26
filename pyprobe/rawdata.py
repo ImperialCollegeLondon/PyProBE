@@ -507,6 +507,16 @@ class CyclingData(Table):
                 "Description": self.step_descriptions.get("Description", []),
             }
         )
+        if step_description_df.height == 0:
+            error_msg = (
+                "No step descriptions are attached to this procedure. Unable to "
+                "create a PyBaMM experiment object. Attach a protocol, for "
+                "example with Procedure.attach_legacy_readme, before creating a "
+                "PyBaMM experiment."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
         no_step_descriptions = step_description_df.filter(
             pl.col("Description").is_null(),
         )

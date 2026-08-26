@@ -231,6 +231,25 @@ def test_pybamm_experiment_missing_descriptions():
         raw_data.pybamm_experiment
 
 
+def test_pybamm_experiment_no_protocol():
+    """Test error handling when the procedure carries no protocol at all."""
+    test_data = pl.DataFrame(
+        {
+            "Test Time / s": [1, 2, 3],
+            "Step Count / 1": [1, 2, 3],
+            "Step ID": [1, 2, 3],
+            "Current / A": [0.1, 0.2, 0.3],
+            "Voltage / V": [3.0, 3.1, 3.2],
+            "Net Capacity / Ah": [0.1, 0.2, 0.3],
+        },
+    )
+
+    raw_data = RawData(lf=test_data.lazy(), metadata=build_metadata())
+
+    with pytest.raises(ValueError, match="No step descriptions are attached"):
+        raw_data.pybamm_experiment
+
+
 def test_pybamm_experiment_multiple_conditions():
     """Test handling of steps with multiple comma-separated conditions."""
     test_data = pl.DataFrame(
