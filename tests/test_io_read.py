@@ -37,10 +37,6 @@ def _write_bdf_csv(path: Path, header: str, rows: list[str]) -> Path:
 class TestRawFileRoute:
     """A raw cycler file reads through the BDF reader."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="the raw file route of Procedure.load is not implemented",
-    )
     def test_raw_file_loads_and_writes_nothing(self, tmp_path: Path) -> None:
         """A raw cycler file becomes a procedure, and no file is written."""
         source = tmp_path / ARBIN_SAMPLE.name
@@ -57,10 +53,6 @@ class TestRawFileRoute:
         assert data["Current / A"].to_list()[-1] == pytest.approx(2.650138)
         assert sorted(p.name for p in tmp_path.iterdir()) == before
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load takes no reader control arguments",
-    )
     def test_reader_controls_pass_through(self, tmp_path: Path) -> None:
         """The time zone, the date order and the reconciliation reach the reader."""
         source = _write_bdf_csv(
@@ -96,10 +88,6 @@ class TestRawFileRoute:
 class TestCoreColumnReduction:
     """The read keeps the core column set alone."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="the core column reduction of Procedure.load is not implemented",
-    )
     def test_core_columns_are_kept_and_the_rest_are_dropped(
         self,
         tmp_path: Path,
@@ -119,10 +107,6 @@ class TestCoreColumnReduction:
         assert "Step Time / s" not in names
         assert "AC Internal Resistance / ohm" not in names
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="the raw file route of Procedure.load is not implemented",
-    )
     def test_absent_required_column_raises(self, tmp_path: Path) -> None:
         """A source without a current column fails and names that column."""
         source = _write_bdf_csv(
@@ -175,10 +159,6 @@ class TestCoreColumnReduction:
 class TestExtraColumns:
     """A user names a source column that the ontology does not define."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load takes no extra_columns argument",
-    )
     def test_named_extra_column_is_kept_under_the_given_name(
         self,
         tmp_path: Path,
@@ -200,10 +180,6 @@ class TestExtraColumns:
         assert "Pressure(kPa)" not in data.columns
         assert data["Ambient Pressure / kPa"].to_list() == [101.0, 102.0]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load takes no extra_columns argument",
-    )
     def test_absent_named_source_column_raises(self, tmp_path: Path) -> None:
         """A named source column that the data does not hold fails by name."""
         source = _write_bdf_csv(

@@ -271,12 +271,13 @@ def test_dashboard_run(cell_fixture):
         from pyprobe import Cell
         from pyprobe.dashboard import _Dashboard
         from pyprobe.filters import Procedure
+        from tests.readme_helpers import attach_readme
 
         cell = Cell()
         readme = "tests/sample_data/neware/README.yaml"
         parquet = "tests/sample_data/neware/sample_data_neware.bdf.parquet"
-        cell.add_procedure("Sample", Procedure.load(parquet, readme_path=readme))
-        cell.add_procedure("Sample 2", Procedure.load(parquet, readme_path=readme))
+        cell.add_procedure("Sample", attach_readme(Procedure.load(parquet), readme))
+        cell.add_procedure("Sample 2", attach_readme(Procedure.load(parquet), readme))
 
         dashboard = _Dashboard([cell])
         with patch.object(_Dashboard, "select_cell_indices", return_value=[0]):

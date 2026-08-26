@@ -5,6 +5,7 @@ import polars as pl
 import pytest
 
 from pyprobe.filters import Procedure
+from tests.readme_helpers import attach_readme
 
 
 def test_experiment(procedure_fixture, steps_fixture, benchmark):
@@ -50,9 +51,9 @@ def test_init(procedure_fixture, step_descriptions_fixture):
 
 def test_experiment_no_description():
     """Test creating a procedure with no step descriptions."""
-    procedure = Procedure.load(
-        "tests/sample_data/neware/sample_data_neware.bdf.parquet",
-        readme_path="tests/sample_data/neware/README_total_steps.yaml",
+    procedure = attach_readme(
+        Procedure.load("tests/sample_data/neware/sample_data_neware.bdf.parquet"),
+        "tests/sample_data/neware/README_total_steps.yaml",
     )
     assert np.all(np.isnan(procedure.step_descriptions["Description"]))
 
@@ -65,8 +66,8 @@ def test_experiment_names(procedure_fixture, titles_fixture):
 class TestProcedureLoad:
     """Tests for Procedure.load() classmethod."""
 
-    def test_load_auto_guesses_readme_when_present(self, tmp_path) -> None:
-        """Procedure.load auto-guesses README.yaml in parquet parent directory."""
+    def test_load_leaves_readme_dict_empty(self, tmp_path) -> None:
+        """Procedure.load populates no experiment definitions from a README."""
         from pyprobe.filters import Procedure
 
         df = pl.DataFrame(
@@ -80,56 +81,11 @@ class TestProcedureLoad:
 
         parquet_path = tmp_path / "data.bdf.parquet"
         df.write_parquet(parquet_path)
+        (tmp_path / "README.yaml").write_text("Initial Charge:\n  Steps: [1]\n")
 
-        readme_path = tmp_path / "README.yaml"
-        readme_path.write_text("Initial Charge:\n  Steps: [1]\n")
-
-        procedure = Procedure.load(parquet_path, readme_path=None)
-
-        assert procedure.readme_dict is not None
-        assert "Initial Charge" in procedure.readme_dict
-
-    def test_load_no_readme_proceeds_without_definitions(self, tmp_path) -> None:
-        """Procedure.load proceeds without README when file doesn't exist."""
-        from pyprobe.filters import Procedure
-
-        df = pl.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0],
-                "Current / A": [1.0, -1.0, 0.5],
-                "Voltage / V": [3.7, 3.6, 3.8],
-            }
-        )
-
-        parquet_path = tmp_path / "data.bdf.parquet"
-        df.write_parquet(parquet_path)
-
-        procedure = Procedure.load(parquet_path, readme_path=None)
+        procedure = Procedure.load(parquet_path)
 
         assert procedure.readme_dict == {}
-
-    def test_load_explicit_readme_used(self, tmp_path) -> None:
-        """Procedure.load uses explicit readme_path when provided."""
-        from pyprobe.filters import Procedure
-
-        df = pl.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0],
-                "Current / A": [1.0, -1.0, 0.5],
-                "Voltage / V": [3.7, 3.6, 3.8],
-                "Step ID": [1, 1, 2],
-            }
-        )
-
-        parquet_path = tmp_path / "data.bdf.parquet"
-        df.write_parquet(parquet_path)
-
-        readme_path = tmp_path / "custom_readme.yaml"
-        readme_path.write_text("My Experiment:\n  Steps: [1]\n")
-
-        procedure = Procedure.load(parquet_path, readme_path=readme_path)
-
-        assert "My Experiment" in procedure.readme_dict
 
     def test_load_missing_parquet_raises(self, tmp_path) -> None:
         """Procedure.load raises FileNotFoundError if parquet file doesn't exist."""
@@ -212,11 +168,13 @@ class TestProcedureLoad:
         assert procedure._path is None  # noqa: SLF001
 
     def test_load_raises_on_missing_required_bdf_columns(self, tmp_path) -> None:
-        """Procedure.load raises ValueError when required BDF columns are absent."""
+        """Procedure.load raises where a raw file is missing a required column."""
+        import bdf
+
         csv_path = tmp_path / "bad.csv"
         csv_path.write_text("Test Time / s,Some Column\n0.0,1.0\n1.0,2.0\n")
 
-        with pytest.raises(ValueError, match="Required BDF column"):
+        with pytest.raises(bdf.BDFValidationError):
             Procedure.load(csv_path)
 
     def test_path_propagates_through_filter(self, tmp_path) -> None:

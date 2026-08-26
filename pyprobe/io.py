@@ -490,17 +490,22 @@ def _core_time_group_name(group: tuple[BDF, ...]) -> str:
     return " or ".join(f"'{bdf_col.quantity} / {bdf_col.unit}'" for bdf_col in group)
 
 
-def _normalised_column_expressions(column_set: ColumnDict) -> list[pl.Expr]:
+def _normalised_column_expressions(
+    column_set: ColumnDict, *, warn: bool = True
+) -> list[pl.Expr]:
     """Resolve every core BDF column against *column_set*.
 
     Iterates the required column groups of
     :data:`~pyprobe.columns.CORE_COLUMN_GROUPS` and the single columns of
     :data:`~pyprobe.columns.CORE_COLUMNS`, keeping every column that resolves.
-    A required item that resolves from no column raises. An optional item logs
-    one warning on failure. A silent item is skipped without comment.
+    A required item that resolves from no column raises. A silent item is
+    skipped without comment.
 
     Args:
         column_set: The available columns to resolve against.
+        warn: Where ``True`` (default), log one warning for an optional item
+            that resolves from no column. A caller that separately reports a
+            missing optional column passes ``False`` to avoid a second report.
 
     Returns:
         Expressions for every core column, or group member, that resolves.
@@ -533,7 +538,7 @@ def _normalised_column_expressions(column_set: ColumnDict) -> list[pl.Expr]:
                     f"Required BDF column '{bdf_col.quantity}' could not be resolved "
                     f"from the source data: {exc}"
                 ) from exc
-            if status == "optional":
+            if status == "optional" and warn:
                 logger.warning(
                     "Optional BDF column '{}' could not be resolved; skipping.",
                     bdf_col.quantity,

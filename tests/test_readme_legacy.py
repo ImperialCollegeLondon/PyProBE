@@ -44,10 +44,6 @@ class TestExplicitAttach:
         step_ids = [step_id_of(leaf) for leaf in leaves(break_in)]
         assert step_ids == [4, 5, 6, 7]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load performs README discovery",
-    )
     def test_load_ignores_a_readme_beside_the_file(
         self,
         sample_data_neware_parquet: str,

@@ -5,16 +5,19 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, cast
 
 import bdf
+import bdf.io
 import polars as pl
 
 from pyprobe import utils
-from pyprobe.columns import BDF, Column
+from pyprobe.columns import BDF, Column, ColumnDict
 from pyprobe.rawdata import CyclingData
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from pyprobe.pyprobe_types import (
         FilterToCycleType,
     )
@@ -23,6 +26,51 @@ if TYPE_CHECKING:
 from loguru import logger
 
 IndexType = int | Sequence[int] | slice
+
+
+def _rename_extra_columns(
+    lf: pl.LazyFrame, extra_columns: dict[str, str]
+) -> pl.LazyFrame:
+    """Rename the source columns of *extra_columns* to their output aliases.
+
+    A raw reader leaves a column outside the BDF ontology as text, since it
+    holds no unit information to normalise against. A renamed column converts
+    to a number where every one of its values parses as one; otherwise it
+    stays text, and no value in it becomes null as a side effect of the
+    rename.
+
+    Args:
+        lf: The frame to rename columns on.
+        extra_columns: Mapping of source column name to output alias.
+
+    Returns:
+        *lf* with every source column of *extra_columns* renamed.
+
+    Raises:
+        KeyError: If a source column named in *extra_columns* is absent.
+    """
+    names = lf.collect_schema().names()
+    missing = [src for src in extra_columns if src not in names]
+    if missing:
+        raise KeyError(
+            f"extra_columns names a source column not present in the data: "
+            f"'{missing[0]}'"
+        )
+    lf = lf.rename(extra_columns)
+    aliases = list(extra_columns.values())
+    sample = lf.select(aliases).collect()
+    numeric = [
+        alias
+        for alias in aliases
+        if sample[alias].dtype == pl.String
+        and sample[alias].cast(pl.Float64, strict=False).null_count()
+        == sample[alias].null_count()
+    ]
+    if numeric:
+        lf = lf.with_columns(
+            pl.col(alias).cast(pl.Float64, strict=False) for alias in numeric
+        )
+    return lf
 
 
 def _include_preceding_row(mask: pl.Expr) -> pl.Expr:
@@ -1119,50 +1167,55 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     @classmethod
     def load(
         cls,
-        source: str | Path | pl.LazyFrame | pl.DataFrame,
-        readme_path: str | Path | None = None,
-        metadata_prefer: Literal["parquet", "json"] = "parquet",
+        source: "str | Path | pl.LazyFrame | pl.DataFrame | pd.DataFrame",
+        *,
+        plugin: str | None = None,
+        extra_columns: dict[str, str] | None = None,
+        tz: str = "UTC",
+        day_month_order: str | None = None,
+        reconcile_time: bool = False,
     ) -> "Procedure":
-        """Load a Procedure from a file, LazyFrame, or DataFrame.
+        """Load a Procedure, routing on the type of *source*.
 
-        Accepts a path to a ``.parquet`` or ``.csv`` file, or directly a Polars
-        :class:`~polars.LazyFrame` or :class:`~polars.DataFrame`. The source
-        data can come from **any origin** — battery cycler software, simulation
-        tools, or manual construction — as long as it contains BDF-compatible
-        columns:
-
-        - A time column: ``"Test Time / s"`` or ``"Unix Time / s"``
-        - ``"Current / A"``
-        - ``"Voltage / V"``
-
-        Use :func:`~pyprobe.io.process_cycler` to convert raw cycler files to
-        BDF format, or :func:`~pyprobe.io.process_generic` with a column map to
-        normalise arbitrary DataFrames before passing them here.
-
-        For ``.parquet`` sources, metadata is read from the Parquet footer (or a
-        JSON sidecar, depending on *metadata_prefer*). For ``.csv`` and
-        frame sources, metadata is empty. README auto-discovery only applies when
-        *source* is a file path.
+        A polars :class:`~polars.LazyFrame` or :class:`~polars.DataFrame`
+        loads directly, with an empty metadata record. A pandas ``DataFrame``
+        converts to polars at the boundary and takes the same route. A
+        ``.parquet`` path reads with :func:`polars.scan_parquet`, and its
+        metadata comes from the BDF sidecar beside it; the file is already
+        canonical, so no column reduction runs over it. Any other path reads
+        through :func:`bdf.io.scan`, which detects the cycler plugin, and the
+        result reduces to the core BDF column set of
+        :data:`~pyprobe.columns.CORE_COLUMNS`.
 
         Args:
-            source: A path to a ``.parquet`` or ``.csv`` file, a
-                :class:`~polars.LazyFrame`, or a :class:`~polars.DataFrame`.
-                Must contain BDF-compatible columns (see above).
-            readme_path: Explicit path to a README.yaml for experiment definitions.
-                When ``None`` (default), the parent directory of a file *source*
-                is checked automatically.
-            metadata_prefer: Whether to prefer the Parquet footer (``"parquet"``,
-                default) or a JSON sidecar (``"json"``) when both sources exist.
-                Only used when *source* is a ``.parquet`` file.
+            source: A path to a data file, a :class:`~polars.LazyFrame`, a
+                :class:`~polars.DataFrame`, or a pandas ``DataFrame``.
+            plugin: The cycler plugin name to use for a raw file. ``None``
+                (default) triggers auto-detection. Ignored for every other
+                source.
+            extra_columns: Mapping of source column name to output alias, for
+                a column the BDF ontology does not name. Applies to a
+                ``.parquet`` path or a raw file path.
+            tz: The time zone to interpret a naive timestamp under, for a raw
+                file. Defaults to ``"UTC"``.
+            day_month_order: The day/month order to resolve an ambiguous date
+                under, for a raw file. ``None`` (default) leaves the order
+                unresolved where the reader can infer it.
+            reconcile_time: Where ``True``, reconcile a raw file's elapsed
+                time against its absolute time. Defaults to ``False``.
 
         Returns:
-            Procedure with BDF-format columns, optional metadata, and optional
-            experiment definitions from README.yaml.
+            Procedure with BDF-format columns and the metadata of *source*.
 
         Raises:
             FileNotFoundError: If *source* is a path that does not exist.
-            ValueError: If *source* is a path with an unsupported suffix.
-            ValueError: If required BDF columns are missing from the data.
+            bdf.BDFValidationError: If a raw file is missing a required BDF
+                column; the error names every missing column.
+            bdf.BDFMetadataError: If the sidecar beside a ``.parquet`` file
+                does not parse.
+            ValueError: If a required core column group resolves no column.
+            KeyError: If *extra_columns* names a source column the data does
+                not hold.
 
         Example:
             Load from a processed parquet file::
@@ -1170,68 +1223,72 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
                 from pyprobe.filters import Procedure
 
                 procedure = Procedure.load("data.bdf.parquet")
-                procedure = Procedure.load(
-                    "data.bdf.parquet", readme_path="README.yaml"
-                )
+
+            Load a raw cycler file::
+
+                procedure = Procedure.load("data.xlsx")
 
             Load from a LazyFrame::
 
                 procedure = Procedure.load(my_lf)
         """
-        from pyprobe.io import read_metadata
-        from pyprobe.readme_processor import process_readme
+        from pyprobe.io import _normalised_column_expressions, read_sidecar
 
         resolved_path: Path | None = None
         lf: pl.LazyFrame
-        parquet_metadata: dict[str, Any] = {}
+        metadata: bdf.Metadata = bdf.Metadata()
+        reduced = False
 
-        if isinstance(source, pl.DataFrame):
-            lf = source.lazy()
-        elif isinstance(source, pl.LazyFrame):
+        if isinstance(source, pl.LazyFrame):
             lf = source
-        else:
+        elif isinstance(source, pl.DataFrame):
+            lf = source.lazy()
+        elif isinstance(source, (str, Path)):
             file_path = Path(source)
             if not file_path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
-            suffix = file_path.suffix.lower()
-            if suffix == ".parquet":
+            if file_path.suffix.lower() == ".parquet":
                 resolved_path = file_path
                 lf = pl.scan_parquet(file_path)
-                parquet_metadata = read_metadata(file_path, prefer=metadata_prefer)
-            elif suffix == ".csv":
-                lf = pl.scan_csv(file_path)
+                if extra_columns:
+                    lf = _rename_extra_columns(lf, extra_columns)
+                metadata = read_sidecar(file_path)
             else:
-                raise ValueError(
-                    f"Unsupported file format '{suffix}'. "
-                    "Use '.parquet' or '.csv', or pass a LazyFrame/DataFrame directly."
+                lf, metadata = bdf.io.scan(
+                    str(file_path),
+                    plugin=plugin,
+                    include_unknown=bool(extra_columns),
+                    tz=tz,
+                    day_month_order=day_month_order,
+                    reconcile_time=reconcile_time,
                 )
-            if readme_path is None:
-                candidate = file_path.parent / "README.yaml"
-                if candidate.exists():
-                    readme_path = candidate
-                else:
-                    logger.info(
-                        "No README.yaml found in '{}'; proceeding without "
-                        "experiment definitions.",
-                        file_path.parent,
+                if extra_columns:
+                    lf = _rename_extra_columns(lf, extra_columns)
+                column_set = ColumnDict(lf.collect_schema().names())
+                expressions = _normalised_column_expressions(column_set, warn=False)
+                if extra_columns:
+                    expressions.extend(
+                        pl.col(alias) for alias in extra_columns.values()
                     )
-
-        readme_dict: dict[str, dict[str, Any]] = {}
-        if readme_path is not None:
-            rp = Path(readme_path)
-            if rp.exists():
-                readme_dict = process_readme(str(rp)).experiment_dict
-            else:
-                logger.warning("README path provided but not found: {}", readme_path)
+                lf = lf.select(expressions)
+                reduced = True
+        else:
+            try:
+                lf = pl.from_pandas(source).lazy()
+            except Exception as exc:
+                raise TypeError(
+                    f"Could not convert source to a Polars DataFrame: {exc}"
+                ) from exc
 
         procedure = cls(
             lf=lf,
-            metadata=bdf.Metadata(extras=parquet_metadata or None),
-            readme_dict=readme_dict,
+            metadata=metadata,
+            readme_dict={},
         )
-        procedure.lf = procedure.lf.with_columns(
-            procedure.columns.resolve(BDF.TEST_TIME_SECOND)
-        )
+        if not reduced:
+            procedure.lf = procedure.lf.with_columns(
+                procedure.columns.resolve(BDF.TEST_TIME_SECOND)
+            )
         procedure._path = resolved_path
         return procedure
 

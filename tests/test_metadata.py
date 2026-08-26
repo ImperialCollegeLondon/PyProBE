@@ -135,10 +135,6 @@ class TestSidecarStore:
         with pytest.raises(FileNotFoundError):
             read_sidecar(tmp_path / "missing.parquet")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load does not read the BDF sidecar",
-    )
     def test_invalid_sidecar_raises_the_bdf_error(
         self,
         tmp_path: Path,
