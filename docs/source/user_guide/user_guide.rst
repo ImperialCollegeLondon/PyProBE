@@ -7,6 +7,7 @@ User Guide
    introduction
    installation
    importing_data
+   the_test_protocol
    accessing_data
    plotting
    analysis
