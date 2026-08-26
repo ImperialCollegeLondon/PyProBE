@@ -14,10 +14,6 @@ from pyprobe.filters import Procedure
 class TestFrameRoute:
     """A frame loads directly, and a column map renames its columns."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load takes no column_map argument",
-    )
     def test_frame_maps_to_bdf_columns(self) -> None:
         """A mapped source column reaches the output under its BDF name."""
         frame = pl.DataFrame(
@@ -42,10 +38,6 @@ class TestFrameRoute:
         assert data["Voltage / V"].to_list() == [3.7, 3.6, 3.55]
         assert "curr_a" not in data.columns
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.load takes no column_map argument",
-    )
     def test_mapped_output_name_that_is_not_a_bdf_name_raises(self) -> None:
         """A column map key outside the 'Quantity / unit' form fails by name."""
         frame = pl.DataFrame({"curr_a": [1.0, -1.0]})

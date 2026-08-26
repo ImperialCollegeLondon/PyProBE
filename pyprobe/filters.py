@@ -1171,6 +1171,7 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
         *,
         plugin: str | None = None,
         extra_columns: dict[str, str] | None = None,
+        column_map: dict[str | BDF, str] | None = None,
         tz: str = "UTC",
         day_month_order: str | None = None,
         reconcile_time: bool = False,
@@ -1196,6 +1197,11 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             extra_columns: Mapping of source column name to output alias, for
                 a column the BDF ontology does not name. Applies to a
                 ``.parquet`` path or a raw file path.
+            column_map: Mapping from BDF output column name to source column
+                name, for a :class:`~polars.LazyFrame`, a
+                :class:`~polars.DataFrame`, or a pandas ``DataFrame``. Each
+                key must hold the ``"Quantity / unit"`` form. Ignored for a
+                path source.
             tz: The time zone to interpret a naive timestamp under, for a raw
                 file. Defaults to ``"UTC"``.
             day_month_order: The day/month order to resolve an ambiguous date
@@ -1214,6 +1220,8 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             bdf.BDFMetadataError: If the sidecar beside a ``.parquet`` file
                 does not parse.
             ValueError: If a required core column group resolves no column.
+            ValueError: If a *column_map* key does not hold the
+                ``"Quantity / unit"`` form; the message names that key.
             KeyError: If *extra_columns* names a source column the data does
                 not hold.
 
@@ -1232,7 +1240,11 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
 
                 procedure = Procedure.load(my_lf)
         """
-        from pyprobe.io import _normalised_column_expressions, read_sidecar
+        from pyprobe.io import (
+            _build_column_map_exprs,
+            _normalised_column_expressions,
+            read_sidecar,
+        )
 
         resolved_path: Path | None = None
         lf: pl.LazyFrame
@@ -1279,6 +1291,11 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
                 raise TypeError(
                     f"Could not convert source to a Polars DataFrame: {exc}"
                 ) from exc
+
+        if column_map is not None and not isinstance(source, (str, Path)):
+            lf = lf.select(
+                _build_column_map_exprs(lf.collect_schema().names(), column_map)
+            )
 
         procedure = cls(
             lf=lf,
