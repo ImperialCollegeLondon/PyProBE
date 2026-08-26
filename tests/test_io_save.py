@@ -120,10 +120,6 @@ class TestTableSave:
 class TestProcessCycler:
     """One call reads a raw cycler file and writes a stored artifact."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="process_cycler does not compose the BDF write",
-    )
     def test_absent_output_file_is_written(self, tmp_path: Path) -> None:
         """A conversion with no output file reads the raw file and writes one."""
         source = tmp_path / ARBIN_SAMPLE.name
@@ -150,10 +146,6 @@ class TestProcessCycler:
         assert written == output
         assert pl.read_parquet(output).columns == ["Voltage / V"]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="process_cycler does not compose the BDF write",
-    )
     def test_overwrite_replaces_the_output_file(self, tmp_path: Path) -> None:
         """A requested overwrite reads the raw file again and replaces the output."""
         source = tmp_path / ARBIN_SAMPLE.name
@@ -175,7 +167,6 @@ class TestProcessCycler:
         with pytest.raises(ValueError, match=r"\.csv"):
             process_cycler(source, output_path=tmp_path / "converted.csv")
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_pyprobe_artifact_is_not_a_raw_source(
         self,
         tmp_path: Path,

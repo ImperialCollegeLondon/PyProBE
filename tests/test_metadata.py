@@ -145,7 +145,6 @@ class TestSidecarStore:
         with pytest.raises(bdf.BDFMetadataError):
             Procedure.load(path)
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_pyprobe_file_is_identified_from_the_sidecar(
         self,
         tmp_path: Path,

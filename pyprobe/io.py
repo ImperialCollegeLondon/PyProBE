@@ -298,60 +298,6 @@ def _resolve_glob(source: str | Path) -> list[Path]:
     return [Path(source)]
 
 
-def _load_raw_dataframes(
-    source: str | Path,
-    plugin: str | None,
-    normalize: bool = True,
-    extra_columns: dict[str, str] | None = None,
-) -> list[pl.LazyFrame]:
-    """Load raw cycler files into Polars LazyFrames.
-
-    Expands *source* via :func:`_resolve_glob`, then reads each file using
-    :func:`bdf.io.read`, optionally normalising to BDF column names.
-    :func:`bdf.io.read` returns a ``(DataFrame, metadata)`` tuple; the
-    DataFrame is converted to a LazyFrame.
-
-    Args:
-        source: A file path or glob pattern.
-        plugin: BatteryDF plugin name. ``None`` triggers auto-detection.
-        normalize: When ``True`` (default), normalise to BDF column names.
-            When ``False``, preserve original source column names.
-        extra_columns: Mapping of source column name to output alias. When
-            provided, ``include_unknown=True`` is passed to :func:`bdf.io.read`
-            to preserve source columns, then a rename operation is applied.
-
-    Returns:
-        One LazyFrame per resolved file, in sorted order.
-    """
-    files = _resolve_glob(source)
-    frames: list[pl.LazyFrame] = []
-    for f in files:
-        df, _meta = bdf.io.read(
-            str(f),
-            plugin=plugin,
-            normalize=normalize,
-            include_unknown=bool(extra_columns),
-        )
-        df = df.lazy()
-        if extra_columns:
-            df = df.rename(extra_columns)
-        frames.append(df)
-    return frames
-
-
-def _concat_dataframes(dfs: list[pl.LazyFrame]) -> pl.LazyFrame:
-    """Concatenate a list of LazyFrames using diagonal (schema-union) mode.
-
-    Args:
-        dfs: LazyFrames to concatenate. Columns need not be identical; missing
-            columns are filled with ``null``.
-
-    Returns:
-        Single concatenated LazyFrame.
-    """
-    return pl.concat(dfs, how="diagonal")
-
-
 def _handle_existing_cached_file(output_path: Path) -> Path | None:
     """Check if a cached output file exists and should be reused.
 
@@ -390,11 +336,13 @@ def is_pyprobe_file(path: Path | str) -> bool:
         path: Path to the Parquet file.
 
     Returns:
-        True if the file contains a ``"pyprobe"`` key with a dict value
-        in its footer metadata.
+        True if the BDF metadata sidecar beside *path* holds a ``"pyprobe"``
+        key with a dict value under its ``extras``.
 
     Raises:
         FileNotFoundError: If path does not exist.
+        bdf.BDFMetadataError: If a sidecar exists beside path and does not
+            parse.
 
     Example::
 
@@ -406,8 +354,9 @@ def is_pyprobe_file(path: Path | str) -> bool:
     file_path = Path(path)
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
-    meta = MetadataManager(file_path).read_parquet()
-    return isinstance(meta.get("pyprobe"), dict)
+    metadata = read_sidecar(file_path)
+    extras = metadata.extras or {}
+    return isinstance(extras.get("pyprobe"), dict)
 
 
 def _build_column_map_exprs(
@@ -550,18 +499,17 @@ def process_cycler(
     source: str | Path,
     output_path: str | Path | None = None,
     *,
-    plugin: str | None = None,
     overwrite_data: bool = False,
     compression_priority: Literal[
         "performance", "file size", "uncompressed"
     ] = "performance",
-    extra_columns: dict[str, str] | None = None,
+    **load_kwargs: Any,
 ) -> Path:
-    """Read cycler file(s), normalise to BDF columns, and write to Parquet.
+    """Read cycler file(s), normalise to BDF columns, and write a BDF artifact.
 
-    Reads one or more raw cycler files (via a file path or glob pattern),
-    normalises columns to BDF standard using ``batterydf``, and writes the
-    result to a ``.bdf.parquet`` file.
+    Expands *source* to one or more raw cycler files, loads each through
+    :meth:`~pyprobe.filters.Procedure.load`, extends the first with the rest,
+    and saves the result through :meth:`~pyprobe.result.Table.save`.
 
     Args:
         source: Path to the raw cycler file, or a glob pattern matching multiple
@@ -570,7 +518,6 @@ def process_cycler(
             with ``.parquet``). When ``None``, defaults to
             ``<source_parent>/<stem>.bdf.parquet`` where *stem* comes from
             *source* (or the first sorted glob match for glob patterns).
-        plugin: BatteryDF plugin name for reading. ``None`` triggers auto-detection.
         overwrite_data: When ``False`` (default), return the cached Parquet path
             immediately if it already exists without reprocessing raw data.
             When ``True``, reprocess and overwrite the existing file.
@@ -580,11 +527,8 @@ def process_cycler(
             - ``"file size"`` — uses ``zstd`` for smaller files.
             - ``"uncompressed"`` — no compression.
 
-        extra_columns: Mapping of source column name to output alias. When
-            provided, ``include_unknown=True`` is passed to :func:`bdf.io.read`
-            to preserve source columns, then a rename operation is applied.
-            Can only add columns not already auto-resolved by ``bdf`` (an alias
-            colliding with an auto-resolved BDF column is silently overwritten).
+        load_kwargs: Forwarded to :meth:`~pyprobe.filters.Procedure.load` for
+            every file, e.g. ``plugin`` or ``extra_columns``.
 
     Returns:
         Path to the written ``.bdf.parquet`` file.
@@ -594,10 +538,6 @@ def process_cycler(
         ValueError: If *source* is a PyProBE-written file (use
             :func:`~pyprobe.filters.Procedure.load` instead).
         ValueError: If *output_path* is provided but does not end with ``.parquet``.
-        ValueError: If any time column (Unix Time or Test Time) cannot be resolved
-            from the source data.
-        ValueError: If any required BDF column (current, voltage) cannot be resolved
-            from the source data.
 
     Example:
         Basic usage (writes ``data.bdf.parquet`` next to source)::
@@ -615,6 +555,8 @@ def process_cycler(
                 extra_columns={"Pressure(kPa)": "Ambient Pressure / kPa"},
             )
     """
+    from pyprobe.filters import Procedure
+
     first_file = _resolve_glob(source)[0]
 
     if (
@@ -647,28 +589,16 @@ def process_cycler(
         if cached is not None:
             return cached
 
-    dfs = _load_raw_dataframes(source, plugin, extra_columns=extra_columns)
-    df = _concat_dataframes(dfs)
+    files = _resolve_glob(source)
+    procedure = Procedure.load(files[0], **load_kwargs)
+    if len(files) > 1:
+        procedure.extend([Procedure.load(f, **load_kwargs) for f in files[1:]])
 
-    # if Unix Time / s in data already, drop Test Time / s
-    # means Test Time / s is calculated from Unix Time / s where possible
-    column_names = set(df.collect_schema().names())
-    if {"Unix Time / s", "Test Time / s"}.issubset(column_names):
-        df = df.drop("Test Time / s")
-
-    column_set = ColumnDict(df.collect_schema().names())
-    expressions: list[pl.Expr] = _normalised_column_expressions(column_set)
-
-    if extra_columns is not None:
-        expressions.extend(pl.col(alias) for alias in extra_columns.values())
-
-    normalised: pl.LazyFrame = df.select(expressions)
-
-    normalised.sink_parquet(
-        str(resolved_output_path),
-        compression=_COMPRESSION_MAP[compression_priority],
+    procedure.save(
+        resolved_output_path,
+        overwrite=True,
+        compression_priority=compression_priority,
     )
-    _embed_provenance(resolved_output_path)
     logger.info("Wrote normalised data to '{}'.", resolved_output_path)
     return resolved_output_path
 

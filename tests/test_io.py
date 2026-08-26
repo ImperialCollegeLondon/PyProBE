@@ -1,18 +1,18 @@
 """Tests for the io module.
 
 This module provides tests for BDF-based cycler data import, including:
-- process_cycler happy path and integration with column resolution
-- process_cycler output_path and skip_if_exists behavior
-- Error handling for missing required and optional columns
-- Parquet metadata write and read operations
-- process_cycler integration tests with actual sample data files
+- process_cycler as a composition of the load, the extend and the save
+- process_cycler output_path resolution, including glob sources
+- process_cycler integration tests with actual sample data files, including
+  the overwrite_data behavior
 - process_generic with different DataFrame sources (polars, lazy, pandas)
+- is_pyprobe_file, backed by the BDF metadata sidecar
 """
 
 import datetime
 from pathlib import Path
-from typing import Any, cast
-from unittest.mock import MagicMock, patch
+from typing import cast
+from unittest.mock import patch
 
 import pandas as pd
 import polars as pl
@@ -21,371 +21,136 @@ import pyarrow.parquet as pq
 import pytest
 
 from pyprobe.columns import BDF
+from pyprobe.filters import Procedure
 from pyprobe.io import (
+    is_pyprobe_file,
     process_cycler,
     process_generic,
 )
 
 
-def _mock_read(
-    df: "pd.DataFrame | pl.DataFrame",
-) -> tuple[pl.DataFrame, dict[str, Any]]:
-    """Mimic :func:`bdf.io.read`, returning a ``(DataFrame, metadata)`` tuple.
+def _fake_procedure(n: int = 3, offset: float = 0.0) -> Procedure:
+    """Build a minimal procedure over a frame with the given row count.
 
-    :func:`bdf.io.read` returns Polars data plus a metadata dict; tests provide
-    a source frame (pandas or polars) which is normalised to Polars here.
+    Args:
+        n: The number of rows to build.
+        offset: The starting value of the test time column.
+
+    Returns:
+        Procedure: A procedure holding a Test Time, a Current, and a Voltage
+            column.
     """
-    if isinstance(df, pd.DataFrame):
-        df = pl.from_pandas(df)
-    return df, {}
-
-
-@pytest.fixture
-def bdf_df() -> pd.DataFrame:
-    """Pandas DataFrame with the 3 required BDF columns."""
-    return pd.DataFrame(
-        {
-            "Test Time / s": [0.0, 1.0, 2.0],
-            "Current / A": [1.0, -1.0, 0.5],
-            "Voltage / V": [3.7, 3.6, 3.8],
-        }
+    return Procedure.load(
+        pl.DataFrame(
+            {
+                "Test Time / s": [offset + i for i in range(n)],
+                "Current / A": [1.0] * n,
+                "Voltage / V": [3.7] * n,
+            }
+        ),
     )
 
 
-class TestProcessCycler:
-    """Tests for process_cycler with minimal required columns."""
+class TestProcessCyclerComposition:
+    """process_cycler composes the load, the extend and the save."""
 
-    def test_process_cycler_required_columns_only(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler returns LazyFrame with required BDF columns.
-
-        `Net Capacity / Ah` also resolves here (and is included as an
-        optional column) via the trapezoidal current/time integral recipe,
-        since `Current / A` and `Test Time / s` are both present.
-        """
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        assert isinstance(result, Path)
-        result = pl.scan_parquet(result).collect()
-        assert "Test Time / s" in result.columns
-        assert "Current / A" in result.columns
-        assert "Voltage / V" in result.columns
-        assert "Net Capacity / Ah" in result.columns
-        assert result.shape == (3, 4)
-
-    def test_process_cycler_with_optional_columns(self, tmp_path: Path) -> None:
-        """process_cycler includes optional columns when available."""
-        fake_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0],
-                "Current / A": [1.0, -1.0, 0.5],
-                "Voltage / V": [3.7, 3.6, 3.8],
-                "Net Capacity / Ah": [0.0, 0.1, 0.15],
-                "Step ID": [1, 1, 2],
-            }
-        )
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert "Net Capacity / Ah" in result.columns
-        assert "Step ID" in result.columns
-
-    def test_process_cycler_derives_step_count_from_step_index(
-        self, tmp_path: Path
-    ) -> None:
-        """process_cycler derives Step Count from Step Index when available."""
-        fake_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0, 3.0],
-                "Current / A": [1.0, -1.0, 0.5, 0.3],
-                "Voltage / V": [3.7, 3.6, 3.8, 3.7],
-                "Step ID": [1, 1, 2, 2],
-            }
-        )
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert "Step Count / 1" in result.columns
-        step_count = result["Step Count / 1"].to_list()
-        assert step_count == [0, 0, 1, 1]
-
-    def test_process_cycler_passes_plugin_to_bdf_read(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler forwards plugin parameter to bdf.read()."""
+    def test_forwards_load_kwargs_to_procedure_load(self, tmp_path: Path) -> None:
+        """Every keyword outside the process_cycler signature reaches the load."""
         with patch(
-            "pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)
-        ) as mock_read:
-            process_cycler("fake.csv", output_path=tmp_path, plugin="neware_csv")
+            "pyprobe.filters.Procedure.load", return_value=_fake_procedure()
+        ) as mock_load:
+            process_cycler(
+                "fake.csv",
+                output_path=tmp_path,
+                plugin="neware_csv",
+                extra_columns={"Pressure(kPa)": "Ambient Pressure / kPa"},
+            )
 
-        mock_read.assert_called_once()
-        call_kwargs = mock_read.call_args.kwargs
-        assert call_kwargs["plugin"] == "neware_csv"
+        mock_load.assert_called_once_with(
+            Path("fake.csv"),
+            plugin="neware_csv",
+            extra_columns={"Pressure(kPa)": "Ambient Pressure / kPa"},
+        )
+
+    def test_multiple_files_extend_before_the_save(self, tmp_path: Path) -> None:
+        """Every matched file loads, and every one but the first extends onto it."""
+        file1 = tmp_path / "run_1.csv"
+        file2 = tmp_path / "run_2.csv"
+        file1.write_text("dummy")
+        file2.write_text("dummy")
+
+        procedures = [_fake_procedure(offset=0.0), _fake_procedure(offset=10.0)]
+        output = tmp_path / "out.bdf.parquet"
+        with patch("pyprobe.filters.Procedure.load", side_effect=procedures):
+            process_cycler(str(tmp_path / "run_*.csv"), output_path=output)
+
+        result = pl.read_parquet(output)
+        assert result.height == 6
+
+    def test_compression_priority_forwards_to_save(self, tmp_path: Path) -> None:
+        """compression_priority reaches Table.save unchanged."""
+        output = tmp_path / "out.bdf.parquet"
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
+            process_cycler(
+                "fake.csv", output_path=output, compression_priority="file size"
+            )
+
+        pf = pq.ParquetFile(output)
+        assert pf.metadata.row_group(0).column(0).compression == "ZSTD"
 
 
 class TestProcessCyclerOutputPath:
-    """Tests for process_cycler with output_path parameter."""
+    """process_cycler resolves the destination of the write."""
 
-    def test_process_cycler_writes_parquet_with_output_path(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler writes to Parquet file at specified output_path."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        expected_output = tmp_path / "fake.bdf.parquet"
-        assert expected_output.exists()
-        assert isinstance(result, Path)
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 3
-
-    def test_process_cycler_output_file_naming(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler names output file as {source_stem}.bdf.parquet."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("data.xlsx", output_path=tmp_path)
-
-        expected_output = tmp_path / "data.bdf.parquet"
-        assert expected_output.exists()
-        assert isinstance(result, Path)
-
-    def test_process_cycler_returns_path_to_written_parquet(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler returns Path to the written parquet file."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert len(result) == 3
-
-    def test_process_cycler_output_path_as_string(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler accepts output_path as string."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("fake.csv", output_path=str(tmp_path))
-
-        expected_output = tmp_path / "fake.bdf.parquet"
-        assert expected_output.exists()
-        assert isinstance(result, Path)
-
-    def test_process_cycler_output_path_defaults_to_source_parent(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler defaults output_path to source's parent directory."""
+    def test_output_path_defaults_to_source_parent(self, tmp_path: Path) -> None:
+        """With no output_path, the write lands beside the source."""
         source_file = tmp_path / "data.csv"
         source_file.write_text("dummy")
 
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
             result = process_cycler(source_file)
 
-        expected_output = tmp_path / "data.bdf.parquet"
-        assert expected_output.exists()
-        assert isinstance(result, Path)
+        assert result == tmp_path / "data.bdf.parquet"
+        assert result.exists()
 
-    def test_process_cycler_accepts_source_as_path_object(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """process_cycler accepts source as Path object."""
-        source_file = tmp_path / "fake.csv"
-        source_file.write_text("dummy")
-
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler(source_file, output_path=tmp_path)
-
-        assert isinstance(result, Path)
-
-
-class TestProcessCyclerOverwriteData:
-    """Tests for overwrite_data parameter behavior."""
-
-    def test_process_cycler_overwrite_false_skips_read(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """With overwrite_data=False, bdf.read() is not called if file exists."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            process_cycler("fake.csv", output_path=tmp_path)
-
-        mock_read = MagicMock()
-        with patch("pyprobe.io.bdf.io.read", side_effect=mock_read):
-            result = process_cycler(
-                "fake.csv", output_path=tmp_path, overwrite_data=False
-            )
-
-        mock_read.assert_not_called()
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 3
-
-    def test_process_cycler_overwrite_true_overwrites(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """With overwrite_data=True, existing file is overwritten."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            process_cycler("fake.csv", output_path=tmp_path)
-
-        new_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0, 2.0, 3.0],
-                "Current / A": [1.0, -1.0, 0.5, 0.3],
-                "Voltage / V": [3.7, 3.6, 3.8, 3.7],
-            }
-        )
-        with patch(
-            "pyprobe.io.bdf.io.read", return_value=_mock_read(new_df)
-        ) as mock_read:
-            result = process_cycler(
-                "fake.csv", output_path=tmp_path, overwrite_data=True
-            )
-
-        mock_read.assert_called_once()
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 4
-
-    def test_process_cycler_overwrite_data_defaults_false(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """overwrite_data defaults to False (skip if exists)."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            process_cycler("fake.csv", output_path=tmp_path)
-
-        with patch(
-            "pyprobe.io.bdf.io.read", side_effect=Exception("Should not be called")
-        ):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 3
-
-
-class TestProcessCyclerMissingColumns:
-    """Tests for error handling when required or optional columns are missing."""
-
-    @pytest.mark.parametrize(
-        "missing_column",
-        ["Current / A", "Voltage / V"],
-    )
-    def test_process_cycler_missing_required_column_raises(
-        self, tmp_path: Path, missing_column: str
-    ) -> None:
-        """process_cycler raises ValueError when required column is missing."""
-        fake_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-            }
-        )
-        del fake_df[missing_column]
-
-        with (
-            patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)),
-            pytest.raises(ValueError, match="Required BDF column"),
-        ):
-            process_cycler("fake.csv", output_path=tmp_path)
-
-    def test_process_cycler_missing_time_column_raises(self, tmp_path: Path) -> None:
-        """Raise ValueError when both Unix Time and Test Time are missing."""
-        fake_df = pd.DataFrame(
-            {
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-            }
-        )
-
-        with (
-            patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)),
-            pytest.raises(ValueError, match="Required time column"),
-        ):
-            process_cycler("fake.csv", output_path=tmp_path)
-
-    def test_process_cycler_missing_optional_column_warns(
-        self, tmp_path: Path, bdf_df: pd.DataFrame, caplog
-    ) -> None:
-        """process_cycler logs warning via loguru when optional column missing."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 3
-        assert "Net Capacity" not in result.columns
-        assert "Optional BDF column" in caplog.text
-
-
-class TestProcessCyclerEdgeCases:
-    """Edge case and boundary tests for process_cycler."""
-
-    def test_process_cycler_empty_dataframe(self, tmp_path: Path) -> None:
-        """process_cycler handles empty DataFrame (0 rows)."""
-        fake_df = pd.DataFrame(
-            {
-                "Test Time / s": [],
-                "Current / A": [],
-                "Voltage / V": [],
-            }
-        )
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 0
-        assert result.shape[1] == 4
-
-    def test_process_cycler_single_row(self, tmp_path: Path) -> None:
-        """process_cycler handles single-row DataFrame."""
-        fake_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0],
-                "Current / A": [1.5],
-                "Voltage / V": [3.7],
-            }
-        )
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == 1
-
-    def test_process_cycler_large_dataframe(self, tmp_path: Path) -> None:
-        """process_cycler handles large DataFrame efficiently."""
-        n_rows = 10000
-        fake_df = pd.DataFrame(
-            {
-                "Test Time / s": range(n_rows),
-                "Current / A": [1.0 + i * 0.001 for i in range(n_rows)],
-                "Voltage / V": [3.7 + i * 0.0001 for i in range(n_rows)],
-            }
-        )
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        result = pl.scan_parquet(result).collect()
-        assert result.shape[0] == n_rows
-
-    def test_process_cycler_test_time_derived_from_unix_time(
+    def test_output_path_as_a_directory_names_the_file_from_the_source(
         self, tmp_path: Path
     ) -> None:
-        """Test that Test Time is derived from Unix Time."""
-        fake_df = pd.DataFrame(
-            {
-                "Unix Time / s": [0, 1, 2],
-                "Test Time / s": [0, 2, 4],  # different time, should be ignored
-                "Current / A": [1.0, -1.0, 0.5],
-                "Voltage / V": [3.7, 3.6, 3.8],
-            }
-        )
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(fake_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
+        """A directory output_path takes the file name from the source stem."""
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
+            result = process_cycler("data.xlsx", output_path=tmp_path)
 
-        result = pl.scan_parquet(result).collect()
-        assert "Test Time / s" in result.columns
-        test_time = result["Test Time / s"].to_list()
-        assert test_time == pytest.approx([0.0, 1.0, 2.0])
+        assert result == tmp_path / "data.bdf.parquet"
+        assert result.exists()
+
+    def test_output_path_as_a_string(self, tmp_path: Path) -> None:
+        """process_cycler accepts output_path as a string."""
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
+            result = process_cycler("fake.csv", output_path=str(tmp_path))
+
+        assert result == tmp_path / "fake.bdf.parquet"
+        assert result.exists()
+
+
+class TestProcessCyclerGlob:
+    """Tests for glob pattern handling in process_cycler."""
+
+    def test_glob_no_matching_files_raises(self, tmp_path: Path) -> None:
+        """process_cycler raises FileNotFoundError when glob matches no files."""
+        pattern = str(tmp_path / "nonexistent_*.csv")
+        with pytest.raises(FileNotFoundError, match="No files found matching"):
+            process_cycler(pattern, output_path=tmp_path)
+
+    def test_glob_output_named_from_first_file(self, tmp_path: Path) -> None:
+        """process_cycler output file is named from first sorted glob match."""
+        file1 = tmp_path / "zzz_1.csv"
+        file1.write_text("dummy")
+
+        pattern = str(tmp_path / "zzz_*.csv")
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
+            result = process_cycler(pattern, output_path=tmp_path)
+
+        assert result == tmp_path / "zzz_1.bdf.parquet"
 
 
 class TestProcessCyclerIntegration:
@@ -396,12 +161,12 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 9, 20, 8, 37, 5, 772000).timestamp()
             ],
-            "Test Time / s": [271.21399998664856],
+            "Test Time / s": [301.214],
             "Step ID": [3],
             "Step Count / 1": [2],
             "Current / A": [2.650138],
             "Voltage / V": [3.599601],
-            "Net Capacity / Ah": [0.0003806986],
+            "Net Capacity / Ah": [0.00038040109999999997],
             "Temperature T1 / degC": [24.68785],
         },
     )
@@ -441,11 +206,11 @@ class TestProcessCyclerIntegration:
 
     maccor_last_row = pl.DataFrame(
         {
-            "Test Time / s": [13.0],
+            "Test Time / s": [15.06],
             "Current / A": [28.798],
             "Voltage / V": [3.716],
             "Unix Time / s": [datetime.datetime(2023, 11, 23, 15, 56, 24).timestamp()],
-            "Net Capacity / Ah": [0.024005],
+            "Net Capacity / Ah": [0.04024425555555555],
             "Step Count / 1": [2],
             "Temperature T1 / degC": [22.2591],
         },
@@ -456,19 +221,19 @@ class TestProcessCyclerIntegration:
             "Unix Time / s": [
                 datetime.datetime(2024, 3, 6, 21, 39, 38, 591000).timestamp()
             ],
-            "Test Time / s": [562749.496999979],
+            "Test Time / s": [562784.5],
             "Step ID": [12],
             "Step Count / 1": [61],
             "Current / A": [0.0],
             "Voltage / V": [3.4513],
-            "Net Capacity / Ah": [-0.018585],
+            "Net Capacity / Ah": [-0.01857910226387168],
         },
     )
 
     novonix_last_row = pl.DataFrame(
         {
             "Unix Time / s": [datetime.datetime(2025, 7, 19, 18, 51, 8).timestamp()],
-            "Test Time / s": [12288.0],
+            "Test Time / s": [12287.48004],
             "Step Count / 1": [1],
             "Step ID": [0],
             "Current / A": [0.49999387],
@@ -576,153 +341,6 @@ class TestProcessCyclerIntegration:
         # Results should be identical
         pl_testing.assert_frame_equal(result1, result2)
         assert result1.shape == result2.shape
-
-
-class TestProcessCyclerGlob:
-    """Tests for glob pattern handling in process_cycler."""
-
-    def test_glob_concat_two_files(self, tmp_path: Path) -> None:
-        """process_cycler concatenates multiple files matched by glob."""
-        df1 = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-            }
-        )
-        df2 = pd.DataFrame(
-            {
-                "Test Time / s": [2.0, 3.0],
-                "Current / A": [0.5, 0.3],
-                "Voltage / V": [3.8, 3.7],
-            }
-        )
-
-        file1 = tmp_path / "data_1.csv"
-        file2 = tmp_path / "data_2.csv"
-        file1.write_text("dummy")
-        file2.write_text("dummy")
-
-        pattern = str(tmp_path / "data_*.csv")
-        with patch(
-            "bdf.io.read",
-            side_effect=[_mock_read(df1), _mock_read(df2)],
-        ):
-            result = process_cycler(
-                pattern,
-                output_path=tmp_path / "out.bdf.parquet",
-            )
-
-        result_df = pl.scan_parquet(result).collect()
-        assert result_df.shape[0] == 4
-
-    def test_glob_no_matching_files_raises(self, tmp_path: Path) -> None:
-        """process_cycler raises FileNotFoundError when glob matches no files."""
-        pattern = str(tmp_path / "nonexistent_*.csv")
-        with pytest.raises(FileNotFoundError, match="No files found matching"):
-            process_cycler(pattern, output_path=tmp_path)
-
-    def test_glob_output_named_from_first_file(self, tmp_path: Path) -> None:
-        """process_cycler output file is named from first sorted glob match."""
-        df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0],
-                "Current / A": [1.0],
-                "Voltage / V": [3.7],
-            }
-        )
-
-        file1 = tmp_path / "zzz_1.csv"
-        file1.write_text("dummy")
-
-        pattern = str(tmp_path / "zzz_*.csv")
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(df)):
-            result = process_cycler(pattern, output_path=tmp_path)
-
-        assert isinstance(result, Path)
-
-
-class TestProcessCyclerExtraColumns:
-    """Tests for extra_columns parameter in process_cycler.
-
-    extra_columns is applied as a rename operation after bdf.io.read returns.
-    bdf.io.read is called with include_unknown=True to preserve source columns,
-    then the rename is applied. These tests mock bdf.io.read to return the
-    source columns, verify that include_unknown is True, and verify that the
-    rename operation produces the expected output columns.
-    """
-
-    def test_extra_columns_forwarded_to_bdf_io_read(self, tmp_path: Path) -> None:
-        """extra_columns rename is applied after bdf.io.read returns."""
-        bdf_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-                "Pressure(kPa)": [101.3, 101.4],
-            }
-        )
-
-        with patch(
-            "pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)
-        ) as mock_read:
-            process_cycler(
-                "fake.csv",
-                output_path=tmp_path / "out.bdf.parquet",
-                extra_columns={"Pressure(kPa)": "Pressure / kPa"},
-            )
-
-        assert "extra_columns" not in mock_read.call_args.kwargs
-        assert mock_read.call_args.kwargs["include_unknown"] is True
-
-    def test_extra_columns_appends_new_column(self, tmp_path: Path) -> None:
-        """extra_columns can add new columns not in auto-resolved set."""
-        bdf_df = pd.DataFrame(
-            {
-                "Test Time / s": [0.0, 1.0],
-                "Current / A": [1.0, -1.0],
-                "Voltage / V": [3.7, 3.6],
-                "Pressure(kPa)": [101.3, 101.4],
-            }
-        )
-
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler(
-                "fake.csv",
-                output_path=tmp_path / "out.bdf.parquet",
-                extra_columns={"Pressure(kPa)": "Pressure / kPa"},
-            )
-
-        result_df = pl.scan_parquet(result).collect()
-        assert "Pressure / kPa" in result_df.columns
-
-
-class TestProcessCyclerCompression:
-    """Tests for compression_priority parameter."""
-
-    def test_default_compression_is_lz4(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """Default compression_priority='performance' uses lz4."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler("fake.csv", output_path=tmp_path)
-
-        pf = pq.ParquetFile(result)
-        assert pf.metadata.row_group(0).column(0).compression == "LZ4"
-
-    def test_file_size_compression_is_zstd(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
-        """compression_priority='file size' uses zstd."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
-            result = process_cycler(
-                "fake.csv",
-                output_path=tmp_path / "out.bdf.parquet",
-                compression_priority="file size",
-            )
-
-        pf = pq.ParquetFile(result)
-        assert pf.metadata.row_group(0).column(0).compression == "ZSTD"
 
 
 class TestProcessGeneric:
@@ -1029,79 +647,31 @@ class TestHelperFunctions:
         with pytest.raises(ValueError):
             _build_column_map_exprs(columns, column_map)
 
-    def test_concat_dataframes_same_schema(self) -> None:
-        """_concat_dataframes concatenates DataFrames with same schema."""
-        from pyprobe.io import _concat_dataframes
-
-        df1 = pl.DataFrame({"a": [1, 2], "b": [3.0, 4.0]})
-        df2 = pl.DataFrame({"a": [5, 6], "b": [7.0, 8.0]})
-
-        result = _concat_dataframes([df1, df2])
-
-        assert result.shape == (4, 2)
-        assert result.columns == ["a", "b"]
-        assert result["a"].to_list() == [1, 2, 5, 6]
-
-    def test_concat_dataframes_different_schemas(self) -> None:
-        """_concat_dataframes concatenates DataFrames with different schemas."""
-        from pyprobe.io import _concat_dataframes
-
-        df1 = pl.DataFrame({"a": [1, 2], "b": [3.0, 4.0]})
-        df2 = pl.DataFrame({"b": [5.0, 6.0], "c": [7, 8]})
-
-        result = _concat_dataframes([df1, df2])
-
-        # Diagonal mode fills missing columns with null
-        assert "a" in result.columns
-        assert "b" in result.columns
-        assert "c" in result.columns
-        assert result.shape == (4, 3)
-        # Check that nulls are filled correctly
-        assert result["a"][2] is None or result["a"][2] != result["a"][2]  # null check
-        assert result["c"][0] is None or result["c"][0] != result["c"][0]  # null check
-
-    def test_concat_dataframes_empty_list(self) -> None:
-        """_concat_dataframes handles empty list (should error)."""
-        from pyprobe.io import _concat_dataframes
-
-        with pytest.raises(Exception):  # polars concat will error on empty list
-            _concat_dataframes([])
-
 
 class TestIsProbeFile:
-    """Tests for is_pyprobe_file()."""
+    """Tests for is_pyprobe_file(), backed by the BDF metadata sidecar."""
 
-    def test_is_pyprobe_file_true_after_process_cycler(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
+    def test_is_pyprobe_file_true_after_process_cycler(self, tmp_path: Path) -> None:
         """is_pyprobe_file returns True for a file written by process_cycler."""
-        from pyprobe.io import is_pyprobe_file
-
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
             path = process_cycler("fake.csv", output_path=tmp_path)
 
         assert is_pyprobe_file(path) is True
 
     def test_is_pyprobe_file_false_for_plain_parquet(self, tmp_path: Path) -> None:
-        """is_pyprobe_file returns False for a file without pyprobe key."""
-        from pyprobe.io import is_pyprobe_file
-
+        """is_pyprobe_file returns False for a file without a pyprobe sidecar key."""
         p = tmp_path / "plain.parquet"
         pl.DataFrame({"x": [1, 2]}).write_parquet(p)
         assert is_pyprobe_file(p) is False
 
     def test_is_pyprobe_file_raises_for_missing_file(self, tmp_path: Path) -> None:
         """is_pyprobe_file raises FileNotFoundError for non-existent path."""
-        from pyprobe.io import is_pyprobe_file
-
         with pytest.raises(FileNotFoundError):
             is_pyprobe_file(tmp_path / "nonexistent.parquet")
 
-    def test_process_cycler_raises_on_pyprobe_file_input(
-        self, tmp_path: Path, bdf_df: pd.DataFrame
-    ) -> None:
+    def test_process_cycler_raises_on_pyprobe_file_input(self, tmp_path: Path) -> None:
         """process_cycler raises ValueError when source is a PyProBE-written file."""
-        with patch("pyprobe.io.bdf.io.read", return_value=_mock_read(bdf_df)):
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
             path = process_cycler("fake.csv", output_path=tmp_path)
 
         with pytest.raises(ValueError, match="Procedure.load"):
