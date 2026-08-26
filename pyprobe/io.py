@@ -2,11 +2,12 @@
 
 Provides :func:`process_cycler` as the primary entry point for reading raw
 cycler files via the ``batterydf`` package, normalising them to BDF-standard
-column names, and persisting to Parquet with attached metadata.
+column names, and persisting to a BDF artifact.
 
-Also provides :func:`attach_metadata` for updating metadata on existing Parquet
-files, and :func:`process_generic` for normalising arbitrary battery data to
-BDF format under a caller-supplied column map.
+Also provides :func:`process_generic` for normalising arbitrary battery data to
+BDF format under a caller-supplied column map, :func:`read_sidecar` for
+reading the metadata that sits beside a data file, and :func:`is_pyprobe_file`
+for detecting a file that PyProBE wrote.
 
 Typical usage::
 
@@ -18,15 +19,12 @@ Typical usage::
 from __future__ import annotations
 
 import glob
-import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import bdf.io
 import bdf.metadata_parsers
 import polars as pl
-import pyarrow as pa
-import pyarrow.parquet as pq
 from loguru import logger
 
 from pyprobe.columns import (
@@ -40,9 +38,6 @@ from pyprobe.columns import (
 if TYPE_CHECKING:
     import pandas as pd
 
-_PARQUET_METADATA_KEY: bytes = b"bdf_metadata"
-"""Key used to store user metadata in Parquet footer."""
-
 _ParquetCompression = Literal["lz4", "uncompressed", "snappy", "gzip", "brotli", "zstd"]
 
 _COMPRESSION_MAP: dict[str, _ParquetCompression] = {
@@ -51,230 +46,6 @@ _COMPRESSION_MAP: dict[str, _ParquetCompression] = {
     "uncompressed": "uncompressed",
 }
 """Maps compression_priority literals to Parquet compression algorithm names."""
-
-
-class MetadataManager:
-    """Encapsulates all metadata operations for Parquet files.
-
-    Handles reading from and writing to both Parquet footers and JSON sidecars,
-    with preference logic for choosing between sources and updating existing files.
-
-    Example::
-
-        manager = MetadataManager(output_path, metadata_format="parquet")
-        existing = manager.read(metadata_format="parquet")
-        manager.write({"cell_id": "C001"})
-        manager.update({"new_key": "new_value"})
-    """
-
-    def __init__(self, path: Path) -> None:
-        """Initialize MetadataManager for a Parquet file.
-
-        Args:
-            path: Path to the Parquet file.
-        """
-        self.path = Path(path)
-        self.json_path = self.path.with_suffix(".json")
-
-    def read_parquet(self) -> dict[str, Any]:
-        """Read metadata from the Parquet file footer.
-
-        Returns:
-            Dictionary of metadata, or empty dict if missing.
-
-        Raises:
-            ValueError: If metadata exists but is corrupted (invalid JSON or encoding).
-        """
-        pf = pq.ParquetFile(self.path)
-        raw: dict[bytes, bytes] = pf.schema_arrow.metadata or {}
-        if _PARQUET_METADATA_KEY not in raw:
-            return {}
-        try:
-            return json.loads(raw[_PARQUET_METADATA_KEY].decode())
-        except json.JSONDecodeError as exc:
-            raise ValueError(
-                f"Parquet metadata is corrupted (invalid JSON): {exc}"
-            ) from exc
-        except UnicodeDecodeError as exc:
-            raise ValueError(
-                f"Parquet metadata is corrupted (invalid UTF-8 encoding): {exc}"
-            ) from exc
-
-    def read_json(self) -> dict[str, Any]:
-        """Read metadata from the JSON sidecar file.
-
-        Returns:
-            Dictionary of metadata, or empty dict if missing or not a dict.
-        """
-        if not self.json_path.exists():
-            return {}
-        try:
-            raw: Any = json.loads(self.json_path.read_text())
-            if isinstance(raw, dict):
-                return raw
-        except json.JSONDecodeError as exc:
-            logger.warning(
-                "Failed to decode JSON metadata from '{}': {}. "
-                "Returning empty metadata.",
-                self.json_path,
-                exc,
-            )
-        return {}
-
-    def read(
-        self, metadata_format: Literal["parquet", "json"] = "parquet"
-    ) -> dict[str, Any]:
-        """Read metadata for a specific storage format.
-
-        Args:
-            metadata_format: Which format to read from. ``"parquet"`` reads from
-                the Parquet footer; ``"json"`` reads from the sidecar.
-
-        Returns:
-            Dictionary of metadata.
-        """
-        if metadata_format == "parquet":
-            return self.read_parquet()
-        return self.read_json()
-
-    def read_both(
-        self, prefer: Literal["parquet", "json"] = "parquet"
-    ) -> dict[str, Any]:
-        """Read metadata from both sources with preference and fallback logic.
-
-        Tries to read the preferred source first. If the preferred source is
-        corrupted (raises ValueError), falls back to the alternative source.
-        If the alternative source is also unavailable, the error is re-raised.
-        If both sources are missing or empty, returns an empty dict.
-
-        Args:
-            prefer: Which source to prefer when both exist or when only one
-                has valid (non-corrupted) metadata.
-
-        Returns:
-            Dictionary of metadata from the preferred source, or the alternative
-            source if the preferred source is corrupted, or an empty dict if
-            both are missing.
-
-        Raises:
-            ValueError: If the preferred source is corrupted and the alternative
-                source is also unavailable.
-        """
-        prefer_primary = prefer == "parquet"
-        primary_reader = self.read_parquet if prefer_primary else self.read_json
-        secondary_reader = self.read_json if prefer_primary else self.read_parquet
-
-        # Try preferred source first
-        try:
-            primary_meta = primary_reader()
-            if primary_meta:
-                return primary_meta
-        except ValueError:
-            # Preferred source is corrupted; try the alternative
-            secondary_meta = secondary_reader()
-            if secondary_meta:
-                return secondary_meta
-            # Both sources corrupted or missing; re-raise the original error
-            raise
-
-        # Preferred source is empty; try secondary
-        secondary_meta = secondary_reader()
-        return secondary_meta if secondary_meta else {}
-
-    def write(
-        self,
-        metadata: dict[str, Any],
-        metadata_format: Literal["parquet", "json"] = "parquet",
-    ) -> None:
-        """Write metadata to a Parquet file in the specified format.
-
-        Reads the existing Parquet file, embeds or sidecars the metadata, and
-        writes back. If *metadata_format* is ``"parquet"``, metadata is stored
-        in the Parquet footer. If ``"json"``, a sidecar file is written instead.
-
-        Args:
-            metadata: Dictionary of metadata to write.
-            metadata_format: Where to store metadata.
-
-        Raises:
-            ValueError: If the Parquet file is corrupted.
-        """
-        if metadata_format == "parquet":
-            pf = pq.ParquetFile(self.path)
-            original_compression = (
-                pf.metadata.row_group(0).column(0).compression.lower()
-                if pf.metadata.num_row_groups > 0
-                and pf.metadata.row_group(0).num_columns > 0
-                else "snappy"
-            )
-            if original_compression == "uncompressed":
-                original_compression = "none"
-            table = pf.read()
-            existing: dict[bytes, bytes] = table.schema.metadata or {}
-            combined_meta = {
-                **existing,
-                _PARQUET_METADATA_KEY: json.dumps(metadata).encode(),
-            }
-            table = table.replace_schema_metadata(combined_meta)
-            pq.write_table(table, self.path, compression=original_compression)
-        else:
-            self.json_path.write_text(json.dumps(metadata, indent=2))
-
-    def update(
-        self,
-        metadata: dict[str, Any],
-        metadata_format: Literal["parquet", "json"] = "parquet",
-    ) -> None:
-        """Update metadata on an existing cached file without reprocessing.
-
-        Merges *metadata* with existing metadata (new values override old ones),
-        then writes back in the specified format.
-
-        Args:
-            metadata: Dictionary of metadata to merge in.
-            metadata_format: Which format to update.
-
-        Raises:
-            ValueError: If the Parquet file or JSON sidecar is corrupted.
-        """
-        existing_meta = self.read(metadata_format=metadata_format)
-        merged_metadata = {**existing_meta, **metadata}
-        if merged_metadata == existing_meta:
-            return
-        self.write(merged_metadata, metadata_format=metadata_format)
-
-    @classmethod
-    def create(
-        cls,
-        table: pa.Table,
-        path: Path,
-        metadata: dict[str, Any] | None = None,
-        metadata_format: Literal["parquet", "json"] = "parquet",
-    ) -> None:
-        """Write a new Parquet file with optional metadata.
-
-        Embeds or sidecars metadata as specified, then writes the Arrow table
-        to the Parquet file. This method is for creating new files; use
-        :meth:`write` or :meth:`update` for existing files.
-
-        Args:
-            table: Arrow table to persist.
-            path: Destination file path.
-            metadata: Optional metadata dictionary to attach.
-            metadata_format: Where to store metadata ("parquet" or "json").
-        """
-        if metadata:
-            if metadata_format == "parquet":
-                existing: dict[bytes, bytes] = table.schema.metadata or {}
-                combined_meta = {
-                    **existing,
-                    _PARQUET_METADATA_KEY: json.dumps(metadata).encode(),
-                }
-                table = table.replace_schema_metadata(combined_meta)
-            else:
-                json_path = path.with_suffix(".json")
-                json_path.write_text(json.dumps(metadata, indent=2))
-        pq.write_table(table, path)
 
 
 def _resolve_glob(source: str | Path) -> list[Path]:
@@ -610,76 +381,6 @@ def read_sidecar(path: str | Path) -> bdf.Metadata:
 
     parser = bdf.metadata_parsers.BdfSidecarParser()
     return parser.parse(path)
-
-
-def read_metadata(
-    path: str | Path,
-    prefer: Literal["parquet", "json"] = "parquet",
-) -> dict[str, Any]:
-    r"""Read metadata from a Parquet file's footer or a ``.json`` sidecar.
-
-    Checks both the Parquet footer (stored under \"bdf_metadata\") and a ``.json``
-    sidecar (derived from *path* by replacing the ``.parquet`` suffix with
-    ``.json``). When both sources contain metadata, *prefer* controls which is
-    returned. When only one source has metadata, that source is returned
-    regardless of *prefer*. When neither has metadata, an empty dict is returned.
-
-    Args:
-        path: Path to the Parquet file.
-        prefer: Which source to return when both exist. ``\"parquet\"`` (default)
-            returns the Parquet footer metadata; ``\"json\"`` returns the sidecar
-            metadata.
-
-    Returns:
-        A dictionary of metadata key-value pairs with their original types
-        preserved (via JSON round-tripping).
-
-    Raises:
-        ValueError: If *prefer* is not ``\"parquet\"`` or ``\"json\"``.
-
-    Example:
-        Load metadata from a processed battery file, choosing between Parquet
-        footer and JSON sidecar::
-
-            from pyprobe.io import read_metadata
-
-            # Prefer Parquet footer metadata (default)
-            meta = read_metadata("data.bdf.parquet")
-            print(meta["cell_id"])  # 'C001'
-
-            # Or prefer JSON sidecar if both exist
-            meta = read_metadata("data.bdf.parquet", prefer="json")
-    """
-    if prefer not in ("parquet", "json"):
-        raise ValueError(f"prefer must be 'parquet' or 'json', got '{prefer}'.")
-
-    manager = MetadataManager(Path(path))
-    return manager.read_both(prefer=prefer)
-
-
-def attach_metadata(
-    path: str | Path,
-    metadata: dict[str, Any],
-    metadata_format: Literal["parquet", "json"] = "parquet",
-) -> None:
-    """Attach or update metadata on an existing Parquet file.
-
-    Merges *metadata* with any existing metadata stored in the file, with
-    new values taking precedence.
-
-    Args:
-        path: Path to the existing Parquet file.
-        metadata: JSON-serializable key-value pairs to attach.
-        metadata_format: Where to store metadata. ``"parquet"`` (default) embeds
-            in the Parquet footer. ``"json"`` writes a ``.json`` sidecar file.
-
-    Raises:
-        FileNotFoundError: If *path* does not exist.
-    """
-    path = Path(path)
-    if not path.exists():
-        raise FileNotFoundError(f"Parquet file not found: {path}")
-    MetadataManager(path).update(metadata, metadata_format=metadata_format)
 
 
 def process_generic(
