@@ -1,8 +1,10 @@
 """Tests for the readme_processor module."""
 
 import pytest
+import yaml
 
-from pyprobe.readme_processor import ReadmeModel, process_readme
+from pyprobe.protocol import Step, leaves, step_id_of
+from pyprobe.readme_processor import readme_to_method
 
 
 @pytest.fixture
@@ -37,118 +39,113 @@ def readme_dict_fixture():
     }
 
 
-def test_readme(readme_dict_fixture):
-    """Test the process_readme function."""
-    readme = ReadmeModel(readme_dict=readme_dict_fixture)
-    assert list(readme.experiment_dict.keys()) == [
+def _method_from_file(readme_path):
+    """Return the protocol tree of a README.yaml file."""
+    with open(readme_path) as file:
+        return readme_to_method(yaml.safe_load(file))
+
+
+def _step_ids(node: Step):
+    """Return the step identifier of each leaf under a node, in tree order."""
+    return [step_id_of(leaf) for leaf in leaves(node)]
+
+
+def _descriptions(node: Step):
+    """Return the description of each leaf under a node, in tree order."""
+    return [leaf.description for leaf in leaves(node)]
+
+
+def test_readme_to_method(readme_dict_fixture):
+    """Test the conversion of a readme dictionary to a protocol tree."""
+    method = readme_to_method(readme_dict_fixture)
+
+    assert [group.description for group in method] == [
         "Experiment 1",
         "Experiment 2",
         "Experiment 3",
     ]
-    assert readme.experiment_dict["Experiment 1"]["Steps"] == [1, 2, 3, 4, 5]
-    assert readme.experiment_dict["Experiment 1"]["Step Descriptions"] == [
+
+    assert _step_ids(method[0]) == [1, 2, 3, 4, 5]
+    assert _descriptions(method[0]) == [
         "Rest for 1 hour",
         "Rest for 2 hours",
         "Rest for 3 hours",
         "Rest for 4 hours",
         "Rest for 5 hours, Rest for 6 hours",
     ]
-    assert readme.experiment_dict["Experiment 1"]["Cycles"] == [
-        (1, 4, 2),
-        (2, 3, 3),
-    ]
+    outer = method[0].steps[0]
+    assert outer.count == 2
+    assert _step_ids(outer) == [1, 2, 3, 4]
+    inner = outer.steps[1]
+    assert inner.count == 3
+    assert _step_ids(inner) == [2, 3]
 
-    assert readme.experiment_dict["Experiment 2"]["Steps"] == [6, 7, 8, 9]
-    assert readme.experiment_dict["Experiment 2"]["Step Descriptions"] == [
-        "Step 1",
-        "Step 2",
-        "Step 3",
-        "Step 4",
-    ]
-    assert readme.experiment_dict["Experiment 2"]["Cycles"] == []
+    assert _step_ids(method[1]) == [6, 7, 8, 9]
+    assert _descriptions(method[1]) == ["Step 1", "Step 2", "Step 3", "Step 4"]
+    assert method[1].count is None
 
-    assert readme.experiment_dict["Experiment 3"]["Steps"] == [
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-    ]
-    assert readme.experiment_dict["Experiment 3"]["Step Descriptions"] == []
-    assert readme.experiment_dict["Experiment 3"]["Cycles"] == []
+    assert _step_ids(method[2]) == [10, 11, 12, 13, 14, 15, 16, 17]
+    assert _descriptions(method[2]) == [None] * 8
 
 
-def test_process_readme_file_explicit(titles_fixture, benchmark):
-    """Test processing a readme file in yaml format."""
+def test_readme_to_method_file_explicit(titles_fixture):
+    """Test the conversion of a readme file with explicit step numbers."""
+    method = _method_from_file("tests/sample_data/neware/README.yaml")
 
-    def _process_readme():
-        return process_readme("tests/sample_data/neware/README.yaml")
+    assert [group.description for group in method] == titles_fixture
 
-    readme = benchmark(_process_readme)
-
-    assert list(readme.experiment_dict.keys()) == titles_fixture
-    assert readme.experiment_dict["Break-in Cycles"]["Steps"] == [4, 5, 6, 7]
-    assert readme.experiment_dict["Break-in Cycles"]["Step Descriptions"] == [
+    break_in = method[1]
+    assert _step_ids(break_in) == [4, 5, 6, 7]
+    assert _descriptions(break_in) == [
         "Discharge at 4 mA until 3 V",
         "Rest for 2 hours",
         "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
         "Rest for 2 hours",
     ]
+    assert break_in.count == 5
 
-    assert readme.experiment_dict["Discharge Pulses"]["Steps"] == [9, 10, 11, 12]
-    assert readme.experiment_dict["Discharge Pulses"]["Step Descriptions"] == [
+    pulses = method[2]
+    assert _step_ids(pulses) == [9, 10, 11, 12]
+    assert _descriptions(pulses) == [
         "Rest for 10 seconds",
         "Discharge at 20 mA for 0.2 hours or until 3 V",
         "Rest for 30 minutes",
         "Rest for 1.5 hours",
     ]
-    assert readme.experiment_dict["Discharge Pulses"]["Cycles"] == [(9, 12, 10)]
+    assert pulses.count == 10
 
 
-def test_process_readme_file_implicit(titles_fixture, benchmark):
-    """Test processing a readme file in yaml format."""
+def test_readme_to_method_file_implicit(titles_fixture):
+    """Test the conversion of a readme file with implicit step numbers."""
+    method = _method_from_file("tests/sample_data/neware/README_implicit.yaml")
 
-    def _process_readme():
-        return process_readme("tests/sample_data/neware/README_implicit.yaml")
+    assert [group.description for group in method] == titles_fixture
 
-    readme = benchmark(_process_readme)
-
-    assert list(readme.experiment_dict.keys()) == titles_fixture
-    assert readme.experiment_dict["Break-in Cycles"]["Steps"] == [4, 5, 6, 7]
-    assert readme.experiment_dict["Break-in Cycles"]["Step Descriptions"] == [
+    break_in = method[1]
+    assert _step_ids(break_in) == [4, 5, 6, 7]
+    assert _descriptions(break_in) == [
         "Discharge at 4 mA until 3 V",
         "Rest for 2 hours",
         "Charge at 4 mA until 4.2 V, Hold at 4.2 V until 0.04 A",
         "Rest for 2 hours",
     ]
-    assert readme.experiment_dict["Break-in Cycles"]["Cycles"] == []
+    assert break_in.count is None
 
-    assert readme.experiment_dict["Discharge Pulses"]["Steps"] == [8, 9, 10, 11]
-    assert readme.experiment_dict["Discharge Pulses"]["Step Descriptions"] == [
-        "Rest for 10 seconds",
-        "Discharge at 20 mA for 0.2 hours or until 3 V",
-        "Rest for 30 minutes",
-        "Rest for 1.5 hours",
-    ]
-    assert readme.experiment_dict["Discharge Pulses"]["Cycles"] == []
+    pulses = method[2]
+    assert _step_ids(pulses) == [8, 9, 10, 11]
+    assert pulses.count is None
 
 
-def process_readme_file_total_steps(titles_fixture, benchmark):
-    """Test processing a readme file in yaml format."""
+def test_readme_to_method_file_total_steps(titles_fixture):
+    """Test the conversion of a readme file that states a total step count."""
+    method = _method_from_file("tests/sample_data/neware/README_total_steps.yaml")
 
-    def _process_readme():
-        return process_readme("tests/sample_data/neware/README_total_steps.yaml")
+    assert [group.description for group in method] == titles_fixture
 
-    readme = benchmark(_process_readme)
+    break_in = method[1]
+    assert _step_ids(break_in) == [4, 5, 6, 7]
+    assert _descriptions(break_in) == [None] * 4
 
-    assert list(readme.experiment_dict.keys()) == titles_fixture
-    assert readme.experiment_dict["Break-in Cycles"]["Steps"] == [4, 5, 6, 7]
-    assert readme.experiment_dict["Break-in Cycles"]["Step Descriptions"] == []
-    assert readme.experiment_dict["Break-in Cycles"]["Cycles"] == []
-
-    assert readme.experiment_dict["Discharge Pulses"]["Steps"] == [8, 9, 10, 11]
-    assert readme.experiment_dict["Discharge Pulses"]["Step Descriptions"] == []
-    assert readme.experiment_dict["Discharge Pulses"]["Cycles"] == []
+    pulses = method[2]
+    assert _step_ids(pulses) == [8, 9, 10, 11]
+    assert _descriptions(pulses) == [None] * 4
