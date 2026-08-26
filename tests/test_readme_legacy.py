@@ -80,10 +80,6 @@ class TestCycleConversion:
         assert group.count == 5
         assert [step_id_of(leaf) for leaf in leaves(group)] == [1, 2, 3]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="readme_to_method is not implemented",
-    )
     def test_cycle_that_cuts_across_the_step_list_raises(self) -> None:
         """A cycle whose bounds do not name a contiguous run of steps fails."""
         readme = {

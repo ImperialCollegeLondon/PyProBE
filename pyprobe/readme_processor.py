@@ -139,6 +139,10 @@ def readme_to_method(readme: dict[str, Any]) -> list[Step]:
 
     Returns:
         list[Step]: The protocol tree, with one group node per experiment.
+
+    Raises:
+        ValueError: If a cycle does not bound a contiguous group of steps.
+            The message names the experiment and the cycle key.
     """
     method: list[Step] = []
     max_step = 0
@@ -155,7 +159,14 @@ def readme_to_method(readme: dict[str, Any]) -> list[Step]:
         )
         for key in [key for key in experiment if "cycle" in key.lower()]:
             cycle = experiment[key]
-            _apply_cycle(group, cycle["Start"], cycle["End"], cycle["Count"])
+            if not _apply_cycle(group, cycle["Start"], cycle["End"], cycle["Count"]):
+                error_msg = (
+                    f"'{key}' of experiment '{name}' bounds steps "
+                    f"{cycle['Start']} to {cycle['End']}, which are not a "
+                    "contiguous group of that experiment's steps."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
         method.append(group)
     return method
 
