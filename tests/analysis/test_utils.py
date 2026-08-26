@@ -111,7 +111,9 @@ def test_build_result_lazyframe_input(result):
     new = utils.build_result(result, lf, column_definitions={"x": "x def"})
     assert new.lf is lf
     assert new.column_definitions == {"x": "x def"}
-    assert new.metadata == result.metadata
+    assert new.metadata.model_dump(exclude={"extras"}) == result.metadata.model_dump(
+        exclude={"extras"},
+    )
 
 
 def test_build_result_dataframe_input(result):
@@ -119,14 +121,20 @@ def test_build_result_dataframe_input(result):
     df = pl.DataFrame({"x": [1, 2, 3]})
     new = utils.build_result(result, df)
     assert isinstance(new.lf, pl.LazyFrame)
-    assert new.column_definitions == result.column_definitions
+    assert new.column_definitions == {
+        "Current": "current def",
+        "Voltage": "voltage def",
+    }
 
 
 def test_build_result_inherits_column_definitions_when_none(result):
     """build_result without column_definitions inherits from source."""
     lf = pl.LazyFrame({"x": [1]})
     new = utils.build_result(result, lf)
-    assert new.column_definitions == result.column_definitions
+    assert new.column_definitions == {
+        "Current": "current def",
+        "Voltage": "voltage def",
+    }
 
 
 def test_build_result_replaces_column_definitions(result):

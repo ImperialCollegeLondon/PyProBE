@@ -15,12 +15,11 @@ y_data = np.array([2, 4, 6, 8, 10])
 @pytest.fixture
 def differentiation_fixture():
     """Return a Differentiation instance."""
-    input_data = Result(
+    return Result(
         lf=pl.DataFrame({"x": x_data, "y": y_data}),
         metadata=build_metadata(),
+        column_definitions={"x": "The x data", "y": "The y data"},
     )
-    input_data.column_definitions = {"x": "The x data", "y": "The y data"}
-    return input_data
 
 
 def test_gradient(differentiation_fixture):

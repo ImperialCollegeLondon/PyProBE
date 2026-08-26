@@ -121,8 +121,8 @@ def build_result(
 ) -> Table:
     """Construct a Table inheriting source metadata.
 
-    When column_definitions is None, source.column_definitions is inherited.
-    When provided, it replaces source.column_definitions entirely on the new Table.
+    When column_definitions is None, the new Table inherits the definitions that
+    the source's metadata record holds. When provided, they replace them entirely.
     To inherit and extend, call with ``column_definitions={**source.column_definitions,
     "New": "new def"}``.
 
@@ -134,12 +134,11 @@ def build_result(
     Returns:
         A new Table with the given data and inherited or replaced column_definitions.
     """
-    defs = (
-        source.column_definitions if column_definitions is None else column_definitions
-    )
     if isinstance(data, pl.DataFrame):
         data = data.lazy()
-    return Table(lf=data, metadata=source.metadata, column_definitions=defs)
+    return Table(
+        lf=data, metadata=source.metadata, column_definitions=column_definitions
+    )
 
 
 def append_columns(

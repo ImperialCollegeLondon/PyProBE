@@ -11,6 +11,7 @@ from typing import Any, Literal, Protocol, Union, cast, runtime_checkable
 
 import bdf
 import bdf.io
+import bdf.spec
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -293,6 +294,27 @@ class Curve(Quantified, PPoly):
         )
 
 
+_DEFINITIONS_KEY = "column_definitions"
+"""The key of the extras mapping that holds the stored column definitions."""
+
+
+def _ontology_definition(label: str) -> str | None:
+    """Return the BDF ontology definition of a column label.
+
+    Args:
+        label: The column label to look up, such as "Current / A".
+
+    Returns:
+        str | None: The definition field of the matching
+            :class:`bdf.spec.Quantity`, or ``None`` where the ontology defines
+            no quantity for the label.
+    """
+    match = bdf.spec.COLUMN_ONTOLOGY.quantity_from_label(label)
+    if match is None or not match[0].definition:
+        return None
+    return match[0].definition
+
+
 _STAT_SUITE: dict[str, Callable[[pl.Expr], pl.Expr]] = {
     "delta": lambda e: e.last() - e.first(),
     "range": lambda e: e.max() - e.min(),
@@ -328,7 +350,9 @@ class Table:
     Key attributes for describing the data:
         - :attr:`metadata`: A :class:`bdf.Metadata` record describing the cell
           and data source. Free-form keys live under ``metadata.extras``.
-        - :attr:`column_definitions`: A dictionary of column definitions.
+        - :attr:`column_definitions`: A read-only mapping of a column label to
+          its definition, read from the BDF ontology and from the definitions
+          that :meth:`define_column` writes.
         - :meth:`print_definitions`: Print the column definitions.
         - :attr:`columns`: A :class:`~pyprobe.columns.ColumnDict` object providing
           column name access (via ``.names``) and BDF-aware resolution (via
@@ -374,15 +398,71 @@ class Table:
                     "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
                 )
         metadata = _coerce_metadata(metadata)
-        if column_definitions is None:
-            column_definitions = {}
-        elif not isinstance(column_definitions, dict):
+        if column_definitions is not None and not isinstance(column_definitions, dict):
             raise ValueError("column_definitions must be a dictionary.")
 
         self.lf: pl.LazyFrame = lf
         self.metadata = metadata.model_copy(deep=True)
-        self.column_definitions = column_definitions.copy()
+        if column_definitions is not None:
+            self._write_definitions(dict(column_definitions))
         self._path: Path | None = _path
+
+    @property
+    def column_definitions(self) -> dict[str, str]:
+        """The definition of each column, keyed by its label.
+
+        A column that the BDF ontology defines takes its definition from the
+        ontology. A column that the ontology does not define takes it from
+        ``metadata.extras["column_definitions"]``, which :meth:`define_column`
+        writes. Where both hold one label, the extras win.
+
+        Returns:
+            dict[str, str]: The definition of each column, keyed by its label.
+        """
+        definitions: dict[str, str] = {}
+        for label in self.lf.collect_schema().names():
+            definition = _ontology_definition(label)
+            if definition is not None:
+                definitions[label] = definition
+        definitions.update(self._stored_definitions())
+        return definitions
+
+    def _stored_definitions(self) -> dict[str, str]:
+        """Return the definitions that the metadata record holds.
+
+        Returns:
+            dict[str, str]: A copy of ``extras["column_definitions"]``, empty
+                where the record holds none.
+        """
+        extras = self.metadata.extras or {}
+        return dict(extras.get(_DEFINITIONS_KEY, {}))
+
+    def _write_definitions(self, definitions: dict[str, str]) -> None:
+        """Write the definitions into the metadata record.
+
+        A definition of a column of the frame is not stored where the BDF
+        ontology already gives that exact text, because the property reads it
+        from the ontology. A definition of any other label is stored, because
+        the property derives an ontology definition for a column of the frame
+        alone.
+
+        Args:
+            definitions: The definitions to store, keyed by column label.
+        """
+        labels = set(self.lf.collect_schema().names())
+        stored = {
+            label: definition
+            for label, definition in definitions.items()
+            if label not in labels or definition != _ontology_definition(label)
+        }
+        extras = dict(self.metadata.extras or {})
+        if stored == dict(extras.get(_DEFINITIONS_KEY, {})):
+            return
+        if stored:
+            extras[_DEFINITIONS_KEY] = stored
+        else:
+            extras.pop(_DEFINITIONS_KEY, None)
+        self.metadata.extras = extras
 
     def collect(self) -> pl.DataFrame:
         """Collect the lazy dataframe into a polars DataFrame.
@@ -826,13 +906,19 @@ class Table:
 
     @property
     def info(self) -> dict[str, Any | None]:
-        """The extras mapping of the metadata record.
+        """The extras mapping of the metadata record, without the definitions.
+
+        The column definitions live under a reserved key of the extras, and
+        they are a mapping rather than a value. This property drops that key,
+        so every value it returns is a value a caller can write to a column or
+        to a MAT file.
 
         Returns:
-            dict: The extras mapping, or an empty mapping where the record
-                holds no extras.
+            dict: The extras mapping without its column definitions, or an
+                empty mapping where the record holds no extras.
         """
-        return self.metadata.extras or {}
+        extras = self.metadata.extras or {}
+        return {key: value for key, value in extras.items() if key != _DEFINITIONS_KEY}
 
     @property
     def df(self) -> pl.DataFrame:
@@ -1058,7 +1144,9 @@ class Table:
             column_name (str): The name of the column.
             definition (str): The definition of the quantity stored in the column
         """
-        self.column_definitions[column_name] = definition
+        definitions = self._stored_definitions()
+        definitions[column_name] = definition
+        self._write_definitions(definitions)
 
     def print_definitions(self) -> None:
         """Print the definitions of the columns stored in this result object."""
@@ -1084,11 +1172,11 @@ class Table:
             dataframe = pl.LazyFrame({})
         elif isinstance(dataframe, pl.DataFrame):
             dataframe = dataframe.lazy()
-        if column_definitions is None:
-            column_definitions = {}
+        extras = dict(self.metadata.extras or {})
+        extras.pop(_DEFINITIONS_KEY, None)
         return Table(
             lf=dataframe,
-            metadata=self.metadata,
+            metadata=self.metadata.model_copy(update={"extras": extras}),
             column_definitions=column_definitions,
         )
 
@@ -1417,9 +1505,9 @@ class Table:
     ) -> None:
         """Join two Result objects on a column. A wrapper around the polars join method.
 
-        This will extend the data in the Result object horizontally. The column
-        definitions of the two Result objects are combined, if there are any conflicts
-        the column definitions of the calling Result object will take precedence.
+        This will extend the data in the Result object horizontally. Each object
+        keeps its own metadata record, so the column definitions of the other object
+        do not travel with its columns.
 
         Args:
             other (Result): The other Result object to join with.
@@ -1440,10 +1528,6 @@ class Table:
             how=how,
             coalesce=coalesce,
         )
-        self.column_definitions = {
-            **other.column_definitions,
-            **self.column_definitions,
-        }
 
     def extend(
         self,
@@ -1453,9 +1537,7 @@ class Table:
         """Extend the data in this Result object with the data in another Result object.
 
         This method will concatenate the data in the two Result objects, with the Result
-        object calling the method above the other Result object. The column definitions
-        of the two Result objects are combined, if there are any conflicts the column
-        definitions of the calling Result object will take precedence.
+        object calling the method above the other Result object.
 
         This object keeps its own metadata record. Where another record differs, one
         warning names every top level field that differs.
@@ -1478,7 +1560,6 @@ class Table:
             [self.lf] + other_frame_list,
             how=concat_method,
         )
-        self._merge_column_definitions(other)
 
     @staticmethod
     def _as_list(other: Union["Table", list["Table"]]) -> list["Table"]:  # noqa: UP007
@@ -1504,10 +1585,11 @@ class Table:
         Args:
             other: The other Table object(s) being extended with.
         """
-        original_column_definitions = self.column_definitions.copy()
+        merged: dict[str, str] = {}
         for other_result in other:
-            self.column_definitions.update(other_result.column_definitions)
-        self.column_definitions.update(original_column_definitions)
+            merged.update(other_result.column_definitions)
+        merged.update(self._stored_definitions())
+        self._write_definitions(merged)
 
     def _warn_on_differing_metadata(self, other: list["Table"]) -> None:
         """Log one warning naming every top level field that differs.

@@ -223,12 +223,11 @@ class TestResultDataProperty:
         Result_fixture.define_column("Resistance", "Resistance of the circuit")
         Result_fixture.print_definitions()
         captured = capsys.readouterr()
-        expected_output = (
-            "{'Current': 'Current definition'"
-            ",\n 'Resistance': 'Resistance of the circuit'"
-            ",\n 'Voltage': 'Voltage across the circuit'}"
-        )
-        assert captured.out.strip() == expected_output
+        printed = eval(captured.out)  # noqa: S307
+        assert printed == Result_fixture.column_definitions
+        assert printed["Voltage"] == "Voltage across the circuit"
+        assert printed["Resistance"] == "Resistance of the circuit"
+        assert printed["Current"] == "Current definition"
 
 
 class TestResultBuild:
@@ -1281,16 +1280,10 @@ class TestResultFrameOperations:
             expected_data,
             check_column_order=False,
         )
-        assert (
-            reduced_result_fixture.column_definitions["Voltage"] == "Voltage definition"
-        )
-        assert (
-            reduced_result_fixture.column_definitions["Capacity"]
-            == "Capacity definition"
-        )
-        assert (
-            reduced_result_fixture.column_definitions["Current"] == "Current definition"
-        )
+        assert reduced_result_fixture.column_definitions == {
+            "Voltage": "Voltage definition",
+            "Current": "Current definition",
+        }
 
     def test_combine_results(self):
         """Test the combine results method."""
@@ -1317,6 +1310,13 @@ class TestResultFrameOperations:
         )
 
 
+def metadata_apart_from_definitions(result):
+    """Return a result's metadata record without its column definitions."""
+    extras = dict(read_extras(result))
+    extras.pop("column_definitions", None)
+    return result.metadata.model_copy(update={"extras": extras})
+
+
 class TestResultCleanCopy:
     """Test Result.clean_copy method."""
 
@@ -1325,21 +1325,27 @@ class TestResultCleanCopy:
         clean_result = reduced_result_fixture.clean_copy()
         assert isinstance(clean_result, Result)
         assert clean_result.lf.collect().is_empty()
-        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert metadata_apart_from_definitions(
+            clean_result,
+        ) == metadata_apart_from_definitions(reduced_result_fixture)
         assert clean_result.column_definitions == {}
 
         new_df = pl.DataFrame({"Test [V]": [1, 2, 3]})
         clean_result = reduced_result_fixture.clean_copy(dataframe=new_df)
         assert isinstance(clean_result, Result)
         pl_testing.assert_frame_equal(clean_result.data, new_df)
-        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert metadata_apart_from_definitions(
+            clean_result,
+        ) == metadata_apart_from_definitions(reduced_result_fixture)
         assert clean_result.column_definitions == {}
 
         new_defs = {"New Column [A]": "New definition"}
         clean_result = reduced_result_fixture.clean_copy(column_definitions=new_defs)
         assert isinstance(clean_result, Result)
         assert clean_result.lf.collect().is_empty()
-        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert metadata_apart_from_definitions(
+            clean_result,
+        ) == metadata_apart_from_definitions(reduced_result_fixture)
         assert clean_result.column_definitions == new_defs
 
         clean_result = reduced_result_fixture.clean_copy(
@@ -1348,7 +1354,9 @@ class TestResultCleanCopy:
         )
         assert isinstance(clean_result, Result)
         pl_testing.assert_frame_equal(clean_result.data, new_df)
-        assert clean_result.metadata == reduced_result_fixture.metadata
+        assert metadata_apart_from_definitions(
+            clean_result,
+        ) == metadata_apart_from_definitions(reduced_result_fixture)
         assert clean_result.column_definitions == new_defs
 
         lazy_df = new_df.lazy()

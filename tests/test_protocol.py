@@ -255,11 +255,6 @@ class TestDerivedViews:
 
         assert experiment.cycle_info == [(4, 7, 5)]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.column_definitions returns the constructor argument rather "
-        "than the merged ontology view",
-    )
     def test_column_definition_comes_from_the_bdf_ontology(
         self,
         cycling_frame: pl.DataFrame,
@@ -273,11 +268,6 @@ class TestDerivedViews:
 
         assert table.column_definitions["Current / A"] == expected
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.column_definitions returns the constructor argument rather "
-        "than the merged ontology view",
-    )
     def test_column_definition_of_a_non_ontology_column_comes_from_extras(
         self,
         cycling_frame: pl.DataFrame,
@@ -297,11 +287,6 @@ class TestDerivedViews:
             == "the site's ambient pressure sensor"
         )
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.define_column writes to the released flat attribute "
-        "rather than to extras",
-    )
     def test_define_column_writes_into_the_metadata_extras(
         self,
         cycling_frame: pl.DataFrame,
