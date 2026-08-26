@@ -59,10 +59,6 @@ class TestExplicitAttach:
 class TestCycleConversion:
     """A README cycle becomes a repeat count on a contiguous group."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="readme_to_method is not implemented",
-    )
     def test_contiguous_cycle_becomes_one_repeating_group(self) -> None:
         """A cycle over the whole experiment becomes one group with that count."""
         readme = {
@@ -106,10 +102,6 @@ class TestCycleConversion:
 
         assert "Cycle 1" in str(failure.value)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="readme_to_method is not implemented",
-    )
     def test_nested_cycles_nest_the_inner_group_in_the_outer(self) -> None:
         """An inner cycle declared after an outer one becomes a nested group."""
         readme = {
