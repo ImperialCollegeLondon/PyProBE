@@ -23,11 +23,6 @@ from tests.protocol_helpers import attach_protocol
 class TestGroupConvention:
     """A group node names an experiment, repeats as a cycle, or both."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment_names reads the legacy readme_dict "
-        "rather than the protocol tree",
-    )
     def test_group_with_a_description_names_an_experiment(
         self,
         procedure: Procedure,
@@ -54,10 +49,6 @@ class TestGroupConvention:
 
         assert procedure.experiment_names == ["Formation"]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.cycle_info reads a stored list rather than the protocol tree",
-    )
     def test_group_with_a_count_is_a_cycle(self, procedure: Procedure) -> None:
         """A group that repeats a count is treated as a cycle."""
         attach_protocol(
@@ -78,10 +69,6 @@ class TestGroupConvention:
 
         assert procedure.cycle_info == [(4, 7, 5)]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="the protocol tree does not yet drive experiment_names and cycle_info",
-    )
     def test_group_with_a_description_and_a_count_is_both(
         self,
         procedure: Procedure,
@@ -110,11 +97,6 @@ class TestGroupConvention:
 class TestExperimentDataSelection:
     """Filtering to an experiment selects the data rows of its leaves alone."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_experiment_selects_only_the_rows_of_its_leaves(self) -> None:
         """A skipped step number is excluded even where the source data holds it."""
         frame = pl.DataFrame(
@@ -152,12 +134,6 @@ class TestExperimentDataSelection:
 class TestStepIdentifierValidation:
     """A leaf that carries no identifier, or an invalid one, fails and names itself."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment passes the bdf.Metadata record into "
-        "Table's dict-only metadata check, before it validates step "
-        "identifiers",
-    )
     def test_leaf_without_a_step_identifier_raises(
         self,
         procedure_fixture: Procedure,
@@ -194,11 +170,6 @@ class TestDerivedViews:
     Each view derives from the protocol tree.
     """
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.step_descriptions reads a stored dict rather than "
-        "the protocol tree",
-    )
     def test_step_descriptions_pair_each_leaf_tag_with_its_description(
         self,
         procedure: Procedure,
@@ -224,11 +195,6 @@ class TestDerivedViews:
             "Description": ["Charge", "Rest", "Discharge"],
         }
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_cycle_info_reads_the_repeat_count_and_the_bounds(
         self,
         procedure: Procedure,

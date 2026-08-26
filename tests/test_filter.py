@@ -17,7 +17,9 @@ from pyprobe.filters import (
     _RankExprs,
     _span_mask,
 )
+from pyprobe.protocol import Step
 from tests.metadata_helpers import build_metadata
+from tests.protocol_helpers import attach_protocol, protocol_metadata
 
 
 @pytest.fixture
@@ -64,17 +66,23 @@ def generic_experiment():
             "Net Capacity / Ah": [0.0] * len(steps),
         },
     )
-    step_descriptions = {
-        "Step ID": [1, 2, 3, 4],
-        "Description": ["CC Charge", "CV Charge", "Discharge", "Rest"],
-    }
-    cycle_info = [(1, 4, 2), (1, 2, 2)]
-    return filters.Experiment(
-        lf=dataframe,
-        metadata=build_metadata(),
-        step_descriptions=step_descriptions,
-        cycle_info=cycle_info,
+    outer = Step(
+        mode="group",
+        count=2,
+        steps=[
+            Step(
+                mode="group",
+                count=2,
+                steps=[
+                    Step(description="CC Charge", tags=["step_id:1"]),
+                    Step(description="CV Charge", tags=["step_id:2"]),
+                ],
+            ),
+            Step(description="Discharge", tags=["step_id:3"]),
+            Step(description="Rest", tags=["step_id:4"]),
+        ],
     )
+    return filters.Experiment(lf=dataframe, metadata=protocol_metadata([outer]))
 
 
 def _make_multilevel_experiment(
@@ -954,7 +962,10 @@ class TestGenericExperiment:
 
     def test_cycle_inferred_from_step_decrease(self, generic_experiment):
         """When cycle_info is empty, cycles are inferred from step number decreases."""
-        generic_experiment.cycle_info = []
+        generic_experiment = filters.Experiment(
+            lf=generic_experiment.lf,
+            metadata=build_metadata(),
+        )
         assert generic_experiment.cycle(0).data["Test Time / s"].to_list() == list(
             range(6)
         )
@@ -1103,3 +1114,70 @@ class TestParametricConstantFilters:
         assert len(first) < len(both)
         assert len(first) == 100
         assert first["Voltage / V"].min() >= 4.2 * 0.999
+
+
+@pytest.fixture
+def shifted_index_experiment():
+    """Return an experiment whose middle group repeats three times.
+
+    The tree holds one leaf, then a group of two leaves that repeats, then
+    one more leaf. A step index therefore addresses the first leaf from the
+    start and the last leaf from the end, and neither leaf from the other
+    end.
+    """
+    frame = pl.DataFrame(
+        {
+            "Test Time / s": [float(row) for row in range(8)],
+            "Current / A": [1.0] * 8,
+            "Voltage / V": [3.7] * 8,
+            "Step ID": [1, 2, 3, 2, 3, 2, 3, 4],
+            "Step Count / 1": list(range(8)),
+        },
+    )
+    procedure = filters.Procedure.load(frame)
+    attach_protocol(
+        procedure,
+        [
+            Step(
+                mode="group",
+                description="Cycling",
+                steps=[
+                    Step(description="Rest", tags=["step_id:1"]),
+                    Step(
+                        mode="group",
+                        count=3,
+                        steps=[
+                            Step(description="Charge", tags=["step_id:2"]),
+                            Step(description="Discharge", tags=["step_id:3"]),
+                        ],
+                    ),
+                    Step(description="Final Rest", tags=["step_id:4"]),
+                ],
+            ),
+        ],
+    )
+    return procedure.experiment("Cycling")
+
+
+class TestStepIndexAddressing:
+    """A step call reduces the tree only where its index addresses a leaf."""
+
+    def test_non_negative_index_after_a_repeat_keeps_the_source(
+        self, shifted_index_experiment
+    ):
+        """A repeat before the leaf shifts a non-negative index past it."""
+        group = shifted_index_experiment._protocol_node
+        first_leaf = group.steps[0]
+
+        assert shifted_index_experiment.step(0)._protocol_node is first_leaf
+        assert shifted_index_experiment.step(3)._protocol_node is group
+
+    def test_negative_index_before_a_repeat_keeps_the_source(
+        self, shifted_index_experiment
+    ):
+        """A repeat after the leaf shifts a negative index past it."""
+        group = shifted_index_experiment._protocol_node
+        last_leaf = group.steps[2]
+
+        assert shifted_index_experiment.step(-1)._protocol_node is last_leaf
+        assert shifted_index_experiment.step(-4)._protocol_node is group

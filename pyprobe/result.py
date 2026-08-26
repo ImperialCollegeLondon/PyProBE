@@ -28,7 +28,7 @@ from pyprobe.columns import (
     CurveColumns,
     column_factory_from_string,
 )
-from pyprobe.protocol import Step
+from pyprobe.protocol import Step, leaves
 from pyprobe.utils import deprecated, validate_timezone
 
 try:
@@ -294,6 +294,38 @@ class Curve(Quantified, PPoly):
         )
 
 
+def _node_repeats(node: "Step") -> bool:
+    """Report whether a protocol node is a group that repeats.
+
+    Args:
+        node: The protocol node to read.
+
+    Returns:
+        bool: True where the node is a group that carries a count.
+    """
+    return node.mode == "group" and node.count is not None
+
+
+def _leaf_repeats(node: "Step", *, repeats_above: bool) -> list[bool]:
+    """Report, for each leaf below a node, whether a group above it repeats.
+
+    Args:
+        node: The protocol node to walk.
+        repeats_above: Whether a group above the node repeats.
+
+    Returns:
+        list[bool]: One flag per leaf below the node, in tree order.
+    """
+    if not node.steps:
+        return [repeats_above]
+    found: list[bool] = []
+    for child in node.steps:
+        found.extend(
+            _leaf_repeats(child, repeats_above=repeats_above or _node_repeats(child)),
+        )
+    return found
+
+
 _DEFINITIONS_KEY = "column_definitions"
 """The key of the extras mapping that holds the stored column definitions."""
 
@@ -463,6 +495,73 @@ class Table:
         else:
             extras.pop(_DEFINITIONS_KEY, None)
         self.metadata.extras = extras
+
+    def _protocol_nodes(self) -> list["Step"]:
+        """Return the protocol nodes at the level of this object.
+
+        An object that holds a node reports that node alone. An object that
+        holds none reports the whole method of its metadata record.
+
+        Returns:
+            list[Step]: The nodes at the level of this object, in tree order.
+        """
+        if self._protocol_node is not None:
+            return [self._protocol_node]
+        protocol = self.metadata.battinfo_test_protocol
+        if protocol is None:
+            return []
+        return list(protocol.method or [])
+
+    def _protocol_children(self) -> list["Step"]:
+        """Return the protocol nodes one level below this object.
+
+        An object that holds no node stands over the whole method, so its
+        children are the top level nodes of the method.
+
+        Returns:
+            list[Step]: The nodes below this object, in tree order.
+        """
+        if self._protocol_node is not None:
+            return list(self._protocol_node.steps or [])
+        protocol = self.metadata.battinfo_test_protocol
+        if protocol is None:
+            return []
+        return list(protocol.method or [])
+
+    def _protocol_leaves(self) -> list["Step"]:
+        """Return the protocol leaves at the level of this object.
+
+        Returns:
+            list[Step]: The leaves below the nodes of this object, in tree
+                order.
+        """
+        found: list[Step] = []
+        for node in self._protocol_nodes():
+            found.extend(leaves(node))
+        return found
+
+    def _protocol_leaf_repeats(self, *, include_nodes: bool = True) -> list[bool]:
+        """Report, for each leaf below this object, whether a group repeats above it.
+
+        A repeat above a leaf gives many step events for that one leaf, so a
+        step index does not address the leaf at the same position.
+
+        Args:
+            include_nodes: When ``True``, a count on a node of this object
+                counts as a repeat above every leaf below that node.
+
+        Returns:
+            list[bool]: One flag per leaf below this object, in tree order.
+        """
+        found: list[bool] = []
+        for node in self._protocol_nodes():
+            found.extend(
+                _leaf_repeats(
+                    node,
+                    repeats_above=include_nodes and _node_repeats(node),
+                ),
+            )
+        return found
 
     def collect(self) -> pl.DataFrame:
         """Collect the lazy dataframe into a polars DataFrame.

@@ -7,17 +7,20 @@ import polars as pl
 import pytest
 
 from pyprobe.columns import BDF, Column
+from pyprobe.protocol import Step
 from pyprobe.rawdata import RawData
+from pyprobe.readme_processor import read_readme
 from tests.metadata_helpers import build_metadata
+from tests.protocol_helpers import protocol_metadata
 
 
 @pytest.fixture
-def RawData_fixture(lazyframe_fixture, info_fixture, step_descriptions_fixture):
+def RawData_fixture(lazyframe_fixture):
     """Return a Result instance."""
+    method = read_readme("tests/sample_data/neware/README.yaml")
     return RawData(
         lf=lazyframe_fixture,
-        metadata=info_fixture,
-        step_descriptions=step_descriptions_fixture,
+        metadata=protocol_metadata(method, Name="Test_Cell"),
     )
 
 
@@ -189,16 +192,12 @@ def test_pybamm_experiment():
         },
     )
 
-    step_descriptions = {
-        "Step": [1, 2],
-        "Description": ["Rest for 1 hour", "Charge at 1C until 4.2V"],
-    }
+    method = [
+        Step(description="Rest for 1 hour", tags=["step_id:1"]),
+        Step(description="Charge at 1C until 4.2V", tags=["step_id:2"]),
+    ]
 
-    raw_data = RawData(
-        lf=test_data.lazy(),
-        metadata=build_metadata(),
-        step_descriptions=step_descriptions,
-    )
+    raw_data = RawData(lf=test_data.lazy(), metadata=protocol_metadata(method))
 
     result = raw_data.pybamm_experiment
     assert isinstance(result, list)
@@ -220,16 +219,13 @@ def test_pybamm_experiment_missing_descriptions():
         },
     )
 
-    step_descriptions = {
-        "Step": [1, 2, 3],
-        "Description": ["Rest for 1 hour", None, "Charge at 1C"],
-    }
+    method = [
+        Step(description="Rest for 1 hour", tags=["step_id:1"]),
+        Step(tags=["step_id:2"]),
+        Step(description="Charge at 1C", tags=["step_id:3"]),
+    ]
 
-    raw_data = RawData(
-        lf=test_data.lazy(),
-        metadata=build_metadata(),
-        step_descriptions=step_descriptions,
-    )
+    raw_data = RawData(lf=test_data.lazy(), metadata=protocol_metadata(method))
 
     with pytest.raises(ValueError, match="Descriptions for steps.*are missing"):
         raw_data.pybamm_experiment
@@ -248,19 +244,15 @@ def test_pybamm_experiment_multiple_conditions():
         },
     )
 
-    step_descriptions = {
-        "Step": [1, 2],
-        "Description": [
-            "Charge at 1C until 4.2V, Hold at 4.2V until C/20",
-            "Rest for 1 hour",
-        ],
-    }
+    method = [
+        Step(
+            description="Charge at 1C until 4.2V, Hold at 4.2V until C/20",
+            tags=["step_id:1"],
+        ),
+        Step(description="Rest for 1 hour", tags=["step_id:2"]),
+    ]
 
-    raw_data = RawData(
-        lf=test_data.lazy(),
-        metadata=build_metadata(),
-        step_descriptions=step_descriptions,
-    )
+    raw_data = RawData(lf=test_data.lazy(), metadata=protocol_metadata(method))
 
     result = raw_data.pybamm_experiment
     assert len(result) == 3
@@ -283,16 +275,12 @@ def test_pybamm_experiment_with_loops():
         },
     )
 
-    step_descriptions = {
-        "Step": [1, 2],
-        "Description": ["Discharge at C/10", "Rest for 1 hour"],
-    }
+    method = [
+        Step(description="Discharge at C/10", tags=["step_id:1"]),
+        Step(description="Rest for 1 hour", tags=["step_id:2"]),
+    ]
 
-    data = RawData(
-        lf=base_df.lazy(),
-        metadata=build_metadata(),
-        step_descriptions=step_descriptions,
-    )
+    data = RawData(lf=base_df.lazy(), metadata=protocol_metadata(method))
 
     expected = [
         "Discharge at C/10",  # Step 1

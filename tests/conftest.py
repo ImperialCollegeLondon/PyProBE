@@ -8,7 +8,6 @@ from loguru import logger
 from pyprobe.cell import Cell
 from pyprobe.filters import Procedure
 from tests.metadata_helpers import build_metadata
-from tests.readme_helpers import attach_readme
 
 
 @pytest.fixture
@@ -110,10 +109,8 @@ def step_descriptions_fixture():
 def cell_fixture(sample_data_neware_parquet):
     """Pytest fixture for example cell."""
     c = Cell()
-    proc = attach_readme(
-        Procedure.load(sample_data_neware_parquet),
-        "tests/sample_data/neware/README.yaml",
-    )
+    proc = Procedure.load(sample_data_neware_parquet)
+    proc.attach_legacy_readme("tests/sample_data/neware/README.yaml")
     c.add_procedure("Sample", proc)
     return c
 
@@ -121,10 +118,11 @@ def cell_fixture(sample_data_neware_parquet):
 @pytest.fixture
 def procedure_fixture():
     """Pytest fixture for example procedure."""
-    return attach_readme(
-        Procedure.load("tests/sample_data/neware/sample_data_neware.bdf.parquet"),
-        "tests/sample_data/neware/README.yaml",
+    procedure = Procedure.load(
+        "tests/sample_data/neware/sample_data_neware.bdf.parquet",
     )
+    procedure.attach_legacy_readme("tests/sample_data/neware/README.yaml")
+    return procedure
 
 
 @pytest.fixture(scope="function")

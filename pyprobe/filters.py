@@ -13,8 +13,11 @@ import polars as pl
 
 from pyprobe import utils
 from pyprobe.columns import BDF, Column, ColumnDict
+from pyprobe.protocol import Step as ProtocolStep
+from pyprobe.protocol import leaves, step_id_of
 from pyprobe.rawdata import CyclingData
 from pyprobe.readme_processor import read_readme
+from pyprobe.result import _node_repeats
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -336,6 +339,7 @@ def _build_result(
     mask: pl.Expr,
     column: "BDF | Column",
     include_preceding_row: bool,
+    node: "ProtocolStep | None" = None,
 ) -> "Cycle | Step":
     """Create a filtered Cycle or Step result object.
 
@@ -345,6 +349,7 @@ def _build_result(
         column: The filter column; ``BDF.CYCLE_COUNT`` produces a Cycle, else a Step.
         include_preceding_row: When ``True``, include the row immediately
             before each contiguous block of selected rows.
+        node: The protocol node that the result holds.
 
     Returns:
         Cycle | Step: A new result object containing the filtered data.
@@ -353,23 +358,209 @@ def _build_result(
         mask = _include_preceding_row(mask)
     filtered_lf = obj.lf.filter(mask)
     path = getattr(obj, "_path", None)
+    result: Cycle | Step
     if column == BDF.CYCLE_COUNT:
-        cycle_info = obj.cycle_info[1:] if len(obj.cycle_info) > 1 else []
-        return Cycle(
-            lf=filtered_lf,
-            metadata=obj.metadata,
-            column_definitions=obj.column_definitions,
-            step_descriptions=obj.step_descriptions,
-            cycle_info=cycle_info,
-            _path=path,
+        result = Cycle(lf=filtered_lf, metadata=obj.metadata, _path=path)
+    else:
+        result = Step(lf=filtered_lf, metadata=obj.metadata, _path=path)
+    result._protocol_node = node  # noqa: SLF001
+    return result
+
+
+def _selected_positions(index: "IndexType") -> "Iterator[int]":
+    """Yield the position of each group that an index selects, in order.
+
+    Args:
+        index: A single int, a sequence of ints, or a bounded slice.
+
+    Yields:
+        int: One position per selected group, in the order of selection.
+    """
+    if isinstance(index, int):
+        yield index
+    elif isinstance(index, slice):
+        yield from range(index.start or 0, cast(int, index.stop))
+    else:
+        yield from index
+
+
+def _repeating_groups(
+    node: "ProtocolStep",
+    *,
+    include_node: bool,
+) -> "list[ProtocolStep]":
+    """Return the shallowest repeating groups at or below a node.
+
+    A branch contributes its first group that holds a count, so a repeat
+    nested below another repeat does not appear beside it.
+
+    Args:
+        node: The node to search.
+        include_node: When ``True``, a count on the node itself qualifies it.
+
+    Returns:
+        list[ProtocolStep]: The groups that hold a count, in tree order.
+    """
+    if include_node and _node_repeats(node):
+        return [node]
+    found: list[ProtocolStep] = []
+    for child in node.steps or []:
+        if child.mode != "group":
+            continue
+        found.extend(_repeating_groups(child, include_node=True))
+    return found
+
+
+def _first_repeating_node(
+    nodes: "list[ProtocolStep]",
+    *,
+    include_nodes: bool,
+) -> "ProtocolStep | None":
+    """Return the node of the next cycle level below a tree level.
+
+    Args:
+        nodes: The nodes at the level to descend from.
+        include_nodes: When ``True``, a count on one of *nodes* qualifies it.
+
+    Returns:
+        ProtocolStep | None: The group that the next cycle level holds, or
+            ``None`` where no group below the level repeats.
+
+    Raises:
+        ValueError: If two groups below the level each hold a count, which
+            leaves the next cycle level ambiguous. The message names both.
+    """
+    found: list[ProtocolStep] = []
+    for node in nodes:
+        found.extend(_repeating_groups(node, include_node=include_nodes))
+    if len(found) > 1:
+        names = ", ".join(str(group.description) for group in found)
+        error_msg = (
+            "The next cycle level is ambiguous, because these groups each "
+            f"repeat: {names}."
         )
-    return Step(
-        lf=filtered_lf,
-        metadata=obj.metadata,
-        column_definitions=obj.column_definitions,
-        step_descriptions=obj.step_descriptions,
-        _path=path,
-    )
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    return found[0] if found else None
+
+
+def _cycle_bounds(group: "ProtocolStep") -> "tuple[int, int, int] | None":
+    """Return the first step, the last step and the count of a repeating group.
+
+    Args:
+        group: The group that repeats.
+
+    Returns:
+        tuple[int, int, int] | None: The identifier of the first leaf, the
+            identifier of the last leaf and the repeat count, or ``None``
+            where either bounding leaf carries no identifier.
+    """
+    step_ids = [step_id_of(leaf) for leaf in leaves(group)]
+    if not step_ids or step_ids[0] is None or step_ids[-1] is None:
+        return None
+    return (step_ids[0], step_ids[-1], cast(int, group.count))
+
+
+def _all_repeating_groups(
+    node: "ProtocolStep",
+    *,
+    include_node: bool,
+) -> "list[ProtocolStep]":
+    """Return every group at or below a node that repeats, in tree order.
+
+    A repeat nested below another repeat appears after the group that holds
+    it, so the outermost repeat of a branch comes first.
+
+    Args:
+        node: The node to walk.
+        include_node: When ``True``, a count on the node itself qualifies it.
+
+    Returns:
+        list[ProtocolStep]: The groups that hold a count, in tree order.
+    """
+    found: list[ProtocolStep] = []
+    if include_node and _node_repeats(node):
+        found.append(node)
+    for child in node.steps or []:
+        if child.mode != "group":
+            continue
+        found.extend(_all_repeating_groups(child, include_node=True))
+    return found
+
+
+def _cycle_view(
+    nodes: "list[ProtocolStep]",
+    *,
+    include_nodes: bool,
+) -> list[tuple[int, int, int]]:
+    """Return the bounds and the count of every repeat below a level.
+
+    Args:
+        nodes: The nodes at the level to walk.
+        include_nodes: When ``True``, a count on one of the nodes qualifies it.
+
+    Returns:
+        list[tuple[int, int, int]]: The bounds and the count of each repeating
+            group, in tree order.
+    """
+    view: list[tuple[int, int, int]] = []
+    for node in nodes:
+        for group in _all_repeating_groups(node, include_node=include_nodes):
+            bounds = _cycle_bounds(group)
+            if bounds is not None:
+                view.append(bounds)
+    return view
+
+
+def _next_cycle_target(obj: "FilterToCycleType") -> "ProtocolStep | None":
+    """Return the node of the next cycle level, or the node of the source.
+
+    Args:
+        obj: The source object to filter.
+
+    Returns:
+        ProtocolStep | None: The group that the next cycle level holds, or
+            the node of the source object where no group below it repeats.
+    """
+    found = obj._next_cycle_node()  # noqa: SLF001
+    if found is not None:
+        return found
+    return obj._protocol_node  # noqa: SLF001
+
+
+def _addressed_leaf(
+    obj: "FilterToCycleType",
+    index: "IndexType | None",
+) -> "ProtocolStep | None":
+    """Return the leaf that a step index addresses, or the node of the source.
+
+    A step index counts step events in the data, and a repeating group gives
+    many events for one leaf, so one repeat shifts every index past it. A
+    non-negative index counts from the start, so it addresses its leaf where
+    no group at or before that leaf repeats. A negative index counts from the
+    end, so it addresses its leaf where no group at or after that leaf
+    repeats. Where a repeat lies on the side the index counts from, the
+    result keeps the node of its source.
+
+    Args:
+        obj: The source object to filter.
+        index: Positional selector of the filtered result.
+
+    Returns:
+        ProtocolStep | None: The leaf the index addresses, or the node of the
+            source object where the index addresses no leaf.
+    """
+    node = obj._protocol_node  # noqa: SLF001
+    if not isinstance(index, int):
+        return node
+    leaves_below = obj._protocol_leaves()  # noqa: SLF001
+    if not -len(leaves_below) <= index < len(leaves_below):
+        return node
+    repeats = obj._protocol_leaf_repeats()  # noqa: SLF001
+    counted = repeats[: index + 1] if index >= 0 else repeats[index:]
+    if any(counted):
+        return node
+    return leaves_below[index]
 
 
 class _Filter:
@@ -390,6 +581,30 @@ class _Filter:
         """
         self.column = column
         self.condition = condition
+
+    def _target_node(
+        self,
+        obj: "FilterToCycleType",
+        index: "IndexType | None",
+    ) -> "ProtocolStep | None":
+        """Return the protocol node that a filtered result holds.
+
+        A structural filter names its target node before it reads the data. A
+        condition filter builds its mask from the data, so it reduces nothing.
+
+        Args:
+            obj: The source object to filter.
+            index: Positional selector of the filtered result.
+
+        Returns:
+            ProtocolStep | None: The node of the result, or ``None`` where the
+                filter reduces nothing.
+        """
+        if self.condition is not None:
+            return None
+        if self.column == BDF.CYCLE_COUNT:
+            return _next_cycle_target(obj)
+        return _addressed_leaf(obj, index)
 
     def singular(
         self,
@@ -412,7 +627,13 @@ class _Filter:
         col_expr = cast("FilterToCycleType", obj).columns.resolve(self.column)
         exprs = _RankExprs(col_expr, self.condition)
         mask = _combined_mask(index, exprs, self.condition)
-        return _build_result(obj, mask, self.column, include_preceding_row)
+        return _build_result(
+            obj,
+            mask,
+            self.column,
+            include_preceding_row,
+            self._target_node(obj, index),
+        )
 
     def plural(
         self,
@@ -441,13 +662,20 @@ class _Filter:
 
         if not _needs_collect(index):
             assert index is not None
-            for rank_mask in _iter_group_masks(index, exprs):
+            positions = _selected_positions(index)
+            for position, rank_mask in zip(positions, _iter_group_masks(index, exprs)):
                 cond_mask = (
                     (self.condition & rank_mask)
                     if self.condition is not None
                     else rank_mask
                 )
-                yield _build_result(obj, cond_mask, self.column, include_preceding_row)
+                yield _build_result(
+                    obj,
+                    cond_mask,
+                    self.column,
+                    include_preceding_row,
+                    self._target_node(obj, position),
+                )
         else:
             full_mask = _combined_mask(index, exprs, self.condition)
             lf_lazy = obj.lf.lazy() if isinstance(obj.lf, pl.DataFrame) else obj.lf
@@ -467,7 +695,13 @@ class _Filter:
                     if self.condition is not None
                     else rank_mask
                 )
-                yield _build_result(obj, cond_mask, self.column, include_preceding_row)
+                yield _build_result(
+                    obj,
+                    cond_mask,
+                    self.column,
+                    include_preceding_row,
+                    self._target_node(obj, rank_val),
+                )
 
 
 def get_cycle_column(
@@ -716,6 +950,35 @@ class StepFiltersMixin:
 
 class CycleFiltersMixin:
     """Mixin providing cycle and charge/discharge filter methods."""
+
+    @property
+    def cycle_info(self) -> list[tuple[int, int, int]]:
+        """The bounds and the count of every repeat below this object.
+
+        Each tuple holds the first step identifier, the last step identifier
+        and the repeat count of one group. The list holds every repeating
+        group below this object, in tree order.
+
+        Returns:
+            list[tuple[int, int, int]]: The bounds and the count of each
+                repeat below this object.
+        """
+        return _cycle_view(
+            cast("FilterToCycleType", self)._protocol_nodes(),  # noqa: SLF001
+            include_nodes=True,
+        )
+
+    def _next_cycle_node(self) -> "ProtocolStep | None":
+        """Return the protocol node of the next cycle level below this object.
+
+        Returns:
+            ProtocolStep | None: The group that the next cycle level holds, or
+                ``None`` where no group below this object repeats.
+        """
+        return _first_repeating_node(
+            cast("FilterToCycleType", self)._protocol_nodes(),  # noqa: SLF001
+            include_nodes=True,
+        )
 
     def _charge_filter(self) -> "_Filter":
         """Create a filter for charge events."""
@@ -1080,6 +1343,23 @@ class CycleFiltersMixin:
         )
 
 
+def _named_groups(obj: "FilterToCycleType") -> "list[ProtocolStep]":
+    """Return the groups one level below an object that name an experiment.
+
+    Args:
+        obj: The object whose tree level to read.
+
+    Returns:
+        list[ProtocolStep]: The groups that carry a description, in tree
+            order.
+    """
+    return [
+        node
+        for node in obj._protocol_children()  # noqa: SLF001
+        if node.mode == "group" and node.description is not None
+    ]
+
+
 class ExperimentFiltersMixin:
     """Mixin providing experiment-level filter methods."""
 
@@ -1107,7 +1387,63 @@ class ExperimentFiltersMixin:
                 description, or if every leaf below the resolved group carries
                 no step identifier. The message names the experiment.
         """
-        raise NotImplementedError
+        obj = cast("FilterToCycleType", self)
+        groups = [self._resolve_group(name) for name in experiment_names]
+        step_ids: list[int] = []
+        for name, group in zip(experiment_names, groups):
+            named = [
+                step_id
+                for step_id in (step_id_of(leaf) for leaf in leaves(group))
+                if step_id is not None
+            ]
+            if not named:
+                error_msg = f"No step of experiment '{name}' carries a step number."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            step_ids.extend(named)
+
+        mask = obj.columns.resolve(BDF.STEP_ID).is_in(step_ids)
+        if include_preceding_row:
+            mask = _include_preceding_row(mask)
+        if len(groups) > 1:
+            warnings.warn(
+                "Multiple experiments selected. Cycles will be inferred from "
+                "the step numbers.",
+            )
+            node = ProtocolStep(
+                mode="group",
+                steps=[leaf for group in groups for leaf in leaves(group)],
+            )
+        else:
+            node = groups[0]
+
+        experiment = Experiment(
+            lf=obj.lf.filter(mask),
+            metadata=obj.metadata,
+            _path=obj._path,  # noqa: SLF001
+        )
+        experiment._protocol_node = node  # noqa: SLF001
+        return experiment
+
+    def _resolve_group(self, name: str) -> "ProtocolStep":
+        """Return the group that a name resolves to at the current level.
+
+        Args:
+            name: The description of the experiment to resolve.
+
+        Returns:
+            ProtocolStep: The group that the name names.
+
+        Raises:
+            ValueError: If the current level holds no group with that
+                description. The message names the experiment.
+        """
+        for group in _named_groups(cast("FilterToCycleType", self)):
+            if group.description == name:
+                return group
+        error_msg = f"{name} not in procedure."
+        logger.error(error_msg)
+        raise ValueError(error_msg)
 
     @property
     def experiment_names(self) -> list[str]:
@@ -1116,10 +1452,18 @@ class ExperimentFiltersMixin:
         Returns:
             list[str]: The names of the experiments below this object.
         """
-        raise NotImplementedError
+        return [
+            str(group.description)
+            for group in _named_groups(cast("FilterToCycleType", self))
+        ]
 
 
-class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
+class Procedure(
+    CycleFiltersMixin,
+    ExperimentFiltersMixin,
+    StepFiltersMixin,
+    CyclingData,
+):
     """A class for a procedure in a battery experiment."""
 
     def __init__(
@@ -1148,22 +1492,6 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             step_descriptions=step_descriptions,
         )
         self.readme_dict = readme_dict
-        self.cycle_info = cycle_info.copy() if cycle_info is not None else []
-        self._populate_step_descriptions()
-
-    def _populate_step_descriptions(self) -> None:
-        """Populate step_descriptions from readme_dict."""
-        self.step_descriptions = {"Step": [], "Description": []}
-        for experiment in self.readme_dict:
-            steps = cast(list[int], self.readme_dict[experiment]["Steps"])
-            descriptions: list[str | None] = [None] * len(steps)
-            if "Step Descriptions" in self.readme_dict[experiment]:
-                descriptions = cast(
-                    list[str | None],
-                    self.readme_dict[experiment]["Step Descriptions"],
-                )
-            self.step_descriptions["Step"].extend(steps)
-            self.step_descriptions["Description"].extend(descriptions)
 
     @classmethod
     def load(
@@ -1329,81 +1657,41 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
         protocol.method = method
         self.metadata.battinfo_test_protocol = protocol
 
-    def experiment(
-        self,
-        *experiment_names: str,
-        include_preceding_row: bool = False,
-    ) -> "Experiment":
-        """Return an experiment object from the procedure.
-
-        Args:
-            experiment_names: Variable-length argument list of experiment names.
-            include_preceding_row: When ``True``, prepend the data point
-                immediately before the experiment's first row.
-
-        Returns:
-            Experiment: An experiment object from the procedure.
-        """
-        steps_idx = []
-        for experiment_name in experiment_names:
-            if experiment_name not in self.experiment_names:
-                error_msg = f"{experiment_name} not in procedure."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-            steps_idx.append(self.readme_dict[experiment_name]["Steps"])
-        flattened_steps = utils.flatten_list(steps_idx)
-        mask = self.columns.resolve(BDF.STEP_ID).is_in(flattened_steps)
-        if include_preceding_row:
-            mask = _include_preceding_row(mask)
-        lf_filtered = self.lf.filter(mask)
-        cycles_list: list[tuple[int, int, int]] = []
-        if len(experiment_names) > 1:
-            warnings.warn(
-                "Multiple experiments selected. Cycles will be inferred from "
-                "the step numbers.",
-            )
-        elif "Cycles" in self.readme_dict[experiment_names[0]]:
-            cycles_list = self.readme_dict[experiment_names[0]]["Cycles"]  # type: ignore[assignment]
-
-        return Experiment(
-            lf=lf_filtered,
-            metadata=self.metadata,
-            column_definitions=self.column_definitions,
-            step_descriptions=self.step_descriptions,
-            cycle_info=cycles_list,
-            _path=self._path,
-        )
-
     def remove_experiment(self, *experiment_names: str) -> None:
         """Remove an experiment from the procedure.
 
         Args:
             experiment_names: Variable-length argument list of experiment names.
+
+        Raises:
+            ValueError: If the top level of the protocol tree holds no group
+                with that description. The message names the experiment.
         """
         steps_idx = []
         for experiment_name in experiment_names:
-            if experiment_name not in self.experiment_names:
-                error_msg = f"{experiment_name} not in procedure."
-                logger.error(error_msg)
-                raise ValueError(error_msg)
-            steps_idx.append(self.readme_dict[experiment_name]["Steps"])
+            group = self._resolve_group(experiment_name)
+            steps_idx.append([step_id_of(leaf) for leaf in leaves(group)])
         flattened_steps = utils.flatten_list(steps_idx)
         conditions = [
             self.columns.resolve(BDF.STEP_ID).is_in(flattened_steps).not_(),
         ]
         for experiment_name in experiment_names:
-            self.readme_dict.pop(experiment_name)
-        self._populate_step_descriptions()
+            self.readme_dict.pop(experiment_name, None)
+        self._remove_protocol_groups(experiment_names)
         self.lf = self.lf.filter(conditions)
 
-    @property
-    def experiment_names(self) -> list[str]:
-        """Return the names of the experiments in the procedure.
+    def _remove_protocol_groups(self, descriptions: tuple[str, ...]) -> None:
+        """Drop the named groups from the top level of the protocol tree.
 
-        Returns:
-            List[str]: The names of the experiments in the procedure.
+        Args:
+            descriptions: The descriptions of the groups to drop.
         """
-        return list(self.readme_dict.keys())
+        protocol = self.metadata.battinfo_test_protocol
+        if protocol is None or not protocol.method:
+            return
+        protocol.method = [
+            group for group in protocol.method if group.description not in descriptions
+        ]
 
     @utils.deprecated(
         reason="Use add_data instead.",
@@ -1427,15 +1715,13 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
         )
 
 
-class Experiment(CycleFiltersMixin, StepFiltersMixin, CyclingData):
+class Experiment(
+    CycleFiltersMixin,
+    ExperimentFiltersMixin,
+    StepFiltersMixin,
+    CyclingData,
+):
     """A class for an experiment in a battery experimental procedure."""
-
-    cycle_info: list[tuple[int, int, int]] = []
-    """A list of tuples representing the cycle information from the README yaml file.
-
-    The tuple format is
-    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
-    """
 
     def __init__(
         self,
@@ -1463,18 +1749,47 @@ class Experiment(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             step_descriptions=step_descriptions,
             _path=_path,
         )
-        self.cycle_info = cycle_info.copy() if cycle_info is not None else []
 
 
 class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     """A class for a cycle in a battery experimental procedure."""
 
-    cycle_info: list[tuple[int, int, int]] = []
-    """A list of tuples representing the cycle information from the README yaml file.
+    @property
+    def cycle_info(self) -> list[tuple[int, int, int]]:
+        """The bounds and the count of every repeat below this cycle.
 
-    The tuple format is
-    :code:`(start step (inclusive), end step (inclusive), cycle count)`.
-    """
+        The node of this object holds the repeat of the cycle itself, so the
+        list holds the repeats below that node alone.
+
+        Returns:
+            list[tuple[int, int, int]]: The bounds and the count of each
+                repeat below this cycle.
+        """
+        return _cycle_view(self._protocol_nodes(), include_nodes=False)
+
+    def _next_cycle_node(self) -> "ProtocolStep | None":
+        """Return the protocol node of the next cycle level below this cycle.
+
+        Returns:
+            ProtocolStep | None: The first group below this cycle that
+                repeats, or ``None`` where no group below it does.
+        """
+        return _first_repeating_node(self._protocol_nodes(), include_nodes=False)
+
+    def _protocol_leaf_repeats(self, *, include_nodes: bool = False) -> list[bool]:
+        """Report, for each leaf below this cycle, whether a group repeats above it.
+
+        The data of a cycle holds one repetition of its own node, so the count
+        of that node leaves a step index addressing a leaf.
+
+        Args:
+            include_nodes: When ``True``, a count on the node of this cycle
+                counts as a repeat above every leaf below it.
+
+        Returns:
+            list[bool]: One flag per leaf below this cycle, in tree order.
+        """
+        return super()._protocol_leaf_repeats(include_nodes=include_nodes)
 
     def __init__(
         self,
@@ -1502,7 +1817,6 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             step_descriptions=step_descriptions,
             _path=_path,
         )
-        self.cycle_info = cycle_info.copy() if cycle_info is not None else []
 
 
 class Step(StepFiltersMixin, CyclingData):

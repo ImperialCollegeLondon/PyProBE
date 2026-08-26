@@ -15,6 +15,7 @@ from pyprobe.columns import (
     Column,
     _step_count_from_step_id,
 )
+from pyprobe.protocol import step_id_of
 from pyprobe.result import Table
 from pyprobe.utils import deprecated
 
@@ -44,13 +45,6 @@ class CyclingData(Table):
     - ``Step ID``
     """
 
-    step_descriptions: dict[str, list[str | int | None]]
-    """A dictionary containing the fields 'Step' and 'Description'.
-
-    - 'Step' is a list of step numbers (from the README).
-    - 'Description' is a list of corresponding descriptions in PyBaMM Experiment format.
-    """
-
     def __init__(
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
@@ -63,15 +57,27 @@ class CyclingData(Table):
         super().__init__(
             lf=lf, metadata=metadata, column_definitions=column_definitions, _path=_path
         )
-
-        if step_descriptions is None:
-            self.step_descriptions = {}
-        else:
-            self.step_descriptions = {
-                key: value.copy() for key, value in step_descriptions.items()
-            }
-
         self._check_required_columns()
+
+    @property
+    def step_descriptions(self) -> dict[str, list[str | int | None]]:
+        """The description of each step of the protocol, in tree order.
+
+        The mapping holds two lists of equal length. ``"Step"`` holds the
+        cycler step identifier of each leaf below this object, and
+        ``"Description"`` holds the description of the same leaf at the same
+        index. A description is ``None`` where its leaf carries none.
+
+        Returns:
+            dict[str, list[str | int | None]]: The step identifiers and the
+                descriptions of the leaves below this object.
+        """
+        steps: list[str | int | None] = []
+        descriptions: list[str | int | None] = []
+        for leaf in self._protocol_leaves():
+            steps.append(step_id_of(leaf))
+            descriptions.append(leaf.description)
+        return {"Step": steps, "Description": descriptions}
 
     def _check_required_columns(self) -> None:
         """Validate that required and optional BDF columns are resolvable.

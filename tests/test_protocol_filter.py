@@ -20,11 +20,6 @@ from tests.protocol_helpers import attach_protocol
 class TestStructuralFilters:
     """An experiment, a cycle and a step filter each reduce the tree."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_experiment_filter_reduces_to_the_named_group(
         self,
         procedure: Procedure,
@@ -41,12 +36,6 @@ class TestStructuralFilters:
 
         assert experiment._protocol_node is group
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.info returns the metadata record directly, so "
-        "Procedure.step's dict-only check rejects it before setting "
-        "_protocol_node",
-    )
     def test_step_filter_reduces_to_the_leaf(self, procedure: Procedure) -> None:
         """Filtering to a step holds that step's leaf as its protocol."""
         leaf = Step(description="Charge", tags=["step_id:1"])
@@ -84,11 +73,6 @@ class TestConditionFilters:
 class TestCycleDescent:
     """A cycle filter descends to the first group below that repeats."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_outer_cycle_filter_reduces_to_the_repeating_group(
         self,
         procedure: Procedure,
@@ -110,11 +94,6 @@ class TestCycleDescent:
 
         assert cycle._protocol_node is outer
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_inner_cycle_filter_reduces_to_the_nested_group(
         self,
         procedure: Procedure,
@@ -142,11 +121,6 @@ class TestCycleDescent:
 
         assert inner_cycle._protocol_node is inner
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_no_repeating_group_infers_the_boundary_and_warns(
         self,
         procedure: Procedure,
@@ -174,12 +148,6 @@ class TestCycleDescent:
         warnings = [r for r in caplog.records if r.levelname == "WARNING"]
         assert len(warnings) == 1
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.info returns the metadata record directly, so "
-        "Procedure.cycle's dict-only check rejects it before validating "
-        "sibling groups",
-    )
     def test_two_sibling_groups_with_a_count_raises(
         self,
         procedure: Procedure,
@@ -212,11 +180,6 @@ class TestCycleDescent:
 class TestExperimentNavigation:
     """A user reads the experiments at a tree level, and filters to one of them."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment_names reads the legacy readme_dict "
-        "rather than the protocol tree",
-    )
     def test_procedure_reports_its_top_experiments(
         self,
         procedure: Procedure,
@@ -240,11 +203,6 @@ class TestExperimentNavigation:
 
         assert procedure.experiment_names == ["Initial Charge", "Break-in"]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_experiment_reports_its_child_experiments(
         self,
         procedure: Procedure,
@@ -279,11 +237,6 @@ class TestExperimentNavigation:
             "Discharge Phase",
         ]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.experiment resolves names against the legacy "
-        "readme_dict, not the protocol tree",
-    )
     def test_filtering_to_a_child_experiment_returns_its_data_alone(self) -> None:
         """Filtering to a child experiment selects the rows of that child alone."""
         frame = pl.DataFrame(
@@ -329,10 +282,6 @@ class TestExperimentNavigation:
 
         assert set(child.data["Step ID"].to_list()) == {1, 2}
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Experiment does not hold ExperimentFiltersMixin",
-    )
     def test_name_not_present_at_the_current_level_raises(
         self,
         procedure_fixture: Procedure,

@@ -1,11 +1,9 @@
 """Module containing tests of the procedure class."""
 
-import numpy as np
 import polars as pl
 import pytest
 
 from pyprobe.filters import Procedure
-from tests.readme_helpers import attach_readme
 
 
 def test_experiment(procedure_fixture, steps_fixture, benchmark):
@@ -51,11 +49,13 @@ def test_init(procedure_fixture, step_descriptions_fixture):
 
 def test_experiment_no_description():
     """Test creating a procedure with no step descriptions."""
-    procedure = attach_readme(
-        Procedure.load("tests/sample_data/neware/sample_data_neware.bdf.parquet"),
+    procedure = Procedure.load(
+        "tests/sample_data/neware/sample_data_neware.bdf.parquet",
+    )
+    procedure.attach_legacy_readme(
         "tests/sample_data/neware/README_total_steps.yaml",
     )
-    assert np.all(np.isnan(procedure.step_descriptions["Description"]))
+    assert procedure.step_descriptions["Description"] == [None] * 11
 
 
 def test_experiment_names(procedure_fixture, titles_fixture):
