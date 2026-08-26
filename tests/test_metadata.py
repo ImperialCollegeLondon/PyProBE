@@ -64,7 +64,6 @@ class TestExtras:
 
         assert procedure.info == {}
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_write_records_the_pyprobe_provenance(
         self,
         tmp_path: Path,
@@ -84,7 +83,6 @@ class TestExtras:
 class TestSidecarStore:
     """The sidecar beside the data file is the only store."""
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_write_produces_one_store(
         self,
         tmp_path: Path,
@@ -99,7 +97,6 @@ class TestSidecarStore:
         footer = pq.read_schema(path).metadata or {}
         assert b"bdf_metadata" not in footer
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_load_reads_the_sidecar(
         self,
         tmp_path: Path,
@@ -168,7 +165,6 @@ class TestSidecarStore:
 class TestSaveReplacesTheRecord:
     """A save writes the record that the object holds."""
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_changed_field_reaches_the_sidecar(
         self,
         tmp_path: Path,
@@ -185,7 +181,6 @@ class TestSaveReplacesTheRecord:
 
         assert read_sidecar(path).raw == {"Name": "B"}
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_dropped_field_leaves_the_sidecar(
         self,
         tmp_path: Path,

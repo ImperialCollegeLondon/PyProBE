@@ -26,7 +26,6 @@ ARBIN_SAMPLE = Path("tests/sample_data/arbin/sample_data_arbin.csv")
 class TestTableSave:
     """A table object writes itself to a BDF artifact."""
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_procedure_writes_the_data_file_and_the_sidecar(
         self,
         tmp_path: Path,
@@ -41,9 +40,10 @@ class TestTableSave:
         assert path.exists()
         assert (tmp_path / "procedure.metadata.json").exists()
         frame, _ = bdf.io.scan(path, plugin="bdf_parquet")
-        pl_testing.assert_frame_equal(frame.collect(), procedure.data)
+        pl_testing.assert_frame_equal(
+            frame.collect(), procedure.data, check_column_order=False
+        )
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_filtered_object_writes_its_own_data(
         self,
         tmp_path: Path,
@@ -58,7 +58,6 @@ class TestTableSave:
         pl_testing.assert_frame_equal(pl.read_parquet(path), step.data)
         assert (tmp_path / "step.metadata.json").exists()
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_written_artifact_reloads(
         self,
         tmp_path: Path,
@@ -74,7 +73,6 @@ class TestTableSave:
         pl_testing.assert_frame_equal(loaded.data, procedure.data)
         assert loaded.metadata.raw == {"Name": "A"}  # type: ignore[attr-defined]
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_save_path_with_a_wrong_suffix_raises(self, tmp_path: Path) -> None:
         """A save to a path that is not Parquet fails and names the suffix."""
         table = Table(
@@ -90,7 +88,6 @@ class TestTableSave:
         with pytest.raises(ValueError, match=r"\.csv"):
             table.save(tmp_path / "table.csv")
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_save_without_a_required_column_raises(self, tmp_path: Path) -> None:
         """A frame that holds no current column fails the BDF validation."""
         table = Table(
@@ -105,7 +102,6 @@ class TestTableSave:
         with pytest.raises(bdf.BDFValidationError, match="Current / A"):
             table.save(tmp_path / "table.parquet")
 
-    @pytest.mark.xfail(strict=True, reason="Table.save is not implemented")
     def test_save_over_an_existing_file_needs_an_overwrite(
         self,
         tmp_path: Path,

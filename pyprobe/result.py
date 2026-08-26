@@ -10,6 +10,7 @@ from pprint import pprint
 from typing import Any, Literal, Protocol, Union, cast, runtime_checkable
 
 import bdf
+import bdf.io
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -1559,7 +1560,34 @@ class Table:
                 ``False``.
             bdf.BDFValidationError: If a required BDF column is absent.
         """
-        raise NotImplementedError
+        import datetime as dt
+
+        from pyprobe._version import __version__ as _pyprobe_version
+        from pyprobe.io import _COMPRESSION_MAP
+
+        resolved_path = Path(path)
+        if resolved_path.suffix != ".parquet":
+            raise ValueError(f"path must end with '.parquet', got: '{resolved_path}'")
+        if not overwrite and resolved_path.exists():
+            raise FileExistsError(
+                f"'{resolved_path}' already exists. Pass overwrite=True to replace it."
+            )
+
+        extras = dict(self.metadata.extras or {})
+        extras["pyprobe"] = {
+            "version": _pyprobe_version,
+            "written_at": dt.datetime.now(dt.UTC).isoformat(),
+        }
+        metadata = self.metadata.model_copy(update={"extras": extras})
+
+        bdf.io.save(
+            self.lf,
+            resolved_path,
+            metadata=metadata,
+            labels=labels,
+            compression=_COMPRESSION_MAP[compression_priority],
+        )
+        return resolved_path
 
     def export_to_mat(self, filename: str) -> None:
         """Export the data to a .mat file.
