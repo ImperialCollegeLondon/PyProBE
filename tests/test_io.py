@@ -168,6 +168,16 @@ class TestProcessCyclerIntegration:
             "Voltage / V": [3.599601],
             "Net Capacity / Ah": [0.00038040109999999997],
             "Temperature T1 / degC": [24.68785],
+            "Cycle Count / 1": [1],
+            "Record Index / 1": [13],
+            "Step Time / s": [0.5173],
+            "Schedule Charging Capacity / Ah": [0.000400839],
+            "Schedule Discharging Capacity / Ah": [2.04379e-05],
+            "Schedule Charging Energy / Wh": [0.001441009],
+            "Schedule Discharging Energy / Wh": [7.21224e-05],
+            "Power / W": [9.539439395],
+            "DC Internal Resistance / ohm": [None],
+            "AC Internal Resistance / ohm": [None],
         },
     )
 
@@ -179,6 +189,10 @@ class TestProcessCyclerIntegration:
             "Current / A": [0.449601734416934],
             "Voltage / V": [3.53285012323902],
             "Net Capacity / Ah": [0.001248916998009],
+            "Record Index / 1": [74],
+            "Power / W": [1.58837554284334],
+            "DC Internal Resistance / ohm": [0.0158499616218021],
+            "AC Internal Resistance / ohm": [0.00934282342688728],
         },
     )
 
@@ -190,6 +204,12 @@ class TestProcessCyclerIntegration:
             "Current / A": [-0.8998263500000001],
             "Voltage / V": [3.4854481],
             "Net Capacity / Ah": [-0.03237135133365207],
+            "Cycle Count / 1": [0],
+            "Step Time / s": [139.5240066270344],
+            "Charging Energy / Wh": [0.0],
+            "Discharging Energy / Wh": [0.1131072579669868],
+            "Power / W": [-3.1362982],
+            "Internal Resistance / ohm": [3.8734674],
         },
     )
 
@@ -201,6 +221,12 @@ class TestProcessCyclerIntegration:
             "Net Capacity / Ah": [0.0],
             "Step Count / 1": [0],
             "Step ID": [0],
+            "Cycle Count / 1": [0],
+            "Charging Energy / Wh": [0.0],
+            "Discharging Energy / Wh": [0.0],
+            "Cumulative Energy / Wh": [0.0],
+            "Power / W": [0.0],
+            "Internal Resistance / ohm": [0.0],
         },
     )
 
@@ -213,6 +239,11 @@ class TestProcessCyclerIntegration:
             "Net Capacity / Ah": [0.04024425555555555],
             "Step Count / 1": [2],
             "Temperature T1 / degC": [22.2591],
+            "Cycle Count / 1": [1],
+            "Record Index / 1": [17],
+            "Step Time / s": [5.06],
+            "Step Cumulative Capacity / Ah": [0.024],
+            "Step Cumulative Energy / Wh": [0.091],
         },
     )
 
@@ -227,6 +258,11 @@ class TestProcessCyclerIntegration:
             "Current / A": [0.0],
             "Voltage / V": [3.4513],
             "Net Capacity / Ah": [-0.01857910226387168],
+            "Cycle Count / 1": [14],
+            "Step Time / s": [5400.0],
+            "Step Charging Capacity / Ah": [0.0],
+            "Step Discharging Capacity / Ah": [0.0],
+            "Step Cumulative Capacity / Ah": [0.0],
         },
     )
 
@@ -241,6 +277,11 @@ class TestProcessCyclerIntegration:
             "Net Capacity / Ah": [1.70652976],
             "Temperature T1 / degC": [24.792],
             "Temperature T2 / degC": [25.262],
+            "Cycle Count / 1": [1],
+            "Step Type": ["7"],
+            "Step Time / s": [12287.48004],
+            "Step Net Energy / Wh": [6.84854718],
+            "Power / W": [2.06429761],
         },
     )
 
@@ -343,6 +384,29 @@ class TestProcessCyclerIntegration:
         assert result1.shape == result2.shape
 
 
+class TestReduceColumnsIntegration:
+    """A load keeps a BDF label outside the core set, and casts an exact dtype."""
+
+    def test_a_bdf_label_outside_the_core_set_survives_a_load(self) -> None:
+        """A column that the core set does not name still reaches the frame."""
+        procedure = Procedure.load(
+            "tests/sample_data/arbin/sample_data_arbin.csv", plugin="arbin_csv"
+        )
+
+        names = procedure.data.columns
+        assert "Power / W" in names
+        assert "Cycle Count / 1" in names
+        assert "Step Time / s" in names
+
+    def test_the_int_ontology_dtype_is_exact_after_a_neware_load(self) -> None:
+        """Step Count / 1 is Int64 after a load, not the raw UInt64 of the source."""
+        procedure = Procedure.load(
+            "tests/sample_data/neware/sample_data_neware.xlsx", plugin="neware_xlsx"
+        )
+
+        assert procedure.data.schema["Step Count / 1"] == pl.Int64
+
+
 class TestProcessGeneric:
     """Tests for process_generic function with different DataFrame sources."""
 
@@ -419,7 +483,7 @@ class TestProcessGeneric:
         output_path = tmp_path / "output.bdf.parquet"
 
         with pytest.raises(
-            ValueError, match="Required BDF column 'Voltage / V' is not resolvable"
+            ValueError, match="Required BDF column 'Voltage' could not be resolved"
         ):
             process_generic(df, column_map, output_path)
 

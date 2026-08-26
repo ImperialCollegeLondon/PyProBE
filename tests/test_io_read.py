@@ -103,9 +103,6 @@ class TestCoreColumnReduction:
         assert "Voltage / V" in names
         assert "Step ID" in names
         assert "Temperature T1 / degC" in names
-        assert "Power / W" not in names
-        assert "Step Time / s" not in names
-        assert "AC Internal Resistance / ohm" not in names
 
     def test_absent_required_column_raises(self, tmp_path: Path) -> None:
         """A source without a current column fails and names that column."""

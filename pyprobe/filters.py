@@ -12,7 +12,7 @@ import bdf.io
 import polars as pl
 
 from pyprobe import utils
-from pyprobe.columns import BDF, Column, ColumnDict
+from pyprobe.columns import BDF, Column
 from pyprobe.protocol import Step as ProtocolStep
 from pyprobe.protocol import leaves, step_id_of
 from pyprobe.rawdata import CyclingData
@@ -1484,12 +1484,18 @@ class Procedure(
         A polars :class:`~polars.LazyFrame` or :class:`~polars.DataFrame`
         loads directly, with an empty metadata record. A pandas ``DataFrame``
         converts to polars at the boundary and takes the same route. A
-        ``.parquet`` path reads with :func:`polars.scan_parquet`, and its
-        metadata comes from the BDF sidecar beside it; the file is already
-        canonical, so no column reduction runs over it. Any other path reads
-        through :func:`bdf.io.scan`, which detects the cycler plugin, and the
-        result reduces to the core BDF column set of
-        :data:`~pyprobe.columns.CORE_COLUMNS`.
+        ``.parquet`` path reads through :func:`bdf.io.scan` under the
+        ``"bdf_parquet"`` plugin, and its metadata comes from the BDF sidecar
+        beside it. Any other path reads through :func:`bdf.io.scan`, which
+        detects the cycler plugin.
+
+        Every route keeps the core BDF columns of
+        :data:`~pyprobe.columns.CORE_COLUMNS` and
+        :data:`~pyprobe.columns.CORE_COLUMN_GROUPS`, and every other column
+        whose name :func:`~pyprobe.columns.is_valid_column_name` accepts. It
+        drops every other column, and logs one warning naming every dropped
+        column. The result orders its columns to the canonical core order,
+        because a plugin returns its own order.
 
         Args:
             source: A path to a data file, a :class:`~polars.LazyFrame`, a
@@ -1518,7 +1524,7 @@ class Procedure(
 
         Raises:
             FileNotFoundError: If *source* is a path that does not exist.
-            bdf.BDFValidationError: If a raw file is missing a required BDF
+            bdf.BDFValidationError: If a path is missing a required BDF
                 column; the error names every missing column.
             bdf.BDFMetadataError: If the sidecar beside a ``.parquet`` file
                 does not parse.
@@ -1545,14 +1551,14 @@ class Procedure(
         """
         from pyprobe.io import (
             _build_column_map_exprs,
-            _normalised_column_expressions,
+            _reduce_columns,
+            _reorder_columns,
             read_sidecar,
         )
 
         resolved_path: Path | None = None
         lf: pl.LazyFrame
         metadata: bdf.Metadata = bdf.Metadata()
-        reduced = False
 
         if isinstance(source, pl.LazyFrame):
             lf = source
@@ -1562,31 +1568,21 @@ class Procedure(
             file_path = Path(source)
             if not file_path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
-            if file_path.suffix.lower() == ".parquet":
+            is_parquet = file_path.suffix.lower() == ".parquet"
+            scan_plugin = "bdf_parquet" if is_parquet else plugin
+            if is_parquet:
                 resolved_path = file_path
-                lf = pl.scan_parquet(file_path)
-                if extra_columns:
-                    lf = _rename_extra_columns(lf, extra_columns)
-                metadata = read_sidecar(file_path)
-            else:
-                lf, metadata = bdf.io.scan(
-                    str(file_path),
-                    plugin=plugin,
-                    include_unknown=bool(extra_columns),
-                    tz=tz,
-                    day_month_order=day_month_order,
-                    reconcile_time=reconcile_time,
-                )
-                if extra_columns:
-                    lf = _rename_extra_columns(lf, extra_columns)
-                column_set = ColumnDict(lf.collect_schema().names())
-                expressions = _normalised_column_expressions(column_set, warn=False)
-                if extra_columns:
-                    expressions.extend(
-                        pl.col(alias) for alias in extra_columns.values()
-                    )
-                lf = lf.select(expressions)
-                reduced = True
+            lf, scanned_metadata = bdf.io.scan(
+                str(file_path),
+                plugin=scan_plugin,
+                include_unknown=True,
+                tz=tz,
+                day_month_order=day_month_order,
+                reconcile_time=reconcile_time,
+            )
+            metadata = read_sidecar(file_path) if is_parquet else scanned_metadata
+            if extra_columns:
+                lf = _rename_extra_columns(lf, extra_columns)
         else:
             try:
                 lf = pl.from_pandas(source).lazy()
@@ -1595,16 +1591,21 @@ class Procedure(
                     f"Could not convert source to a Polars DataFrame: {exc}"
                 ) from exc
 
+        always_keep: set[str] = set()
+        if extra_columns:
+            always_keep.update(extra_columns.values())
         if column_map is not None and not isinstance(source, (str, Path)):
             lf = lf.select(
                 _build_column_map_exprs(lf.collect_schema().names(), column_map)
             )
+            always_keep.update(
+                key.name if isinstance(key, BDF) else key for key in column_map
+            )
+
+        lf = _reduce_columns(lf, warn=False, always_keep=always_keep)
+        lf = _reorder_columns(lf)
 
         procedure = cls(lf=lf, metadata=metadata)
-        if not reduced:
-            procedure.lf = procedure.lf.with_columns(
-                procedure.columns.resolve(BDF.TEST_TIME_SECOND)
-            )
         procedure._path = resolved_path
         return procedure
 

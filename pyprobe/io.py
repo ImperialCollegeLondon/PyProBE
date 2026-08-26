@@ -19,11 +19,13 @@ Typical usage::
 from __future__ import annotations
 
 import glob
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import bdf.io
 import bdf.metadata_parsers
+import bdf.spec
 import polars as pl
 from loguru import logger
 
@@ -33,6 +35,7 @@ from pyprobe.columns import (
     CORE_COLUMNS,
     ColumnDict,
     column_factory_from_string,
+    is_valid_column_name,
 )
 
 if TYPE_CHECKING:
@@ -194,9 +197,55 @@ def _core_time_group_name(group: tuple[BDF, ...]) -> str:
     return " or ".join(f"'{bdf_col.quantity} / {bdf_col.unit}'" for bdf_col in group)
 
 
+def _cast_to_ontology_dtype(expr: pl.Expr, bdf_col: BDF) -> pl.Expr:
+    """Cast *expr* to the dtype that the BDF ontology declares for *bdf_col*.
+
+    A resolved column can carry a dtype of its source, or of the recipe that
+    derived it, neither of which the BDF reader promises to reproduce on a
+    later read of a saved artifact. Casting to the ontology's own dtype here
+    keeps a value stable across a save and a load.
+
+    Args:
+        expr: The resolved expression to cast.
+        bdf_col: The core column that *expr* resolves.
+
+    Returns:
+        *expr*, cast to the ontology dtype of *bdf_col*, under its own name.
+    """
+    match = bdf.spec.COLUMN_ONTOLOGY.quantity_from_label(bdf_col.name)
+    dtype = match[0].dtype if match is not None else None
+    if dtype == "str":
+        return expr.cast(pl.Utf8, strict=False)
+    if dtype == "int":
+        return expr.cast(pl.Int64, strict=True)
+    if dtype == "float":
+        return expr.cast(pl.Float64, strict=False)
+    return expr
+
+
+def _consumed_source_names(bdf_col: BDF, column_set: ColumnDict) -> set[str]:
+    """Return the raw column names of *column_set* that resolve *bdf_col*.
+
+    An exact match consumes its own name. A match by quantity consumes the
+    name of every column of that quantity. A column that resolves *bdf_col*
+    through a recipe, deriving it from other columns, consumes no name of its
+    own.
+
+    Args:
+        bdf_col: The core column to check.
+        column_set: The available columns to check against.
+
+    Returns:
+        The raw column names that resolving *bdf_col* consumes.
+    """
+    if bdf_col.name in column_set:
+        return {bdf_col.name}
+    return {c.name for c in column_set.columns_for_quantity(bdf_col.quantity)}
+
+
 def _normalised_column_expressions(
     column_set: ColumnDict, *, warn: bool = True
-) -> list[pl.Expr]:
+) -> tuple[list[pl.Expr], set[str]]:
     """Resolve every core BDF column against *column_set*.
 
     Iterates the required column groups of
@@ -212,19 +261,25 @@ def _normalised_column_expressions(
             missing optional column passes ``False`` to avoid a second report.
 
     Returns:
-        Expressions for every core column, or group member, that resolves.
+        A tuple of the expressions for every core column, or group member,
+        that resolves, and the raw column names of *column_set* that those
+        expressions consume.
 
     Raises:
         ValueError: If a required column, or every column of a required group,
             cannot be resolved.
     """
     expressions: list[pl.Expr] = []
+    consumed: set[str] = set()
     for group, status in CORE_COLUMN_GROUPS.items():
         resolved_any = False
         for bdf_col in group:
             try:
-                expressions.append(column_set.resolve(bdf_col))
+                expressions.append(
+                    _cast_to_ontology_dtype(column_set.resolve(bdf_col), bdf_col)
+                )
                 resolved_any = True
+                consumed |= _consumed_source_names(bdf_col, column_set)
             except ValueError:
                 continue
         if not resolved_any and status == "required":
@@ -235,7 +290,10 @@ def _normalised_column_expressions(
 
     for bdf_col, status in CORE_COLUMNS.items():
         try:
-            expressions.append(column_set.resolve(bdf_col))
+            expressions.append(
+                _cast_to_ontology_dtype(column_set.resolve(bdf_col), bdf_col)
+            )
+            consumed |= _consumed_source_names(bdf_col, column_set)
         except ValueError as exc:
             if status == "required":
                 raise ValueError(
@@ -247,7 +305,89 @@ def _normalised_column_expressions(
                     "Optional BDF column '{}' could not be resolved; skipping.",
                     bdf_col.quantity,
                 )
-    return expressions
+    return expressions, consumed
+
+
+def _reduce_columns(
+    lf: pl.LazyFrame,
+    *,
+    warn: bool = True,
+    always_keep: Iterable[str] = (),
+) -> pl.LazyFrame:
+    """Reduce *lf* to its core BDF columns and its other valid column names.
+
+    Resolves the core column groups of :data:`~pyprobe.columns.CORE_COLUMN_GROUPS`
+    and the core columns of :data:`~pyprobe.columns.CORE_COLUMNS` against *lf*,
+    keeping every one that resolves. Every other column keeps its place where
+    :func:`~pyprobe.columns.is_valid_column_name` accepts its name, or where
+    *always_keep* names it, and drops otherwise. A drop logs one warning
+    naming every dropped column.
+
+    Args:
+        lf: The frame to reduce.
+        warn: Forwarded to the core column resolution.
+        always_keep: Column names to keep regardless of the name rule, for a
+            column the caller named directly.
+
+    Returns:
+        *lf* selected down to its core columns and its other valid columns.
+
+    Raises:
+        ValueError: If a required core column, or every column of a required
+            group, cannot be resolved.
+    """
+    names = lf.collect_schema().names()
+    column_set = ColumnDict(names)
+    core_expressions, consumed = _normalised_column_expressions(column_set, warn=warn)
+    always_keep_set = set(always_keep)
+    other_names = [name for name in names if name not in consumed]
+    kept = [
+        name
+        for name in other_names
+        if name in always_keep_set or is_valid_column_name(name)
+    ]
+    kept_set = set(kept)
+    dropped = [name for name in other_names if name not in kept_set]
+    if dropped:
+        logger.warning(
+            "Dropping column(s) whose name gives no ' / ' separator, or gives "
+            "a unit that does not parse: {}",
+            dropped,
+        )
+    # The caller reorders the frame afterwards, so this selection carries no
+    # column order of its own.
+    selection = {expr.meta.output_name(): expr for expr in core_expressions}
+    selection.update({name: pl.col(name) for name in kept})
+    return lf.select(list(selection.values()))
+
+
+def _reorder_columns(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """Reorder *lf* to the canonical order of its core BDF columns.
+
+    Orders the time group of :data:`~pyprobe.columns.CORE_COLUMN_GROUPS`
+    first, then the columns of :data:`~pyprobe.columns.CORE_COLUMNS`, then
+    every other column of *lf* in its existing order.
+
+    Args:
+        lf: The frame to reorder.
+
+    Returns:
+        *lf* with its columns in the canonical order.
+    """
+    names = lf.collect_schema().names()
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for group in CORE_COLUMN_GROUPS:
+        for bdf_col in group:
+            if bdf_col.name in names and bdf_col.name not in seen:
+                ordered.append(bdf_col.name)
+                seen.add(bdf_col.name)
+    for bdf_col in CORE_COLUMNS:
+        if bdf_col.name in names and bdf_col.name not in seen:
+            ordered.append(bdf_col.name)
+            seen.add(bdf_col.name)
+    ordered.extend(name for name in names if name not in seen)
+    return lf.select(ordered)
 
 
 def process_cycler(
