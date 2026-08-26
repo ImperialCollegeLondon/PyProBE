@@ -3,6 +3,63 @@
 
 ## Unreleased
 
+### BDF read/write pipeline and test protocol
+
+`Procedure.load` and `Table.save` become the one read path and the one write
+path, both routed through `bdf`. `bdf.Metadata` replaces the metadata
+dictionary, and the test protocol becomes a `bdf` step tree that a filter
+reduces rather than a stored structure that a filter copies.
+
+#### Added
+
+- **`Procedure.load`** — the one read path for a `.parquet` artifact, a raw
+  cycler file, a `LazyFrame`, a `DataFrame`, or a pandas `DataFrame`. It
+  routes on the source type, and it accepts a `plugin`, a `column_map`, and
+  an `extra_columns` argument for a column the BDF ontology does not name.
+- **`Table.save`** — writes any `Table`, including a filtered or a joined
+  one, to a `.parquet` path and its `<stem>.metadata.json` sidecar through
+  `bdf.io.save`.
+- **`CyclingData.extend`** — combines two cycling data objects vertically,
+  with a `time` argument and a `step_id` argument that each state their own
+  rule, and it rebuilds `Step Count / 1` over the whole extended frame.
+- **`Procedure.attach_legacy_readme`** — converts a `README.yaml` file to a
+  protocol tree and writes it into
+  `metadata.battinfo_test_protocol.method`, replacing the current protocol
+  of the procedure it is called on.
+- **The test protocol tree** — `metadata.battinfo_test_protocol.method`
+  holds an ordered tree of `bdf` `Step` records. `experiment_names`,
+  `step_descriptions`, and `cycle_info` become read-only properties that
+  derive from that tree, and a filtered object reports the subtree that
+  produced it.
+
+#### Changed / Deprecated
+
+- **BREAKING** `pyprobe.io.process_cycler` and `pyprobe.io.process_generic`
+  become a composition of `Procedure.load` and `Table.save`. Each keeps its
+  name, its cache behaviour, and `compression_priority`.
+- **BREAKING** `Table.metadata` and `Curve.metadata` hold a `bdf.Metadata`
+  record instead of a dictionary. A free-form key moves under
+  `metadata.extras`, and `Table.info` still returns that mapping flat.
+- **BREAKING** A load keeps every core BDF column, and every other column
+  whose name carries a valid `"Quantity / unit"` form. A name that fails the
+  rule is dropped on a read, and one warning names every dropped column.
+  `Table.add_data` applies the same rule to an added column, and raises a
+  `ValueError` that names the column rather than dropping it silently.
+
+#### Removed
+
+- **BREAKING** `pyprobe.io.MetadataManager`, the Parquet footer metadata
+  store, `read_metadata`, `attach_metadata`, and `Procedure.sync_metadata` are
+  gone. The footer store keyed a written file under `b"bdf_metadata"`; that
+  key is gone from a written file, and no migration path exists for it,
+  because no released version wrote one. `bdf.io.save` owns the
+  `<stem>.metadata.json` sidecar instead.
+- **BREAKING** README discovery on load is gone. `Procedure.load` no longer
+  looks for a `README.yaml` beside the source; a procedure attaches one
+  explicitly through `Procedure.attach_legacy_readme`.
+- **BREAKING** `readme_dict` is gone. The protocol tree replaces the legacy
+  README dictionary it held.
+
 ### Quantified data model + Table/Curve operation namespaces
 
 A unified `Quantified` data model and verb-grouped operation namespaces were
