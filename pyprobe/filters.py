@@ -590,18 +590,19 @@ class _Filter:
         """Return the protocol node that a filtered result holds.
 
         A structural filter names its target node before it reads the data. A
-        condition filter builds its mask from the data, so it reduces nothing.
+        condition filter builds its mask from the data, so it keeps the node
+        of its source rather than reduce the tree.
 
         Args:
             obj: The source object to filter.
             index: Positional selector of the filtered result.
 
         Returns:
-            ProtocolStep | None: The node of the result, or ``None`` where the
-                filter reduces nothing.
+            ProtocolStep | None: The node of the result, or ``None`` where
+                neither the source nor the filter names one.
         """
         if self.condition is not None:
-            return None
+            return obj._protocol_node  # noqa: SLF001
         if self.column == BDF.CYCLE_COUNT:
             return _next_cycle_target(obj)
         return _addressed_leaf(obj, index)

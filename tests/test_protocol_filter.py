@@ -49,10 +49,6 @@ class TestStructuralFilters:
 class TestConditionFilters:
     """A condition filter keeps the protocol of its source unchanged."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="a condition filter does not propagate _protocol_node",
-    )
     def test_charge_filter_keeps_the_source_protocol_without_a_collect(
         self,
         procedure: Procedure,
