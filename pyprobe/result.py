@@ -27,6 +27,7 @@ from pyprobe.columns import (
     ColumnDict,
     CurveColumns,
     column_factory_from_string,
+    is_valid_column_name,
 )
 from pyprobe.protocol import Step, leaves
 from pyprobe.utils import deprecated, validate_timezone
@@ -1505,6 +1506,16 @@ class Table:
         new_data_cols = [
             col for col in new_data.collect_schema().names() if col != "Unix Time / s"
         ]
+        for col in new_data_cols:
+            if not is_valid_column_name(col):
+                error_msg = (
+                    f"Column name '{col}' fails the column name rule. It must "
+                    "hold a ' / ' separator followed by a unit that pint parses, "
+                    "or it must name a BDF column that the ontology defines "
+                    "without a unit."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
         # Optionally align the new data with existing data
         if align_on is not None:

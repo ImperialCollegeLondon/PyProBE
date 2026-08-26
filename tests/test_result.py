@@ -270,8 +270,8 @@ class TestAddDataBasic:
                     datetime(1985, 1, 1, 0, 0, 4),
                     datetime(1985, 1, 1, 0, 0, 5),
                 ],
-                "Data 1": [2.0, 4.0, 6.0, 8.0, 10.0, 12.0],
-                "Data 2": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
+                "Data 1 / 1": [2.0, 4.0, 6.0, 8.0, 10.0, 12.0],
+                "Data 2 / 1": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
             },
         )
         result_object = Result(lf=existing_data, metadata=build_metadata())
@@ -284,8 +284,8 @@ class TestAddDataBasic:
             {
                 "Unix Time / s": np.array([base_time + i for i in range(6)]),
                 "Data": [2, 4, 6, 8, 10, 12],
-                "Data 1": [2.0, 4.0, 6.0, 8.0, 10.0, 12.0],
-                "Data 2": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
+                "Data 1 / 1": [2.0, 4.0, 6.0, 8.0, 10.0, 12.0],
+                "Data 2 / 1": [4.0, 8.0, 12.0, 16.0, 20.0, 24.0],
             },
         )
         pl_testing.assert_frame_equal(
@@ -301,7 +301,7 @@ class TestAddDataBasic:
             {"Unix Time / s": np.array([base_time]), "Value": [1]}
         )
 
-        new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext": [10]})
+        new_data = pl.LazyFrame({"DateStr": ["2023/01/01 10:00:00"], "Ext / 1": [10]})
 
         result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
@@ -315,8 +315,8 @@ class TestAddDataBasic:
         assert schema["Unix Time / s"] == pl.Float64
 
         data = result.data
-        assert "Ext" in data.columns
-        assert data["Ext"][0] == 10
+        assert "Ext / 1" in data.columns
+        assert data["Ext / 1"][0] == 10
 
 
 class TestAddDataTimezoneHandling:
@@ -333,7 +333,7 @@ class TestAddDataTimezoneHandling:
         new_data = pl.LazyFrame(
             {
                 "DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)],
-                "Ext": [10],
+                "Ext / 1": [10],
             }
         )
 
@@ -342,7 +342,7 @@ class TestAddDataTimezoneHandling:
 
         schema = result.lf.collect_schema()
         assert schema["Unix Time / s"] == pl.Float64
-        assert "Ext" in schema
+        assert "Ext / 1" in schema
 
     def test_add_data_timezone_difference_utc_vs_london(self):
         """Test time difference calculation between UTC and Europe/London."""
@@ -356,7 +356,7 @@ class TestAddDataTimezoneHandling:
         new_data_london = pl.LazyFrame(
             {
                 "DateTime": [datetime(2023, 6, 21, 12, 0, 0)],
-                "Data": [10],
+                "Data / 1": [10],
             }
         )
 
@@ -387,7 +387,7 @@ class TestAddDataTimezoneHandling:
         new_data_newyork = pl.LazyFrame(
             {
                 "DateTime": [datetime(2023, 6, 21, 12, 0, 0)],
-                "Data": [10],
+                "Data / 1": [10],
             }
         )
 
@@ -418,7 +418,7 @@ class TestAddDataTimezoneHandling:
 
         naive_time = datetime(2023, 3, 21, 12, 0, 0)
 
-        new_data = pl.LazyFrame({"DateTime": [naive_time], "Data": [10]})
+        new_data = pl.LazyFrame({"DateTime": [naive_time], "Data / 1": [10]})
 
         result = Result(lf=existing_data, metadata=build_metadata())
         result.add_data(
@@ -454,7 +454,7 @@ class TestAddDataTimezoneHandling:
                     datetime(2023, 6, 21, 13, 0, 0),  # 13:00 BST = 12:00 UTC
                     datetime(2023, 6, 21, 14, 0, 0),  # 14:00 BST = 13:00 UTC
                 ],
-                "Temperature_London": [20.0, 21.0],
+                "Temperature London / degC": [20.0, 21.0],
             }
         )
 
@@ -468,7 +468,7 @@ class TestAddDataTimezoneHandling:
         )
 
         data = result.data
-        london_col = data["Temperature_London"]
+        london_col = data["Temperature London / degC"]
         assert london_col[0] == 20.0
         assert london_col[1] == 21.0
 
@@ -499,7 +499,7 @@ class TestAddDataTimezoneHandling:
         new_data = pl.LazyFrame(
             {
                 "DateUTC": [datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)],
-                "Ext": [10],
+                "Ext / 1": [10],
             }
         )
 
@@ -510,7 +510,7 @@ class TestAddDataTimezoneHandling:
         assert schema["Unix Time / s"] == pl.Float64
         data = result.data
         assert len(data) > 0
-        assert "Ext" in data.columns
+        assert "Ext / 1" in data.columns
 
 
 class TestAddDataJoinStrategies:
@@ -532,7 +532,7 @@ class TestAddDataJoinStrategies:
                     datetime(2024, 1, 1, 0, 0, 2),
                     datetime(2024, 1, 1, 0, 0, 4),
                 ],
-                "Voltage": [3.6, 3.8, 4.0],
+                "Voltage / V": [3.6, 3.8, 4.0],
             },
         )
 
@@ -548,13 +548,13 @@ class TestAddDataJoinStrategies:
         data = result.data
         assert len(data) == 5
         assert "Temperature" in data.columns
-        assert "Voltage" in data.columns
+        assert "Voltage / V" in data.columns
 
-        assert data["Voltage"][0] == pytest.approx(3.6)
-        assert data["Voltage"][1] == pytest.approx(3.7)
-        assert data["Voltage"][2] == pytest.approx(3.8)
-        assert data["Voltage"][3] == pytest.approx(3.9)
-        assert data["Voltage"][4] == pytest.approx(4.0)
+        assert data["Voltage / V"][0] == pytest.approx(3.6)
+        assert data["Voltage / V"][1] == pytest.approx(3.7)
+        assert data["Voltage / V"][2] == pytest.approx(3.8)
+        assert data["Voltage / V"][3] == pytest.approx(3.9)
+        assert data["Voltage / V"][4] == pytest.approx(4.0)
 
     def test_add_data_join_strategy_keep_new(self):
         """Test add_data with join_strategy='keep_new'."""
@@ -574,7 +574,7 @@ class TestAddDataJoinStrategies:
                     datetime(2024, 1, 1, 0, 0, 3),
                     datetime(2024, 1, 1, 0, 0, 4),
                 ],
-                "Voltage": [3.6, 3.7, 3.8, 3.9, 4.0],
+                "Voltage / V": [3.6, 3.7, 3.8, 3.9, 4.0],
             },
         )
 
@@ -610,7 +610,7 @@ class TestAddDataJoinStrategies:
                     datetime(2024, 1, 1, 0, 0, 0, 500000),
                     datetime(2024, 1, 1, 0, 0, 1, 500000),
                 ],
-                "Voltage": [3.65, 3.85],
+                "Voltage / V": [3.65, 3.85],
             },
         )
 
@@ -626,10 +626,10 @@ class TestAddDataJoinStrategies:
         data = result.data
         assert len(data) >= 3
         assert "Temperature" in data.columns
-        assert "Voltage" in data.columns
+        assert "Voltage / V" in data.columns
 
         assert data["Temperature"].null_count() < len(data)
-        assert data["Voltage"].null_count() < len(data)
+        assert data["Voltage / V"].null_count() < len(data)
 
 
 class TestAddDataFillStrategies:
@@ -650,7 +650,7 @@ class TestAddDataFillStrategies:
                     datetime(2024, 1, 1, 0, 0, 1),
                     datetime(2024, 1, 1, 0, 0, 4),
                 ],
-                "Voltage": [3.7, 4.0],
+                "Voltage / V": [3.7, 4.0],
             },
         )
 
@@ -664,12 +664,12 @@ class TestAddDataFillStrategies:
         )
 
         data = result.data
-        assert data["Voltage"][0] is None
-        assert data["Voltage"][1] == 3.7
-        assert data["Voltage"][2] == 3.7
-        assert data["Voltage"][3] == 3.7
-        assert data["Voltage"][4] == 4.0
-        assert data["Voltage"][5] == 4.0
+        assert data["Voltage / V"][0] is None
+        assert data["Voltage / V"][1] == 3.7
+        assert data["Voltage / V"][2] == 3.7
+        assert data["Voltage / V"][3] == 3.7
+        assert data["Voltage / V"][4] == 4.0
+        assert data["Voltage / V"][5] == 4.0
 
     def test_add_data_fill_strategy_backward_fill(self):
         """Test add_data with fill_strategy='backward_fill'."""
@@ -686,7 +686,7 @@ class TestAddDataFillStrategies:
                     datetime(2024, 1, 1, 0, 0, 1),
                     datetime(2024, 1, 1, 0, 0, 4),
                 ],
-                "Voltage": [3.7, 4.0],
+                "Voltage / V": [3.7, 4.0],
             },
         )
 
@@ -700,12 +700,12 @@ class TestAddDataFillStrategies:
         )
 
         data = result.data
-        assert data["Voltage"][0] == 3.7
-        assert data["Voltage"][1] == 3.7
-        assert data["Voltage"][2] == 4.0
-        assert data["Voltage"][3] == 4.0
-        assert data["Voltage"][4] == 4.0
-        assert data["Voltage"][5] is None
+        assert data["Voltage / V"][0] == 3.7
+        assert data["Voltage / V"][1] == 3.7
+        assert data["Voltage / V"][2] == 4.0
+        assert data["Voltage / V"][3] == 4.0
+        assert data["Voltage / V"][4] == 4.0
+        assert data["Voltage / V"][5] is None
 
     def test_add_data_fill_strategy_none(self):
         """Test add_data with fill_strategy=None."""
@@ -723,7 +723,7 @@ class TestAddDataFillStrategies:
                     datetime(2024, 1, 1, 0, 0, 2),
                     datetime(2024, 1, 1, 0, 0, 4),
                 ],
-                "Voltage": [3.6, 3.8, 4.0],
+                "Voltage / V": [3.6, 3.8, 4.0],
             },
         )
 
@@ -737,11 +737,11 @@ class TestAddDataFillStrategies:
         )
 
         data = result.data
-        assert data["Voltage"][0] == 3.6
-        assert data["Voltage"][1] is None
-        assert data["Voltage"][2] == 3.8
-        assert data["Voltage"][3] is None
-        assert data["Voltage"][4] == 4.0
+        assert data["Voltage / V"][0] == 3.6
+        assert data["Voltage / V"][1] is None
+        assert data["Voltage / V"][2] == 3.8
+        assert data["Voltage / V"][3] is None
+        assert data["Voltage / V"][4] == 4.0
 
 
 class TestAddDataValidation:
@@ -759,7 +759,7 @@ class TestAddDataValidation:
         new_data = pl.LazyFrame(
             {
                 "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
-                "Voltage": [3.7],
+                "Voltage / V": [3.7],
             },
         )
 
@@ -790,7 +790,7 @@ class TestAddDataValidation:
         new_data = pl.LazyFrame(
             {
                 "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
-                "Voltage": [3.7],
+                "Voltage / V": [3.7],
             },
         )
 
@@ -809,6 +809,63 @@ class TestAddDataValidation:
                 fill_strategy="bad_strategy",
                 timezone="UTC",
             )
+
+    def test_add_data_raises_for_column_with_no_unit(self):
+        """A raw column name with no unit and no bare-name exemption raises."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Voltage / V": [3.7]},
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+                "Cell Replaced": [1],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata=build_metadata())
+        with pytest.raises(ValueError, match="'Cell Replaced'"):
+            result.add_data(new_data, time_column_name="DateTime", timezone="UTC")
+
+    def test_add_data_raises_for_column_map_key_with_no_unit(self):
+        """A column_map key that fails the name rule raises, naming that key."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Voltage / V": [3.7]},
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+                "RawFlag": [1],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata=build_metadata())
+        with pytest.raises(ValueError, match="'Cell Flag'"):
+            result.add_data(
+                new_data,
+                time_column_name="DateTime",
+                column_map={"Cell Flag": "RawFlag"},
+                timezone="UTC",
+            )
+
+    def test_add_data_accepts_bare_step_id(self):
+        """A bare 'Step ID' column, exempt from the unit rule, is accepted."""
+        base_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC).timestamp()
+        existing_data = pl.LazyFrame(
+            {"Unix Time / s": np.array([base_time]), "Voltage / V": [3.7]},
+        )
+        new_data = pl.LazyFrame(
+            {
+                "DateTime": [datetime(2024, 1, 1, 0, 0, 0)],
+                "Step ID": [1],
+            },
+        )
+
+        result = Result(lf=existing_data, metadata=build_metadata())
+        result.add_data(new_data, time_column_name="DateTime", timezone="UTC")
+
+        assert "Step ID" in result.data.columns
 
 
 class TestAddDataComplexScenarios:
@@ -830,7 +887,7 @@ class TestAddDataComplexScenarios:
                     datetime(2024, 1, 1, 0, 0, 3),
                     datetime(2024, 1, 1, 0, 0, 5),
                 ],
-                "Voltage": [3.7, 3.9, 4.1],
+                "Voltage / V": [3.7, 3.9, 4.1],
             },
         )
 
@@ -856,18 +913,18 @@ class TestAddDataComplexScenarios:
             "expected_value",
         ),
         [
-            ("keep_existing", "interpolate", 3, "Voltage", 2, 3.8),
-            ("keep_existing", "forward_fill", 3, "Voltage", 2, 3.7),
-            ("keep_existing", "backward_fill", 3, "Voltage", 2, 3.9),
-            ("keep_existing", None, 3, "Voltage", 2, None),
+            ("keep_existing", "interpolate", 3, "Voltage / V", 2, 3.8),
+            ("keep_existing", "forward_fill", 3, "Voltage / V", 2, 3.7),
+            ("keep_existing", "backward_fill", 3, "Voltage / V", 2, 3.9),
+            ("keep_existing", None, 3, "Voltage / V", 2, None),
             ("keep_new", "interpolate", 3, "Temperature", 3, 23.0),
             ("keep_new", "forward_fill", 3, "Temperature", 3, 22.0),
             ("keep_new", "backward_fill", 3, "Temperature", 3, 24.0),
             ("keep_new", None, 3, "Temperature", 3, None),
-            ("keep_both", "interpolate", 6, "Voltage", 2, 3.8),
-            ("keep_both", "forward_fill", 6, "Voltage", 2, 3.7),
-            ("keep_both", "backward_fill", 6, "Voltage", 2, 3.9),
-            ("keep_both", None, 6, "Voltage", 2, None),
+            ("keep_both", "interpolate", 6, "Voltage / V", 2, 3.8),
+            ("keep_both", "forward_fill", 6, "Voltage / V", 2, 3.7),
+            ("keep_both", "backward_fill", 6, "Voltage / V", 2, 3.9),
+            ("keep_both", None, 6, "Voltage / V", 2, None),
         ],
     )
     def test_add_data_all_join_fill_strategy_combinations(
@@ -894,7 +951,7 @@ class TestAddDataComplexScenarios:
                     datetime(2024, 1, 1, 0, 0, 3),
                     datetime(2024, 1, 1, 0, 0, 5),
                 ],
-                "Voltage": [3.7, 3.9, 4.1],
+                "Voltage / V": [3.7, 3.9, 4.1],
             },
         )
 
@@ -1076,7 +1133,7 @@ class TestAddDataAlignment:
                     datetime(1970, 1, 1, 0, 0, 1, 500000),
                     datetime(1970, 1, 1, 0, 0, 2, 500000),
                 ],
-                "Other [A]": [1.5, 2.5, 3.5],
+                "Other / A": [1.5, 2.5, 3.5],
             }
         )
 
@@ -1090,7 +1147,7 @@ class TestAddDataAlignment:
 
         combined_df = result.data
 
-        assert "Other [A]" in combined_df.columns
+        assert "Other / A" in combined_df.columns
         assert len(combined_df) > 0
 
     def test_add_data_with_alignment_error(self):
@@ -1104,7 +1161,7 @@ class TestAddDataAlignment:
         new_df = pl.DataFrame(
             {
                 "Time [s]": [0.0],
-                "Other [A]": [1.0],
+                "Other / A": [1.0],
             }
         )
         result = Result(lf=base_df.lazy(), metadata=build_metadata())
@@ -1113,7 +1170,7 @@ class TestAddDataAlignment:
             result.add_data(
                 new_df,
                 time_column_name="Time [s]",
-                align_on=("NonExistent [V]", "Other [A]"),
+                align_on=("NonExistent [V]", "Other / A"),
                 timezone="UTC",
             )
 
