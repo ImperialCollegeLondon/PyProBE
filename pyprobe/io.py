@@ -5,8 +5,8 @@ cycler files via the ``batterydf`` package, normalising them to BDF-standard
 column names, and persisting to Parquet with attached metadata.
 
 Also provides :func:`attach_metadata` for updating metadata on existing Parquet
-files, and :func:`process_generic` for normalising arbitrary DataFrames to BDF
-format without going through the cycler pipeline.
+files, and :func:`process_generic` for normalising arbitrary battery data to
+BDF format under a caller-supplied column map.
 
 Typical usage::
 
@@ -311,22 +311,6 @@ def _handle_existing_cached_file(output_path: Path) -> Path | None:
         return None
     logger.info("Skipping processing; using cached file '{}'.", output_path)
     return output_path
-
-
-def _embed_provenance(path: Path) -> None:
-    """Embed PyProBE provenance metadata into a Parquet file footer."""
-    import datetime as _dt
-
-    from pyprobe._version import __version__ as _version
-
-    MetadataManager(path).update(
-        {
-            "pyprobe": {
-                "version": _version,
-                "written_at": _dt.datetime.now(_dt.UTC).isoformat(),
-            }
-        }
-    )
 
 
 def is_pyprobe_file(path: Path | str) -> bool:
@@ -699,94 +683,69 @@ def attach_metadata(
 
 
 def process_generic(
-    source: pl.DataFrame | pl.LazyFrame | pd.DataFrame,
+    source: str | Path | pl.LazyFrame | pl.DataFrame | pd.DataFrame,
     column_map: dict[str | BDF, str],
-    output_path: str | Path,
+    output_path: str | Path | None = None,
+    *,
+    overwrite_data: bool = False,
     compression_priority: Literal[
         "performance", "file size", "uncompressed"
     ] = "performance",
-    *,
-    overwrite_data: bool = False,
+    **load_kwargs: Any,
 ) -> Path:
-    """Normalise an arbitrary DataFrame to BDF format and write to Parquet.
+    """Normalise arbitrary battery data to BDF format and write a BDF artifact.
 
-    Accepts a polars DataFrame, polars LazyFrame, or pandas DataFrame, renames
-    columns per *column_map* (mapping BDF output name to source column name),
-    validates that required BDF columns are resolvable, and writes all mapped
-    columns to *output_path*.
+    Loads *source* through :meth:`~pyprobe.filters.Procedure.load`, passing
+    *column_map* to name the source column of each BDF column, and saves the
+    result through :meth:`~pyprobe.result.Table.save`.
 
     Args:
-        source: Raw battery data. Accepts a polars DataFrame, polars LazyFrame,
-            or pandas DataFrame.
+        source: Raw battery data: a path to a file, a polars DataFrame, a
+            polars LazyFrame, or a pandas DataFrame.
         column_map: Mapping from BDF-format output name (e.g. ``"Current / A"``)
-            to the column name in *source*.
-        output_path: Destination path for the output Parquet file.
-        compression_priority: Compression algorithm selection.
+            to the column name in *source*. Applies where *source* is a frame;
+            ignored where *source* is a path.
+        output_path: Destination path for the output Parquet file. When
+            ``None`` and *source* is a path, defaults to
+            ``<source_parent>/<stem>.bdf.parquet``.
         overwrite_data: When ``False`` (default), return the existing output path
             immediately if it already exists without reprocessing. When ``True``,
             reprocess and overwrite the existing file.
+        compression_priority: Compression algorithm selection.
+        load_kwargs: Forwarded to :meth:`~pyprobe.filters.Procedure.load`.
 
     Returns:
         The resolved path of the written Parquet file.
 
     Raises:
-        TypeError: If *source* cannot be converted to a Polars DataFrame.
+        ValueError: If *output_path* is ``None`` and *source* is not a path.
+        ValueError: If the resolved output path does not end with ``.parquet``.
         ValueError: If any required BDF column cannot be resolved after
             applying *column_map*.
     """
-    output = Path(output_path)
-    compression = _COMPRESSION_MAP[compression_priority]
+    from pyprobe.filters import Procedure
+
+    if output_path is not None:
+        resolved_output_path = Path(output_path)
+    elif isinstance(source, (str, Path)):
+        source_path = Path(source)
+        resolved_output_path = source_path.parent / (source_path.stem + ".bdf.parquet")
+    else:
+        raise ValueError("output_path is required unless source is a file path.")
+
+    if resolved_output_path.suffix != ".parquet":
+        raise ValueError(f"output_path must end with '.parquet', got: '{output_path}'")
 
     if not overwrite_data:
-        cached = _handle_existing_cached_file(output)
+        cached = _handle_existing_cached_file(resolved_output_path)
         if cached is not None:
             return cached
 
-    # Normalize input: convert to LazyFrame, tracking original type for output method
-    is_lazy = isinstance(source, pl.LazyFrame)
-    if not is_lazy:
-        if not isinstance(source, pl.DataFrame):
-            try:
-                source = pl.from_pandas(source)
-            except Exception as exc:
-                raise TypeError(
-                    f"Could not convert source to a Polars DataFrame: {exc}"
-                ) from exc
-        source = source.lazy()
-
-    # Build and apply column map expressions
-    exprs = _build_column_map_exprs(source.collect_schema().names(), column_map)
-    output_columns = [str(e.meta.output_name()) for e in exprs]
-    column_set = ColumnDict(output_columns)
-
-    # Validate required BDF columns
-    for group, status in CORE_COLUMN_GROUPS.items():
-        if status != "required":
-            continue
-        if not any(column_set.can_resolve(bdf_col) for bdf_col in group):
-            raise ValueError(
-                f"Required time column: either {_core_time_group_name(group)} "
-                "must be available in the source."
-            )
-
-    for bdf_col, status in CORE_COLUMNS.items():
-        if status != "required":
-            continue
-        try:
-            column_set.resolve(bdf_col)
-        except ValueError as exc:
-            raise ValueError(
-                f"Required BDF column '{bdf_col.quantity}' could not be resolved "
-                f"from the source: {exc}"
-            ) from exc
-
-    # Select mapped columns and write (method depends on original type)
-    selected = source.select(exprs)
-    if is_lazy:
-        selected.sink_parquet(str(output), compression=compression)
-    else:
-        selected.collect().write_parquet(str(output), compression=compression)
-
-    _embed_provenance(output)
-    logger.info("Wrote generic data to '{}'.", output)
-    return output
+    procedure = Procedure.load(source, column_map=column_map, **load_kwargs)
+    procedure.save(
+        resolved_output_path,
+        overwrite=True,
+        compression_priority=compression_priority,
+    )
+    logger.info("Wrote generic data to '{}'.", resolved_output_path)
+    return resolved_output_path

@@ -419,7 +419,7 @@ class TestProcessGeneric:
         output_path = tmp_path / "output.bdf.parquet"
 
         with pytest.raises(
-            ValueError, match="Required BDF column 'Voltage' could not be resolved"
+            ValueError, match="Required BDF column 'Voltage / V' is not resolvable"
         ):
             process_generic(df, column_map, output_path)
 
@@ -499,6 +499,41 @@ class TestProcessGeneric:
 
         pf = pq.ParquetFile(result)
         assert pf.metadata.row_group(0).column(0).compression == "ZSTD"
+
+    def test_output_path_defaults_from_a_path_source(self, tmp_path: Path) -> None:
+        """A path source with no output_path names the write from its stem."""
+        source = tmp_path / "data.csv"
+        with patch("pyprobe.filters.Procedure.load", return_value=_fake_procedure()):
+            result = process_generic(str(source), {})
+
+        assert result == tmp_path / "data.bdf.parquet"
+        assert result.exists()
+
+    def test_output_path_required_for_a_frame_source(self) -> None:
+        """A frame source with no output_path fails and names the requirement."""
+        df = pl.DataFrame({"Current / A": [1.0], "Voltage / V": [3.7]})
+
+        with pytest.raises(ValueError, match="output_path is required"):
+            process_generic(df, {"Current / A": "Current / A"})
+
+    def test_forwards_load_kwargs_to_procedure_load(self, tmp_path: Path) -> None:
+        """A keyword outside the process_generic signature reaches the load."""
+        column_map: dict[str | BDF, str] = {"Test Time / s": "Time [s]"}
+        with patch(
+            "pyprobe.filters.Procedure.load", return_value=_fake_procedure()
+        ) as mock_load:
+            process_generic(
+                "fake.csv",
+                column_map,
+                tmp_path / "output.bdf.parquet",
+                plugin="neware_csv",
+            )
+
+        mock_load.assert_called_once_with(
+            "fake.csv",
+            column_map=column_map,
+            plugin="neware_csv",
+        )
 
 
 class TestHelperFunctions:
