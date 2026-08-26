@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import bdf.io
+import bdf.metadata_parsers
 import polars as pl
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -671,7 +672,12 @@ def read_sidecar(path: str | Path) -> bdf.Metadata:
         FileNotFoundError: If the data file does not exist.
         bdf.BDFMetadataError: If the sidecar does not parse.
     """
-    raise NotImplementedError
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+
+    parser = bdf.metadata_parsers.BdfSidecarParser()
+    return parser.parse(path)
 
 
 def read_metadata(

@@ -127,7 +127,6 @@ class TestSidecarStore:
 
         assert loaded.metadata == bdf.Metadata()
 
-    @pytest.mark.xfail(strict=True, reason="read_sidecar is not implemented")
     def test_sidecar_read_of_an_absent_data_file_raises(
         self,
         tmp_path: Path,
