@@ -144,10 +144,6 @@ class TestExtendTime:
 class TestExtendSteps:
     """The extend states how the step columns cross a boundary."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not implement the step identifier rule",
-    )
     def test_offset_step_identifier_continues(self) -> None:
         """An offset step identifier continues past the maximum of the first."""
         first = _procedure(
@@ -167,10 +163,6 @@ class TestExtendSteps:
 
         assert first.data["Step ID"].to_list() == [1, 2, 3, 4, 5, 6]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not implement the step identifier rule",
-    )
     def test_verbatim_step_identifier_stacks(self) -> None:
         """A verbatim step identifier stacks the recorded values."""
         first = _procedure(
@@ -190,10 +182,6 @@ class TestExtendSteps:
 
         assert first.data["Step ID"].to_list() == [1, 2, 3, 1, 2, 3]
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not rebuild the step count",
-    )
     def test_step_count_is_rebuilt_across_the_boundary(self) -> None:
         """A recorded step count is replaced by one that never resets."""
         first = _procedure(
@@ -217,6 +205,29 @@ class TestExtendSteps:
         assert counts == sorted(counts)
         assert len(set(counts)) == 4
         assert counts[4] > counts[3]
+
+    def test_step_count_rebuild_raises_where_a_source_lacks_step_id(self) -> None:
+        """The rebuild raises where one source lacks Step ID and another holds it."""
+        first = _procedure(
+            test_time=[0.0, 1.0],
+            current=[1.0, 1.0],
+            voltage=[3.7, 3.8],
+            step_id=[1, 1],
+        )
+        middle = _procedure(
+            test_time=[0.0, 1.0],
+            current=[1.0, 1.0],
+            voltage=[3.6, 3.5],
+        )
+        last = _procedure(
+            test_time=[0.0, 1.0],
+            current=[1.0, 1.0],
+            voltage=[3.4, 3.3],
+            step_id=[1, 1],
+        )
+
+        with pytest.raises(ValueError, match="Step ID"):
+            first.extend([middle, last])
 
 
 class TestExtendResult:

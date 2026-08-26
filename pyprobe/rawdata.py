@@ -8,7 +8,13 @@ import bdf
 import polars as pl
 from loguru import logger
 
-from pyprobe.columns import BDF, CORE_COLUMN_GROUPS, CORE_COLUMNS, Column
+from pyprobe.columns import (
+    BDF,
+    CORE_COLUMN_GROUPS,
+    CORE_COLUMNS,
+    Column,
+    _step_count_from_step_id,
+)
 from pyprobe.result import Table
 from pyprobe.utils import deprecated
 
@@ -141,14 +147,16 @@ class CyclingData(Table):
                 ``"elapsed"`` derives the test time from ``Unix Time / s``, so
                 the real gap between sources survives. ``"keep"`` stacks the
                 recorded values verbatim.
-            step_id: Reserved for a future rule on how the ``Step ID`` column
-                crosses a source boundary. It has no effect yet.
+            step_id: How the ``Step ID`` column crosses a source boundary.
+                ``"offset"`` adds the maximum value of one source to the next.
+                ``"keep"`` stacks the recorded values verbatim.
             concat_method: The method to use for concatenation. See the
                 :func:`polars.concat` documentation for the available values.
 
         Raises:
             ValueError: ``time`` is ``"elapsed"`` and a source holds no
-                ``Unix Time / s`` column.
+                ``Unix Time / s`` column. One source holds a ``Step ID``
+                column and another does not.
         """
         if not isinstance(other, list):
             other = [other]
@@ -161,11 +169,73 @@ class CyclingData(Table):
         )
         frames = [base_frame, *other_frames]
         frames = self._with_time_rule(frames, time)
-        self.lf = pl.concat(frames, how=concat_method)
+        frames = self._with_step_id_rule(frames, step_id)
+        merged = pl.concat(frames, how=concat_method)
+        self.lf = self._rebuild_step_count(merged, sources)
         original_column_definitions = self.column_definitions.copy()
         for source in other:
             self.column_definitions.update(source.column_definitions)
         self.column_definitions.update(original_column_definitions)
+
+    @staticmethod
+    def _with_step_id_rule(
+        frames: list[pl.LazyFrame],
+        step_id: Literal["offset", "keep"],
+    ) -> list[pl.LazyFrame]:
+        """Adjust the ``Step ID`` column of each frame across a boundary.
+
+        Args:
+            frames: The frames to adjust, in the order they will be
+                concatenated.
+            step_id: ``"offset"`` adds the maximum ``Step ID`` value of one
+                frame to the next. ``"keep"`` returns the frames unchanged.
+
+        Returns:
+            The frames with an adjusted ``Step ID`` column, where ``step_id``
+            calls for one.
+        """
+        if step_id == "keep":
+            return frames
+        return CyclingData._with_running_offset(frames, BDF.STEP_ID.name, "max")
+
+    @staticmethod
+    def _rebuild_step_count(lf: pl.LazyFrame, sources: list["Table"]) -> pl.LazyFrame:
+        """Rebuild ``Step Count / 1`` over the whole extended frame.
+
+        A recorded step count resets at a file boundary, so it is replaced by
+        one that increments whenever the ``Step ID`` column changes, over the
+        full extended frame. The frame is returned unchanged where no source
+        holds a ``Step ID`` column.
+
+        Args:
+            lf: The extended frame.
+            sources: The sources the frame was built from, in the order they
+                were concatenated.
+
+        Returns:
+            The frame with a rebuilt ``Step Count / 1`` column, where a
+            ``Step ID`` column is present.
+
+        Raises:
+            ValueError: One source holds a ``Step ID`` column and another
+                does not, naming each source without the column.
+        """
+        step_id_col = BDF.STEP_ID.name
+        holders = [
+            step_id_col in source.lf.collect_schema().names() for source in sources
+        ]
+        if not any(holders):
+            return lf
+        if not all(holders):
+            missing = [str(index) for index, holds in enumerate(holders) if not holds]
+            raise ValueError(
+                f"Cannot rebuild '{BDF.STEP_COUNT.name}': source(s) "
+                f"{', '.join(missing)} hold no '{step_id_col}' column, while "
+                "another source does."
+            )
+        return lf.with_columns(
+            _step_count_from_step_id({BDF.STEP_ID: pl.col(step_id_col)})
+        )
 
     @staticmethod
     def _with_time_rule(
