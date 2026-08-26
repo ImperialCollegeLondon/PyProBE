@@ -66,7 +66,7 @@ def test_experiment_names(procedure_fixture, titles_fixture):
 class TestProcedureLoad:
     """Tests for Procedure.load() classmethod."""
 
-    def test_load_leaves_readme_dict_empty(self, tmp_path) -> None:
+    def test_load_leaves_the_protocol_empty(self, tmp_path) -> None:
         """Procedure.load populates no experiment definitions from a README."""
         from pyprobe.filters import Procedure
 
@@ -85,7 +85,7 @@ class TestProcedureLoad:
 
         procedure = Procedure.load(parquet_path)
 
-        assert procedure.readme_dict == {}
+        assert procedure.experiment_names == []
 
     def test_load_missing_parquet_raises(self, tmp_path) -> None:
         """Procedure.load raises FileNotFoundError if parquet file doesn't exist."""

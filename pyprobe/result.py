@@ -3,7 +3,7 @@
 import os
 import re
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from functools import wraps
 from pathlib import Path
 from pprint import pprint
@@ -58,7 +58,11 @@ class Quantified(Protocol):
     """
 
     metadata: bdf.Metadata
-    column_definitions: dict[str, str]
+
+    @property
+    def column_definitions(self) -> dict[str, str]:
+        """The definition of each of the object's columns, keyed by its label."""
+        ...
 
     @property
     def columns(self) -> ColumnDict:
@@ -141,7 +145,6 @@ class Curve(Quantified, PPoly):
         x_quantity: str | Column,
         y_quantity: str | Column,
         metadata: bdf.Metadata | None = None,
-        column_definitions: dict[str, str] | None = None,
         extrapolate: bool | None = None,
         axis: int = 0,
     ) -> None:
@@ -154,7 +157,6 @@ class Curve(Quantified, PPoly):
             y_quantity: The y-axis quantity (string, ``Column``, or ``BDF``).
             metadata: The metadata record for the curve. An empty
                 ``bdf.Metadata`` is used where ``None``.
-            column_definitions: Optional column-definition mapping.
             extrapolate: Passed through to :class:`scipy.interpolate.PPoly`.
             axis: Passed through to :class:`scipy.interpolate.PPoly`.
 
@@ -176,8 +178,22 @@ class Curve(Quantified, PPoly):
         )
         metadata = _coerce_metadata(metadata)
         self.metadata: bdf.Metadata = metadata.model_copy(deep=True)
-        self.column_definitions: dict[str, str] = (
-            column_definitions if column_definitions is not None else {}
+
+    @property
+    def column_definitions(self) -> dict[str, str]:
+        """The definition of each quantity of the curve, keyed by its label.
+
+        A quantity that the BDF ontology defines takes its definition from the
+        ontology. Any other label takes it from
+        ``metadata.extras["column_definitions"]``. Where both hold one label,
+        the extras win.
+
+        Returns:
+            dict[str, str]: The definition of each quantity, keyed by its label.
+        """
+        return _definitions_of(
+            (self.x_quantity.name, self.y_quantity.name),
+            self.metadata,
         )
 
     @classmethod
@@ -188,7 +204,6 @@ class Curve(Quantified, PPoly):
         x_quantity: str | Column,
         y_quantity: str | Column,
         metadata: bdf.Metadata | None = None,
-        column_definitions: dict[str, str] | None = None,
     ) -> "Curve":
         """Build a Curve from a scipy ``PPoly`` or ``BSpline``.
 
@@ -204,7 +219,6 @@ class Curve(Quantified, PPoly):
             metadata: The metadata record for the curve. ``curve_method`` is
                 added under ``metadata.extras`` if not already present. An
                 empty ``bdf.Metadata`` is used where ``None``.
-            column_definitions: Optional column-definition mapping.
 
         Returns:
             A new :class:`Curve` wrapping the (normalised) piecewise polynomial.
@@ -233,7 +247,6 @@ class Curve(Quantified, PPoly):
             x_quantity=x_quantity,
             y_quantity=y_quantity,
             metadata=metadata,
-            column_definitions=column_definitions,
             extrapolate=poly.extrapolate,
             axis=poly.axis,
         )
@@ -270,7 +283,6 @@ class Curve(Quantified, PPoly):
             x_quantity=self.x_quantity,
             y_quantity=y_quantity,
             metadata=self.metadata,
-            column_definitions=dict(self.column_definitions),
             extrapolate=d.extrapolate,
             axis=d.axis,
         )
@@ -290,7 +302,6 @@ class Curve(Quantified, PPoly):
         return Table(
             lf=frame.lazy(),
             metadata=self.metadata,
-            column_definitions=dict(self.column_definitions),
         )
 
 
@@ -328,6 +339,34 @@ def _leaf_repeats(node: "Step", *, repeats_above: bool) -> list[bool]:
 
 _DEFINITIONS_KEY = "column_definitions"
 """The key of the extras mapping that holds the stored column definitions."""
+
+
+def _definitions_of(
+    labels: Iterable[str],
+    metadata: bdf.Metadata,
+) -> dict[str, str]:
+    """Return the definition of each label, keyed by the label.
+
+    A label that the BDF ontology defines takes its definition from the
+    ontology. Any label takes it from ``metadata.extras["column_definitions"]``
+    as well, and that mapping wins where both hold one label.
+
+    Args:
+        labels: The column labels to define, in the order they are read.
+        metadata: The record that holds the stored definitions.
+
+    Returns:
+        dict[str, str]: The definition of each label that either source
+            defines.
+    """
+    definitions: dict[str, str] = {}
+    for label in labels:
+        definition = _ontology_definition(label)
+        if definition is not None:
+            definitions[label] = definition
+    extras = metadata.extras or {}
+    definitions.update(dict(extras.get(_DEFINITIONS_KEY, {})))
+    return definitions
 
 
 def _ontology_definition(label: str) -> str | None:
@@ -402,7 +441,6 @@ class Table:
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
         metadata: bdf.Metadata | None = None,
-        column_definitions: dict[str, str] | None = None,
         _path: Path | None = None,
     ) -> None:
         """Create a Table with explicit constructor validation.
@@ -411,7 +449,6 @@ class Table:
             lf: A LazyFrame, DataFrame, or a path to a parquet file.
             metadata: The metadata record for the result. An empty
                 ``bdf.Metadata`` is used where ``None``.
-            column_definitions: Optional definitions for data columns.
             _path: Optional path to the backing Parquet file.
 
         Raises:
@@ -430,13 +467,9 @@ class Table:
                     "lf must be a polars DataFrame, LazyFrame, or a parquet file path."
                 )
         metadata = _coerce_metadata(metadata)
-        if column_definitions is not None and not isinstance(column_definitions, dict):
-            raise ValueError("column_definitions must be a dictionary.")
 
         self.lf: pl.LazyFrame = lf
         self.metadata = metadata.model_copy(deep=True)
-        if column_definitions is not None:
-            self._write_definitions(dict(column_definitions))
         self._path: Path | None = _path
 
     @property
@@ -451,13 +484,7 @@ class Table:
         Returns:
             dict[str, str]: The definition of each column, keyed by its label.
         """
-        definitions: dict[str, str] = {}
-        for label in self.lf.collect_schema().names():
-            definition = _ontology_definition(label)
-            if definition is not None:
-                definitions[label] = definition
-        definitions.update(self._stored_definitions())
-        return definitions
+        return _definitions_of(self.lf.collect_schema().names(), self.metadata)
 
     def _stored_definitions(self) -> dict[str, str]:
         """Return the definitions that the metadata record holds.
@@ -760,9 +787,7 @@ class Table:
             lf = lf.group_by(by, maintain_order=True).agg(exprs)
         else:
             lf = lf.select(exprs)
-        return Table(
-            lf, metadata=self.metadata, column_definitions=self.column_definitions
-        )
+        return Table(lf, metadata=self.metadata)
 
     def delta(self, *columns: str | Column) -> "Table":
         """Collapse the frame to a single row by computing ``last − first``.
@@ -971,9 +996,7 @@ class Table:
         if step_id_name in self.lf.collect_schema().names():
             agg_exprs.append(pl.col(step_id_name).first())
         lf = lf.group_by(by, maintain_order=True).agg(agg_exprs)
-        return Table(
-            lf, metadata=self.metadata, column_definitions=self.column_definitions
-        )
+        return Table(lf, metadata=self.metadata)
 
     @property
     def columns(self) -> ColumnDict:
@@ -1273,11 +1296,13 @@ class Table:
             dataframe = dataframe.lazy()
         extras = dict(self.metadata.extras or {})
         extras.pop(_DEFINITIONS_KEY, None)
-        return Table(
+        copy = Table(
             lf=dataframe,
             metadata=self.metadata.model_copy(update={"extras": extras}),
-            column_definitions=column_definitions,
         )
+        if column_definitions is not None:
+            copy._write_definitions(dict(column_definitions))
+        return copy
 
     @staticmethod
     def _verify_compatible_frames(
@@ -1853,7 +1878,6 @@ class Table:
     def from_polars_io(
         polars_io_func: Callable[..., pl.DataFrame | pl.LazyFrame],
         metadata: bdf.Metadata | None = None,
-        column_definitions: dict[str, str] = {},
         **kwargs: Any,
     ) -> "Table":
         """Create a new Table object with data from a Polars IO function.
@@ -1871,8 +1895,6 @@ class Table:
             metadata (bdf.Metadata | None):
                 The metadata record for the new Table object. An empty
                 ``bdf.Metadata`` is used where ``None``.
-            column_definitions (dict[str, str]):
-                The column definitions for the new Result object. Empty by default.
             **kwargs: The keyword arguments to pass to the Polars IO function.
 
         Returns:
@@ -1886,7 +1908,6 @@ class Table:
             result = Table.from_polars_io(
                 pl.scan_csv,
                 metadata=bdf.Metadata(extras={"test": "test"}),
-                column_definitions={},
                 source="data.csv",
             )
 
@@ -1897,7 +1918,6 @@ class Table:
             result = Table.from_polars_io(
                 pl.from_pandas,
                 metadata=bdf.Metadata(extras={"test": "test"}),
-                column_definitions={},
                 data=pd.DataFrame({"a": [1, 2, 3]}),
             )
 
@@ -1908,7 +1928,6 @@ class Table:
             result = Table.from_polars_io(
                 pl.from_numpy,
                 metadata=bdf.Metadata(extras={"test": "test"}),
-                column_definitions={},
                 data=np.array([[1, 2, 3], [4, 5, 6]]),
                 schema=["a", "b"]
             )
@@ -1917,7 +1936,7 @@ class Table:
         lf = polars_io_func(**kwargs)
         if isinstance(lf, pl.DataFrame):
             lf = lf.lazy()
-        return Table(lf=lf, metadata=metadata, column_definitions=column_definitions)
+        return Table(lf=lf, metadata=metadata)
 
     @property
     @deprecated(

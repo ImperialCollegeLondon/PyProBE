@@ -1467,33 +1467,6 @@ class Procedure(
 ):
     """A class for a procedure in a battery experiment."""
 
-    def __init__(
-        self,
-        lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: bdf.Metadata,
-        readme_dict: dict[str, dict[str, list[str | int | tuple[int, int, int]]]],
-        column_definitions: dict[str, str] | None = None,
-        step_descriptions: dict[str, list[str | int | None]] | None = None,
-        cycle_info: list[tuple[int, int, int]] | None = None,
-    ) -> None:
-        """Initialize a procedure with README-derived experiment metadata.
-
-        Args:
-            lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: The metadata record for the procedure.
-            readme_dict: Experiment definitions from README.
-            column_definitions: Column descriptions.
-            step_descriptions: Step-by-step descriptions.
-            cycle_info: Cycle boundary information.
-        """
-        super().__init__(
-            lf=lf,
-            metadata=metadata,
-            column_definitions=column_definitions,
-            step_descriptions=step_descriptions,
-        )
-        self.readme_dict = readme_dict
-
     @classmethod
     def load(
         cls,
@@ -1627,11 +1600,7 @@ class Procedure(
                 _build_column_map_exprs(lf.collect_schema().names(), column_map)
             )
 
-        procedure = cls(
-            lf=lf,
-            metadata=metadata,
-            readme_dict={},
-        )
+        procedure = cls(lf=lf, metadata=metadata)
         if not reduced:
             procedure.lf = procedure.lf.with_columns(
                 procedure.columns.resolve(BDF.TEST_TIME_SECOND)
@@ -1676,8 +1645,6 @@ class Procedure(
         conditions = [
             self.columns.resolve(BDF.STEP_ID).is_in(flattened_steps).not_(),
         ]
-        for experiment_name in experiment_names:
-            self.readme_dict.pop(experiment_name, None)
         self._remove_protocol_groups(experiment_names)
         self.lf = self.lf.filter(conditions)
 
@@ -1724,33 +1691,6 @@ class Experiment(
 ):
     """A class for an experiment in a battery experimental procedure."""
 
-    def __init__(
-        self,
-        lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: bdf.Metadata,
-        column_definitions: dict[str, str] | None = None,
-        step_descriptions: dict[str, list[str | int | None]] | None = None,
-        cycle_info: list[tuple[int, int, int]] | None = None,
-        _path: Path | None = None,
-    ) -> None:
-        """Initialize an experiment view with optional cycle metadata.
-
-        Args:
-            lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: The metadata record for the experiment.
-            column_definitions: Column descriptions.
-            step_descriptions: Step-by-step descriptions.
-            cycle_info: Cycle boundary information.
-            _path: Optional path to the backing Parquet file.
-        """
-        super().__init__(
-            lf=lf,
-            metadata=metadata,
-            column_definitions=column_definitions,
-            step_descriptions=step_descriptions,
-            _path=_path,
-        )
-
 
 class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
     """A class for a cycle in a battery experimental procedure."""
@@ -1792,58 +1732,6 @@ class Cycle(CycleFiltersMixin, StepFiltersMixin, CyclingData):
         """
         return super()._protocol_leaf_repeats(include_nodes=include_nodes)
 
-    def __init__(
-        self,
-        lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: bdf.Metadata,
-        column_definitions: dict[str, str] | None = None,
-        step_descriptions: dict[str, list[str | int | None]] | None = None,
-        cycle_info: list[tuple[int, int, int]] | None = None,
-        _path: Path | None = None,
-    ) -> None:
-        """Initialize a cycle view with optional nested cycle metadata.
-
-        Args:
-            lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: The metadata record for the cycle.
-            column_definitions: Column descriptions.
-            step_descriptions: Step-by-step descriptions.
-            cycle_info: Cycle boundary information.
-            _path: Optional path to the backing Parquet file.
-        """
-        super().__init__(
-            lf=lf,
-            metadata=metadata,
-            column_definitions=column_definitions,
-            step_descriptions=step_descriptions,
-            _path=_path,
-        )
-
 
 class Step(StepFiltersMixin, CyclingData):
     """A class for a step in a battery experimental procedure."""
-
-    def __init__(
-        self,
-        lf: pl.LazyFrame | pl.DataFrame | str,
-        metadata: bdf.Metadata,
-        column_definitions: dict[str, str] | None = None,
-        step_descriptions: dict[str, list[str | int | None]] | None = None,
-        _path: Path | None = None,
-    ) -> None:
-        """Initialize a step view.
-
-        Args:
-            lf: A LazyFrame, DataFrame, or a path to a parquet file.
-            metadata: The metadata record for the step.
-            column_definitions: Column descriptions.
-            step_descriptions: Step-by-step descriptions.
-            _path: Optional path to the backing Parquet file.
-        """
-        super().__init__(
-            lf=lf,
-            metadata=metadata,
-            column_definitions=column_definitions,
-            step_descriptions=step_descriptions,
-            _path=_path,
-        )

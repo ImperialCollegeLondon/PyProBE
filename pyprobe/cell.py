@@ -16,7 +16,101 @@ from loguru import logger
 
 from pyprobe._version import __version__
 from pyprobe.filters import Procedure
+from pyprobe.protocol import Step, step_id_tag
+from pyprobe.readme_processor import readme_to_method
 from pyprobe.utils import PyBaMMSolution, deprecated
+
+
+def _protocol_from_step_ranges(step_ranges: pl.DataFrame) -> list[Step]:
+    """Return a protocol tree from the step range of each experiment.
+
+    Args:
+        step_ranges: A frame of one row per experiment, which holds the name
+            of the experiment and the step identifiers that it covers.
+
+    Returns:
+        list[Step]: One group node per experiment, in step order, and one
+            leaf under each group per step identifier.
+    """
+    rows = sorted(step_ranges.iter_rows(), key=lambda row: row[1][0])
+    return [
+        Step(
+            mode="group",
+            description=name,
+            steps=[Step(tags=[step_id_tag(int(step_id))]) for step_id in step_ids],
+        )
+        for name, step_ids in rows
+    ]
+
+
+def _protocol_record(procedure: Procedure) -> dict[str, Any] | None:
+    """Return the test protocol of a procedure as a JSON-ready mapping.
+
+    Args:
+        procedure: The procedure to read the protocol from.
+
+    Returns:
+        dict[str, Any] | None: The protocol record, or ``None`` where the
+            procedure holds none.
+    """
+    protocol = procedure.metadata.battinfo_test_protocol
+    if protocol is None:
+        return None
+    return protocol.model_dump(mode="json")
+
+
+def _method_from_experiment_dict(
+    experiment_dict: dict[str, Any],
+) -> list[Step]:
+    """Return a protocol tree from the experiment definitions of an archive.
+
+    An archive of a released version holds one entry per experiment, which
+    lists the step numbers of the experiment, the description of each of
+    those steps, and the bounds and the count of each of its cycles.
+
+    Args:
+        experiment_dict: The experiment definitions that the archive holds.
+
+    Returns:
+        list[Step]: One group node per experiment.
+    """
+    readme: dict[str, Any] = {}
+    for name, experiment in experiment_dict.items():
+        steps = list(experiment.get("Steps", []))
+        descriptions = list(experiment.get("Step Descriptions") or [])
+        descriptions += [None] * (len(steps) - len(descriptions))
+        entry: dict[str, Any] = {"Steps": dict(zip(steps, descriptions))}
+        for index, cycle in enumerate(experiment.get("Cycles") or [], start=1):
+            start, end, count = cycle
+            entry[f"Cycle {index}"] = {"Start": start, "End": end, "Count": count}
+        readme[name] = entry
+    return readme_to_method(readme)
+
+
+def _archived_protocol(
+    procedure: dict[str, Any],
+) -> bdf.BattinfoTestProtocol | None:
+    """Return the test protocol that an archived procedure holds.
+
+    An archive of a released version holds the experiment definitions as a
+    mapping under ``"readme_dict"``, which converts to a tree.
+
+    Args:
+        procedure: The record of one procedure of the archive.
+
+    Returns:
+        bdf.BattinfoTestProtocol | None: The protocol, or ``None`` where the
+            record holds no experiment definitions.
+    """
+    record = procedure.get("protocol")
+    if record is not None:
+        return bdf.BattinfoTestProtocol.model_validate(record)
+    experiment_dict = procedure.get("readme_dict")
+    if not experiment_dict:
+        return None
+    return bdf.BattinfoTestProtocol(
+        method=_method_from_experiment_dict(experiment_dict),
+    )
 
 
 @dataclass
@@ -181,12 +275,7 @@ class Cell:
             ),
         )
 
-        # create a dictionary of the experiment names and the step ranges
-        experiment_dict = {}
-        for row in step_ranges.collect().iter_rows():
-            experiment = row[0]
-            experiment_dict[experiment] = {"Steps": row[1]}
-            experiment_dict[experiment]["Step Descriptions"] = []
+        method = _protocol_from_step_ranges(step_ranges.collect())
 
         # reformat the data to the PyProBE format
         lf = all_solution_data.select(
@@ -210,8 +299,9 @@ class Cell:
         )
         self.procedure[procedure_name] = Procedure(
             lf=lf,
-            metadata=bdf.Metadata(),
-            readme_dict=experiment_dict,
+            metadata=bdf.Metadata(
+                battinfo_test_protocol=bdf.BattinfoTestProtocol(method=method),
+            ),
         )
 
         # write the data to a parquet file if a path is provided
@@ -261,11 +351,8 @@ class Cell:
             df.write_parquet(filepath)
             metadata["procedure"][procedure_name] = {
                 "lf": filename,
-                "info": procedure.info,
-                "column_definitions": procedure.column_definitions,
-                "step_descriptions": procedure.step_descriptions,
-                "readme_dict": procedure.readme_dict,
-                "cycle_info": procedure.cycle_info,
+                "metadata": dict(procedure.metadata.extras or {}),
+                "protocol": _protocol_record(procedure),
             }
         with open(os.path.join(path, "metadata.json"), "w") as f:
             json.dump(metadata, f)
@@ -434,19 +521,15 @@ def load_archive(path: str) -> Cell:
     legacy_info: dict[str, Any] = metadata.get("info", {})
     cell = Cell()
     for procedure_name, procedure in metadata["procedure"].items():
-        readme_dict = procedure.get("readme_dict", {})
-        for experiment_data in readme_dict.values():
-            if "Cycles" in experiment_data:
-                experiment_data["Cycles"] = [
-                    tuple(cycle) for cycle in experiment_data["Cycles"]
-                ]
+        fields: dict[str, Any] = {
+            "extras": procedure.get("metadata", legacy_info),
+        }
+        protocol = _archived_protocol(procedure)
+        if protocol is not None:
+            fields["battinfo_test_protocol"] = protocol
         cell.procedure[procedure_name] = Procedure(
             lf=os.path.join(archive_path, procedure["lf"]),
-            metadata=bdf.Metadata(extras=procedure.get("metadata", legacy_info)),
-            readme_dict=readme_dict,
-            column_definitions=procedure.get("column_definitions"),
-            step_descriptions=procedure.get("step_descriptions"),
-            cycle_info=procedure.get("cycle_info"),
+            metadata=bdf.Metadata(**fields),
         )
 
     return cell

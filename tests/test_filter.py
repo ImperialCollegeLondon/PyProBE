@@ -121,8 +121,6 @@ def _make_multilevel_experiment(
     return filters.Experiment(
         lf=df,
         metadata=build_metadata(),
-        step_descriptions={"Step ID": [0], "Description": ["Test"]},
-        cycle_info=[],
     )
 
 
@@ -907,8 +905,6 @@ class TestIterators:
         exp = filters.Experiment(
             lf=df,
             metadata=build_metadata(),
-            step_descriptions={"Step ID": [1, 2], "Description": ["A", "B"]},
-            cycle_info=[],
         )
         results = list(exp.iter_step(slice(-3, None)))
         assert len(results) == 2
@@ -1096,8 +1092,6 @@ class TestParametricConstantFilters:
         exp = filters.Experiment(
             lf=df,
             metadata=build_metadata(),
-            step_descriptions={"Step ID": [0], "Description": ["Test"]},
-            cycle_info=[],
         )
         wide = exp.constant_voltage(target=4.2, rtol=0.003).data
         narrow = exp.constant_voltage(target=4.2, rtol=0.001).data

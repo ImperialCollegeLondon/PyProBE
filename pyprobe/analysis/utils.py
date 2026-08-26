@@ -136,9 +136,10 @@ def build_result(
     """
     if isinstance(data, pl.DataFrame):
         data = data.lazy()
-    return Table(
-        lf=data, metadata=source.metadata, column_definitions=column_definitions
-    )
+    result = Table(lf=data, metadata=source.metadata)
+    if column_definitions is not None:
+        result._write_definitions(dict(column_definitions))  # noqa: SLF001
+    return result
 
 
 def append_columns(

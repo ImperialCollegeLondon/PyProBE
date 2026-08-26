@@ -49,14 +49,10 @@ class CyclingData(Table):
         self,
         lf: pl.LazyFrame | pl.DataFrame | str,
         metadata: bdf.Metadata,
-        column_definitions: dict[str, str] | None = None,
-        step_descriptions: dict[str, list[str | int | None]] | None = None,
         _path: Path | None = None,
     ) -> None:
         """Create a CyclingData object with BDF-column validation."""
-        super().__init__(
-            lf=lf, metadata=metadata, column_definitions=column_definitions, _path=_path
-        )
+        super().__init__(lf=lf, metadata=metadata, _path=_path)
         self._check_required_columns()
 
     @property
@@ -369,12 +365,7 @@ class CyclingData(Table):
         new_lf = self.lf.with_columns(
             (expr - expr.first()).alias(column_str),
         )
-        return CyclingData(
-            lf=new_lf,
-            metadata=self.metadata,
-            column_definitions=self.column_definitions,
-            step_descriptions=self.step_descriptions,
-        )
+        return CyclingData(lf=new_lf, metadata=self.metadata)
 
     @property
     @deprecated(

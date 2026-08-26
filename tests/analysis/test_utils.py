@@ -24,8 +24,10 @@ def result():
                 BDF.TEST_TIME_SECOND.name: [0.0, 1.0, 2.0],
             }
         ),
-        metadata=build_metadata(cell_id="test"),
-        column_definitions={"Current": "current def", "Voltage": "voltage def"},
+        metadata=build_metadata(
+            cell_id="test",
+            column_definitions={"Current": "current def", "Voltage": "voltage def"},
+        ),
     )
 
 
@@ -42,8 +44,9 @@ def result_with_recipe_cols():
                 BDF.STEP_COUNT.name: [0, 0, 0],
             }
         ),
-        metadata=build_metadata(),
-        column_definitions={},
+        metadata=build_metadata(
+            column_definitions={},
+        ),
     )
 
 

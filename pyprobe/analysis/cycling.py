@@ -28,7 +28,6 @@ def summary(input_data: FilterToCycleType, dchg_before_chg: bool = True) -> Tabl
     cycle_lf = Table(
         lf=get_cycle_column(input_data),
         metadata=input_data.metadata,
-        column_definitions=input_data.column_definitions,
     )
     resolved_exprs = [
         cycle_lf.columns.resolve(BDF.CUMULATIVE_CAPACITY_AH),

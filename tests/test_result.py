@@ -33,13 +33,9 @@ from tests.metadata_helpers import build_metadata, read_extras
 @pytest.fixture
 def Result_fixture(lazyframe_fixture, info_fixture):
     """Return a Result instance."""
-    return Result(
-        lf=lazyframe_fixture,
-        metadata=info_fixture,
-        column_definitions={
-            "Current": "Current definition",
-        },
-    )
+    result = Result(lf=lazyframe_fixture, metadata=info_fixture)
+    result.define_column("Current", "Current definition")
+    return result
 
 
 @pytest.fixture
@@ -51,14 +47,10 @@ def reduced_result_fixture():
             "Voltage [V]": [1, 2, 3],
         },
     )
-    return Result(
-        lf=data.lazy(),
-        metadata=build_metadata(test="metadata"),
-        column_definitions={
-            "Voltage": "Voltage definition",
-            "Current": "Current definition",
-        },
-    )
+    result = Result(lf=data.lazy(), metadata=build_metadata(test="metadata"))
+    result.define_column("Voltage", "Voltage definition")
+    result.define_column("Current", "Current definition")
+    return result
 
 
 class TestResultInit:
@@ -1201,8 +1193,8 @@ class TestResultFrameOperations:
         other_result = Result(
             lf=other_data.lazy(),
             metadata=build_metadata(test="metadata"),
-            column_definitions={"Voltage": "Voltage definition"},
         )
+        other_result.define_column("Voltage", "Voltage definition")
         reduced_result_fixture.join(other_result, on="Current [A]", how="left")
         expected_data = pl.DataFrame(
             {
@@ -1231,8 +1223,8 @@ class TestResultFrameOperations:
         other_result = Result(
             lf=other_data.lazy(),
             metadata=build_metadata(test="metadata"),
-            column_definitions={"Voltage": "Voltage definition"},
         )
+        other_result.define_column("Voltage", "Voltage definition")
         reduced_result_fixture.extend(other_result)
         expected_data = pl.DataFrame(
             {
@@ -1261,12 +1253,10 @@ class TestResultFrameOperations:
         other_result = Result(
             lf=other_data.lazy(),
             metadata=build_metadata(test="metadata"),
-            column_definitions={
-                "Voltage": "New voltage definition",
-                "Capacity": "Capacity definition",
-                "Current": "Current definition",
-            },
         )
+        other_result.define_column("Voltage", "New voltage definition")
+        other_result.define_column("Capacity", "Capacity definition")
+        other_result.define_column("Current", "Current definition")
         reduced_result_fixture.extend(other_result)
         expected_data = pl.DataFrame(
             {
@@ -1400,18 +1390,16 @@ class TestResultPolarsIO:
 
         result = Result.from_polars_io(
             metadata=build_metadata(test="metadata"),
-            column_definitions={"a": "Column A"},
             polars_io_func=pl.read_csv,
             source=str(csv_path),
         )
         assert isinstance(result, Result)
         assert result.info == {"test": "metadata"}
-        assert result.column_definitions == {"a": "Column A"}
+        assert result.column_definitions == {}
         pl_testing.assert_frame_equal(result.data, test_df)
 
         result_lazy = Result.from_polars_io(
             metadata=build_metadata(test="lazy"),
-            column_definitions={},
             polars_io_func=pl.scan_csv,
             source=str(csv_path),
         )
@@ -1420,7 +1408,6 @@ class TestResultPolarsIO:
 
         result_with_kwargs = Result.from_polars_io(
             metadata=build_metadata(test="kwargs"),
-            column_definitions={"a": "Column A with kwargs"},
             polars_io_func=pl.read_csv,
             source=str(csv_path),
             has_header=True,
@@ -1457,7 +1444,6 @@ class TestResultPolarsIO:
             polars_io_func=io_function,
             source=test_file,
             metadata=metadata,
-            column_definitions={},
         )
 
         assert isinstance(result, Result)
@@ -1475,7 +1461,6 @@ class TestResultPolarsIO:
             polars_io_func=pl.from_pandas,
             data=test_df.to_pandas(),
             metadata=metadata,
-            column_definitions={},
         )
 
         assert isinstance(result, Result)
@@ -1488,7 +1473,6 @@ class TestResultPolarsIO:
             schema=["a", "b"],
             data=test_df.to_numpy(),
             metadata=metadata,
-            column_definitions={},
         )
 
         assert isinstance(result, Result)

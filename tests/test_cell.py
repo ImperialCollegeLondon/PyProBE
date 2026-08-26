@@ -11,7 +11,10 @@ from polars.testing import assert_frame_equal
 
 import pyprobe
 from pyprobe import cell
+from pyprobe._version import __version__
 from pyprobe.filters import Procedure
+from pyprobe.protocol import Step, leaves, step_id_of
+from tests.protocol_helpers import attach_protocol
 
 
 @pytest.fixture
@@ -114,13 +117,9 @@ def test_import_pybamm_solution(benchmark, tmp_path):
         sol.cycles[1].steps[3]["Current [A]"].entries * -1,
     )
 
-    assert cell_instance.procedure["PyBaMM"].readme_dict["Test"]["Steps"] == [
-        0,
-        1,
-        2,
-        3,
-        4,
-    ]
+    assert cell_instance.procedure["PyBaMM"].experiment("Test").step_descriptions[
+        "Step"
+    ] == [0, 1, 2, 3, 4]
 
     # test with multiple experiments from different simulations
     experiment2 = pybamm.Experiment(
@@ -204,10 +203,6 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
         cell_from_file = pyprobe.load_archive(str(archive_path))
     assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
     assert (
-        cell_instance.procedure[title].readme_dict
-        == cell_from_file.procedure[title].readme_dict
-    )
-    assert (
         cell_instance.procedure[title].column_definitions
         == cell_from_file.procedure[title].column_definitions
     )
@@ -218,6 +213,10 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
     assert (
         cell_instance.procedure[title].cycle_info
         == cell_from_file.procedure[title].cycle_info
+    )
+    assert (
+        cell_instance.procedure[title].experiment_names
+        == cell_from_file.procedure[title].experiment_names
     )
     assert_frame_equal(
         cell_instance.procedure[title].lf,
@@ -245,10 +244,6 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
         cell_from_file = pyprobe.load_archive(str(archive_zip_path))
     assert cell_instance.procedure.keys() == cell_from_file.procedure.keys()
     assert (
-        cell_instance.procedure[title].readme_dict
-        == cell_from_file.procedure[title].readme_dict
-    )
-    assert (
         cell_instance.procedure[title].column_definitions
         == cell_from_file.procedure[title].column_definitions
     )
@@ -260,10 +255,178 @@ def test_archive(cell_instance, tmp_path, sample_data_neware_parquet):
         cell_instance.procedure[title].cycle_info
         == cell_from_file.procedure[title].cycle_info
     )
+    assert (
+        cell_instance.procedure[title].experiment_names
+        == cell_from_file.procedure[title].experiment_names
+    )
     assert_frame_equal(
         cell_instance.procedure[title].lf,
         cell_from_file.procedure[title].lf,
     )
+
+
+def test_archive_round_trips_the_protocol(cell_instance, tmp_path):
+    """An archived procedure keeps the experiments and the repeats of its protocol."""
+    frame = pl.DataFrame(
+        {
+            "Test Time / s": [0.0, 1.0, 2.0, 3.0],
+            "Current / A": [1.0, 1.0, -1.0, -1.0],
+            "Voltage / V": [3.7, 3.8, 3.6, 3.5],
+            "Step ID": [1, 2, 3, 4],
+        },
+    )
+    procedure = Procedure.load(frame)
+    attach_protocol(
+        procedure,
+        [
+            Step(
+                mode="group",
+                description="Formation",
+                steps=[
+                    Step(description="Charge", tags=["step_id:1"]),
+                    Step(description="Rest", tags=["step_id:2"]),
+                ],
+            ),
+            Step(
+                mode="group",
+                description="Break-in",
+                count=5,
+                steps=[
+                    Step(description="Discharge", tags=["step_id:3"]),
+                    Step(description="Rest", tags=["step_id:4"]),
+                ],
+            ),
+        ],
+    )
+    cell_instance.procedure["Test"] = procedure
+    archive_path = tmp_path / "archive"
+    with pytest.warns(DeprecationWarning, match="archive"):
+        cell_instance.archive(str(archive_path))
+
+    with pytest.warns(DeprecationWarning, match="load_archive"):
+        loaded = pyprobe.load_archive(str(archive_path)).procedure["Test"]
+
+    assert loaded.experiment_names == ["Formation", "Break-in"]
+    assert loaded.cycle_info == [(3, 4, 5)]
+    assert loaded.step_descriptions == {
+        "Step": [1, 2, 3, 4],
+        "Description": ["Charge", "Rest", "Discharge", "Rest"],
+    }
+    assert loaded.experiment("Formation").data["Step ID"].to_list() == [1, 2]
+
+
+ARCHIVE_FRAME = pl.DataFrame(
+    {
+        "Test Time / s": [0.0, 1.0, 2.0, 3.0],
+        "Current / A": [1.0, 1.0, -1.0, -1.0],
+        "Voltage / V": [3.7, 3.8, 3.6, 3.5],
+        "Step ID": [1, 2, 3, 4],
+    },
+)
+"""The data that a hand-written archive holds."""
+
+
+def write_released_archive(directory, procedure_record):
+    """Write an archive in the shape that a released version wrote.
+
+    Args:
+        directory: The directory to write the archive into.
+        procedure_record: The record of the one procedure of the archive,
+            beside its data file name.
+
+    Returns:
+        str: The path of the archive.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    ARCHIVE_FRAME.write_parquet(directory / "Test.parquet")
+    metadata = {
+        "info": {"Name": "Cell A"},
+        "procedure": {"Test": {"lf": "Test.parquet", **procedure_record}},
+        "PyProBE Version": __version__,
+    }
+    with open(directory / "metadata.json", "w") as file:
+        json.dump(metadata, file)
+    return str(directory)
+
+
+def test_load_archive_reads_an_archive_that_holds_no_protocol(tmp_path):
+    """An archive without a protocol loads, and its procedure holds no experiment."""
+    archive_path = write_released_archive(tmp_path / "archive", {"readme_dict": {}})
+
+    with pytest.warns(DeprecationWarning, match="load_archive"):
+        loaded = pyprobe.load_archive(archive_path).procedure["Test"]
+
+    assert loaded.experiment_names == []
+    assert loaded.info == {"Name": "Cell A"}
+    assert loaded.data["Step ID"].to_list() == [1, 2, 3, 4]
+
+
+def test_load_archive_builds_a_tree_from_the_released_definitions(tmp_path):
+    """An archive of a released version gives the experiments it defines."""
+    archive_path = write_released_archive(
+        tmp_path / "archive",
+        {
+            "readme_dict": {
+                "Formation": {
+                    "Steps": [1, 2],
+                    "Step Descriptions": ["Charge", "Rest"],
+                    "Cycles": [],
+                },
+                "Break-in": {
+                    "Steps": [3, 4],
+                    "Step Descriptions": ["Discharge", "Rest"],
+                    "Cycles": [[3, 4, 5]],
+                },
+            },
+        },
+    )
+
+    with pytest.warns(DeprecationWarning, match="load_archive"):
+        loaded = pyprobe.load_archive(archive_path).procedure["Test"]
+
+    assert loaded.experiment_names == ["Formation", "Break-in"]
+    assert loaded.cycle_info == [(3, 4, 5)]
+    assert loaded.step_descriptions == {
+        "Step": [1, 2, 3, 4],
+        "Description": ["Charge", "Rest", "Discharge", "Rest"],
+    }
+    assert loaded.experiment("Break-in").data["Step ID"].to_list() == [3, 4]
+
+
+def test_archive_keeps_a_written_column_definition(cell_instance, tmp_path):
+    """A definition that a user wrote survives the archive and the load."""
+    procedure = Procedure.load(ARCHIVE_FRAME)
+    procedure.define_column("Voltage / V", "The voltage across the cell terminals")
+    cell_instance.procedure["Test"] = procedure
+    archive_path = tmp_path / "archive"
+    with pytest.warns(DeprecationWarning, match="archive"):
+        cell_instance.archive(str(archive_path))
+
+    with pytest.warns(DeprecationWarning, match="load_archive"):
+        loaded = pyprobe.load_archive(str(archive_path)).procedure["Test"]
+
+    assert (
+        loaded.column_definitions["Voltage / V"]
+        == "The voltage across the cell terminals"
+    )
+
+
+def test_protocol_from_step_ranges_names_each_experiment():
+    """The PyBaMM protocol holds one group per experiment, in step order."""
+    step_ranges = pl.DataFrame(
+        {
+            "Experiment": ["Test2", "Test1"],
+            "Step Range": [[3, 4], [0, 1, 2]],
+        },
+    )
+
+    method = cell._protocol_from_step_ranges(step_ranges)
+
+    assert [group.description for group in method] == ["Test1", "Test2"]
+    assert [[step_id_of(leaf) for leaf in leaves(group)] for group in method] == [
+        [0, 1, 2],
+        [3, 4],
+    ]
 
 
 class TestCellAddProcedure:

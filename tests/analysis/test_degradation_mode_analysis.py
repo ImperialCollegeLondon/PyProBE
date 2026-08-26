@@ -481,8 +481,9 @@ def test_run_batch_dma():
             lf=pl.DataFrame(
                 {"Voltage / V": ocv_target, "Net Capacity / Ah": soc},
             ),
-            metadata=build_metadata(),
-            column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
+            metadata=build_metadata(
+                column_definitions={"Voltage": "OCV", "Capacity": "SOC"},
+            ),
         )
         for ocv_target in ocv_target_list
     ]

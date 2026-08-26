@@ -19,8 +19,9 @@ def noisy_data():
 
     return Result(
         lf=pl.LazyFrame({"x": x, "y": y}),
-        metadata=build_metadata(),
-        column_definitions={"x": "The x data", "y": "The y data"},
+        metadata=build_metadata(
+            column_definitions={"x": "The x data", "y": "The y data"},
+        ),
     )
 
 
@@ -34,8 +35,9 @@ def noisy_data_reversed():
     flipped_y = np.flip(y)
     return Result(
         lf=pl.LazyFrame({"x": flipped_x, "y": flipped_y}),
-        metadata=build_metadata(),
-        column_definitions={"x": "The x data", "y": "The y data"},
+        metadata=build_metadata(
+            column_definitions={"x": "The x data", "y": "The y data"},
+        ),
     )
 
 
@@ -287,8 +289,9 @@ def test_downsample_non_monotonic(benchmark):
 
     data = Result(
         lf=pl.LazyFrame({"x": x, "y": y}),
-        metadata=build_metadata(),
-        column_definitions={"x": "The x data", "y": "The y data"},
+        metadata=build_metadata(
+            column_definitions={"x": "The x data", "y": "The y data"},
+        ),
     )
 
     def smooth():
@@ -312,8 +315,9 @@ def test_downsample_intervals():
     values = times
     test_data = Result(
         lf=pl.LazyFrame({"Time [s]": times, "values": values}),
-        metadata=build_metadata(),
-        column_definitions={"Time": "time", "values": "test values"},
+        metadata=build_metadata(
+            column_definitions={"Time": "time", "values": "test values"},
+        ),
     )
 
     # Test with different intervals
@@ -332,8 +336,10 @@ def test_downsample_metadata_preservation():
     values = np.array([0, 1, 2, 3, 4, 5])
     test_data = Result(
         lf=pl.LazyFrame({"Time [s]": times, "values": values}),
-        metadata=build_metadata(test_info="test"),
-        column_definitions={"Time": "time", "values": "test values"},
+        metadata=build_metadata(
+            test_info="test",
+            column_definitions={"Time": "time", "values": "test values"},
+        ),
     )
 
     result = smoothing.downsample(test_data, "values", sampling_interval=2.0)
