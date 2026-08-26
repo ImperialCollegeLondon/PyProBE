@@ -14,6 +14,7 @@ import polars as pl
 from pyprobe import utils
 from pyprobe.columns import BDF, Column, ColumnDict
 from pyprobe.rawdata import CyclingData
+from pyprobe.readme_processor import read_readme
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -1323,7 +1324,10 @@ class Procedure(CycleFiltersMixin, StepFiltersMixin, CyclingData):
             ValueError: If a cycle does not bound a contiguous group of steps.
                 The message names the experiment and the cycle key.
         """
-        raise NotImplementedError
+        method = read_readme(readme_path)
+        protocol = self.metadata.battinfo_test_protocol or bdf.BattinfoTestProtocol()
+        protocol.method = method
+        self.metadata.battinfo_test_protocol = protocol
 
     def experiment(
         self,

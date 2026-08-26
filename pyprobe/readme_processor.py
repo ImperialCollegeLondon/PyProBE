@@ -1,5 +1,6 @@
 """Module for processing PyPrBE README files."""
 
+from pathlib import Path
 from typing import Any, cast
 
 import yaml
@@ -169,6 +170,29 @@ def readme_to_method(readme: dict[str, Any]) -> list[Step]:
                 raise ValueError(error_msg)
         method.append(group)
     return method
+
+
+def read_readme(readme_path: str | Path) -> list[Step]:
+    """Read a legacy README.yaml file and convert it to a protocol tree.
+
+    Args:
+        readme_path: The path to the README.yaml file.
+
+    Returns:
+        list[Step]: The protocol tree, with one group node per experiment.
+
+    Raises:
+        FileNotFoundError: If the README file does not exist.
+        ValueError: If a cycle does not bound a contiguous group of steps.
+            The message names the experiment and the cycle key.
+    """
+    path = Path(readme_path)
+    if not path.is_file():
+        error_msg = f"README file not found: {path}"
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
+    with path.open() as file:
+        return readme_to_method(yaml.safe_load(file))
 
 
 def _experiment_steps(

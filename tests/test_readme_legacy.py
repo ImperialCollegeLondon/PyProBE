@@ -23,10 +23,6 @@ NEWARE_README = Path("tests/sample_data/neware/README.yaml")
 class TestExplicitAttach:
     """A legacy README converts on an explicit call alone."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Procedure.attach_legacy_readme is not implemented",
-    )
     def test_attach_writes_the_tree_and_the_step_identifiers(
         self,
         procedure: Procedure,
