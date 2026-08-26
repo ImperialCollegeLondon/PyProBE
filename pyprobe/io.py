@@ -17,7 +17,6 @@ Typical usage::
 
 from __future__ import annotations
 
-import contextlib
 import glob
 import json
 from pathlib import Path
@@ -32,6 +31,8 @@ from loguru import logger
 
 from pyprobe.columns import (
     BDF,
+    CORE_COLUMN_GROUPS,
+    CORE_COLUMNS,
     ColumnDict,
     column_factory_from_string,
 )
@@ -41,32 +42,6 @@ if TYPE_CHECKING:
 
 _PARQUET_METADATA_KEY: bytes = b"bdf_metadata"
 """Key used to store user metadata in Parquet footer."""
-
-_REQUIRED_BDF_COLUMNS: list[BDF] = [
-    BDF.TEST_TIME_SECOND,
-    BDF.CURRENT_AMPERE,
-    BDF.VOLTAGE_VOLT,
-]
-"""BDF columns that must be resolvable; :func:`process_cycler` raises if not."""
-
-_OPTIONAL_BDF_COLUMNS: list[BDF] = [
-    BDF.UNIX_TIME_SECOND,
-    BDF.NET_CAPACITY_AH,
-    BDF.STEP_COUNT,
-    BDF.STEP_ID,
-]
-"""BDF columns included when available; warnings are emitted on failure."""
-
-_SILENT_OPTIONAL_BDF_COLUMNS: list[BDF] = [
-    BDF.AMBIENT_TEMPERATURE_CELSIUS,
-    BDF.SURFACE_TEMPERATURE_CELSIUS,
-    BDF.TEMPERATURE_T1_CELSIUS,
-    BDF.TEMPERATURE_T2_CELSIUS,
-    BDF.TEMPERATURE_T3_CELSIUS,
-    BDF.TEMPERATURE_T4_CELSIUS,
-    BDF.TEMPERATURE_T5_CELSIUS,
-]
-"""BDF columns included when available; no warning if missing."""
 
 _ParquetCompression = Literal["lz4", "uncompressed", "snappy", "gzip", "brotli", "zstd"]
 
@@ -502,6 +477,70 @@ def _resolve_time_column(column_set: ColumnDict) -> pl.Expr:
         ) from exc
 
 
+def _core_time_group_name(group: tuple[BDF, ...]) -> str:
+    """Return a human-readable name for a required BDF column group.
+
+    Args:
+        group: The columns of a :data:`~pyprobe.columns.CORE_COLUMN_GROUPS` entry.
+
+    Returns:
+        A description naming every column of *group*, e.g.
+        ``"'Unix Time / s' or 'Test Time / s'"``.
+    """
+    return " or ".join(f"'{bdf_col.quantity} / {bdf_col.unit}'" for bdf_col in group)
+
+
+def _normalised_column_expressions(column_set: ColumnDict) -> list[pl.Expr]:
+    """Resolve every core BDF column against *column_set*.
+
+    Iterates the required column groups of
+    :data:`~pyprobe.columns.CORE_COLUMN_GROUPS` and the single columns of
+    :data:`~pyprobe.columns.CORE_COLUMNS`, keeping every column that resolves.
+    A required item that resolves from no column raises. An optional item logs
+    one warning on failure. A silent item is skipped without comment.
+
+    Args:
+        column_set: The available columns to resolve against.
+
+    Returns:
+        Expressions for every core column, or group member, that resolves.
+
+    Raises:
+        ValueError: If a required column, or every column of a required group,
+            cannot be resolved.
+    """
+    expressions: list[pl.Expr] = []
+    for group, status in CORE_COLUMN_GROUPS.items():
+        resolved_any = False
+        for bdf_col in group:
+            try:
+                expressions.append(column_set.resolve(bdf_col))
+                resolved_any = True
+            except ValueError:
+                continue
+        if not resolved_any and status == "required":
+            raise ValueError(
+                f"Required time column: either {_core_time_group_name(group)} "
+                "must be available in the source data."
+            )
+
+    for bdf_col, status in CORE_COLUMNS.items():
+        try:
+            expressions.append(column_set.resolve(bdf_col))
+        except ValueError as exc:
+            if status == "required":
+                raise ValueError(
+                    f"Required BDF column '{bdf_col.quantity}' could not be resolved "
+                    f"from the source data: {exc}"
+                ) from exc
+            if status == "optional":
+                logger.warning(
+                    "Optional BDF column '{}' could not be resolved; skipping.",
+                    bdf_col.quantity,
+                )
+    return expressions
+
+
 def process_cycler(
     source: str | Path,
     output_path: str | Path | None = None,
@@ -613,33 +652,7 @@ def process_cycler(
         df = df.drop("Test Time / s")
 
     column_set = ColumnDict(df.collect_schema().names())
-    expressions: list[pl.Expr] = []
-    for bdf_col in _REQUIRED_BDF_COLUMNS:
-        try:
-            expressions.append(column_set.resolve(bdf_col))
-        except ValueError as exc:
-            if bdf_col == BDF.TEST_TIME_SECOND:
-                raise ValueError(
-                    "Required time column: either 'Unix Time / s' or 'Test Time / s' "
-                    "must be available in the source data."
-                ) from exc
-            raise ValueError(
-                f"Required BDF column '{bdf_col.quantity}' could not be resolved "
-                f"from the source data: {exc}"
-            ) from exc
-
-    for bdf_col in _OPTIONAL_BDF_COLUMNS:
-        try:
-            expressions.append(column_set.resolve(bdf_col))
-        except ValueError:
-            logger.warning(
-                "Optional BDF column '{}' could not be resolved; skipping.",
-                bdf_col.quantity,
-            )
-
-    for bdf_col in _SILENT_OPTIONAL_BDF_COLUMNS:
-        with contextlib.suppress(ValueError):
-            expressions.append(column_set.resolve(bdf_col))
+    expressions: list[pl.Expr] = _normalised_column_expressions(column_set)
 
     if extra_columns is not None:
         expressions.extend(pl.col(alias) for alias in extra_columns.values())
@@ -812,7 +825,18 @@ def process_generic(
     column_set = ColumnDict(output_columns)
 
     # Validate required BDF columns
-    for bdf_col in _REQUIRED_BDF_COLUMNS:
+    for group, status in CORE_COLUMN_GROUPS.items():
+        if status != "required":
+            continue
+        if not any(column_set.can_resolve(bdf_col) for bdf_col in group):
+            raise ValueError(
+                f"Required time column: either {_core_time_group_name(group)} "
+                "must be available in the source."
+            )
+
+    for bdf_col, status in CORE_COLUMNS.items():
+        if status != "required":
+            continue
         try:
             column_set.resolve(bdf_col)
         except ValueError as exc:

@@ -8,18 +8,9 @@ import bdf
 import polars as pl
 from loguru import logger
 
-from pyprobe.columns import BDF, Column
+from pyprobe.columns import BDF, CORE_COLUMN_GROUPS, CORE_COLUMNS, Column
 from pyprobe.result import Table
 from pyprobe.utils import deprecated
-
-_REQUIRED_BDF_TIME: list[BDF] = [BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND]
-"""Time columns (at least one must be resolvable); Unix Time is preferred."""
-
-_REQUIRED_BDF: list[BDF] = [BDF.CURRENT_AMPERE, BDF.VOLTAGE_VOLT]
-"""BDF columns that must be resolvable; CyclingData raises ValueError if not."""
-
-_OPTIONAL_BDF: list[BDF] = [BDF.NET_CAPACITY_AH, BDF.STEP_COUNT, BDF.STEP_ID]
-"""BDF columns included when available; warnings emitted on failure."""
 
 
 class CyclingData(Table):
@@ -93,32 +84,38 @@ class CyclingData(Table):
         """
         col_set = self.columns
 
-        # Validate time column (either Unix Time or Test Time must be resolvable)
-        if not any(col_set.can_resolve(time_col) for time_col in _REQUIRED_BDF_TIME):
-            error_msg = (
-                "Required time column: either 'Unix Time / s' or 'Test Time / s' "
-                "must be resolvable from available columns."
-            )
-            logger.error(error_msg)
-            raise ValueError(error_msg)
+        # Validate required column groups (at least one member must resolve)
+        for group, status in CORE_COLUMN_GROUPS.items():
+            if status != "required":
+                continue
+            if not any(col_set.can_resolve(bdf_col) for bdf_col in group):
+                names = " or ".join(
+                    f"'{bdf_col.quantity} / {bdf_col.unit}'" for bdf_col in group
+                )
+                error_msg = (
+                    f"Required time column: either {names} must be resolvable "
+                    "from available columns."
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
-        # Validate other required columns
-        for bdf_col in _REQUIRED_BDF:
-            if not col_set.can_resolve(bdf_col):
+        # Validate required and optional columns
+        for bdf_col, status in CORE_COLUMNS.items():
+            if status == "silent":
+                continue
+            if col_set.can_resolve(bdf_col):
+                continue
+            if status == "required":
                 error_msg = (
                     f"Required BDF column '{bdf_col.name}' is not resolvable "
                     f"from available columns."
                 )
                 logger.error(error_msg)
                 raise ValueError(error_msg)
-
-        # Validate optional columns
-        for bdf_col in _OPTIONAL_BDF:
-            if not col_set.can_resolve(bdf_col):
-                logger.warning(
-                    f"Optional BDF column '{bdf_col.name}' is not resolvable; some "
-                    "features may be unavailable."
-                )
+            logger.warning(
+                f"Optional BDF column '{bdf_col.name}' is not resolvable; some "
+                "features may be unavailable."
+            )
 
     def zero_column(
         self,

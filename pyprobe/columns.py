@@ -792,7 +792,20 @@ class BDF(BDFColumn, Enum):
         return match
 
 
-CORE_COLUMNS: dict[BDF, Literal["required", "optional", "silent"]] = {}
+CORE_COLUMNS: dict[BDF, Literal["required", "optional", "silent"]] = {
+    BDF.CURRENT_AMPERE: "required",
+    BDF.VOLTAGE_VOLT: "required",
+    BDF.NET_CAPACITY_AH: "optional",
+    BDF.STEP_COUNT: "optional",
+    BDF.STEP_ID: "optional",
+    BDF.AMBIENT_TEMPERATURE_CELSIUS: "silent",
+    BDF.SURFACE_TEMPERATURE_CELSIUS: "silent",
+    BDF.TEMPERATURE_T1_CELSIUS: "silent",
+    BDF.TEMPERATURE_T2_CELSIUS: "silent",
+    BDF.TEMPERATURE_T3_CELSIUS: "silent",
+    BDF.TEMPERATURE_T4_CELSIUS: "silent",
+    BDF.TEMPERATURE_T5_CELSIUS: "silent",
+}
 """The core PyProBE columns that each stand alone, in output order.
 
 A ``"required"`` column must resolve, and the read fails where it does not. An
@@ -804,11 +817,15 @@ not reported.
 CORE_COLUMN_GROUPS: dict[
     tuple[BDF, ...],
     Literal["required", "optional", "silent"],
-] = {}
+] = {
+    (BDF.UNIX_TIME_SECOND, BDF.TEST_TIME_SECOND): "required",
+}
 """The core PyProBE columns that satisfy one status together.
 
-A group holds its status where at least one column of the tuple resolves, and
-the reader prefers the first column of the tuple that resolves. A required
+A group holds its status where at least one column of the tuple resolves. A
+reduction keeps every column of the tuple that resolves, and drops the group
+only where no column of it resolves. A reader that needs one column of the
+group instead takes the first column of the tuple that resolves. A required
 group that resolves no column fails the read, and the error names every column
 of the group.
 """
