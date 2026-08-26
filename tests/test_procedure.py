@@ -210,3 +210,14 @@ class TestProcedureLoad:
         step = procedure.step(1)
 
         assert step._path == parquet_path  # noqa: SLF001
+
+    def test_load_accepts_plugin_instance(self) -> None:
+        """Procedure.load accepts a Plugin instance for the plugin argument."""
+        import bdf.plugins
+
+        procedure = Procedure.load(
+            "tests/sample_data/arbin/sample_data_arbin.csv",
+            plugin=bdf.plugins.ARBIN_CSV,
+        )
+
+        assert len(procedure.lf.collect()) == 13

@@ -21,6 +21,7 @@ from pyprobe.result import _node_repeats
 
 if TYPE_CHECKING:
     import pandas as pd
+    from bdf.plugins import Plugin
 
     from pyprobe.pyprobe_types import (
         FilterToCycleType,
@@ -1472,7 +1473,7 @@ class Procedure(
         cls,
         source: "str | Path | pl.LazyFrame | pl.DataFrame | pd.DataFrame",
         *,
-        plugin: str | None = None,
+        plugin: "Plugin | str | None" = None,
         extra_columns: dict[str, str] | None = None,
         column_map: dict[str | BDF, str] | None = None,
         tz: str = "UTC",
@@ -1500,7 +1501,8 @@ class Procedure(
         Args:
             source: A path to a data file, a :class:`~polars.LazyFrame`, a
                 :class:`~polars.DataFrame`, or a pandas ``DataFrame``.
-            plugin: The cycler plugin name to use for a raw file. ``None``
+            plugin: The cycler plugin for a raw file, as a
+                :class:`~bdf.plugins.Plugin` or as the name of one. ``None``
                 (default) triggers auto-detection. Ignored for every other
                 source.
             extra_columns: Mapping of source column name to output alias, for
