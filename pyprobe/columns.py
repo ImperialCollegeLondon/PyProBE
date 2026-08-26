@@ -27,6 +27,7 @@ Typical usage::
 """
 
 import re
+import tokenize
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from enum import Enum
@@ -829,6 +830,58 @@ group instead takes the first column of the tuple that resolves. A required
 group that resolves no column fails the read, and the error names every column
 of the group.
 """
+
+_UNITLESS_BARE_QUANTITIES: frozenset[str] = frozenset(
+    {BDF.STEP_ID.quantity, BDF.STEP_TYPE.quantity}
+)
+"""The bare quantity names that the name rule accepts without a unit."""
+
+
+def is_valid_column_name(name: str) -> bool:
+    """Check whether a column name satisfies the BDF column name rule.
+
+    The name splits on the first ``" / "``, the separator that every BDF
+    label uses, with one space on each side of the slash. A name that holds
+    that separator passes where :mod:`pint` parses the text after it, and a
+    compound unit keeps every later slash. A name that holds no such
+    separator is bare, and it passes only where it names a BDF column that
+    the ontology defines without a unit. A raw column of a cycler carries a
+    slash with no surrounding space, so it holds no ``" / "`` and fails as a
+    bare name.
+
+    Args:
+        name: The column name to check.
+
+    Returns:
+        ``True`` where the name satisfies the rule, ``False`` otherwise.
+
+    Examples:
+        >>> is_valid_column_name("Current / A")
+        True
+        >>> is_valid_column_name("Specific Capacity / mAh/g")
+        True
+        >>> is_valid_column_name("Step ID")
+        True
+        >>> is_valid_column_name("Cell Replaced")
+        False
+        >>> is_valid_column_name("Current / nonsense")
+        False
+        >>> is_valid_column_name("Efficiency/%")
+        False
+    """
+    quantity, separator, raw_unit = name.partition(" / ")
+    if not separator:
+        return quantity in _UNITLESS_BARE_QUANTITIES
+    if not raw_unit.strip():
+        return False
+    try:
+        _ureg.parse_units(raw_unit)
+    except (pint.errors.PintError, tokenize.TokenError, ValueError):
+        # pint raises tokenize.TokenError for an unmatched bracket and a
+        # plain ValueError for a unit that is only a number, and neither
+        # class derives from pint.errors.PintError.
+        return False
+    return True
 
 
 def _seam_charge(current: pl.Expr, time: pl.Expr, key: pl.Expr) -> pl.Expr:

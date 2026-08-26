@@ -32,6 +32,7 @@ from pyprobe.columns import (
     _split_quantity_unit,
     column_factory,
     column_factory_from_string,
+    is_valid_column_name,
 )
 
 
@@ -1499,3 +1500,153 @@ class TestColumnDictInit:
     ) -> None:
         """can_resolve handles recipe-based BDF columns correctly."""
         assert ColumnDict(available).can_resolve(column) is expected
+
+
+class TestIsValidColumnName:
+    """Tests for is_valid_column_name."""
+
+    @pytest.mark.parametrize(
+        "name, expected",
+        [
+            ("Current / A", True),
+            ("Voltage / mV", True),
+            ("Step ID", True),
+            ("Step Type", True),
+            ("Cell Replaced", False),
+            ("cell replaced", False),
+            ("Current / nonsense", False),
+            ("Extra Quantity / mA", True),
+            ("Foo / (((", False),
+            ("Cycle / 3", False),
+            ("Specific Capacity / mAh/g", True),
+            ("dQ/dV / Ah/V", True),
+            ("Efficiency/%", False),
+            ("Q discharge/mA.h", False),
+            ("Cell Note / ", False),
+            ("Cell Note /  ", False),
+        ],
+    )
+    def test_is_valid_column_name(self, name: str, expected: bool) -> None:
+        """A name passes where a unit or a defined bare column name backs it."""
+        assert is_valid_column_name(name) is expected
+
+
+class TestIsValidColumnNameAgainstCyclerFixtures:
+    """Tests for is_valid_column_name over the columns of the sample data files.
+
+    A raw cycler file holds a column the BDF plugin recognises, whose name
+    already carries the ``"Quantity / unit"`` form with one space on each
+    side of the slash, and a column the plugin does not recognise, whose raw
+    header keeps the punctuation the cycler wrote. This class names every
+    such column that the sample data fixtures hold, gathered from a scan of
+    every fixture with ``include_unknown=True``, and asserts which group the
+    name rule keeps and which it drops.
+    """
+
+    # A BDF-recognised column of a sample data file. Its name already carries
+    # a unit, with one space on each side of the slash, or names a bare BDF
+    # quantity that the ontology defines without a unit.
+    _RECOGNISED_COLUMNS = (
+        "AC Internal Resistance / ohm",
+        "Charging Energy / Wh",
+        "Cumulative Energy / Wh",
+        "Current / A",
+        "Cycle Count / 1",
+        "DC Internal Resistance / ohm",
+        "Discharging Energy / Wh",
+        "Internal Resistance / ohm",
+        "Net Capacity / Ah",
+        "Power / W",
+        "Record Index / 1",
+        "Schedule Charging Capacity / Ah",
+        "Schedule Charging Energy / Wh",
+        "Schedule Discharging Capacity / Ah",
+        "Schedule Discharging Energy / Wh",
+        "Step Charging Capacity / Ah",
+        "Step Count / 1",
+        "Step Cumulative Capacity / Ah",
+        "Step Cumulative Energy / Wh",
+        "Step Discharging Capacity / Ah",
+        "Step ID",
+        "Step Net Energy / Wh",
+        "Step Time / s",
+        "Step Type",
+        "Temperature T1 / degC",
+        "Temperature T2 / degC",
+        "Test Time / s",
+        "Unix Time / s",
+        "Voltage / V",
+    )
+
+    # A raw column of a sample data file that no BDF plugin maps. Every one
+    # of these either holds a slash with no surrounding space, so it carries
+    # no separator the rule recognises, or holds no slash at all, and none
+    # names a BDF quantity that the ontology defines without a unit.
+    _UNRECOGNISED_COLUMNS = (
+        "Ah-Cyc-Charge",
+        "Ah-Cyc-Charge-0",
+        "Ah-Cyc-Discharge",
+        "Ah-Cyc-Discharge-0",
+        "Ah-Step",
+        "Aux_dT/dt_1 (C/s)",
+        "Capacitance charge/ï¿½F",
+        "Capacitance discharge/ï¿½F",
+        "Capacity (Ah)",
+        "Capacity/mA.h",
+        "Command",
+        "Count",
+        "Cyc-Count",
+        "Efficiency/%",
+        "I Range",
+        "Level",
+        "Ns changes",
+        "Q charge/discharge/mA.h",
+        "Q charge/mA.h",
+        "Q discharge/mA.h",
+        "State",
+        "T1[ï¿½C]",
+        "TC_Counter1",
+        "TC_Counter2",
+        "TC_Counter3",
+        "Temperature/ï¿½C",
+        "Wh-Cyc-Charge",
+        "Wh-Cyc-Charge-0",
+        "Wh-Cyc-Discharge",
+        "Wh-Cyc-Discharge-0",
+        "Wh-Step",
+        "Wh[Wh]",
+        "control changes",
+        "control/V",
+        "control/V/mA",
+        "control/mA",
+        "counter inc.",
+        "dIdt (A/h)",
+        "dQ/dV (Ah/V)",
+        "dV/dQ (V/Ah)",
+        "dV/dt (V/s)",
+        "dVdt (V/h)",
+        "dq/mA.h",
+        "error",
+        "half cycle",
+        "mAh/g",
+        "mode",
+        "ox/red",
+        "t-Cyc[s]",
+        "t-Set[s]",
+        "t-Step[s]",
+        "x",
+    )
+
+    @pytest.mark.parametrize("name", _RECOGNISED_COLUMNS)
+    def test_recognised_column_passes(self, name: str) -> None:
+        """A column a BDF plugin recognises satisfies the name rule."""
+        assert is_valid_column_name(name) is True
+
+    @pytest.mark.parametrize("name", _UNRECOGNISED_COLUMNS)
+    def test_unrecognised_column_fails(self, name: str) -> None:
+        """A raw column no BDF plugin recognises fails the name rule."""
+        assert is_valid_column_name(name) is False
+
+    def test_fixture_column_lists_are_disjoint(self) -> None:
+        """The two column lists name no column in common."""
+        assert not set(self._RECOGNISED_COLUMNS) & set(self._UNRECOGNISED_COLUMNS)
