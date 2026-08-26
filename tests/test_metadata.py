@@ -222,10 +222,6 @@ class TestExtendRecord:
             record for record in caplog.records if record.levelname == "WARNING"
         ] == []
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Table.extend does not report a differing record",
-    )
     def test_differing_records_warn_and_keep_the_first(
         self,
         cycling_frame: pl.DataFrame,

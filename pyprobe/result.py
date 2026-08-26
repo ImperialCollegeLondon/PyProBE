@@ -1457,14 +1457,17 @@ class Table:
         of the two Result objects are combined, if there are any conflicts the column
         definitions of the calling Result object will take precedence.
 
+        This object keeps its own metadata record. Where another record differs, one
+        warning names every top level field that differs.
+
         Args:
             other (Result | List[Result]): The other Result object(s) to extend with.
             concat_method (str):
                 The method to use for concatenation. Default is 'diagonal'. See the
                 polars.concat method documentation for more information.
         """
-        if not isinstance(other, list):
-            other = [other]
+        other = self._as_list(other)
+        self._warn_on_differing_metadata(other)
         other_frame_list = [other_result.lf for other_result in other]
         self.lf, other_frame_list = self._verify_compatible_frames(
             self.lf,
@@ -1475,10 +1478,57 @@ class Table:
             [self.lf] + other_frame_list,
             how=concat_method,
         )
+        self._merge_column_definitions(other)
+
+    @staticmethod
+    def _as_list(other: Union["Table", list["Table"]]) -> list["Table"]:  # noqa: UP007
+        """Return the other object(s) an extend combines with, as a list.
+
+        Args:
+            other: One Table object, or a list of them.
+
+        Returns:
+            ``other`` unchanged where it is already a list, otherwise a list
+            holding the one object.
+        """
+        if isinstance(other, list):
+            return other
+        return [other]
+
+    def _merge_column_definitions(self, other: list["Table"]) -> None:
+        """Merge the column definitions of other objects into this one's.
+
+        Where a definition conflicts, this object's own definition takes
+        precedence.
+
+        Args:
+            other: The other Table object(s) being extended with.
+        """
         original_column_definitions = self.column_definitions.copy()
         for other_result in other:
             self.column_definitions.update(other_result.column_definitions)
         self.column_definitions.update(original_column_definitions)
+
+    def _warn_on_differing_metadata(self, other: list["Table"]) -> None:
+        """Log one warning naming every top level field that differs.
+
+        Args:
+            other: The other Table object(s) being extended with.
+        """
+        differing_fields: set[str] = set()
+        for other_result in other:
+            for field in type(self.metadata).model_fields:
+                if getattr(self.metadata, field) != getattr(
+                    other_result.metadata, field
+                ):
+                    differing_fields.add(field)
+        if differing_fields:
+            logger.warning(
+                "This object keeps its own metadata record; the following "
+                "top level fields differ from another record being extended "
+                "with: {}",
+                ", ".join(sorted(differing_fields)),
+            )
 
     @classmethod
     def build(

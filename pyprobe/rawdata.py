@@ -134,7 +134,9 @@ class CyclingData(Table):
     ) -> None:
         """Extend this cycling data with the rows of one or more other objects.
 
-        The sources are ordered, then concatenated.
+        The sources are ordered, then concatenated. This object keeps its own
+        metadata record, and logs one warning where another source holds a
+        record with a differing top level field.
 
         Args:
             other: The other cycling data object(s) to extend with.
@@ -158,8 +160,8 @@ class CyclingData(Table):
                 ``Unix Time / s`` column. One source holds a ``Step ID``
                 column and another does not.
         """
-        if not isinstance(other, list):
-            other = [other]
+        other = self._as_list(other)
+        self._warn_on_differing_metadata(other)
         sources: list[Table] = [self, *other]
         if order == "start_time":
             sources = self._ordered_by_start_time(sources)
@@ -172,10 +174,7 @@ class CyclingData(Table):
         frames = self._with_step_id_rule(frames, step_id)
         merged = pl.concat(frames, how=concat_method)
         self.lf = self._rebuild_step_count(merged, sources)
-        original_column_definitions = self.column_definitions.copy()
-        for source in other:
-            self.column_definitions.update(source.column_definitions)
-        self.column_definitions.update(original_column_definitions)
+        self._merge_column_definitions(other)
 
     @staticmethod
     def _with_step_id_rule(
