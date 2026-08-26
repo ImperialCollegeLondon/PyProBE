@@ -425,12 +425,12 @@ class Column:
     def resolve(self, available: "set[Column] | ColumnDict") -> pl.Expr:
         """Resolve this column to a Polars expression from available columns.
 
-        Resolution strategy:
-        1. Exact match: return the column if it's in available.
-        2. BDF recipe lookup: if this is not a BDFColumn, try to resolve via
-           a BDF member's recipes (which may derive the quantity from others).
-        3. Quantity scan: search available columns for matching quantity
-           (case-insensitive), then apply unit conversion if needed.
+        The resolution tries an exact match first, returning the column where
+        it is already in *available*. Failing that, where this column is not
+        a :class:`BDFColumn`, it tries a BDF member's recipes, which can
+        derive the quantity from other columns. Finally, it scans *available*
+        for a column of matching quantity, case-insensitive, and applies unit
+        conversion where needed.
 
         Args:
             available: Set of available :class:`Column` and/or

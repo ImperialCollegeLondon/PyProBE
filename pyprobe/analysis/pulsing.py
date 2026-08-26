@@ -276,7 +276,7 @@ class Pulsing:
             pulse_number (int): The Pulse Number to return.
 
         Returns:
-            Step: A step object for a pulse in the pulsing experiment.
+            pyprobe.filters.Step: A step object for a pulse in the pulsing experiment.
         """
         return self.input_data.cycle(pulse_number).chargeordischarge(0)
 
@@ -287,6 +287,6 @@ class Pulsing:
             rest_number (int): The rest number to return.
 
         Returns:
-            Step: A step object for a rest in the pulsing experiment.
+            pyprobe.filters.Step: A step object for a rest in the pulsing experiment.
         """
         return self.input_data.cycle(rest_number).rest(0)

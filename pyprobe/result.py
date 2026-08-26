@@ -135,7 +135,9 @@ class Curve(Quantified, PPoly):
         x_quantity: The x-axis BDF quantity descriptor.
         y_quantity: The y-axis BDF quantity descriptor.
         metadata: Metadata carried with the curve.
-        column_definitions: Definitions of the curve's quantities.
+
+    See the :attr:`column_definitions` property for the definition of each of
+    the curve's quantities.
     """
 
     def __init__(

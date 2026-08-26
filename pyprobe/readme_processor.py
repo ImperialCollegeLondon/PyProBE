@@ -21,7 +21,7 @@ def readme_to_method(readme: dict[str, Any]) -> list[Step]:
         readme: The dictionary that a README.yaml file holds.
 
     Returns:
-        list[Step]: The protocol tree, with one group node per experiment.
+        list[pyprobe.protocol.Step]: The protocol tree, one group node per experiment.
 
     Raises:
         ValueError: If a cycle does not bound a contiguous group of steps.
@@ -61,7 +61,7 @@ def read_readme(readme_path: str | Path) -> list[Step]:
         readme_path: The path to the README.yaml file.
 
     Returns:
-        list[Step]: The protocol tree, with one group node per experiment.
+        list[pyprobe.protocol.Step]: The protocol tree, one group node per experiment.
 
     Raises:
         FileNotFoundError: If the README file does not exist.
