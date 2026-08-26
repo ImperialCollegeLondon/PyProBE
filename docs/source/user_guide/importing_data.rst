@@ -34,92 +34,172 @@ metadata to identify the cell and the conditions it was tested under.
 Importing data from a cycler
 ----------------------------
 PyProBE defines a Procedure as a dataset collected from a single run of an experimental
-protocol created on a battery cycler. Throughout its life, a cell will likely undergo
-multiple procedures, such as beginning-of-life testing, degradation cycles, reference 
-performance tests (RPTs) etc. 
+protocol created on a battery cycler. Throughout its life, a cell undergoes multiple
+procedures, such as beginning-of-life testing, degradation cycles, and reference
+performance tests (RPTs).
 
-Data can be imported into PyProBE from a range of cyclers. You import data from a cycler
-using the :func:`~pyprobe.cell.Cell.import_from_cycler` method:
+:func:`~pyprobe.io.process_cycler` reads a raw cycler file, normalises it to the
+PyProBE column format, and writes it to a ``.parquet`` file next to the source:
 
 .. code-block:: python
 
-   # From the previously created cell instance
-   cell.import_from_cycler(
-      procedure_name="Sample",
-      cycler="neware",
-      input_data_path="path/to/cycler_file.csv")
+   from pyprobe.io import process_cycler
 
-This will do two things:
-1. Convert the data in the cycler file into the PyProBE standard format, saved to a 
-'.parquet' file. By default, the file will be saved to the same path with only the
-file extension changed, however this can be controlled by passing a filepath to the
-:code:`output_data_path` argument of this function.
-2. Import the data into a the cell's :code:`procedure` dictionary with the given name as
-the dictionary key.
+   output_path = process_cycler("path/to/cycler_file.csv")
 
-These steps can be separated. You can perform step 1 with the :func:`pyprobe.cell.process_cycler_data`
-method, and step 2 with the :func:`pyprobe.cell.Cell.import_data` method.
+By default, the written file sits beside the source with the ``.bdf.parquet`` suffix.
+Pass a path to the :code:`output_path` argument to control this. The first call takes
+longer than a later one, because it runs the conversion. A later call with the same
+:code:`output_path` returns the cached path immediately, unless :code:`overwrite_data=True`
+forces a fresh conversion.
 
-The first time this method is called will take longer than subsequent calls as the data
-conversion is executed. Once the '.parquet' file is written future executions will be
-much faster.
+:meth:`~pyprobe.cell.Cell.add_procedure` then loads the written file into a cell, under
+the name you give it:
+
+.. code-block:: python
+
+   import pyprobe
+
+   cell = pyprobe.Cell()
+   cell.add_procedure("Sample", output_path)
+
+:meth:`~pyprobe.cell.Cell.add_procedure` also accepts a raw cycler file, a PyProBE
+``.parquet`` artifact, a :class:`~pyprobe.filters.Procedure`, a
+:class:`~polars.LazyFrame`, or a :class:`~polars.DataFrame` directly. It routes the
+source through :meth:`~pyprobe.filters.Procedure.load`, so the two calls above collapse
+to one:
+
+.. code-block:: python
+
+   cell.add_procedure("Sample", "path/to/cycler_file.csv")
 
 Any number of procedures can be added to a cell, for example:
 
 .. code-block:: python
 
-   # Add the first procedure
-   cell.import_from_cycler(
-      procedure_name="Cycling",
-      cycler="neware",
-      input_data_path="path/to/cycler_file_cycling.csv")
-   
-   # Add the second procedure
-   cell.import_from_cycler(
-      procedure_name="RPT",
-      cycler="neware",
-      input_data_path="path/to/cycler_file_RPT.csv")
+   cell.add_procedure("Cycling", "path/to/cycler_file_cycling.csv")
+   cell.add_procedure("RPT", "path/to/cycler_file_RPT.csv")
 
    print(cell.procedure)
-   # Returns: dict({'Cycling': <pyprobe.procedure.Procedure object…, 'RPT': <pyprobe.procedure.Procedure object…})
+   # Returns: {'Cycling': <pyprobe.filters.Procedure object…, 'RPT': <pyprobe.filters.Procedure object…}
 
-When the data is imported, PyProBE will look for a README file in the directory of the
-cycler file and/or the PyProBE format '.parquet' file. You can also specify a custom
-path for it in the :code:`readme_path` argument. The README file contains details of the 
-experimental procedure that generated the data. See the :ref:`writing_a_readme_file`
-section for guidance.
+Loading a procedure directly
+----------------------------
+:meth:`~pyprobe.filters.Procedure.load` is the one read path that
+:func:`~pyprobe.io.process_cycler` and :meth:`~pyprobe.cell.Cell.add_procedure` both
+use underneath. It routes on the type of its *source*:
 
-Without a README file, the data will still be imported, but will not be filterable
-by 'experiment' or by complex cycle patterns.
+- A :class:`~polars.LazyFrame`, a :class:`~polars.DataFrame`, or a pandas
+  ``DataFrame`` loads directly, with an empty metadata record. A ``column_map``
+  names the source column of each BDF column, keyed by the BDF output name in its
+  ``"Quantity / unit"`` form, for example ``{"Current / A": "I_meas"}``.
+- A ``.parquet`` path reads the file that :func:`~pyprobe.io.process_cycler` or
+  :meth:`~pyprobe.result.Table.save` wrote, together with its
+  ``<stem>.metadata.json`` sidecar.
+- Any other path reads through the cycler plugin that ``bdf`` detects, or the plugin
+  that the ``plugin`` argument names.
+
+.. code-block:: python
+
+   from pyprobe.filters import Procedure
+
+   procedure = Procedure.load("path/to/cycler_file.bdf.parquet")
+
+``extra_columns`` names a source column that the BDF ontology does not resolve, on a
+``.parquet`` path or a raw file path. Its key is the source column name, and its value
+is the name the loaded column carries:
+
+.. code-block:: python
+
+   procedure = Procedure.load(
+      "path/to/cycler_file.csv",
+      extra_columns={"Pressure(kPa)": "Ambient Pressure / kPa"},
+   )
+
+A name given through ``extra_columns`` or ``column_map`` must satisfy the column name
+rule described below. A save then writes that name into the artifact, so a later load
+of that artifact keeps the column without repeating the map.
+
+Which columns a load keeps
+--------------------------
+A load reads with every column the source holds, and then reduces the frame. It keeps
+every core BDF column that :meth:`~pyprobe.filters.Procedure.load` guarantees or
+derives, such as ``Current / A``, ``Voltage / V``, and a time column. It also keeps
+every other column whose name carries a ``"Quantity / unit"`` form that
+:func:`~pyprobe.columns.is_valid_column_name` accepts.
+
+A load drops every column whose name fails the rule, and logs one warning that names
+each dropped column. A user therefore names an extra column once, through
+``extra_columns`` or ``column_map``, in a form the rule accepts, and every later load
+of the written artifact keeps that column without repeating the map.
+
+When a procedure is loaded, PyProBE performs no README discovery of its own. A legacy
+README describing the experimental protocol attaches through
+:meth:`~pyprobe.filters.Procedure.attach_legacy_readme`. See the
+:ref:`writing_a_readme_file` section for guidance on writing the README, and the
+:ref:`the_test_protocol` section for guidance on how PyProBE represents the attached
+protocol.
+
+Without an attached protocol, the data is still filterable by cycle, step, and step
+type, but not by experiment.
 
 Working with multiple input files
 ---------------------------------
-Some cyclers may output data in multiple files. For example, BioLogic Modulo Bat 
-procedures. Assuming the data is all in the same folder, PyProBE is able to collect all
-of the files and process them into a single parquet file. This is done by providing a 
-:code:`*` wildcard in the :code:`input_filename` argument:
+Some cyclers output data in multiple files, for example BioLogic Modulo Bat
+procedures. Assuming the data is all in the same folder, PyProBE collects the files
+and processes them into a single ``.parquet`` file. Provide a :code:`*` wildcard in
+the source path:
 
 .. code-block:: python
 
-   # From the previously created cell instance
-   cell.import_from_cycler(
-      procedure_name="Sample",
-      cycler="neware",
-      input_data_path="path/to/cycler_file*.csv")
+   output_path = process_cycler("path/to/cycler_file*.csv")
 
-This will process all files in the folder that match the pattern 
-:code:`cycler_file*.csv`, e.g. :code:`cycler_file_1.csv`, :code:`cycler_file_2.csv`, 
-etc.
+This processes every file in the folder that matches the pattern
+:code:`cycler_file*.csv`, for example :code:`cycler_file_1.csv`,
+:code:`cycler_file_2.csv`, and so on. :func:`~pyprobe.io.process_cycler` loads each
+file, extends the first with the rest, and saves the result. See
+`Extending a procedure`_ below for the rules that the extend applies.
 
-The Biologic Modulo Bat format has its own reader ``'biologic_MB'``:
+Saving a procedure
+------------------
+:meth:`~pyprobe.result.Table.save` writes any :class:`~pyprobe.result.Table`, so a
+filtered or a joined :class:`~pyprobe.filters.Procedure` writes the same way a freshly
+loaded one does:
 
 .. code-block:: python
 
-   cell.import_from_cycler(
-      procedure_name="biologic_MB",
-      cycler="neware",
-      input_data_path="path/to/cycler_file_*_MB.mpt")
+   procedure = Procedure.load("path/to/cycler_file.csv")
+   procedure.save("path/to/output.bdf.parquet")
 
+The call writes the Parquet data file and the ``<stem>.metadata.json`` sidecar
+together. It raises :class:`FileExistsError` where the data file already exists,
+unless :code:`overwrite=True` is given, and it raises :class:`ValueError` where the
+path does not end with ``.parquet``.
+
+Extending a procedure
+---------------------
+:meth:`~pyprobe.rawdata.CyclingData.extend` combines two cycling data objects
+vertically, and every filtered or loaded :class:`~pyprobe.filters.Procedure` inherits
+it. It orders the sources by their first ``Unix Time / s`` value by default, then
+applies two rules across the boundary between one source and the next:
+
+- The ``time`` argument controls the ``Test Time / s`` column. ``"continue"``
+  (default) adds the last value of one source to the next, so the test time runs on
+  without a gap. ``"elapsed"`` derives the test time from ``Unix Time / s`` instead,
+  so a real gap between two files survives. ``"keep"`` stacks the recorded values
+  verbatim.
+- The ``step_id`` argument controls the ``Step ID`` column. ``"offset"`` (default)
+  adds the maximum value of one source to the next, so a step identifier stays
+  unique across the extended frame. ``"keep"`` stacks the recorded values verbatim.
+
+``Step Count / 1`` is always rebuilt over the whole extended frame, because a recorded
+step count resets at a file boundary:
+
+.. code-block:: python
+
+   first = Procedure.load("path/to/cycler_file_1.csv")
+   second = Procedure.load("path/to/cycler_file_2.csv")
+   first.extend(second)
 
 Batch preprocessing
 -------------------
@@ -154,6 +234,10 @@ The data that you provide must be timeseries, with a column that can be interpre
 DateTime format. This is usually a string that may appear like: ``"2024-02-29 09:19:58.554"``.
 PyProBE will interpolate your data into the time series of the cycling data already there,
 so it can be filtered as normal.
+
+Each added column name must satisfy the column name rule described above. A name that
+fails the rule raises a :class:`ValueError` that names the column, rather than being
+silently dropped later.
 
 
 .. footbibliography::
