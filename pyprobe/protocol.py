@@ -15,8 +15,24 @@ module takes the class from here.
 """
 
 from bdf.battinfo.generated.test_protocol_schema import Step
+from loguru import logger
 
-__all__ = ["Step", "leaves", "step_id_of"]
+__all__ = ["Step", "leaves", "step_id_of", "step_id_tag"]
+
+_STEP_ID_PREFIX = "step_id:"
+"""The prefix of the tag that carries a cycler step identifier."""
+
+
+def step_id_tag(step_id: int) -> str:
+    """Return the tag that carries a cycler step identifier.
+
+    Args:
+        step_id: The step identifier to write.
+
+    Returns:
+        str: The tag, in the form that :func:`step_id_of` reads.
+    """
+    return f"{_STEP_ID_PREFIX}{step_id}"
 
 
 def step_id_of(step: Step) -> int | None:
@@ -35,7 +51,20 @@ def step_id_of(step: Step) -> int | None:
         ValueError: If the tag holds a value that is not an integer. The
             message names the description of the node.
     """
-    raise NotImplementedError
+    for tag in step.tags or []:
+        if not tag.startswith(_STEP_ID_PREFIX):
+            continue
+        value = tag[len(_STEP_ID_PREFIX) :]
+        try:
+            return int(value)
+        except ValueError:
+            error_msg = (
+                f"Step '{step.description}' carries the step identifier tag "
+                f"'{tag}', which does not hold an integer."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg) from None
+    return None
 
 
 def leaves(step: Step) -> list[Step]:
@@ -50,4 +79,9 @@ def leaves(step: Step) -> list[Step]:
     Returns:
         list[Step]: The leaves under the node, in tree order.
     """
-    raise NotImplementedError
+    if not step.steps:
+        return [step]
+    found: list[Step] = []
+    for child in step.steps:
+        found.extend(leaves(child))
+    return found

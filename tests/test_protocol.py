@@ -180,10 +180,6 @@ class TestStepIdentifierValidation:
         with pytest.raises(ValueError, match="Break-in Cycles"):
             procedure_fixture.experiment("Break-in Cycles")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="pyprobe.protocol.step_id_of is not implemented",
-    )
     def test_invalid_step_identifier_raises(self) -> None:
         """A tag that does not hold an integer identifier fails, naming the leaf."""
         leaf = Step(description="Hold at 4.2 V", tags=["step_id:four"])
