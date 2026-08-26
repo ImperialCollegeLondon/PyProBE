@@ -2,7 +2,7 @@
 
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional, Union
 
 import bdf
 import polars as pl
@@ -116,6 +116,73 @@ class CyclingData(Table):
                 f"Optional BDF column '{bdf_col.name}' is not resolvable; some "
                 "features may be unavailable."
             )
+
+    def extend(  # type: ignore[override]
+        self,
+        other: Union["Table", list["Table"]],  # noqa: UP007
+        *,
+        order: Literal["start_time", "given"] = "start_time",
+        time: Literal["continue", "elapsed", "keep"] = "continue",
+        step_id: Literal["offset", "keep"] = "offset",
+        concat_method: str = "diagonal",
+    ) -> None:
+        """Extend this cycling data with the rows of one or more other objects.
+
+        The sources are ordered, then concatenated.
+
+        Args:
+            other: The other cycling data object(s) to extend with.
+            order: ``"start_time"`` orders the sources by the first
+                ``Unix Time / s`` value of each one, falling back to the given
+                order where an object holds no such column. ``"given"`` keeps
+                the order the caller gave.
+            time: Reserved for a future rule on how the ``Test Time / s``
+                column crosses a source boundary. It has no effect yet.
+            step_id: Reserved for a future rule on how the ``Step ID`` column
+                crosses a source boundary. It has no effect yet.
+            concat_method: The method to use for concatenation. See the
+                :func:`polars.concat` documentation for the available values.
+        """
+        if not isinstance(other, list):
+            other = [other]
+        sources: list[Table] = [self, *other]
+        if order == "start_time":
+            sources = self._ordered_by_start_time(sources)
+        frames = [source.lf for source in sources]
+        base_frame, other_frames = self._verify_compatible_frames(
+            frames[0], frames[1:], mode="collect all"
+        )
+        self.lf = pl.concat([base_frame, *other_frames], how=concat_method)
+        original_column_definitions = self.column_definitions.copy()
+        for source in other:
+            self.column_definitions.update(source.column_definitions)
+        self.column_definitions.update(original_column_definitions)
+
+    @staticmethod
+    def _ordered_by_start_time(sources: list["Table"]) -> list["Table"]:
+        """Order the sources by the first ``Unix Time / s`` value of each one.
+
+        Args:
+            sources: The sources to order.
+
+        Returns:
+            The sources sorted by the first ``Unix Time / s`` value of each
+            one, or unchanged where an object holds no such column.
+        """
+        unix_time_col = BDF.UNIX_TIME_SECOND.name
+        starts: list[float] = []
+        for source in sources:
+            if unix_time_col not in source.lf.collect_schema().names():
+                return sources
+            starts.append(
+                source.lf.select(pl.col(unix_time_col).first()).collect().item()
+            )
+        return [
+            source
+            for _, source in sorted(
+                zip(starts, sources, strict=True), key=lambda pair: pair[0]
+            )
+        ]
 
     def zero_column(
         self,

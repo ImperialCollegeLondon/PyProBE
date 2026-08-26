@@ -45,10 +45,6 @@ def _procedure(**columns: list[float] | list[int]) -> Procedure:
 class TestExtendOrder:
     """The extend orders the objects before it concatenates them."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="CyclingData.extend does not implement the order rule",
-    )
     def test_extend_orders_by_start_time(self) -> None:
         """The object with the earliest Unix time leads the extended data."""
         late = _procedure(
