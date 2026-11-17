@@ -84,8 +84,8 @@ class ColumnMap(ABC):
             else:
                 # Split pattern into prefix and suffix
                 prefix, suffix = pattern.split("*")
-                # Find first matching column
-                for col in available_set:
+                valid_matches = {}
+                for col in available_columns:
                     if col.startswith(prefix) and col.endswith(suffix):
                         unit = (
                             col[len(prefix) : -len(suffix)]
@@ -97,7 +97,16 @@ class ColumnMap(ABC):
                             and self.pyprobe_name != "Temperature [C]"
                         ):
                             continue
-                        matches[pattern] = {"Cycler name": col, "Cycler unit": unit}
+                        valid_matches[col] = unit
+
+                if len(valid_matches) > 1:
+                    raise ValueError(
+                        f"Ambiguous columns for {self.pyprobe_name!r} matching "
+                        f"{pattern!r}: {sorted(valid_matches)}"
+                    )
+                if valid_matches:
+                    col, unit = next(iter(valid_matches.items()))
+                    matches[pattern] = {"Cycler name": col, "Cycler unit": unit}
 
         return matches
 

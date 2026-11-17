@@ -1,6 +1,7 @@
 """Tests for the neware module."""
 
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import polars as pl
@@ -337,3 +338,27 @@ def test_apply_step_correction():
 
     step_col = BiologicMB.apply_step_correction(df).select("Ns")
     pl_testing.assert_frame_equal(step_col, expected_step_col)
+
+
+def test_biologic_mb_mixed_capacity_units_reject_ambiguity(tmp_path: Path) -> None:
+    """Reject split BioLogic files with competing charge-capacity unit columns."""
+    rows = [
+        ("mA.h", "0.0", "500.0"),
+        ("A.h", "0.0", "0.8"),
+    ]
+    for n, (unit, initial, final) in enumerate(rows, start=1):
+        header = [
+            "EC-Lab ASCII FILE",
+            "Nb header lines : 5",
+            "Acquisition started on : 01/01/2025 00:00:00.000",
+            "Dummy line",
+            f"time/s\tNs\tI/mA\tEcell/V\tQ charge/{unit}\tQ discharge/{unit}",
+            f"0.0\t0\t1000.0\t3.6\t{initial}\t0.0",
+            f"10.0\t0\t1000.0\t3.8\t{final}\t0.0",
+        ]
+        (tmp_path / f"segment_{n}.txt").write_text(
+            "\n".join(header) + "\n", encoding="utf-8"
+        )
+
+    with pytest.raises(ValueError, match="Ambiguous columns.*Q charge/"):
+        BiologicMB(input_data_path=str(tmp_path / "segment_*.txt"))
