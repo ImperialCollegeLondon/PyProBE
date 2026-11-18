@@ -156,6 +156,13 @@ PyProBE is fully open source. For more information about its license, see [LICEN
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/VolMax-Studio">
+                    <img src="https://avatars.githubusercontent.com/u/216700238?v=4" width="100;" alt="VolMax-Studio"/>
+                    <br />
+                    <sub><b>VolMax-Studio</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/mohammedasher">
                     <img src="https://avatars.githubusercontent.com/u/168521559?v=4" width="100;" alt="mohammedasher"/>
                     <br />
