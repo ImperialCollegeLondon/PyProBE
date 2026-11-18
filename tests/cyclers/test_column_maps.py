@@ -3,6 +3,7 @@
 import datetime
 
 import polars as pl
+import pytest
 from polars.testing import assert_frame_equal
 
 from pyprobe.cyclers.column_maps import (
@@ -77,6 +78,27 @@ def test_match_columns():
         "Current/*": {"Cycler name": "Current/mA", "Cycler unit": "mA"},
         "Voltage/*": {"Cycler name": "Voltage/V", "Cycler unit": "V"},
     }
+
+
+@pytest.mark.parametrize(
+    "columns",
+    [
+        ["Q charge/mA.h", "Q charge/A.h"],
+        ["Q charge/A.h", "Q charge/mA.h"],
+    ],
+)
+def test_match_columns_ambiguous_valid_units_raise(columns: list[str]) -> None:
+    """Reject multiple valid unit columns instead of silently selecting one."""
+    column_map = TestColumnMap("Capacity [Ah]", ["Q charge/*"])
+    with pytest.raises(ValueError, match="Ambiguous columns.*Q charge/"):
+        column_map.match_columns(columns, ["Q charge/*"])
+
+
+def test_match_columns_duplicate_name_not_ambiguous() -> None:
+    """A repeated column name is not a second valid candidate."""
+    column_map = TestColumnMap("Capacity [Ah]", ["Q charge/*"])
+    result = column_map.match_columns(["Q charge/A.h", "Q charge/A.h"], ["Q charge/*"])
+    assert result["Q charge/*"]["Cycler name"] == "Q charge/A.h"
 
 
 def test_ColumnMap_validate(caplog):
