@@ -106,6 +106,8 @@ def _downsample_monotonic_data(
             The desired minimum interval between points.
         occurrence (Literal['first', 'last', 'middle'], optional):
             The occurrence to take when downsampling. Default is 'first'.
+            For 'middle', select the middle row in input order, taking the later
+            of the two middle rows for an even-sized bin.
 
     Returns:
         pl.DataFrame | pl.LazyFrame:
@@ -125,7 +127,9 @@ def _downsample_monotonic_data(
         return df.group_by("bin", maintain_order=True).last().drop("bin")
     elif occurrence == "middle":
         return (
-            df.group_by("bin", maintain_order=True).quantile(0.5, "nearest").drop("bin")
+            df.group_by("bin", maintain_order=True)
+            .agg(pl.all().get(pl.len() // 2))
+            .drop("bin")
         )
 
 
@@ -203,6 +207,8 @@ def downsample(
             The occurrence to take when downsampling. Default is 'first'.
             This argument is only used when the target column is monotonic, otherwise
             the first occurrence when the interval condition is met is taken.
+            'middle' selects an observed row in input order, taking the later of
+            the two middle rows for an even-sized bin.
 
     Returns:
         Result:
