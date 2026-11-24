@@ -278,6 +278,37 @@ def test_downsample_monotonic(noisy_data, benchmark):
     assert np.all(np.abs(diffs) >= 0.9)
 
 
+@pytest.mark.parametrize("lazy", [False, True])
+@pytest.mark.parametrize("descending", [False, True])
+def test_downsample_middle_preserves_observed_rows(lazy, descending):
+    """Select complete middle rows rather than independent column quantiles."""
+    values = list(range(8))
+    if descending:
+        values.reverse()
+    df = pl.DataFrame(
+        {
+            "Time [s]": list(range(8)),
+            "values": values,
+            "measurement": [80, 10, 70, 20, 60, 30, 50, 40],
+            "label": list("abcdefgh"),
+            "flag": [True, False] * 4,
+        },
+    )
+    source = df.lazy() if lazy else df
+
+    result = smoothing._downsample_monotonic_data(
+        source,
+        "values",
+        4,
+        occurrence="middle",
+    )
+
+    assert isinstance(result, type(source))
+    if lazy:
+        result = result.collect()
+    assert result.equals(df[[2, 6]])
+
+
 def test_downsample_non_monotonic(benchmark):
     """Test non-monotonic downsampling."""
     rng = np.random.default_rng(42)
